@@ -1,0 +1,102 @@
+#ifndef LKG_GENETICMAP_H_
+#define LKG_GENETICMAP_H_
+
+using namespace std;
+
+#include <cstdio>
+#include <cmath>
+#include <string>
+#include <vector>
+
+class Snp {
+    string name;
+    double genetic_distance;
+    unsigned int physical_distance;
+    double major_freq;
+    double minor_freq;
+
+ public :
+    Snp(string name, double genetic, unsigned int physical) 
+        : name(name), genetic_distance(genetic), physical_distance(physical),
+        major_freq(1.0), minor_freq(0.0) {}
+    ~Snp() {}
+    
+    double major() { return major_freq; }
+    double minor() { return minor_freq; }
+    void set_minor_freq(double m) {
+        minor_freq = m;
+        major_freq = 1.0 - m;
+    }
+    
+    string get_name() { return name; }
+    double get_g_distance() { return genetic_distance; }
+    unsigned int get_p_distance() { return physical_distance; }
+
+	void print() {
+		printf("\t%s\t%f\t%u\t(minor=%f, major=%f)\n",
+			name.c_str(), genetic_distance, physical_distance,
+			minor_freq, major_freq);
+	}
+};
+
+class GeneticMap {
+    vector<Snp*> map;
+    vector<double> thetas; // both stored in log e
+    vector<double> inverse_thetas;
+    
+ public :
+    GeneticMap() {}
+    ~GeneticMap() {
+        for(int i = 0; i < int(map.size()); ++i) {
+            delete map[i];
+        }
+    }
+    
+	Snp* operator[](int i) {
+		return map[i];
+	}
+
+    void add(Snp* s) { map.push_back(s); }
+    void add_theta(double d) {
+        thetas.push_back(log(d));
+        inverse_thetas.push_back(log1p(-d));
+    }
+    Snp* get_marker(unsigned int i) { 
+        return map[i];
+    }
+    double get_minor(unsigned int i) {
+        return map[i]->minor();
+    }
+    double get_major(unsigned int i) {
+        return map[i]->major();
+    }
+    double get_theta(unsigned int i) {
+        return thetas[i];
+    }
+    double get_inverse_theta(unsigned int i) {
+        return inverse_thetas[i];
+    }
+    unsigned int num_markers() { return map.size(); }
+    bool sanity_check() {
+//		fprintf(stderr, "map %u\nthetas %u\ninverse %u\n", 
+//					map.size(), thetas.size(), inverse_thetas.size());
+        return (map.size() == (thetas.size() + 1)) and \
+            (map.size() == (inverse_thetas.size() + 1));
+    }
+	void print() {
+		printf("GeneticMap: %d loci\n", int(map.size()));
+		
+		for(int i = 0; i < int(map.size()); ++i)
+			map[i]->print();
+		
+		printf("\n");
+		printf("  thetas:\n");
+		for(int i = 0; i < int(thetas.size()); ++i)
+			printf("\t%f\n", exp(thetas[i]));
+
+		printf("\n");
+	}
+};
+
+#endif
+

@@ -139,6 +139,8 @@ class Person {
 	bool operator<(const Person& p) const {
 		return isfounder() and not p.isfounder();
 	}
+
+    bool peel_operation(PeelOperation* p);
 };
 
 #endif

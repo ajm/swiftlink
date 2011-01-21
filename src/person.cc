@@ -72,6 +72,10 @@ string Person::affection_str() const {
 	return "unspecified";
 }
 
+bool peel_operation(PeelOperation* p) {
+    p->set_pivot(internal_id);
+}
+
 void Person::print() const {
 	printf("\tid: %s\n\
 \tfather: %s\n\

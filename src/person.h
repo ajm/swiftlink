@@ -26,6 +26,7 @@ enum affection {
 };
 
 class Pedigree;
+class PeelOperation;
 
 class Person {
 	string id;

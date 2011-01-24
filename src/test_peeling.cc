@@ -6,7 +6,7 @@ using namespace std;
 #include "parser.h"
 #include "pedfileparser.h"
 #include "pedigree.h"
-#include "peel.h"
+#include "peeling.h"
 
 int main(int argc, char **argv) {
 
@@ -16,19 +16,17 @@ int main(int argc, char **argv) {
 	}
 
     bool sane = true;
-	vector<Pedigree*> pv;
-	PedigreeParser p(argv[1], &pv);
+	vector<Pedigree*> v;
+	PedigreeParser p(argv[1], &v);
 	
 	if(!p.parse()) {
 		fprintf(stderr, "parsing error\n");
 		return 1;
 	}
 	
-	//printf("read in %u families\n", pv.size());
-	
 	for(unsigned int i = 0; i < pv.size(); ++i) {
-		if(pv[i]->sanity_check()) {
-			pv[i]->print();
+		if(v[i]->sanity_check()) {
+			v[i]->print();
 		}
 		else {
 			sane = false;
@@ -36,8 +34,12 @@ int main(int argc, char **argv) {
 		}
 
         // perform peel
+        PedigreePeeler pp(v[i]);
+        pp.build_peel_order();
+        pp.print();
+        
 
-		delete pv[i]; // just to shut up valgrind
+		delete v[i]; // just to shut up valgrind
 	}
 	
 	return sane ? 0 : 1;

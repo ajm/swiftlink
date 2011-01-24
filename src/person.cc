@@ -6,6 +6,7 @@ using namespace std;
 #include "person.h"
 #include "pedigree.h"
 #include "genotype.h"
+#include "peeling.h"
 
 bool Person::mendelian_errors() const {
 	if(isfounder())

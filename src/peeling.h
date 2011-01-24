@@ -1,9 +1,10 @@
-#ifndef LKG_GENOTYPE_H_
-#define LKG_GENOTYPE_H_
+#ifndef LKG_PEELING_H_
+#define LKG_PEELING_H_
 
 using namespace std;
 
 #include <vector>
+#include <cstdio>
 
 #include "pedigree.h"
 
@@ -15,6 +16,10 @@ class PeelOperation {
   public :
     PeelOperation(unsigned int pivot_node, vector<unsigned int>* cutset_nodes) 
         : pivot(pivot_node), cutset(cutset_nodes) {}
+
+    ~PeelOperation() {
+        delete cutset;
+    }
     
     unsigned int get_pivot() { 
         return pivot;
@@ -31,6 +36,23 @@ class PeelOperation {
     void set_cutset(vector<unsigned int>* c) {
         cutset = c;
     }
+
+    void print() {
+        int tmp = cutset.size();
+
+        printf("%d:");
+        for(unsigned int i = 0; i < tmp; ++i) {
+            printf("%d");
+            if(i != (tmp-1)) {
+                putchar(',');
+            }
+        }
+        putchar('\n');
+    }
+
+    bool operator<(const PeelOperation& p) const {
+		return cutset.size() < p.cutset.size();
+	}
 };
 
 // XXX i think I would need one that could peel :
@@ -45,7 +67,7 @@ class PeelOperation {
 
 class PedigreePeeler {
 
-    Pedigree& ped;
+    Pedigree* ped;
     vector<PeelOperation> peel;
     bool* peeled;
 
@@ -53,7 +75,7 @@ class PedigreePeeler {
     vector<PeelOperation> get_possible_peels(unsigned int* unpeeled);
 
   public :
-    PedigreePeeler(Pedigree& p) : ped(p) {
+    PedigreePeeler(Pedigree* p) : ped(p) {
         peeled = new bool[ped.size()];
     }
 
@@ -61,8 +83,25 @@ class PedigreePeeler {
         delete[] peeled;
     }
 
+    PeelOperation get_random_operation(
+            vector<PeelOperation>::iterator start,
+            vector<PeelOperation>::iterator end
+        );
+    
+    PeelOperation get_best_operation_heuristic(
+            vector<PeelOperation>::iterator start,
+            vector<PeelOperation>::iterator end
+        );
+    
+    PeelOperation get_best_operation(
+            vector<PeelOperation>::iterator start,
+            vector<PeelOperation>::iterator end
+        );
+
+    vector<PeelOperation> all_possible_peels(unsigned int* unpeeled);
+
     bool build_peel_order();
-    void print_peel_order();
+    void print();
     bool peel(double *likelihood);
 };
 

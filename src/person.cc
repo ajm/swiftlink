@@ -73,10 +73,6 @@ string Person::affection_str() const {
 	return "unspecified";
 }
 
-bool peel_operation(PeelOperation* p) {
-    p->set_pivot(internal_id);
-}
-
 void Person::print() const {
 	printf("\tid: %s\n\
 \tfather: %s\n\
@@ -90,5 +86,97 @@ void Person::print() const {
 			gender_str().c_str(),
 			affection_str().c_str(),
             int(genotypes.size()));
+}
+
+//----------
+
+unsigned int Person::count_peeled() {}
+
+bool Person::contains_unpeeled(vector<Person*>& v, PeelingState& ps) const {
+
+    for(unsigned int i = 0; i < v.size(); ++i) {
+        if(not ps.is_peeled(v[i]->internal_id))
+            return true;
+    }
+
+    return false;
+}
+
+unsigned int Person::count_unpeeled(vector<Person*>& v, PeelingState& ps) const {
+    unsigned int count = 0;
+
+    for(unsigned int i = 0; i < v.size(); ++i) {
+        if(not ps.is_peeled(v[i]->internal_id))
+            ++count;
+    }
+
+    return count;
+}
+
+
+bool Person::offspring_peeled(PeelingState& ps) const {
+    return not contains_unpeeled(children, ps);
+}
+
+bool Person::partners_peeled(PeelingState& ps) const {
+    return not contains_unpeeled(mates, ps);
+}
+
+bool Person::parents_peeled(PeelingState& ps) const {
+    return ps.is_peeled(this->maternal_id) and ps.is_peeled(this->paternal_id);
+}
+
+bool Person::ripe_above(PeelingState& ps) const {
+    return parents_peeled();
+}
+
+bool Person::ripe_below(PeelingState& ps) const {
+    return offspring_peeled(ps);
+}
+
+bool Person::ripe_across(PeelingState& ps) const {
+    return  offspring_peeled(ps) and \
+            parents_peeled(ps) and \
+            (count_unpeeled(partners, ps) == 1);
+}
+
+bool Person::ripe_all(PeelingState& ps) const {
+    return  offspring_peeled(ps) and \
+            parents_peeled(ps) and \
+            partners_peeled(ps);
+}
+
+bool Person::ripe_above_partners(PeelingState& ps) {
+    
+    for(unsigned int i = 0; i < partners.size(); ++i) {
+        if(not partners[i]->ripe_above(ps))
+            return false;
+    }
+
+    return ripe_above(ps);
+}
+
+bool Person::ripe(PeelingState& ps) const {
+    return ripe_all(ps) or \
+            ripe_across(ps) or \
+            ripe_below(ps) or \
+            ripe_above_partners(ps);
+}
+
+bool Person::peel_operation(PeelOperation* p, PeelingState& state) {
+    p->set_pivot(internal_id);
+    
+    if(ripe(state)) {
+        get_cutset(p);
+        return true;
+    }
+
+    return false;
+}
+
+void Person::neighbours() {}
+
+void Person::get_cutset(PeelOperation* p) {
+    queue<unsigned int> q;
 }
 

@@ -8,12 +8,28 @@ using namespace std;
 
 #include "pedigree.h"
 
+class PeelingState {
+    vector<bool> peeled;
+
+    PeelingState(Pedigree* p) peeled(p->num_members(), false) {}
+
+    bool is_peeled(unsigned int i) {
+        return peeled[i];
+    }
+
+    void set_peeled(unsigned int i) {
+        peeled[i] = true;
+    }
+};
+
 class PeelOperation {
     
     unsigned int pivot;
-    vector<unsigned int>* cutset;
+    vector<unsigned int> cutset;
     
   public :
+    PeelOperation() pivot(-1), cutset(0) {}
+    
     PeelOperation(unsigned int pivot_node, vector<unsigned int>* cutset_nodes) 
         : pivot(pivot_node), cutset(cutset_nodes) {}
 
@@ -21,11 +37,11 @@ class PeelOperation {
         delete cutset;
     }
     
-    unsigned int get_pivot() { 
+    unsigned int get_pivot() const { 
         return pivot;
     }
     
-    unsigned int get_cutset_size() { 
+    unsigned int get_cutset_size() const { 
         return cutset.size();
     }
 
@@ -33,11 +49,11 @@ class PeelOperation {
         pivot = p;
     }
 
-    void set_cutset(vector<unsigned int>* c) {
-        cutset = c;
+    void add_cutnode(unsigned int c) {
+        cutset.push_back(c);
     }
 
-    void print() {
+    void print() const {
         int tmp = cutset.size();
 
         printf("%d:");
@@ -69,19 +85,15 @@ class PedigreePeeler {
 
     Pedigree* ped;
     vector<PeelOperation> peel;
-    bool* peeled;
+    PeelingState state;
 
     PeelOperation get_minimum_cutset(vector<PeelOperation*> peels);
     vector<PeelOperation> get_possible_peels(unsigned int* unpeeled);
 
   public :
-    PedigreePeeler(Pedigree* p) : ped(p) {
-        peeled = new bool[ped.size()];
-    }
-
-    ~PedigreePeeler() {
-        delete[] peeled;
-    }
+    PedigreePeeler(Pedigree* p) 
+        : ped(p), ps(p) {}
+    ~PedigreePeeler() {}
 
     PeelOperation get_random_operation(
             vector<PeelOperation>::iterator start,
@@ -98,7 +110,7 @@ class PedigreePeeler {
             vector<PeelOperation>::iterator end
         );
 
-    vector<PeelOperation> all_possible_peels(unsigned int* unpeeled);
+    vector<PeelOperation> all_possible_peels();
 
     bool build_peel_order();
     void print();

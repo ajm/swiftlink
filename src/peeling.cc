@@ -44,16 +44,16 @@ PeelOperation PedigreePeeler::get_best_operation(
 
 // create a list of all the possible peels from peripheral families
 // the actual details of what a peel is, is coded in the person class
-vector<PeelOperation> PedigreePeeler::all_possible_peels(unsigned int* unpeeled) {
+vector<PeelOperation> PedigreePeeler::all_possible_peels() {
     vector<PeelOperation> tmp;
     
     for(unsigned int i = 0; i < ped->size(); ++i) {
         PeelOperation p;
 
-        if(not peeled[i]) {
+        if(not state.is_peeled(i)) {
             unpeeled++;
             
-            if((*ped)[i]->peel_operation(&p)) {
+            if((*ped)[i]->peel_operation(&p, state)) {
                 tmp.push_back(p);
             }
         }
@@ -72,7 +72,7 @@ bool PedigreePeeler::build_peel_order() {
     while(true) {
         unpeeled = 0;
 
-        tmp = all_possible_peels(&unpeeled);
+        tmp = all_possible_peels();
         
         // everyone is peeled, so we are done
         if(unpeeled == 0)

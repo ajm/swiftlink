@@ -69,9 +69,7 @@ class Person {
 			typed(true),
 			ped(pedigree) {}
 	
-	~Person() {
-		//fprintf(stderr, "Person %s destructor\n", id.c_str());
-	}
+	~Person() {}
 
 	/* getters */
 	string& get_id() { return this->id; }

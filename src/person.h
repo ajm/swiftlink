@@ -27,6 +27,7 @@ enum affection {
 
 class Pedigree;
 class PeelOperation;
+class PeelingState;
 
 class Person {
 	string id;
@@ -139,7 +140,20 @@ class Person {
 		return isfounder() and not p.isfounder();
 	}
 
-    bool peel_operation(PeelOperation* p);
+    bool contains_unpeeled(vector<Person*>& v, PeelingState& ps);
+    unsigned int count_unpeeled(vector<Person*>& v, PeelingState& ps);
+    bool offspring_peeled(PeelingState& ps);
+    bool partners_peeled(PeelingState& ps);
+    bool parents_peeled(PeelingState& ps);
+    bool ripe_above(PeelingState& ps);
+    bool ripe_below(PeelingState& ps);
+    bool ripe_across(PeelingState& ps);
+    bool ripe_all(PeelingState& ps);
+    bool ripe_above_partners(PeelingState& ps);
+    bool ripe(PeelingState& ps);
+    bool peel_operation(PeelOperation* p, PeelingState& state);
+    void neighbours(vector<unsigned int>& nodes);
+    void get_cutset(PeelOperation* operation, PeelingState& state);
 };
 
 #endif

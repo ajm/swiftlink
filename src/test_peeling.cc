@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	
-	for(unsigned int i = 0; i < pv.size(); ++i) {
+	for(unsigned int i = 0; i < v.size(); ++i) {
 		if(v[i]->sanity_check()) {
 			v[i]->print();
 		}

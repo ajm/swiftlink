@@ -1,12 +1,15 @@
 using namespace std;
 
 #include <cstdio>
+#include <vector>
+#include <queue>
 
 #include "lkg.h"
 #include "person.h"
 #include "pedigree.h"
 #include "genotype.h"
 #include "peeling.h"
+
 
 bool Person::mendelian_errors() const {
 	if(isfounder())
@@ -90,9 +93,7 @@ void Person::print() const {
 
 //----------
 
-unsigned int Person::count_peeled() {}
-
-bool Person::contains_unpeeled(vector<Person*>& v, PeelingState& ps) const {
+bool Person::contains_unpeeled(vector<Person*>& v, PeelingState& ps) {
 
     for(unsigned int i = 0; i < v.size(); ++i) {
         if(not ps.is_peeled(v[i]->internal_id))
@@ -102,7 +103,7 @@ bool Person::contains_unpeeled(vector<Person*>& v, PeelingState& ps) const {
     return false;
 }
 
-unsigned int Person::count_unpeeled(vector<Person*>& v, PeelingState& ps) const {
+unsigned int Person::count_unpeeled(vector<Person*>& v, PeelingState& ps) {
     unsigned int count = 0;
 
     for(unsigned int i = 0; i < v.size(); ++i) {
@@ -113,34 +114,33 @@ unsigned int Person::count_unpeeled(vector<Person*>& v, PeelingState& ps) const 
     return count;
 }
 
-
-bool Person::offspring_peeled(PeelingState& ps) const {
+bool Person::offspring_peeled(PeelingState& ps) {
     return not contains_unpeeled(children, ps);
 }
 
-bool Person::partners_peeled(PeelingState& ps) const {
+bool Person::partners_peeled(PeelingState& ps) {
     return not contains_unpeeled(mates, ps);
 }
 
-bool Person::parents_peeled(PeelingState& ps) const {
+bool Person::parents_peeled(PeelingState& ps) {
     return ps.is_peeled(this->maternal_id) and ps.is_peeled(this->paternal_id);
 }
 
-bool Person::ripe_above(PeelingState& ps) const {
-    return parents_peeled();
+bool Person::ripe_above(PeelingState& ps) {
+    return parents_peeled(ps);
 }
 
-bool Person::ripe_below(PeelingState& ps) const {
+bool Person::ripe_below(PeelingState& ps) {
     return offspring_peeled(ps);
 }
 
-bool Person::ripe_across(PeelingState& ps) const {
+bool Person::ripe_across(PeelingState& ps) {
     return  offspring_peeled(ps) and \
             parents_peeled(ps) and \
-            (count_unpeeled(partners, ps) == 1);
+            (count_unpeeled(mates, ps) == 1);
 }
 
-bool Person::ripe_all(PeelingState& ps) const {
+bool Person::ripe_all(PeelingState& ps) {
     return  offspring_peeled(ps) and \
             parents_peeled(ps) and \
             partners_peeled(ps);
@@ -148,15 +148,15 @@ bool Person::ripe_all(PeelingState& ps) const {
 
 bool Person::ripe_above_partners(PeelingState& ps) {
     
-    for(unsigned int i = 0; i < partners.size(); ++i) {
-        if(not partners[i]->ripe_above(ps))
+    for(unsigned int i = 0; i < mates.size(); ++i) {
+        if(not mates[i]->ripe_above(ps))
             return false;
     }
 
     return ripe_above(ps);
 }
 
-bool Person::ripe(PeelingState& ps) const {
+bool Person::ripe(PeelingState& ps) {
     return ripe_all(ps) or \
             ripe_across(ps) or \
             ripe_below(ps) or \
@@ -167,16 +167,67 @@ bool Person::peel_operation(PeelOperation* p, PeelingState& state) {
     p->set_pivot(internal_id);
     
     if(ripe(state)) {
-        get_cutset(p);
+        get_cutset(p, state);
         return true;
     }
 
     return false;
 }
 
-void Person::neighbours() {}
+void Person::neighbours(vector<unsigned int>& nodes) {
+    nodes.clear();
 
-void Person::get_cutset(PeelOperation* p) {
+    if(maternal_id != UNKNOWN_ID)
+        nodes.push_back(maternal_id);
+
+    if(paternal_id != UNKNOWN_ID)
+        nodes.push_back(paternal_id);
+
+    for(unsigned int i = 0; i < children.size(); ++i)
+        nodes.push_back(children[i]->internal_id);
+
+    for(unsigned int i = 0; i < mates.size(); ++i)
+        nodes.push_back(mates[i]->internal_id);
+}
+
+void Person::get_cutset(PeelOperation* operation, PeelingState& state) {
     queue<unsigned int> q;
+    vector<unsigned int> n;
+    unsigned int visited[ped->num_members()];
+    unsigned int tmp, tmp2;
+    Person* p;
+
+    for(unsigned int i = 0; i < ped->num_members(); ++i) {
+		visited[i] = WHITE;
+    }
+    
+    visited[internal_id] = GREY;
+    q.push(internal_id);
+
+    while(not q.empty()) {
+		tmp = q.front();
+		q.pop();
+		
+        p = ped->get_by_index(tmp);
+        p->neighbours(n);
+
+        for(unsigned int i = 0; i < n.size(); ++i) {
+            tmp2 = n[i];
+
+            if(not state.is_peeled(tmp2)) {
+                if(internal_id != tmp2) {
+                    operation->add_cutnode(tmp2);
+                }
+                continue;
+            }
+
+            if(visited[tmp2] == WHITE) {
+                visited[tmp2] = GREY;
+                q.push(tmp2);
+            }
+        }
+        
+        visited[tmp] = BLACK;
+    }
 }
 

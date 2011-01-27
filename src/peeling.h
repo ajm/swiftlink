@@ -24,7 +24,6 @@ class PeelingState {
 };
 
 class PeelOperation {
-    
     unsigned int pivot;
     vector<unsigned int> cutset;
     
@@ -49,11 +48,10 @@ class PeelOperation {
     }
 
     void add_cutnode(unsigned int c) {
-        for(unsigned int i; i < cutset.size(); ++i) {
+        for(unsigned int i = 0; i < cutset.size(); ++i) {
             if(cutset[i] == c)
                 return;
         }
-        
         cutset.push_back(c);
     }
 
@@ -91,28 +89,16 @@ class PedigreePeeler {
     vector<PeelOperation> peelorder;
     PeelingState state;
 
-
   public :
     PedigreePeeler(Pedigree* p) 
         : ped(p), state(p) {}
     
     ~PedigreePeeler() {}
 
-    PeelOperation get_random_operation(
-            vector<PeelOperation>::iterator start,
-            vector<PeelOperation>::iterator end
-        );
+    PeelOperation get_random_operation(vector<PeelOperation>& v);
+    PeelOperation get_best_operation_heuristic(vector<PeelOperation>& v);
+    PeelOperation get_best_operation(vector<PeelOperation>& v);
     
-    PeelOperation get_best_operation_heuristic(
-            vector<PeelOperation>::iterator start,
-            vector<PeelOperation>::iterator end
-        );
-    
-    PeelOperation get_best_operation(
-            vector<PeelOperation>::iterator start,
-            vector<PeelOperation>::iterator end
-        );
-
     vector<PeelOperation> all_possible_peels(int* unpeeled);
 
     bool build_peel_order();

@@ -1,7 +1,6 @@
 using namespace std;
 
 #include <vector>
-#include <utility>
 #include <algorithm>
 #include <cstdlib>
 #include <cstdio>
@@ -9,10 +8,8 @@ using namespace std;
 #include "peeling.h"
 
 // annoyingly I cannot use random_shuffle, which might be safer (?)
-PeelOperation PedigreePeeler::get_random_operation(
-    vector<PeelOperation>::iterator start, vector<PeelOperation>::iterator end) {
-    
-    return *(start + (rand() % (end - start)));
+PeelOperation PedigreePeeler::get_random_operation(vector<PeelOperation>& v) {
+    return v[rand() % v.size()];
 }
 
 // XXX add any heuristics related to peel operation selection here
@@ -20,9 +17,8 @@ PeelOperation PedigreePeeler::get_random_operation(
 // i)  if one child peeled up, then peel the rest?
 // ii) if one parent peeled down, then peel the other one?
 //          <-- this will probably happen automatically
-PeelOperation PedigreePeeler::get_best_operation_heuristic(
-    vector<PeelOperation>::iterator start, vector<PeelOperation>::iterator end) {
-    return *start;
+PeelOperation PedigreePeeler::get_best_operation_heuristic(vector<PeelOperation>& v) {
+    return v[0];
 }
 
 // XXX see Thomas'86, need to consider number of alleles
@@ -30,17 +26,21 @@ PeelOperation PedigreePeeler::get_best_operation_heuristic(
 // not just the size of the cutset
 // number of alleles depends on peeling descent graph (4) or 
 // genotypes during the L-sampler (3)
-PeelOperation PedigreePeeler::get_best_operation(
-    vector<PeelOperation>::iterator start, vector<PeelOperation>::iterator end) {
-
-    pair<vector<PeelOperation>::iterator, vector<PeelOperation>::iterator> bounds;
-    vector<PeelOperation> v(start, end);
+PeelOperation PedigreePeeler::get_best_operation(vector<PeelOperation>& v) {    
 
     sort(v.begin(), v.end());
 
-    bounds = equal_range(v.begin(), v.end(), v[0].get_cutset_size());
+    vector<PeelOperation>::iterator it = v.begin();
+    unsigned int cs_size = v[0].get_cutset_size();
+    while(it++ != v.end()) {
+        if(it->get_cutset_size() != cs_size) {
+            break;
+        }
+    }
 
-    return get_best_operation_heuristic(bounds.first, bounds.second);
+    vector<PeelOperation> tmp(v.begin(), it);
+
+    return get_best_operation_heuristic(tmp);
 }
 
 // create a list of all the possible peels from peripheral families
@@ -48,7 +48,7 @@ PeelOperation PedigreePeeler::get_best_operation(
 vector<PeelOperation> PedigreePeeler::all_possible_peels(int* unpeeled) {
     vector<PeelOperation> tmp;
     Person* per;
-    
+
     for(unsigned int i = 0; i < ped->num_members(); ++i) {
         PeelOperation p;
 
@@ -70,10 +70,7 @@ bool PedigreePeeler::build_peel_order() {
     PeelOperation p;
     vector<PeelOperation> tmp;
     int unpeeled;
-    unsigned int peeled[ped->num_members()];
-    
-    fill(peeled.begin(), peeled.end(), false); // <-------- !
-    
+
     while(true) {
         unpeeled = 0;
 
@@ -83,10 +80,21 @@ bool PedigreePeeler::build_peel_order() {
         if(unpeeled == 0)
             break;
 
-        p = get_best_operation(tmp.begin(), tmp.end());
-        
+        p = get_best_operation(tmp);
+/*
+        // debug
+        printf("step %d\n", peelorder.size());
+        printf("selected: ");
+        p.print();
+        printf("\n");
+        for(unsigned int i = 0; i < tmp.size(); ++i) {
+            tmp[i].print();
+        }
+        printf("\n\n");
+        // debug
+*/
         peelorder.push_back(p);
-        peeled[p.get_pivot()] = true;
+        state.set_peeled(p.get_pivot());
 
         tmp.clear();
     }
@@ -105,3 +113,4 @@ bool PedigreePeeler::peel(double *likelihood) {
     return false;
 }
 */
+

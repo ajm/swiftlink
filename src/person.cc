@@ -77,15 +77,15 @@ string Person::affection_str() const {
 }
 
 void Person::print() const {
-	printf("\tid: %s\n\
-\tfather: %s\n\
-\tmother: %s\n\
-\tgender: %s\n\
-\taffection: %s\n\
-\tnumber of markers: %d\n",
-			id.c_str(), 
-			father.c_str(),
-			mother.c_str(),
+	printf( "\tid: %s (%d)\n"
+            "\tfather: %s (%d)\n"
+            "\tmother: %s (%d)\n"
+            "\tgender: %s\n"
+            "\taffection: %s\n"
+            "\tnumber of markers: %d\n",
+			id.c_str(),     internal_id,
+			father.c_str(), paternal_id,
+			mother.c_str(), maternal_id,
 			gender_str().c_str(),
 			affection_str().c_str(),
             int(genotypes.size()));
@@ -123,7 +123,7 @@ bool Person::partners_peeled(PeelingState& ps) {
 }
 
 bool Person::parents_peeled(PeelingState& ps) {
-    return ps.is_peeled(this->maternal_id) and ps.is_peeled(this->paternal_id);
+    return isfounder() or (ps.is_peeled(maternal_id) and ps.is_peeled(paternal_id));
 }
 
 bool Person::ripe_above(PeelingState& ps) {

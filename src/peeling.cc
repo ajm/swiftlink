@@ -32,10 +32,11 @@ PeelOperation PedigreePeeler::get_best_operation(vector<PeelOperation>& v) {
 
     vector<PeelOperation>::iterator it = v.begin();
     unsigned int cs_size = v[0].get_cutset_size();
-    while(it++ != v.end()) {
+    while(it != v.end()) {
         if(it->get_cutset_size() != cs_size) {
             break;
         }
+        it++;
     }
 
     vector<PeelOperation> tmp(v.begin(), it);

@@ -8,6 +8,7 @@ using namespace std;
 
 #include "pedigree.h"
 
+
 class PeelingState {
     vector<bool> peeled;
 

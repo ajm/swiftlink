@@ -9,6 +9,14 @@ using namespace std;
 #include "pedigree.h"
 
 
+enum peeloperation {
+    NULL_PEEL,
+    CHILD_PEEL,
+    PARENT_PEEL,
+    PARTNER_PEEL,
+    LAST_PEEL
+};
+
 class PeelingState {
     vector<bool> peeled;
 
@@ -26,6 +34,7 @@ class PeelingState {
 
 class PeelOperation {
     unsigned int pivot;
+    enum peeloperation type;
     vector<unsigned int> cutset;
     
   public :
@@ -39,21 +48,29 @@ class PeelOperation {
     unsigned int get_pivot() const { 
         return pivot;
     }
-    
-    unsigned int get_cutset_size() const { 
-        return cutset.size();
-    }
 
     void set_pivot(unsigned int p) {
         pivot = p;
     }
-
+    
+    unsigned int get_cutset_size() const { 
+        return cutset.size();
+    }
+    
     void add_cutnode(unsigned int c) {
         for(unsigned int i = 0; i < cutset.size(); ++i) {
             if(cutset[i] == c)
                 return;
         }
         cutset.push_back(c);
+    }
+
+    void set_type(enum peeloperation po) {
+        type = po;
+    }
+
+    enum peeloperation get_type() {
+        return type;
     }
 
     void print() const {

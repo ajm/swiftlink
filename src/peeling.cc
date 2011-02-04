@@ -7,7 +7,7 @@ using namespace std;
 
 #include "peeling.h"
 
-// annoyingly I cannot use random_shuffle, which might be safer (?)
+
 PeelOperation PedigreePeeler::get_random_operation(vector<PeelOperation>& v) {
     return v[rand() % v.size()];
 }
@@ -18,6 +18,13 @@ PeelOperation PedigreePeeler::get_random_operation(vector<PeelOperation>& v) {
 // ii) if one parent peeled down, then peel the other one?
 //          <-- this will probably happen automatically
 PeelOperation PedigreePeeler::get_best_operation_heuristic(vector<PeelOperation>& v) {
+
+    for(unsigned int i = 0; i < v.size(); ++i) {
+        if(v[i].get_type() == CHILD_PEEL) {
+            return v[i];
+        }
+    }
+    
     return v[0];
 }
 

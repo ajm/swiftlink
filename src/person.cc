@@ -165,12 +165,33 @@ bool Person::ripe(PeelingState& ps) {
 
 bool Person::peel_operation(PeelOperation* p, PeelingState& state) {
     p->set_pivot(internal_id);
+    p->set_type(NULL_PEEL);
     
+/*
     if(ripe(state)) {
         get_cutset(p, state);
         return true;
     }
-
+*/
+    
+    if(ripe_all(state)) {
+        p->set_type(LAST_PEEL);
+    }
+    else if(ripe_across(state)) {
+        p->set_type(PARTNER_PEEL);
+    }
+    else if(ripe_below(state)) {
+        p->set_type(CHILD_PEEL);
+    }
+    else if(ripe_above_partners(state)) {
+        p->set_type(PARENT_PEEL);
+    }
+    
+    if(p->get_type() != NULL_PEEL) {
+        get_cutset(p, state);
+        return true;
+    }
+    
     return false;
 }
 

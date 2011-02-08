@@ -4,9 +4,9 @@ using namespace std;
 #include <vector>
 
 #include "parser.h"
-#include "pedfileparser.h"
 #include "pedigree.h"
-#include "peeling.h"
+#include "pedfileparser.h"
+#include "peel_sequence_generator.h"
 
 int main(int argc, char **argv) {
 
@@ -34,9 +34,9 @@ int main(int argc, char **argv) {
 		}
 
         // perform peel
-        PedigreePeeler pp(v[i]);
-        pp.build_peel_order();
-        pp.print();
+        PeelSequenceGenerator psg(v[i]);
+        psg.build_peel_order();
+        psg.print();
         
 
 		delete v[i]; // just to shut up valgrind

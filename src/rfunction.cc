@@ -1,39 +1,67 @@
+using namespace std;
+
 #include <cmath>
 #include <deque>
 
 #include "rfunction.h"
+#include "peeling.h"
+#include "peel_matrix.h"
 
-// given an assignment this returns the identical value that 
-// evaluate calculates as 'index'
-unsigned int Rfunction::get_index(deque<unsigned int> element) {
-    unsigned int index = 0;
-
-    for(unsigned int i = 0; i < element.size(); ++i) {
-        index += (pow(num_alleles, i) * element[i]);
+// assignments is a misnomer, it does not matter which nodes these assignments
+// relate to so long as they are used in a consistent manner, ie: this assumes
+// that does this r-function, the ordering of the peel operation cutset is 
+// constant
+void Rfunction::generate_key(PeelMatrixKey& pmatrix_index, deque<unsigned int>& assignments) {
+    vector<unsigned int>& cutset = peel.get_cutset();
+    
+    for(unsigned int i = 0; i < cutset.size(); ++i) {
+        pmatrix_index.add(cutset[i], assignments[i]);
     }
-
-    return index;
 }
 
-void Rfunction::evaluate_element(deque<unsigned int> element, unsigned int index) {
+void Rfunction::evaluate_element(PeelMatrixKey& pmatrix_index) {
     double tmp = 0;
+    PeelMatrixKey prev_index(pmatrix_index);
+
+    switch(peel.type) {
+        case PEEL_CHILD :
+            // 1. add pivot later
+            // 2. remove parents now
+            prev_index.remove(pivot->maternal_id);
+            prev_index.remove(pivot->paternal_id);
+            break;
+            
+        case PEEL_PARTNER :
+            // 1. add pivot later
+            break;
+        
+        case PEEL_PARENT :  // XXX don't bother with yet    
+        case LAST_PEEL :    // XXX never seen here?
+        default :
+            abort();
+    }
+    
     
     for(unsigned int i = 0; i < num_alleles; ++i) {
+
+        // finish making the key for the previous rfunction
+        prev_index.add(peel.pivot, i);
+
         // look up disease prob for this allele with this person
         //dp = pivot->get_disease_prob(static_cast<enum phased_genotype>(i));
-        // XXX PLACE HOLDER
-        // sum of likelihood of all possibilities (each possibility x recombination)
+        
+        // (i)      look up relevant old value, if 'prev' is not null
+        // (ii)     given assignments in 'element' (sum probabilities for pivot) x (old value from (i)) x (recombination probs)
+        // (iii)    assign new likelihood in 'rfunc'
     }
-
-    rfunc[index] = tmp;
 }
 
 void Rfunction::evaluate() {
+    PeelMatrixKey k;
     deque<unsigned int> q;
     unsigned int ndim = peel.get_cutset_size();
     unsigned int tmp;
     unsigned int i;
-    unsigned int index = 0;
         
     // initialise to the first element of matrix
     for(i = 0; i < ndim; ++i) {
@@ -44,11 +72,8 @@ void Rfunction::evaluate() {
     while(not q.empty()) {
         
         if(q.size() == ndim) {
-            // a complete address for a cell in matrix, where 'q' is 
-            // an assignment of alleles for nodes specified by 'cutset'
-            // 'index' is where this maps to in 1d array 'rfunc'
-            evaluate_element(q, index);
-            index++;
+            generate_key(k, q);
+            evaluate_element(k);
         }
         
         tmp = q.front() + 1;

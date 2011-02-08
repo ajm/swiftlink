@@ -6,9 +6,10 @@ using namespace std;
 #include <cstdio>
 
 #include "peeling.h"
+#include "peel_sequence_generator.h"
 
 
-PeelOperation PedigreePeeler::get_random_operation(vector<PeelOperation>& v) {
+PeelOperation PeelSequenceGenerator::get_random_operation(vector<PeelOperation>& v) {
     return v[rand() % v.size()];
 }
 
@@ -17,7 +18,7 @@ PeelOperation PedigreePeeler::get_random_operation(vector<PeelOperation>& v) {
 // i)  if one child peeled up, then peel the rest?
 // ii) if one parent peeled down, then peel the other one?
 //          <-- this will probably happen automatically
-PeelOperation PedigreePeeler::get_best_operation_heuristic(vector<PeelOperation>& v) {
+PeelOperation PeelSequenceGenerator::get_best_operation_heuristic(vector<PeelOperation>& v) {
 
     for(unsigned int i = 0; i < v.size(); ++i) {
         if(v[i].get_type() == CHILD_PEEL) {
@@ -33,7 +34,7 @@ PeelOperation PedigreePeeler::get_best_operation_heuristic(vector<PeelOperation>
 // not just the size of the cutset
 // number of alleles depends on peeling descent graph (4) or 
 // genotypes during the L-sampler (3)
-PeelOperation PedigreePeeler::get_best_operation(vector<PeelOperation>& v) {    
+PeelOperation PeelSequenceGenerator::get_best_operation(vector<PeelOperation>& v) {    
 
     sort(v.begin(), v.end());
 
@@ -53,7 +54,7 @@ PeelOperation PedigreePeeler::get_best_operation(vector<PeelOperation>& v) {
 
 // create a list of all the possible peels from peripheral families
 // the actual details of what a peel is, is coded in the person class
-vector<PeelOperation> PedigreePeeler::all_possible_peels(int* unpeeled) {
+vector<PeelOperation> PeelSequenceGenerator::all_possible_peels(int* unpeeled) {
     vector<PeelOperation> tmp;
     Person* per;
 
@@ -74,7 +75,7 @@ vector<PeelOperation> PedigreePeeler::all_possible_peels(int* unpeeled) {
     return tmp;
 }
 
-bool PedigreePeeler::build_peel_order() {
+bool PeelSequenceGenerator::build_peel_order() {
     PeelOperation p;
     vector<PeelOperation> tmp;
     int unpeeled;
@@ -108,17 +109,11 @@ bool PedigreePeeler::build_peel_order() {
     }
 }
 
-void PedigreePeeler::print() {
+void PeelSequenceGenerator::print() {
     
     for(unsigned int i = 0; i < peelorder.size(); ++i) {
         printf("%d: ", i);
         peelorder[i].print(); // XXX this is not ideal
     }
 }
-/*
-bool PedigreePeeler::peel(double *likelihood) {
-    // TODO
-    return false;
-}
-*/
 

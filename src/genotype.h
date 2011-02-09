@@ -5,26 +5,27 @@ using namespace std;
 
 #include <string>
 
-typedef enum phased_genotype {
+
+enum phased_genotype {
     AA = 8,
     AB = 4,
     BA = 2,
     BB = 1,
     UN = 0
+};
 
-} phased_genotype_t;
-
-typedef enum unphased_genotype {
+enum unphased_genotype {
 	UNTYPED,
 	HETERO,
 	HOMOZ_A,
 	HOMOZ_B
+};
 
-} unphased_genotype_t;
+typedef enum phased_genotype    phased_genotype_t;
+typedef enum unphased_genotype  unphased_genotype_t;
 
-bool genotype_compatible(unphased_genotype_t mother, 
-						unphased_genotype_t father, 
-                        unphased_genotype_t child);
+bool genotype_compatible(unphased_genotype_t mother, unphased_genotype_t father, 
+                         unphased_genotype_t child);
 bool genotype_untyped(unphased_genotype_t g);
 bool genotype_homoz(unphased_genotype_t g);
 bool genotype_hetero(unphased_genotype_t g);

@@ -10,7 +10,9 @@ using namespace std;
 #include "lkg.h"
 #include "person.h"
 
+
 class Pedigree {
+
 	string id;
 	vector<Person> members;
 	unsigned int number_of_founders;

@@ -28,8 +28,12 @@ enum affection {
 class Pedigree;
 class PeelOperation;
 class PeelingState;
+class DiseaseModel;
 
 class Person {
+    
+    // info directly from pedigree file, 
+    // essentially verbatim
 	string id;
 	string mother;
 	string father;
@@ -44,21 +48,31 @@ class Person {
 	bool typed;
 	vector<unphased_genotype_t> genotypes;
 	
+    // filled in by the pedigree class once
+    // the entire pedigree file has been read
 	vector<Person*> children;
 	vector<Person*> mates;
-	
+    
+    // allows me to get family members as a 
+    // call to a person object
 	Pedigree* ped;
 	
-    // for peeling code
-    //double disease_probability[4];
+    // for peeling code, information comes from the
+    // disease model objects
+    double disease_prob[4];
 
-	bool _is_unknown(const string& s) const { return s == "0"; }
-	string gender_str() const ;
-	string affection_str() const ;
+
+    // private stuff
+	bool _is_unknown(const string& s) const { 
+        return s == "0"; 
+    }
+	string gender_str() const;
+	string affection_str() const;
+
 
  public :
 	Person(const string name, const string father_name, const string mother_name, 
-			enum sex s, enum affection a, Pedigree* pedigree) :
+			enum sex s, enum affection a, Pedigree* pedigree/*, DiseaseModel& dm*/) :
 			id(name),
 			mother(mother_name),
 			father(father_name),		
@@ -68,21 +82,24 @@ class Person {
 			maternal_id(UNKNOWN_ID),
 			paternal_id(UNKNOWN_ID),
 			typed(true),
-			ped(pedigree) {}
+			ped(pedigree) {
+        
+//        init_probs(dm);
+    }
 	
 	~Person() {}
 
 	/* getters */
-	string& get_id() { return this->id; }
-	string& get_mother() { return this->mother; }
-	string& get_father() { return this->father; }
+	string& get_id() { return id; }
+	string& get_mother() { return mother; }
+	string& get_father() { return father; }
 	
-	unsigned int get_internalid() const { return this->internal_id; }
-	unsigned int get_maternalid() const { return this->maternal_id; }
-	unsigned int get_paternalid() const { return this->paternal_id; }
+	unsigned int get_internalid() const { return internal_id; }
+	unsigned int get_maternalid() const { return maternal_id; }
+	unsigned int get_paternalid() const { return paternal_id; }
 
-	enum sex get_sex() const { return this->gender; }
-	enum affection get_affection() const { return this->affection; }
+	enum sex get_sex() const { return gender; }
+	enum affection get_affection() const { return affection; }
 
 	unphased_genotype_t get_genotype(unsigned int i) const {
 		if(not istyped())
@@ -105,16 +122,14 @@ class Person {
 	unphased_genotype_t get_marker(unsigned i) const { return genotypes[i]; }
 
 	/* setters */
-	void set_internalid(unsigned int id) { this->internal_id = id; }
-	void set_maternalid(unsigned int id) { this->maternal_id = id; }
-	void set_paternalid(unsigned int id) { this->paternal_id = id; }
-	void set_untyped() { this->typed = false; }
+	void set_internalid(unsigned int id) { internal_id = id; }
+	void set_maternalid(unsigned int id) { maternal_id = id; }
+	void set_paternalid(unsigned int id) { paternal_id = id; }
+	void set_untyped() { typed = false; }
 
 	void add_genotype(unphased_genotype_t g) {
 		genotypes.push_back(g);
 	}
-
-//	void person_set_diseaseprob(person_t *p, config_t *c);
 
 	/* tests */
 	bool ismale() const { return this->gender == MALE; }
@@ -130,16 +145,19 @@ class Person {
 	bool mother_unknown() const { return _is_unknown(mother); }
 	bool father_unknown() const { return _is_unknown(father); }
 	
+    // pedigree construction / validation
 	bool mendelian_errors() const;
 	void fill_in_relationships();
 	void print() const;
 
-	// so I can sort, I don't care for a specific ordering, 
+	// so I can sort, I don't care for a specific (strong) ordering, 
 	// I just want all the founders first
 	bool operator<(const Person& p) const {
 		return isfounder() and not p.isfounder();
 	}
 
+    // peeling
+    // XXX many of these can be private
     bool contains_unpeeled(vector<Person*>& v, PeelingState& ps);
     unsigned int count_unpeeled(vector<Person*>& v, PeelingState& ps);
     bool offspring_peeled(PeelingState& ps);
@@ -154,6 +172,10 @@ class Person {
     bool peel_operation(PeelOperation* p, PeelingState& state);
     void neighbours(vector<unsigned int>& nodes);
     void get_cutset(PeelOperation* operation, PeelingState& state);
+
+    // XXX should be private and disease model passed as an argument
+    // to constructor
+    void init_probs(DiseaseModel& dm);
 };
 
 #endif

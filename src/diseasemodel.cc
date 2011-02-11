@@ -32,8 +32,8 @@ enum unphased_trait DiseaseModel::phased2unphased(enum phased_trait t) {
     return TRAIT_HOMO_U;
 }
 
-double DiseaseModel::get_prob(double* prob[3][3], enum affection a, enum phased_trait t) {
-    return (*prob)[a][phased2unphased(t)];
+double DiseaseModel::get_prob(double& prob[3][3], enum affection a, enum phased_trait t) {
+    return prob[a][phased2unphased(t)];
 }
 
 double DiseaseModel::get_penetrance_prob(enum affection a, enum phased_trait t) {

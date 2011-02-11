@@ -9,7 +9,25 @@ using namespace std;
 #include "pedigree.h"
 #include "genotype.h"
 #include "peeling.h"
+#include "diseasemodel.h"
+#include "trait.h"
 
+
+void Person::init_probs(DiseaseModel& dm) {
+
+    disease_prob[TRAIT_AA] = is_founder() ? \
+        dm.get_aprior_prob(affection, TRAIT_HOMO_A) : \
+        dm.get_penetrance_prob(affection, TRAIT_HOMO_A);
+
+    disease_prob[TRAIT_AU] = \
+    disease_prob[TRAIT_UA] = is_founder() ? \
+        dm.get_aprior_prob(affection, TRAIT_HETERO) : \
+        dm.get_penetrance_prob(affection, TRAIT_HETERO);
+
+    disease_prob[TRAIT_UU] = is_founder() ? \
+        dm.get_aprior_prob(affection, TRAIT_HOMO_U) : \
+        dm.get_penetrance_prob(affection, TRAIT_HOMO_U);
+}
 
 bool Person::mendelian_errors() const {
 	if(isfounder())
@@ -168,6 +186,7 @@ bool Person::peel_operation(PeelOperation* p, PeelingState& state) {
     p->set_type(NULL_PEEL);
     
 /*
+    // would be nice, but then I don't know what to do later...
     if(ripe(state)) {
         get_cutset(p, state);
         return true;

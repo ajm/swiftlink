@@ -2,7 +2,7 @@
 #define LKG_DISEASEMODEL_H_
 
 #include "trait.h"
-#include "person.h"
+#include "person.h" // for enum affection
 
 
 class DiseaseModel {
@@ -13,7 +13,7 @@ class DiseaseModel {
 	bool sexlinked;
 
     enum unphased_trait phased2unphased(enum phased_trait t);
-    double get_prob(double* prob[3][3], enum affection a, enum phased_trait t);
+    double get_prob(double& prob[3][3], enum affection a, enum phased_trait t);
 	
  public :
 	DiseaseModel() 

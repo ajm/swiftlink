@@ -10,6 +10,7 @@ using namespace std;
 
 #include "genotype.h"
 
+
 const unsigned int UNKNOWN_PARENT = ~0u;
 const unsigned int UNKNOWN_ID = UNKNOWN_PARENT;
 
@@ -46,7 +47,7 @@ class Person {
 	unsigned int paternal_id;
 	
 	bool typed;
-	vector<unphased_genotype_t> genotypes;
+	vector<enum unphased_genotype> genotypes;
 	
     // filled in by the pedigree class once
     // the entire pedigree file has been read
@@ -89,7 +90,7 @@ class Person {
 	
 	~Person() {}
 
-	/* getters */
+    /* getters */
 	string& get_id() { return id; }
 	string& get_mother() { return mother; }
 	string& get_father() { return father; }
@@ -101,13 +102,15 @@ class Person {
 	enum sex get_sex() const { return gender; }
 	enum affection get_affection() const { return affection; }
 
-	unphased_genotype_t get_genotype(unsigned int i) const {
-		if(not istyped())
+	enum unphased_genotype get_genotype(unsigned int i) const {
+		if(not istyped()) {
 			return UNTYPED;
+        }
 		
 #ifndef _FEELING_LUCKY_
-		if(genotypes.size() < i)
+		if(genotypes.size() < i) {
 			abort();
+        }
 #endif
 		
 		return genotypes[i];
@@ -119,7 +122,7 @@ class Person {
 	Person* get_child(unsigned int i) const { return children[i]; }
 	Person* get_spouse(unsigned int i) const { return mates[i]; }
 	Person* get_mate(unsigned int i) const { return mates[i]; }
-	unphased_genotype_t get_marker(unsigned i) const { return genotypes[i]; }
+	enum unphased_genotype get_marker(unsigned i) const { return genotypes[i]; }
 
 	/* setters */
 	void set_internalid(unsigned int id) { internal_id = id; }
@@ -127,7 +130,7 @@ class Person {
 	void set_paternalid(unsigned int id) { paternal_id = id; }
 	void set_untyped() { typed = false; }
 
-	void add_genotype(unphased_genotype_t g) {
+	void add_genotype(enum unphased_genotype g) {
 		genotypes.push_back(g);
 	}
 
@@ -155,7 +158,7 @@ class Person {
 	bool operator<(const Person& p) const {
 		return isfounder() and not p.isfounder();
 	}
-
+/*
     // peeling
     // XXX many of these can be private
     bool contains_unpeeled(vector<Person*>& v, PeelingState& ps);
@@ -172,7 +175,7 @@ class Person {
     bool peel_operation(PeelOperation* p, PeelingState& state);
     void neighbours(vector<unsigned int>& nodes);
     void get_cutset(PeelOperation* operation, PeelingState& state);
-
+*/
     // XXX should be private and disease model passed as an argument
     // to constructor
     void init_probs(DiseaseModel& dm);

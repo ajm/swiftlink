@@ -11,46 +11,45 @@ using namespace std;
 #include "lkg.h"
 
 
-bool PedigreeParser::_parse_sex(const string& str, enum sex* s) {
+bool PedigreeParser::_parse_sex(const string& str, enum sex& s) {
 	if(str == "0")
-		*s = UNSEXED;
+		s = UNSEXED;
 	else if(str == "1")
-		*s = MALE;
+		s = MALE;
 	else if(str == "2")
-		*s = FEMALE;
+		s = FEMALE;
 	else
 		return false;
 
 	return true;
 }
 
-bool PedigreeParser::_parse_affection(const string& str, enum affection *a) {
+bool PedigreeParser::_parse_affection(const string& str, enum affection &a) {
 	if(str == "0")
-		*a = UNKNOWN_AFFECTION;
+		a = UNKNOWN_AFFECTION;
 	else if(str == "1")
-		*a = UNAFFECTED;
+		a = UNAFFECTED;
 	else if(str == "2")
-		*a = AFFECTED;
+		a = AFFECTED;
 	else
 		return false;
 
 	return true;
 }
 
-bool PedigreeParser::_parse_genotype(const string& a1, const string& a2, 
-		unphased_genotype_t *g) {
+bool PedigreeParser::_parse_genotype(const string& a1, const string& a2, enum unphased_genotype& g) {
 	if((a1 == "0") || (a2 == "0")) {
-		*g = UNTYPED;
+		g = UNTYPED;
 		return true;
 	}
 	
 	if(a1 == a2) {
 		if(a1 == "1") {
-			*g = HOMOZ_A;
+			g = HOMOZ_A;
 			return true;
 		}
 		if(a1 == "2") {
-			*g = HOMOZ_B;
+			g = HOMOZ_B;
 			return true;
 		}
 		
@@ -58,38 +57,33 @@ bool PedigreeParser::_parse_genotype(const string& a1, const string& a2,
 	}
 	else if(((a1 == "1") && (a2 == "2")) || \
 			((a1 == "2") && (a2 == "1"))) {
-		*g = HETERO;
+		g = HETERO;
 		return true;
 	}
 	
 	return false;
 }
 
-Pedigree* PedigreeParser::_current_ped(const string& famid) {
-	Pedigree* p = NULL;
+Pedigree& PedigreeParser::_current_ped(const string& famid) {
 
 	for(unsigned int i = 0; i < pedigrees.size(); ++i) {
-		if(pedigrees[i]->get_id() == famid) {
-			//printf("\tfound family %s\n", famid.c_str());
+		if(pedigrees[i].get_id() == famid) {
 			return pedigrees[i];
 		}
 	}
 
-	//printf("\tcreating new family %s\n", famid.c_str());
-	p = new Pedigree(famid);
+    Pedigree p(famid);
 	pedigrees.push_back(p);
-
-	return p;
+        
+	return *(pedigrees.end());
 }
 
 bool PedigreeParser::parse_line(const int linenum, const string line) {
 	string famid, id, fatherid, motherid;
 	enum sex s = UNSEXED;
 	enum affection a = UNKNOWN_AFFECTION;
-	unphased_genotype_t g;
-	Person* p = NULL;
-	Pedigree* q = NULL;
-
+	enum unphased_genotype g;
+	
 	tokenise(line);
 
 	//printf("read: %s\n", line.c_str());
@@ -114,7 +108,6 @@ bool PedigreeParser::parse_line(const int linenum, const string line) {
 		switch(i) {
 			case 0:
 				famid = tokens[i];
-				q = _current_ped(famid);
 				break;
 			case 1:
 				id = tokens[i];
@@ -126,14 +119,14 @@ bool PedigreeParser::parse_line(const int linenum, const string line) {
 				motherid = tokens[i];
 				break;
 			case 4:
-				if(!_parse_sex(tokens[i], &s)) {
+				if(not _parse_sex(tokens[i], s)) {
 					fprintf(stderr, "error: %s, line %d: bad sex \"%s\" (column 5)\n",
 						filename.c_str(), linenum+1, tokens[i].c_str());
 					return false;
 				}
 				break;
 			case 5:
-				if(!_parse_affection(tokens[i], &a)) {
+				if(not _parse_affection(tokens[i], a)) {
 					fprintf(stderr, "error: %s, line %d: bad affection status \
 \"%s\" (column 6)\n", filename.c_str(), linenum+1, tokens[i].c_str());
 					return false;
@@ -143,31 +136,25 @@ bool PedigreeParser::parse_line(const int linenum, const string line) {
 				break;
 		}
 	}
-	
-	p = new Person(id, fatherid, motherid, s, a, q);
-//	if(! q->add(p)) {
-//		delete p;
-//		return false;
-//	}
-	
+
+    // create / retrieve objects	
+    Pedigree& q = _current_ped(famid);
+	Person p(id, fatherid, motherid, s, a, &q);
+    	
 	// handle genotypes
 	for(int i = 0; i < ((tokens.size() - 6) / 2.0); ++i) {
 		int index = 6 + (i * 2);
-		if(!_parse_genotype(tokens[index], tokens[index+1], &g)) {
-			fprintf(stderr, "error: %s, line %d: error parsing genotype %d \
-(columns %d and %d)\n", filename.c_str(), linenum+1, i+1, index+1, index+2);
+
+		if(not _parse_genotype(tokens[index], tokens[index+1], g)) {
+			fprintf(stderr, "error: %s, line %d: error parsing genotype %d (columns %d and %d)\n", 
+                filename.c_str(), linenum+1, i+1, index+1, index+2);
 			return false;
 		}
-		p->add_genotype(g);
-	}
-    
-    if(! q->add(p)) {
-		delete p;
-		return false;
-	}    
 
-    delete p;
-	return true;
+		p.add_genotype(g);
+	}
+
+    return q.add(p);
 }
 
 bool PedigreeParser::parse_end() {
@@ -175,9 +162,9 @@ bool PedigreeParser::parse_end() {
     
     for(unsigned int i = 0; i < pedigrees.size(); ++i) {
         
-		if(not pedigrees[i]->sanity_check()) {
+		if(not pedigrees[i].sanity_check()) {
             fprintf(stderr, "error: %s, pedigree %s contains relationship errors\n",
-                filename.c_str(), pedigrees[i]->get_id().c_str());
+                filename.c_str(), pedigrees[i].get_id().c_str());
 			ret = false;
         }
     }

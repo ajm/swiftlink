@@ -10,6 +10,59 @@ using namespace std;
 #include "pedigree.h"
 #include "person.h"
 
+
+bool Pedigree::add(Person& p) {
+    if(not exists(p.get_id())) {
+        members.push_back(p);
+		return true;
+    }
+
+    return false;
+}
+
+bool Pedigree::exists(const string& id) {
+	return get_by_name(id) != NULL;
+}
+
+Person* Pedigree::get_by_index(int i) {
+    return &members[i];
+}
+
+Person* Pedigree::get_by_name(const string& id) {
+	for(unsigned int i = 0; i < members.size(); ++i) {
+        //fprintf(stderr, "member = %d\n", i);
+        //fprintf(stderr, "id = %s\n", members[i].get_id().c_str());
+		if(members[i].get_id() == id) {
+			return &members[i];
+		}
+	}
+	return NULL;
+}
+
+unsigned int Pedigree::_count_founders() {
+	number_of_founders = 0;
+		
+	for(unsigned int i = 0; i < members.size(); ++i) {
+		if(members[i].isfounder()) {
+			number_of_founders++;
+		}
+	}
+
+	return number_of_founders;
+}
+
+unsigned int Pedigree::_count_leaves() {
+	number_of_leaves = 0;
+	
+	for(unsigned int i = 0; i < members.size(); ++i) {
+		if(members[i].isleaf()) {
+			number_of_leaves++;
+		}
+	}
+
+	return number_of_leaves;
+}
+
 bool Pedigree::sanity_check() {
     int components;
 

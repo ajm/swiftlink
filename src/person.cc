@@ -30,18 +30,18 @@ void Person::init_probs(DiseaseModel& dm) {
 }
 
 bool Person::mendelian_errors() const {
-	if(isfounder())
+	if(isfounder()) {
 		return false;
+    }
 		
 	Person* m = ped->get_by_index(maternal_id);
 	Person* p = ped->get_by_index(paternal_id);
 		
-	for(uint i = 0; i < genotypes.size(); ++i) {
+	for(unsigned int i = 0; i < genotypes.size(); ++i) {
 		if(not genotype_compatible(m->get_genotype(i), 
 								   p->get_genotype(i), 
 									  get_genotype(i))) {
-			fprintf(stderr, "error: %s, genotypes at loci number %d of \
-				person \"%s\" inconsistent with parents\n", \
+			fprintf(stderr, "error: %s, genotypes at loci number %d of person \"%s\" inconsistent with parents\n",
            		__func__, i+1, id.c_str());
 			return true;
 		}
@@ -53,7 +53,7 @@ bool Person::mendelian_errors() const {
 void Person::fill_in_relationships() {
 	Person* p;
 	
-	for(uint i = 0; i < ped->num_members(); ++i) {
+	for(unsigned int i = 0; i < ped->num_members(); ++i) {
 		p = ped->get_by_index(i);
 		
 		if(p->get_mother() == id) {
@@ -69,6 +69,7 @@ void Person::fill_in_relationships() {
 }
 
 string Person::gender_str() const {
+    
 	switch(gender) {
 		case MALE :
 			return "male";
@@ -78,10 +79,12 @@ string Person::gender_str() const {
 		default :
 			break;
 	}
+    
 	return "unspecified";
 }
 
 string Person::affection_str() const {
+    
 	switch(affection) {
 		case UNAFFECTED :
 			return "unaffected";
@@ -91,6 +94,7 @@ string Person::affection_str() const {
 		default :
 			break;
 	}
+    
 	return "unspecified";
 }
 
@@ -110,7 +114,7 @@ void Person::print() const {
 }
 
 //----------
-
+/*
 bool Person::contains_unpeeled(vector<Person*>& v, PeelingState& ps) {
 
     for(unsigned int i = 0; i < v.size(); ++i) {
@@ -185,13 +189,13 @@ bool Person::peel_operation(PeelOperation* p, PeelingState& state) {
     p->set_pivot(internal_id);
     p->set_type(NULL_PEEL);
     
-/*
+
     // would be nice, but then I don't know what to do later...
-    if(ripe(state)) {
-        get_cutset(p, state);
-        return true;
-    }
-*/
+//    if(ripe(state)) {
+//        get_cutset(p, state);
+//        return true;
+//    }
+
     
     if(ripe_all(state)) {
         p->set_type(LAST_PEEL);
@@ -270,4 +274,5 @@ void Person::get_cutset(PeelOperation* operation, PeelingState& state) {
         visited[tmp] = BLACK;
     }
 }
+*/
 

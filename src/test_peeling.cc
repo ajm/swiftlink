@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
     
-	vector<Pedigree*> v;
+	vector<Pedigree> v;
 	PedigreeParser p(argv[1], v);
 	
 	if(!p.parse()) {
@@ -28,9 +28,6 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-    for(unsigned int i = 0; i < v.size(); ++i) {
-        delete v[i];
-    }
 /*
     DiseaseModel dm;
     dm.set(SIMPLE_AUTOSOMAL_RECESSIVE);

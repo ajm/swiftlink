@@ -22,83 +22,70 @@ class Pedigree {
 	bool _mendelian_errors() const;
 	bool _parental_relationship_errors();
 	bool _same_number_of_markers();
-	int _count_components();
-	
-	unsigned int _count_founders() {
-		number_of_founders = 0;
-		
-		for(uint i = 0; i < members.size(); ++i) {
-			if(members[i].isfounder()) {
-				number_of_founders++;
-			}
-		}
-
-		return number_of_founders;
-	}
-
-	unsigned int _count_leaves() {
-		number_of_leaves = 0;
-		
-		for(uint i = 0; i < members.size(); ++i) {
-			if(members[i].isleaf()) {
-				number_of_leaves++;
-			}
-		}
-
-		return number_of_leaves;
-	}
-	
-	int _person_compare(const Person& a, const Person& b) const;
-	void _reorder_family();
+    void _reorder_family();
 	void _rename_parent_ids();
 	void _fill_in_relationships();
+	int _count_components();
+	int _person_compare(const Person& a, const Person& b) const;
+    unsigned int _count_founders();
+    unsigned int _count_leaves();
 	
  public:
 	Pedigree(const string id) 
         : id(id), number_of_founders(0), number_of_leaves(0) {}
+
+    Pedigree(const Pedigree& rhs) {
+        id = rhs.id;
+        members = rhs.members;
+        number_of_founders = rhs.number_of_founders;
+        number_of_leaves = rhs.number_of_leaves;
+    }
+
 	~Pedigree() {}
 
+    Pedigree& operator=(const Pedigree& rhs) {
+        if(&rhs != this) {
+            id = rhs.id;
+            members.clear();
+            members = rhs.members;
+            number_of_founders = rhs.number_of_founders;
+            number_of_leaves = rhs.number_of_leaves;
+        }
+        return *this;
+    }
+
 	// interrogate	
-	string& get_id() { return this->id; }
-	unsigned int num_members() const { return members.size(); }
+	string& get_id() { 
+        return id;
+    }
+    
+	unsigned int num_members() const { 
+        return members.size();
+    }
+
+   	unsigned int num_markers() { 
+		return members[0].num_markers(); 
+	}
+
 	unsigned int num_founders() { 
 		return number_of_founders != 0 ? 
 			number_of_founders : 
 			_count_founders();
 	}
+
 	unsigned int num_leaves() { 
 		return number_of_leaves != 0 ? 
 			number_of_leaves : 
 			_count_leaves();
 	}
-	unsigned int num_markers() { 
-		return members[0].num_markers(); 
-	}
 		
-	Person* get_by_index(int i) { return &members[i]; }
-	Person* get_by_name(const string& id) {
-		for(uint i = 0; i < members.size(); ++i) {
-			if(members[i].get_id() == id) {
-				return &members[i];
-			}
-		}
-		return NULL;
-	}
+	Person* get_by_index(int i);
+	Person* get_by_name(const string& id);
 	
 	// manipulate
-	bool add(Person* p) {
-		for(uint i = 0; i < members.size(); ++i) {
-			if(members[i].get_id() == p->get_id())
-				return false;
-		}
-        
-		members.push_back(*p);
-		return true;
-	}
-	bool exists(const string& id) {
-		return get_by_name(id) != NULL;
-	}
-		
+	bool add(Person& p);
+	bool exists(const string& id);
+	
 	bool sanity_check();
 	void print() const;
 };

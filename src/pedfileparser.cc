@@ -170,3 +170,18 @@ bool PedigreeParser::parse_line(const int linenum, const string line) {
 	return true;
 }
 
+bool PedigreeParser::parse_end() {
+    bool ret = true;
+    
+    for(unsigned int i = 0; i < pedigrees->size(); ++i) {
+        
+		if(not (*pedigrees)[i]->sanity_check()) {
+            fprintf(stderr, "error: %s, pedigree %s contains relationship errors\n",
+                filename.c_str(), (*pedigrees)[i]->get_id().c_str());
+			ret = false;
+        }
+    }
+
+    return ret;
+}
+

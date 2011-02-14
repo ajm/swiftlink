@@ -20,7 +20,6 @@ int main(int argc, char **argv) {
 		return 1;
 	}
     
-    bool sane = true;
 	vector<Pedigree*> v;
 	PedigreeParser p(argv[1], &v);
 	
@@ -29,24 +28,18 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
+    for(unsigned int i = 0; i < v.size(); ++i) {
+        delete v[i];
+    }
+/*
     DiseaseModel dm;
-    dm.set_freq(1 / 1000.0);
-    dm.set_sexlinked(false);
-	dm.set_penetrance(1.0, 0);
-    dm.set_penetrance(1.0, 1);
-    dm.set_penetrance(1.0, 2);
+    dm.set(SIMPLE_AUTOSOMAL_RECESSIVE);
 	
     // for each pedigree in pedfile
 	for(unsigned int i = 0; i < v.size(); ++i) {
-        // print if sane
-		if(v[i]->sanity_check())
-			v[i]->print();
-		else {
-			sane = false;
-			fprintf(stderr, "sanity error\n");
-		}
-
         // set person local probabilities
+        // XXX this should be done in the pedigree object
+        // the disease model should be passed to the PedigreeParser object
         for(unsigned int j = 0; j < v[i]->num_members(); ++j) {
             Person* p = v[i]->get_by_index(j);
             p->init_probs(dm);
@@ -62,7 +55,7 @@ int main(int argc, char **argv) {
 
 		delete v[i]; // just to shut up valgrind
 	}
-	
-	return sane ? 0 : 1;
+*/	
+	return 0;
 }
 

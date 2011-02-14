@@ -2,17 +2,19 @@
 Aside from writing the missing code I need to :
 
 
-    replace all pointers with references where it makes sense
-
-    const-correctness (do any of the valgrind tools help with this?)
-
+    replace all pointers with references where it makes sense 
+    (this is a massive job / headache)
+    
+    const-correctness 
+    (do any of the valgrind tools help with this?)
+    
     think about flow of otherall application
         - ie: deps: person needs diseasemodel to init
                     but objects are as a result of reading different config files
                     need to make sure that everything can be created as placeholders as well
                     so I don't need to read in the linkage file to test anything that 
                     reads the pedfile
-
+    
     modularise (namespaces? overkill?)
         - parsers
         - peeling
@@ -20,5 +22,6 @@ Aside from writing the missing code I need to :
         - linkage
         - core (ie: to linkage and hap)
         - samplers(?)
-
-
+    
+    pedigree parser should have performed sanity check on all pedigrees at the
+    end of parsing

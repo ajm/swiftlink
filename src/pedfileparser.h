@@ -26,6 +26,7 @@ class PedigreeParser : public Parser {
 	PedigreeParser(const string fn, vector<Pedigree*> *peds) 
 		: Parser(fn, false), pedigrees(peds) {}
 	bool parse_line(const int linenum, const string line);
+    bool parse_end();
 };
 
 #endif

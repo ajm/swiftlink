@@ -54,7 +54,8 @@ class Pedigree {
 	void _fill_in_relationships();
 	
  public:
-	Pedigree(const string id) : id(id), number_of_founders(0), number_of_leaves(0) {}
+	Pedigree(const string id) 
+        : id(id), number_of_founders(0), number_of_leaves(0) {}
 	~Pedigree() {}
 
 	// interrogate	

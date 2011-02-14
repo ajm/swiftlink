@@ -132,12 +132,12 @@ class Person {
 	}
 
 	/* tests */
-	bool ismale() const { return this->gender == MALE; }
-	bool isfemale() const { return this->gender == FEMALE; }
-	bool isunsexed() const { return this->gender == UNSEXED; }
+	bool ismale() const { return gender == MALE; }
+	bool isfemale() const { return gender == FEMALE; }
+	bool isunsexed() const { return gender == UNSEXED; }
 
-	bool isaffected() const { return this->affection == AFFECTED; }
-	bool istyped() const { return this->typed; }
+	bool isaffected() const { return affection == AFFECTED; }
+	bool istyped() const { return typed; }
 
 	bool isfounder() const { return mother_unknown() and father_unknown(); }
 	bool isleaf() const { return children.size() == 0; }

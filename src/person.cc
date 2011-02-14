@@ -15,18 +15,18 @@ using namespace std;
 
 void Person::init_probs(DiseaseModel& dm) {
 
-    disease_prob[TRAIT_AA] = is_founder() ? \
-        dm.get_aprior_prob(affection, TRAIT_HOMO_A) : \
-        dm.get_penetrance_prob(affection, TRAIT_HOMO_A);
+    disease_prob[TRAIT_AA] = isfounder() ? \
+        dm.get_apriori_prob(get_affection(), TRAIT_HOMO_A) : \
+        dm.get_penetrance_prob(get_affection(), TRAIT_HOMO_A);
 
     disease_prob[TRAIT_AU] = \
-    disease_prob[TRAIT_UA] = is_founder() ? \
-        dm.get_aprior_prob(affection, TRAIT_HETERO) : \
-        dm.get_penetrance_prob(affection, TRAIT_HETERO);
+    disease_prob[TRAIT_UA] = isfounder() ? \
+        dm.get_apriori_prob(get_affection(), TRAIT_HETERO) : \
+        dm.get_penetrance_prob(get_affection(), TRAIT_HETERO);
 
-    disease_prob[TRAIT_UU] = is_founder() ? \
-        dm.get_aprior_prob(affection, TRAIT_HOMO_U) : \
-        dm.get_penetrance_prob(affection, TRAIT_HOMO_U);
+    disease_prob[TRAIT_UU] = isfounder() ? \
+        dm.get_apriori_prob(get_affection(), TRAIT_HOMO_U) : \
+        dm.get_penetrance_prob(get_affection(), TRAIT_HOMO_U);
 }
 
 bool Person::mendelian_errors() const {

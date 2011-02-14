@@ -14,34 +14,38 @@ void DiseaseModel::print() {
 	printf("\n");
 }
 
-enum unphased_trait DiseaseModel::phased2unphased(enum phased_trait t) {
+void DiseaseModel::set_autosomal_recessive() {
+    
+    set_freq(1 / 1000.0); // XXX sensible value?
+    set_sexlinked(false);
+	set_penetrance(0.0, TRAIT_HOMO_U);
+    set_penetrance(0.0, TRAIT_HETERO);
+    set_penetrance(1.0, TRAIT_HOMO_A);
 
-    switch(t) {
-        case TRAIT_UU :
-            return TRAIT_HOMO_U;
-        case TRAIT_AU :
-        case TRAIT_UA :
-            return TRAIT_HETERO;
-        case TRAIT_AA :
-            return TRAIT_HOMO_A;
+    init_probs();
+}
+
+void DiseaseModel::set(enum simple_disease_model d) {
+    switch(d) {
+        case SIMPLE_AUTOSOMAL_RECESSIVE :
+            set_autosomal_recessive();
+            break;
+        case SIMPLE_AUTOSOMAL_DOMINANT :
         default :
             abort();
     }
-
-    // to shutup compiler warnings
-    return TRAIT_HOMO_U;
 }
 
-double DiseaseModel::get_prob(double& prob[3][3], enum affection a, enum phased_trait t) {
-    return prob[a][phased2unphased(t)];
+double DiseaseModel::get_prob(double prob[3][3], enum affection a, enum unphased_trait t) {
+    return prob[a][t];
 }
 
-double DiseaseModel::get_penetrance_prob(enum affection a, enum phased_trait t) {
-    return get_prob(&penetrance_prob, a, t);
+double DiseaseModel::get_penetrance_prob(enum affection a, enum unphased_trait t) {
+    return get_prob(penetrance_prob, a, t);
 }
 
-double DiseaseModel::get_apriori_prob(enum affection a, enum phased_trait t) {
-    return get_prob(&apriori_prob, a, t);
+double DiseaseModel::get_apriori_prob(enum affection a, enum unphased_trait t) {
+    return get_prob(apriori_prob, a, t);
 }
 
 // this is essentially an expansion of the disease model to distributions

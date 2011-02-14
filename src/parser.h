@@ -81,6 +81,8 @@ class Parser {
 	}
 };
 
+// simple example of how you would use parser 
+// abstract class
 class EchoParser : public Parser {
 
  public :

@@ -5,6 +5,12 @@
 #include "person.h" // for enum affection
 
 
+enum simple_disease_model {
+    SIMPLE_AUTOSOMAL_RECESSIVE,
+    SIMPLE_AUTOSOMAL_DOMINANT
+    // XXX more...
+};
+
 class DiseaseModel {
 	double frequency;
 	double penetrance[3];
@@ -12,8 +18,8 @@ class DiseaseModel {
 	double penetrance_prob[3][3];
 	bool sexlinked;
 
-    enum unphased_trait phased2unphased(enum phased_trait t);
-    double get_prob(double& prob[3][3], enum affection a, enum phased_trait t);
+    double get_prob(double prob[3][3], enum affection a, enum unphased_trait t);    
+    void set_autosomal_recessive();
 	
  public :
 	DiseaseModel() 
@@ -27,16 +33,18 @@ class DiseaseModel {
 	}
 	
 	void set_freq(double f) { frequency = f; }
-	void set_penetrance(double p, const int i) { penetrance[i] = p; }
+	void set_penetrance(double p, const enum unphased_trait t) { penetrance[t] = p; }
 	void set_sexlinked(bool s) { sexlinked = s; }
 
 	double get_freq() const { return frequency; }
-	double get_penetrance(const int i) const { return penetrance[i]; }
+	double get_penetrance(const enum unphased_trait t) const { return penetrance[t]; }
 	bool is_sexlinked() { return sexlinked; }
     
-    double get_penetrance_prob(enum affection a, enum phased_trait t);
-    double get_apriori_prob(enum affection a, enum phased_trait t);
+    double get_penetrance_prob(enum affection a, enum unphased_trait t);
+    double get_apriori_prob(enum affection a, enum unphased_trait t);
     void init_probs();
+
+    void set(enum simple_disease_model d);
     
 	void print();
 };

@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
 	}
     
 	vector<Pedigree*> v;
-	PedigreeParser p(argv[1], &v);
+	PedigreeParser p(argv[1], v);
 	
 	if(!p.parse()) {
 		fprintf(stderr, "parsing error\n");

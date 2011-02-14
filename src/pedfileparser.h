@@ -10,11 +10,12 @@ using namespace std;
 #include "person.h"
 #include "parser.h"
 
+
 class Pedigree;
 
 class PedigreeParser : public Parser {
 
-	vector<Pedigree*>* pedigrees;
+	vector<Pedigree*>& pedigrees;
 	
 	bool _parse_sex(const string& str, enum sex* s);
 	bool _parse_affection(const string& str, enum affection* a);
@@ -23,7 +24,7 @@ class PedigreeParser : public Parser {
 	Pedigree* _current_ped(const string& famid);
 	
  public :
-	PedigreeParser(const string fn, vector<Pedigree*> *peds) 
+	PedigreeParser(const string fn, vector<Pedigree*>& peds) 
 		: Parser(fn, false), pedigrees(peds) {}
 	bool parse_line(const int linenum, const string line);
     bool parse_end();

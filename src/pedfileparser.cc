@@ -68,16 +68,16 @@ bool PedigreeParser::_parse_genotype(const string& a1, const string& a2,
 Pedigree* PedigreeParser::_current_ped(const string& famid) {
 	Pedigree* p = NULL;
 
-	for(unsigned int i = 0; i < pedigrees->size(); ++i) {
-		if((*pedigrees)[i]->get_id() == famid) {
+	for(unsigned int i = 0; i < pedigrees.size(); ++i) {
+		if(pedigrees[i]->get_id() == famid) {
 			//printf("\tfound family %s\n", famid.c_str());
-			return (*pedigrees)[i];
+			return pedigrees[i];
 		}
 	}
 
 	//printf("\tcreating new family %s\n", famid.c_str());
 	p = new Pedigree(famid);
-	pedigrees->push_back(p);
+	pedigrees.push_back(p);
 
 	return p;
 }
@@ -173,11 +173,11 @@ bool PedigreeParser::parse_line(const int linenum, const string line) {
 bool PedigreeParser::parse_end() {
     bool ret = true;
     
-    for(unsigned int i = 0; i < pedigrees->size(); ++i) {
+    for(unsigned int i = 0; i < pedigrees.size(); ++i) {
         
-		if(not (*pedigrees)[i]->sanity_check()) {
+		if(not pedigrees[i]->sanity_check()) {
             fprintf(stderr, "error: %s, pedigree %s contains relationship errors\n",
-                filename.c_str(), (*pedigrees)[i]->get_id().c_str());
+                filename.c_str(), pedigrees[i]->get_id().c_str());
 			ret = false;
         }
     }

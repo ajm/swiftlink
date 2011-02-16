@@ -75,7 +75,7 @@ Pedigree& PedigreeParser::_current_ped(const string& famid) {
     Pedigree p(famid);
 	pedigrees.push_back(p);
         
-	return *(pedigrees.end());
+	return pedigrees.back();
 }
 
 bool PedigreeParser::parse_line(const int linenum, const string line) {

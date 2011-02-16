@@ -12,10 +12,12 @@ using namespace std;
 
 
 class Pedigree;
+class DiseaseModel;
 
 class PedigreeParser : public Parser {
 
 	vector<Pedigree>& pedigrees;
+    DiseaseModel& disease_model;
 	
 	bool _parse_sex(const string& str, enum sex& s);
 	bool _parse_affection(const string& str, enum affection& a);
@@ -23,8 +25,8 @@ class PedigreeParser : public Parser {
 	Pedigree& _current_ped(const string& famid);
 	
  public :
-	PedigreeParser(const string fn, vector<Pedigree>& peds) 
-		: Parser(fn, false), pedigrees(peds) {}
+	PedigreeParser(const string fn, vector<Pedigree>& peds, DiseaseModel& dm) 
+		: Parser(fn, false), pedigrees(peds), disease_model(dm) {}
     
 	bool parse_line(const int linenum, const string line);
     bool parse_end();

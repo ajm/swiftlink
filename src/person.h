@@ -27,9 +27,9 @@ enum affection {
 };
 
 class Pedigree;
+class DiseaseModel;
 class PeelOperation;
 class PeelingState;
-class DiseaseModel;
 
 class Person {
     
@@ -73,7 +73,7 @@ class Person {
 
  public :
 	Person(const string name, const string father_name, const string mother_name, 
-			enum sex s, enum affection a, Pedigree* pedigree/*, DiseaseModel& dm*/) :
+			enum sex s, enum affection a, Pedigree* pedigree, DiseaseModel& dm) :
 			id(name),
 			mother(mother_name),
 			father(father_name),		
@@ -85,7 +85,7 @@ class Person {
 			typed(true),
 			ped(pedigree) {
         
-//        init_probs(dm);
+        init_probs(dm);
     }
 	
 	~Person() {}

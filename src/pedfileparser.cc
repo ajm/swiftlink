@@ -139,7 +139,7 @@ bool PedigreeParser::parse_line(const int linenum, const string line) {
 
     // create / retrieve objects	
     Pedigree& q = _current_ped(famid);
-	Person p(id, fatherid, motherid, s, a, &q);
+	Person p(id, fatherid, motherid, s, a, &q, disease_model);
     	
 	// handle genotypes
 	for(int i = 0; i < ((tokens.size() - 6) / 2.0); ++i) {

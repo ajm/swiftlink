@@ -8,6 +8,7 @@ using namespace std;
 #include "pedfileparser.h"
 #include "peel_sequence_generator.h"
 #include "diseasemodel.h"
+//#include "rfunction.h"
 
 
 // XXX
@@ -30,18 +31,35 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "parsing error\n");
 		return 1;
 	}
-/*
-    // for each pedigree in pedfile
-	for(unsigned int i = 0; i < v.size(); ++i) {
-        // find a suitable peel order
+
+    // for each pedigree
+	for(vector<Pedigree>::size_type i = 0; i < v.size(); ++i) {
         PeelSequenceGenerator psg(v[i]);
         psg.build_peel_order();
-        psg.print();
         
+        // setup r-functions
+        vector<PeelOperation>& ops = psg.get_peel_order();
+
+        // NONE OF THIS EVEN COMPILES  ;-P
+/*        
+        vector<Rfunction> rfunctions;
+        for(vector<PeelOperation>::size_type j = 0; j < ops.size(); ++j) {
+            Rfunction rf(ops[j], &v[i], 4);
+            rfunctions.push_back(rf);
+        }
+
         // perform the peel
-        // ???
-	}
+        PeelMatrix* last = NULL;
+        for(vector<Rfunction>::size_type j = 0; j < rfunctions.size(); ++j) {
+            Rfunction& rf = rfunctions[j];
+            
+            rf.evaluate(last);
+            
+            last = rf.get_peel_matrix();
+        }
 */
+	}
+
 	return 0;
 }
 

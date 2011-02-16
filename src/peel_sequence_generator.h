@@ -4,6 +4,7 @@
 using namespace std;
 
 #include <vector>
+
 #include "peeling.h"
 
 
@@ -21,21 +22,24 @@ class Pedigree;
 
 class PeelSequenceGenerator {
 
-    Pedigree* ped;
+    Pedigree& ped;
     vector<PeelOperation> peelorder;
+    vector<PeelOperation> tmp;
     PeelingState state;
 
   public :
-    PeelSequenceGenerator(Pedigree* p) : ped(p), state(p) {}
+    PeelSequenceGenerator(Pedigree& p) 
+        : ped(p), state(p) {}
     ~PeelSequenceGenerator() {}
 
     PeelOperation get_random_operation(vector<PeelOperation>& v);
     PeelOperation get_best_operation_heuristic(vector<PeelOperation>& v);
     PeelOperation get_best_operation(vector<PeelOperation>& v);
     
-    vector<PeelOperation> all_possible_peels(int* unpeeled);
+    void all_possible_peels(int& unpeeled);
 
     bool build_peel_order();
+    vector<PeelOperation>& get_peel_order();
     void print();
 };
 

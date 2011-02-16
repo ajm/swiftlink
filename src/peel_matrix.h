@@ -6,7 +6,7 @@ using namespace std;
 #include <cmath>
 #include <map>
 
-#include "genotypes.h"
+#include "genotype.h"
 
 
 //template<class A, class B>

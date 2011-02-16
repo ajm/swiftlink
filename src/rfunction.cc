@@ -57,7 +57,7 @@ void Rfunction::evaluate_element(PeelMatrixKey& pmatrix_index) {
     }
 }
 
-void Rfunction::evaluate() {
+void Rfunction::evaluate(PeelMatrix* previous_matrix) {
     PeelMatrixKey k;
     deque<unsigned int> q;
     unsigned int ndim = peel.get_cutset_size();

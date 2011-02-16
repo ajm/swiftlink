@@ -54,59 +54,50 @@ PeelOperation PeelSequenceGenerator::get_best_operation(vector<PeelOperation>& v
 
 // create a list of all the possible peels from peripheral families
 // the actual details of what a peel is, is coded in the person class
-vector<PeelOperation> PeelSequenceGenerator::all_possible_peels(int* unpeeled) {
-    vector<PeelOperation> tmp;
+void PeelSequenceGenerator::all_possible_peels(int& unpeeled) {
     Person* per;
 
-    for(unsigned int i = 0; i < ped->num_members(); ++i) {
+    tmp.clear();
+
+    for(unsigned int i = 0; i < ped.num_members(); ++i) {
         PeelOperation p;
 
         if(not state.is_peeled(i)) {
-            (*unpeeled)++;
+            unpeeled++;
             
-            per = ped->get_by_index(i);
+            per = ped.get_by_index(i);
 
-            if(per->peel_operation(&p, state)) {
+            if(per->peel_operation(p, state)) {
                 tmp.push_back(p);
             }
         }
     }
-    
-    return tmp;
 }
 
 bool PeelSequenceGenerator::build_peel_order() {
-    PeelOperation p;
-    vector<PeelOperation> tmp;
-    int unpeeled;
 
     while(true) {
-        unpeeled = 0;
+        int unpeeled = 0;
 
-        tmp = all_possible_peels(&unpeeled);
+        all_possible_peels(unpeeled); // populates 'tmp'
         
         // everyone is peeled, so we are done
-        if(unpeeled == 0)
+        if(unpeeled == 0) {
             break;
-
-        p = get_best_operation(tmp);
-/*
-        // debug
-        printf("step %d\n", peelorder.size());
-        printf("selected: ");
-        p.print();
-        printf("\n");
-        for(unsigned int i = 0; i < tmp.size(); ++i) {
-            tmp[i].print();
         }
-        printf("\n\n");
-        // debug
-*/
-        peelorder.push_back(p);
-        state.set_peeled(p.get_pivot());
 
-        tmp.clear();
+        if((unpeeled != 0) and (tmp.size() == 0)) {
+            fprintf(stderr, "Error, %s failed to produce a valid peeling sequence\n", __func__ );
+            return false;
+        }
+        
+        peelorder.push_back(get_best_operation(tmp));
+        state.set_peeled(peelorder.back().get_pivot());
     }
+}
+
+vector<PeelOperation>& PeelSequenceGenerator::get_peel_order() {
+    return peelorder;
 }
 
 void PeelSequenceGenerator::print() {

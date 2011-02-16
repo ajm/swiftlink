@@ -13,23 +13,21 @@ class Person;
 class Rfunction {
 
     PeelMatrix pmatrix;    
-    PeelOperation& peel;
     unsigned int num_alleles; // could be 3 for L-sampler or 4 for peeling
-    
-    Rfunction* prev; // can be null
+    PeelOperation peel;
     Pedigree* ped;
     Person* pivot;
     
-    
  public :
-    Rfunction(PeelOperation& p, unsigned int alleles, Rfunction* rfun, Pedigree* p) 
-        : pmatrix(p.get_cutset(), alleles), peel(p), num_alleles(alleles), prev(rfun), ped(p) {
+    Rfunction(PeelOperation p, Pedigree* p, unsigned int alleles)
+        : pmatrix(p.get_cutset(), alleles), peel(p), num_alleles(alleles), ped(p) {
         
         pivot = ped->get_by_index(peel.get_pivot());
     }
-    ~Rfunction() {}
     
-    void evaluate();
+    PeelMatrix* get_matrix() { return &pmatrix; }
+    
+    bool evaluate(PeelMatrix* previous_matrix);
 };
 
 #endif

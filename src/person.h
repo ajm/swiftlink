@@ -69,6 +69,22 @@ class Person {
     }
 	string gender_str() const;
 	string affection_str() const;
+    void init_probs(DiseaseModel& dm);
+
+    // private, peeling related
+    unsigned int count_unpeeled(vector<Person*>& v, PeelingState& ps);
+    bool contains_unpeeled(vector<Person*>& v, PeelingState& ps);
+    bool offspring_peeled(PeelingState& ps);
+    bool partners_peeled(PeelingState& ps);
+    bool parents_peeled(PeelingState& ps);
+    bool ripe_above(PeelingState& ps);
+    bool ripe_below(PeelingState& ps);
+    bool ripe_across(PeelingState& ps);
+    bool ripe_all(PeelingState& ps);
+    bool ripe_above_partners(PeelingState& ps);
+    bool ripe(PeelingState& ps);
+    void neighbours(vector<unsigned int>& nodes);
+    void get_cutset(PeelOperation& operation, PeelingState& state);
 
 
  public :
@@ -158,27 +174,8 @@ class Person {
 	bool operator<(const Person& p) const {
 		return isfounder() and not p.isfounder();
 	}
-/*
-    // peeling
-    // XXX many of these can be private
-    bool contains_unpeeled(vector<Person*>& v, PeelingState& ps);
-    unsigned int count_unpeeled(vector<Person*>& v, PeelingState& ps);
-    bool offspring_peeled(PeelingState& ps);
-    bool partners_peeled(PeelingState& ps);
-    bool parents_peeled(PeelingState& ps);
-    bool ripe_above(PeelingState& ps);
-    bool ripe_below(PeelingState& ps);
-    bool ripe_across(PeelingState& ps);
-    bool ripe_all(PeelingState& ps);
-    bool ripe_above_partners(PeelingState& ps);
-    bool ripe(PeelingState& ps);
-    bool peel_operation(PeelOperation* p, PeelingState& state);
-    void neighbours(vector<unsigned int>& nodes);
-    void get_cutset(PeelOperation* operation, PeelingState& state);
-*/
-    // XXX should be private and disease model passed as an argument
-    // to constructor
-    void init_probs(DiseaseModel& dm);
+
+    bool peel_operation(PeelOperation& p, PeelingState& state);
 };
 
 #endif

@@ -114,7 +114,6 @@ void Person::print() const {
 }
 
 //----------
-/*
 bool Person::contains_unpeeled(vector<Person*>& v, PeelingState& ps) {
 
     for(unsigned int i = 0; i < v.size(); ++i) {
@@ -185,10 +184,9 @@ bool Person::ripe(PeelingState& ps) {
             ripe_above_partners(ps);
 }
 
-bool Person::peel_operation(PeelOperation* p, PeelingState& state) {
-    p->set_pivot(internal_id);
-    p->set_type(NULL_PEEL);
-    
+bool Person::peel_operation(PeelOperation& p, PeelingState& state) {
+    p.set_pivot(internal_id);
+    p.set_type(NULL_PEEL);
 
     // would be nice, but then I don't know what to do later...
 //    if(ripe(state)) {
@@ -198,19 +196,19 @@ bool Person::peel_operation(PeelOperation* p, PeelingState& state) {
 
     
     if(ripe_all(state)) {
-        p->set_type(LAST_PEEL);
+        p.set_type(LAST_PEEL);
     }
     else if(ripe_across(state)) {
-        p->set_type(PARTNER_PEEL);
+        p.set_type(PARTNER_PEEL);
     }
     else if(ripe_below(state)) {
-        p->set_type(CHILD_PEEL);
+        p.set_type(CHILD_PEEL);
     }
     else if(ripe_above_partners(state)) {
-        p->set_type(PARENT_PEEL);
+        p.set_type(PARENT_PEEL);
     }
     
-    if(p->get_type() != NULL_PEEL) {
+    if(p.get_type() != NULL_PEEL) {
         get_cutset(p, state);
         return true;
     }
@@ -234,7 +232,7 @@ void Person::neighbours(vector<unsigned int>& nodes) {
         nodes.push_back(mates[i]->internal_id);
 }
 
-void Person::get_cutset(PeelOperation* operation, PeelingState& state) {
+void Person::get_cutset(PeelOperation& operation, PeelingState& state) {
     queue<unsigned int> q;
     vector<unsigned int> n;
     unsigned int visited[ped->num_members()];
@@ -260,7 +258,7 @@ void Person::get_cutset(PeelOperation* operation, PeelingState& state) {
 
             if(not state.is_peeled(tmp2)) {
                 if(internal_id != tmp2) {
-                    operation->add_cutnode(tmp2);
+                    operation.add_cutnode(tmp2);
                 }
                 continue;
             }
@@ -274,5 +272,5 @@ void Person::get_cutset(PeelOperation* operation, PeelingState& state) {
         visited[tmp] = BLACK;
     }
 }
-*/
+
 

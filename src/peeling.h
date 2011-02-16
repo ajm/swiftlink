@@ -21,8 +21,8 @@ class PeelingState {
     vector<bool> peeled;
 
   public :
-    PeelingState(Pedigree* p) 
-        : peeled(p->num_members(), false) {}
+    PeelingState(Pedigree& p) 
+        : peeled(p.num_members(), false) {}
 
     bool is_peeled(unsigned int i) {
         return peeled[i];

@@ -5,6 +5,7 @@ using namespace std;
 
 #include <cmath>
 #include <map>
+#include <vector>
 
 #include "genotype.h"
 
@@ -28,7 +29,7 @@ class PeelMatrixKey {
     }
 
     PeelMatrixKey& operator=(const PeelMatrixKey& rhs) {
-        if(*this != rhs) {
+        if(this != &rhs) {
             key = rhs.key;
         }
     }
@@ -42,6 +43,10 @@ class PeelMatrixKey {
     
     void remove(unsigned int k) {
         key.erase(k);
+    }
+
+    int get(unsigned int i) {
+        return static_cast<int>(key[i]);
     }
     
     // ensure this key can address everything for everything in the
@@ -63,7 +68,7 @@ class PeelMatrixKey {
 };
 
 class PeelMatrix {
-    vector<unsigned int>& keys;
+    vector<unsigned int> keys;
     vector<unsigned int> offsets;
     unsigned int number_of_dimensions;
     unsigned int values_per_dimension;
@@ -74,7 +79,7 @@ class PeelMatrix {
         unsigned int index = 0;
 
         for(unsigned int i = 0; i < keys.size(); ++i) {
-            index += (offset[i] * pmk.get(keys[i]));
+            index += (offsets[i] * pmk.get(keys[i]));
         }
 
         return index;
@@ -89,9 +94,10 @@ class PeelMatrix {
     }
     
  public :
-    PeelMatrix(vector<unsigned int>& all_keys, unsigned int val_dim)
-        : keys(all_keys), 
-        number_of_dimensions(all_keys.size()), 
+    PeelMatrix(unsigned int num_dim, unsigned int val_dim)
+        : /*keys(all_keys), */
+        /*number_of_dimensions(all_keys.size()), */
+        number_of_dimensions(num_dim),
         values_per_dimension(val_dim) {
         
         init_offsets();
@@ -103,8 +109,12 @@ class PeelMatrix {
         delete[] data;
     }
 
+    void set_keys(vector<unsigned int>* k) {
+        keys = *k;
+    }
+
     bool is_legal(PeelMatrixKey& pmk) {
-        return pmk.check_keys();
+        return pmk.check_keys(keys);
     }
 
     double get(PeelMatrixKey& pmk) {
@@ -115,7 +125,7 @@ class PeelMatrix {
         data[generate_index(pmk)] = value;
     }
     
-    // TODO overload '[]' operator?
+    // TODO overload '[]' operator ?
 };
 
 #endif

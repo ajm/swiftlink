@@ -6,6 +6,7 @@ using namespace std;
 #include "rfunction.h"
 #include "peeling.h"
 #include "peel_matrix.h"
+#include "genotype.h"
 
 
 // assignments is a misnomer, it does not matter which nodes these assignments
@@ -13,10 +14,10 @@ using namespace std;
 // that does this r-function, the ordering of the peel operation cutset is 
 // constant
 void Rfunction::generate_key(PeelMatrixKey& pmatrix_index, deque<unsigned int>& assignments) {
-    vector<unsigned int>& cutset = peel.get_cutset();
+    vector<unsigned int>* cutset = peel.get_cutset();
     
-    for(unsigned int i = 0; i < cutset.size(); ++i) {
-        pmatrix_index.add(cutset[i], assignments[i]);
+    for(unsigned int i = 0; i < cutset->size(); ++i) {
+        pmatrix_index.add((*cutset)[i], static_cast<enum phased_genotype>(assignments[i]));
     }
 }
 
@@ -24,19 +25,19 @@ void Rfunction::evaluate_element(PeelMatrixKey& pmatrix_index) {
     double tmp = 0;
     PeelMatrixKey prev_index(pmatrix_index);
 
-    switch(peel.type) {
-        case PEEL_CHILD :
+    switch(peel.get_type()) {
+        case CHILD_PEEL :
             // 1. add pivot later
             // 2. remove parents now
-            prev_index.remove(pivot->maternal_id);
-            prev_index.remove(pivot->paternal_id);
+            prev_index.remove(pivot->get_maternalid());
+            prev_index.remove(pivot->get_paternalid());
             break;
             
-        case PEEL_PARTNER :
+        case PARTNER_PEEL :
             // 1. add pivot later
             break;
         
-        case PEEL_PARENT :  // XXX don't bother with yet    
+        case PARENT_PEEL :  // XXX don't bother with yet    
         case LAST_PEEL :    // XXX never seen here?
         default :
             abort();
@@ -46,7 +47,7 @@ void Rfunction::evaluate_element(PeelMatrixKey& pmatrix_index) {
     for(unsigned int i = 0; i < num_alleles; ++i) {
 
         // finish making the key for the previous rfunction
-        prev_index.add(peel.pivot, i);
+        prev_index.add(peel.get_pivot(), static_cast<enum phased_genotype>(i));
 
         // look up disease prob for this allele with this person
         //dp = pivot->get_disease_prob(static_cast<enum phased_genotype>(i));

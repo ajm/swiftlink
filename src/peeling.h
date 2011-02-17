@@ -58,6 +58,10 @@ class PeelOperation {
     unsigned int get_cutset_size() const { 
         return cutset.size();
     }
+
+    vector<unsigned int>* get_cutset() {
+        return &cutset;
+    }
     
     void add_cutnode(unsigned int c) {
         for(unsigned int i = 0; i < cutset.size(); ++i) {
@@ -74,7 +78,7 @@ class PeelOperation {
     enum peeloperation get_type() {
         return type;
     }
-
+    
     void print() const {
         int tmp = cutset.size();
 

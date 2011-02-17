@@ -3,9 +3,11 @@
 
 using namespace std;
 
+#include <cstdio>
 #include <cmath>
 #include <map>
 #include <vector>
+#include <algorithm>
 
 #include "genotype.h"
 
@@ -77,8 +79,11 @@ class PeelMatrix {
     
     unsigned int generate_index(PeelMatrixKey& pmk) {
         unsigned int index = 0;
+        unsigned int tmp;
 
         for(unsigned int i = 0; i < keys.size(); ++i) {
+            tmp = keys[i];
+            //fprintf(stderr, "%d --> %d\n", i, tmp);
             index += (offsets[i] * pmk.get(keys[i]));
         }
 
@@ -100,17 +105,48 @@ class PeelMatrix {
         number_of_dimensions(num_dim),
         values_per_dimension(val_dim) {
         
-        init_offsets();
+        //init_offsets();
         size = pow(values_per_dimension, number_of_dimensions);
         data = new double[size];
     }
-    
+
+    PeelMatrix(const PeelMatrix& rhs) {
+        keys = rhs.keys;
+        offsets = rhs.offsets;
+        number_of_dimensions = rhs.number_of_dimensions;
+        values_per_dimension = rhs.values_per_dimension;
+        size = rhs.size;
+        data = new double[size];
+        copy(rhs.data, rhs.data + size, data);
+    }
+
+    PeelMatrix& operator=(PeelMatrix& rhs) {
+        
+        if(this != &rhs) {
+            keys = rhs.keys;
+            offsets = rhs.offsets;
+            number_of_dimensions = rhs.number_of_dimensions;
+            values_per_dimension = rhs.values_per_dimension;
+
+            if(size != rhs.size) {
+                delete[] data;
+                data = new double[rhs.size];
+            }
+
+            size = rhs.size;
+            copy(rhs.data, rhs.data + size, data);
+        }
+
+        return *this;
+    }
+
     ~PeelMatrix() {
-        delete[] data;
+        delete[] data; // freed twice due to shallow default copy constructor
     }
 
     void set_keys(vector<unsigned int>* k) {
         keys = *k;
+        init_offsets();
     }
 
     bool is_legal(PeelMatrixKey& pmk) {

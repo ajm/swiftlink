@@ -4,7 +4,7 @@ using namespace std;
 #include <string>
 #include <vector>
 
-#include "pedfileparser.h"
+#include "pedigree_parser.h"
 #include "genotype.h"
 #include "pedigree.h"
 #include "person.h"

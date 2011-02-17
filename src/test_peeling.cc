@@ -5,9 +5,10 @@ using namespace std;
 
 #include "parser.h"
 #include "pedigree.h"
-#include "pedfileparser.h"
+#include "pedigree_parser.h"
+#include "peeling.h"
 #include "peel_sequence_generator.h"
-#include "diseasemodel.h"
+#include "disease_model.h"
 #include "rfunction.h"
 
 
@@ -36,6 +37,7 @@ int main(int argc, char **argv) {
 	for(vector<Pedigree>::size_type i = 0; i < v.size(); ++i) {
         PeelSequenceGenerator psg(v[i]);
         psg.build_peel_order();
+        psg.print();
         
         // setup r-functions
         vector<PeelOperation>& ops = psg.get_peel_order();
@@ -51,8 +53,13 @@ int main(int argc, char **argv) {
         PeelMatrix* last = NULL;
         for(vector<Rfunction>::size_type j = 0; j < rfunctions.size(); ++j) {
             Rfunction& rf = rfunctions[j];
+
+            fprintf(stderr, "rfunction %d\n", int(j));
             
-            rf.evaluate(last);
+            if(not rf.evaluate(last)) {
+                fprintf(stderr, "bad R function\n");
+                return 1;
+            }
             
             last = rf.get_matrix();
         }

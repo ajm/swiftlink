@@ -5,7 +5,6 @@ using namespace std;
 
 #include <deque>
 
-
 #include "peel_matrix.h"
 #include "peeling.h"
 #include "pedigree.h"
@@ -22,7 +21,7 @@ class Rfunction {
     Person* pivot;
 
     void generate_key(PeelMatrixKey& pmatrix_index, deque<unsigned int>& assignments);
-    void evaluate_element(PeelMatrixKey& pmatrix_index);    
+    void evaluate_element(PeelMatrixKey& pmatrix_index, PeelMatrix* prev_matrix);
 
  public :
     Rfunction(PeelOperation po, Pedigree* p, unsigned int alleles)
@@ -37,7 +36,7 @@ class Rfunction {
     
     PeelMatrix* get_matrix() { return &pmatrix; }
     
-    void evaluate(PeelMatrix* previous_matrix);
+    bool evaluate(PeelMatrix* previous_matrix);
 };
 
 #endif

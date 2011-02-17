@@ -176,6 +176,7 @@ class Person {
 	}
 
     bool peel_operation(PeelOperation& p, PeelingState& state);
+    double get_disease_prob(enum phased_genotype pg);
 };
 
 #endif

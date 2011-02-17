@@ -2,7 +2,7 @@ using namespace std;
 
 #include <cstdio>
 
-#include "diseasemodel.h"
+#include "disease_model.h"
 #include "trait.h"
 
 

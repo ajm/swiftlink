@@ -15,16 +15,32 @@ using namespace std;
 // constant
 void Rfunction::generate_key(PeelMatrixKey& pmatrix_index, deque<unsigned int>& assignments) {
     vector<unsigned int>* cutset = peel.get_cutset();
-    
+
+    //fprintf(stderr, "generate_key\n");    
+
     for(unsigned int i = 0; i < cutset->size(); ++i) {
+        //fprintf(stderr, "%d:%d\n", i, (*cutset)[i]);
         pmatrix_index.add((*cutset)[i], static_cast<enum phased_genotype>(assignments[i]));
     }
 }
 
-void Rfunction::evaluate_element(PeelMatrixKey& pmatrix_index) {
-    double tmp = 0;
+void Rfunction::evaluate_element(PeelMatrixKey& pmatrix_index, PeelMatrix* prev_matrix) {
+    double tmp;
+    double recombination_prob;
+    double disease_prob;
+    double old_prob;
+    enum phased_genotype pg;
     PeelMatrixKey prev_index(pmatrix_index);
 
+    fprintf(stderr, "evaluate_element\n");
+
+    // given that 'prev_matrix' exists, we need to be able to query it
+    // how this is performed depends on the 'type' of peel we are talking
+    // about and I am not sure whether this procedure is (or can be) particularly
+    // general
+    //
+    // XXX perhaps the PeelMatrixKey class should have the responsibility of 
+    // figuring this out?
     switch(peel.get_type()) {
         case CHILD_PEEL :
             // 1. add pivot later
@@ -45,20 +61,33 @@ void Rfunction::evaluate_element(PeelMatrixKey& pmatrix_index) {
     
     
     for(unsigned int i = 0; i < num_alleles; ++i) {
+        
+        //fprintf(stderr, "evaluate_element, allele=%d\n", i);
+
+        pg = static_cast<enum phased_genotype>(i);
 
         // finish making the key for the previous rfunction
-        prev_index.add(peel.get_pivot(), static_cast<enum phased_genotype>(i));
+        prev_index.add(peel.get_pivot(), pg);
 
-        // look up disease prob for this allele with this person
-        //dp = pivot->get_disease_prob(static_cast<enum phased_genotype>(i));
+        // (a) look up disease prob for this allele with this person
+        // (b) look up the recombination prob for this allele, given the DescentGraph + GeneticMap
+        // (c) look up relevant old value from previous R function, if 'prev' is not null
+        disease_prob = pivot->get_disease_prob(pg);
+        recombination_prob = 1.0; // XXX place holder, see b.
+        old_prob = prev_matrix != NULL ? prev_matrix->get(prev_index) : 1.0;
         
-        // (i)      look up relevant old value, if 'prev' is not null
-        // (ii)     given assignments in 'element' (sum probabilities for pivot) x (old value from (i)) x (recombination probs)
-        // (iii)    assign new likelihood in 'rfunc'
+        // (d) given assignments in 'pmatrix_index' 
+        // (sum probabilities for pivot) x (old value from (i)) x (recombination probs)
+        tmp += (disease_prob * recombination_prob * old_prob);
     }
+
+    // (e) assign new likelihood in 'pmatrix'
+    pmatrix.set(pmatrix_index, tmp);
 }
 
-void Rfunction::evaluate(PeelMatrix* previous_matrix) {
+// XXX can i tell if these matrix can be used together
+//
+bool Rfunction::evaluate(PeelMatrix* previous_matrix) {
     PeelMatrixKey k;
     deque<unsigned int> q;
     unsigned int ndim = peel.get_cutset_size();
@@ -75,7 +104,7 @@ void Rfunction::evaluate(PeelMatrix* previous_matrix) {
         
         if(q.size() == ndim) {
             generate_key(k, q);
-            evaluate_element(k);
+            evaluate_element(k, previous_matrix);
         }
         
         tmp = q.front() + 1;
@@ -90,5 +119,7 @@ void Rfunction::evaluate(PeelMatrix* previous_matrix) {
             }
         }
     }
+
+    return true;
 }
 

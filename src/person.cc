@@ -9,7 +9,7 @@ using namespace std;
 #include "pedigree.h"
 #include "genotype.h"
 #include "peeling.h"
-#include "diseasemodel.h"
+#include "disease_model.h"
 #include "trait.h"
 
 
@@ -27,6 +27,10 @@ void Person::init_probs(DiseaseModel& dm) {
     disease_prob[TRAIT_UU] = isfounder() ? \
         dm.get_apriori_prob(get_affection(), TRAIT_HOMO_U) : \
         dm.get_penetrance_prob(get_affection(), TRAIT_HOMO_U);
+}
+
+double Person::get_disease_prob(enum phased_genotype pg) {
+    return disease_prob[pg];
 }
 
 bool Person::mendelian_errors() const {

@@ -1,10 +1,20 @@
+#include <cstdio>
+
 #include "genetic_map.h"
 
 
 bool GeneticMap::sanity_check() {
-    return (map.size() == (thetas.size() + 1)) and \
-           (map.size() == (inverse_thetas.size() + 1));
+    bool sane = (map.size() == (thetas.size() - 1)) and \
+           (map.size() == (inverse_thetas.size() - 1));
+
+    if(not sane) {
+        fprintf(stderr, 
+            "error in map data: number of markers = %d, number of thetas = %d\n", 
+            map.size(), thetas.size());
     }
+    
+    return sane;
+}
 
 void GeneticMap::print() {
     printf("GeneticMap: %d loci\n", map.size());

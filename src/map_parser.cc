@@ -63,3 +63,7 @@ bool MapParser::parse_line(const int linenum, const string line) {
     return true;
 }
 
+bool MapParser::parse_end() { 
+    return true; //map.sanity_check();
+}
+

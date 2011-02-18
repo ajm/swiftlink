@@ -10,6 +10,7 @@ using namespace std;
 #include "parser.h"
 #include "genetic_map.h"
 
+
 class MapParser : public Parser {
     
     GeneticMap& map;
@@ -19,6 +20,7 @@ class MapParser : public Parser {
         : Parser(fn, false), map(m) {}
     
     bool parse_line(const int linenum, const string line);
+    bool parse_end();
 };
 
 #endif

@@ -9,7 +9,7 @@ bool MapParser::parse_line(const int linenum, const string line) {
     Snp* snp;
     string name;
     double gdist;
-    unsigned int pdist;
+    int pdist;
     
     tokenise(line);
     

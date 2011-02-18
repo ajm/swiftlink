@@ -7,17 +7,17 @@
 #include <cstdlib>
 #include <unistd.h>
 
-#include "linkageprogram.h"
+#include "linkage_program.h"
 
 
-char* mapfile;
-char* pedfile;
-char* datfile;
-bool verbose;
+char*   mapfile;
+char*   pedfile;
+char*   datfile;
+bool    verbose;
 
 void _usage(char *prog) {
 	fprintf(stderr,
-			"usage: %s [-hv] -p pedigreefile -m mapfile -d datfile\n"
+			"Usage: %s [-hv] -p pedigreefile -m mapfile -d datfile\n"
 			"\t-p <pedigree file>\n"
 			"\t-m <map file>\n"
 			"\t-d <data file>\n"
@@ -108,6 +108,7 @@ int main(int argc, char **argv) {
 	_handle_args(argc, argv);
     
     LinkageProgram lp(pedfile, mapfile, datfile);
+    
 	if(lp.run()) {
 		return EXIT_SUCCESS;
 	}

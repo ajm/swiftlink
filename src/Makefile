@@ -4,21 +4,26 @@ CXXFLAGS := -g -Wall -Werror -Wextra -pedantic -std=c++98 -pipe
 INCLUDES := -I.
 LIBS := 
 
-OBJECTS	:= test_peeling.o \
+OBJECTS	:= main.o \
+    program.o \
+    linkage_program.o \
+    pedigree_parser.o \
+    linkagefileparser.o \
+    mapfileparser.o \
+	genotype.o \
 	pedigree.o \
 	person.o \
-	pedigree_parser.o \
 	disease_model.o \
-	genotype.o \
 	peel_sequence_generator.o \
 	rfunction.o
+    
 
-test_peeling: $(OBJECTS)
+app: $(OBJECTS)
 	$(CXX) -o $@ $(LIBS) $(OBJECTS)
 
 %.o: %.cc
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
-	rm -f $(OBJECTS) test_peeling
+	rm -f $(OBJECTS) app
 

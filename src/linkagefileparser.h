@@ -27,9 +27,9 @@ class LinkageParser : public Parser {
 	int number_of_loci;
 	int program_code;
 		
-	bool general_information(const int linenum, const string line);
-	bool description_of_loci(const int linenum, const string line);
-	bool information_on_recombination(const int linenum, const string line);
+	bool general_information(const int linenum);
+	bool description_of_loci(const int linenum);
+	bool information_on_recombination(const int linenum);
 	bool set_numloci(const string s);
 	bool set_sexlinked(const string s);
 	bool set_programcode(const string s);

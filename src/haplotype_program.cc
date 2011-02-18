@@ -17,56 +17,12 @@ using namespace std;
 #include "haplotypewriter.h"
 #include "configparser.h"
 
-LinkageProgram::~LinkageProgram() {
-    for(int i = 0; i < int(pedigrees.size()); ++i) {
-		delete pedigrees[i];
-	}
-}
 
-bool LinkageProgram::read_and_check_input() {
-	PedigreeParser pp(pedfile, &pedigrees);
-	if(! pp.parse()) {
-		fprintf(stderr, "errors parsing pedigree file, exiting...\n");
-		return false;
-	}
-
-	// there are additional things I think, eg: zero families
-	if(int(pedigrees.size()) == 0) {
-		fprintf(stderr, "error: %s contains no families\n", pedfile);
-		return false;
-	}
-	
-	for(int i = 0; i < int(pedigrees.size()); ++i) {
-		if(! pedigrees[i]->sanity_check()) {
-			return false;
-		}
-	}
-	
-	MapParser mp(mapfile, &map);
-	if(! mp.parse()) {
-		fprintf(stderr, "errors parsing map file, exiting...\n");
-		return false;
-	}
-	
-	LinkageParser lp(datfile, &map, &dm);
-	if(! lp.parse()) {
-		fprintf(stderr, "errors parsing linkage file, exiting...\n");
-		return false;
-	}
-
-	if(! map.sanity_check()) {
-		fprintf(stderr, "map data failed sanity check\n");
-		return false;
-	}
-
-	return true;
-}
-
-bool LinkageProgram::run() {
+bool HaplotypeProgram::run() {
     return run_ga();
 }
 
-bool LinkageProgram::run_ga() {
+bool HaplotypeProgram::run_ga() {
 	DescentGraph* ans;
 
 	if(! read_and_check_input()) {
@@ -104,7 +60,7 @@ bool LinkageProgram::run_ga() {
 	return true;
 }
 
-bool LinkageProgram::run_sa() {
+bool HaplotypeProgram::run_sa() {
 	SA_DescentGraph* ans;
 
 	if(! read_and_check_input()) {

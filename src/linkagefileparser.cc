@@ -1,3 +1,5 @@
+using namespace std;
+
 #include <cstdio>
 #include <cstdlib>
 #include <string>
@@ -7,7 +9,7 @@
 #include "trait.h"
 #include "genotype.h"
 #include "geneticmap.h"
-#include "diseasemodel.h"
+#include "disease_model.h"
 #include "linkagefileparser.h"
 
 // see : http://linkage.rockefeller.edu/soft/linkage/sec2.6.html
@@ -17,7 +19,7 @@ bool LinkageParser::unsupported(string s) {
 	return false;
 }
 
-bool LinkageParser::general_information(const int linenum, const string line) {
+bool LinkageParser::general_information(const int linenum) {
 	switch(linenum) {
 		case 0 :
 			return set_numloci(tokens[0]) and \
@@ -36,7 +38,7 @@ bool LinkageParser::general_information(const int linenum, const string line) {
 	return false;
 }
 
-bool LinkageParser::description_of_loci(const int linenum, const string line) {
+bool LinkageParser::description_of_loci(const int linenum) {
 	if(marker_linenum == 0) {
 		if(not read_marker_code(tokens[0])) {
 			return false;
@@ -64,7 +66,7 @@ bool LinkageParser::description_of_loci(const int linenum, const string line) {
 	return false;
 }
 
-bool LinkageParser::information_on_recombination(const int linenum, const string line) {
+bool LinkageParser::information_on_recombination(const int linenum) {
 	vector<double>* tmp;
 	
 	// ignore lines 1 & 3
@@ -281,7 +283,7 @@ bool LinkageParser::read_affection_status() {
 			// store liability classes?
 			if(int(af->size()) == 3) {
 				for(int i = 0; i < 3; ++i)
-					dis->set_penetrance((*af)[i], i);
+					dis->set_penetrance((*af)[i], static_cast<enum unphased_trait>(i));
 				
 				tmp = true;
 			}
@@ -350,23 +352,23 @@ void LinkageParser::marker_end() {
 	marker_linenum = 0; 
 	markers_read[marker_code]++; 
 //	printf("\n\n"); 
-};
+}
 
 bool LinkageParser::parse_line(const int linenum, const string line) {
 	tokenise(line);
 	
 	if(linenum < 3) {
-		return general_information(linenum, line);
+		return general_information(linenum);
 	}
 
 //	printf("   --> number_of_loci: %d, markers_read: %d\n", 
 //		number_of_loci, total_markers_read());
 
 	if(total_markers_read() < number_of_loci) {
-		return description_of_loci(linenum, line);
+		return description_of_loci(linenum);
 	}
 	
-	return information_on_recombination(linenum, line);
+	return information_on_recombination(linenum);
 }
 
 bool LinkageParser::parse_end() {

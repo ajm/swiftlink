@@ -159,6 +159,12 @@ bool PedigreeParser::parse_line(const int linenum, const string line) {
 
 bool PedigreeParser::parse_end() {
     bool ret = true;
+
+    if(pedigrees.size() == 0) {
+        fprintf(stderr, "error: %s contains no families\n", 
+            filename.c_str());
+        return false;
+    }
     
     for(unsigned int i = 0; i < pedigrees.size(); ++i) {
         

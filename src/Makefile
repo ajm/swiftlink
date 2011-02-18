@@ -1,5 +1,5 @@
 CXX	:= g++
-CXXFLAGS := -g
+CXXFLAGS := -g -Wall
 INCLUDES := -I.
 LIBS := 
 
@@ -13,7 +13,7 @@ OBJECTS	:= test_peeling.o \
 	rfunction.o
 
 test_peeling: $(OBJECTS)
-	$(CXX) -o $@ $(LIBS) $<
+	$(CXX) -o $@ $(LIBS) $(OBJECTS)
 
 %.o: %.cc
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@

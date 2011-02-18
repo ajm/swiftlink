@@ -94,7 +94,8 @@ class PeelMatrix {
         offsets.resize(keys.size());
         
         for(unsigned int i = 0; i < keys.size(); ++i) {
-            offsets.push_back(pow(values_per_dimension, i));
+            offsets.push_back(pow(static_cast<double>(values_per_dimension), 
+                                  static_cast<int>(i)));
         }
     }
     
@@ -106,7 +107,8 @@ class PeelMatrix {
         values_per_dimension(val_dim) {
         
         //init_offsets();
-        size = pow(values_per_dimension, number_of_dimensions);
+        size = pow(static_cast<double>(values_per_dimension), 
+                   static_cast<int>(number_of_dimensions));
         data = new double[size];
     }
 

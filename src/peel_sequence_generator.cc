@@ -94,6 +94,8 @@ bool PeelSequenceGenerator::build_peel_order() {
         peelorder.push_back(get_best_operation(tmp));
         state.set_peeled(peelorder.back().get_pivot());
     }
+
+    return true;
 }
 
 vector<PeelOperation>& PeelSequenceGenerator::get_peel_order() {
@@ -103,7 +105,7 @@ vector<PeelOperation>& PeelSequenceGenerator::get_peel_order() {
 void PeelSequenceGenerator::print() {
     
     for(unsigned int i = 0; i < peelorder.size(); ++i) {
-        printf("%d: ", i);
+        printf("rfunction %d: ", i);
         peelorder[i].print(); // XXX this is not ideal
     }
 }

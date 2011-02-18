@@ -59,8 +59,8 @@ class PeelOperation {
         return cutset.size();
     }
 
-    vector<unsigned int>* get_cutset() {
-        return &cutset;
+    vector<unsigned int>& get_cutset() {
+        return cutset;
     }
     
     void add_cutnode(unsigned int c) {
@@ -80,16 +80,16 @@ class PeelOperation {
     }
     
     void print() const {
-        int tmp = cutset.size();
+        unsigned int tmp = cutset.size();
 
-        printf("%d:", pivot);
+        printf("pivot = %d, cutset = (", pivot);
         for(unsigned int i = 0; i < tmp; ++i) {
             printf("%d", cutset[i]);
             if(i != (tmp-1)) {
                 putchar(',');
             }
         }
-        putchar('\n');
+        printf(")\n");
     }
 
     bool operator<(const PeelOperation& p) const {

@@ -239,14 +239,15 @@ void Person::neighbours(vector<unsigned int>& nodes) {
 void Person::get_cutset(PeelOperation& operation, PeelingState& state) {
     queue<unsigned int> q;
     vector<unsigned int> n;
-    unsigned int visited[ped->num_members()];
+    //unsigned int visited[ped->num_members()]; // ISO C++ bitches...
+    vector<int> visited(ped->num_members(), WHITE);
     unsigned int tmp, tmp2;
     Person* p;
-
+/*
     for(unsigned int i = 0; i < ped->num_members(); ++i) {
 		visited[i] = WHITE;
     }
-    
+*/    
     visited[internal_id] = GREY;
     q.push(internal_id);
 

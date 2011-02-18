@@ -92,9 +92,11 @@ class EchoParser : public Parser {
 	bool parse_line(const int linenum, const string s) {
 		tokenise(s);
 		
+        printf("line %d\n", linenum);
 		for(int i = 0; i < int(tokens.size()); ++i) {
 			printf("%s:", tokens[i].c_str());
 		}
+        printf("\n");
 		
 		return true;
 	}

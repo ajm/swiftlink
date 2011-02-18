@@ -223,12 +223,13 @@ int Pedigree::_count_components() {
 	int total = members.size();
 	unsigned int tmp, tmp2;
 	queue<unsigned int> q;
-	int visited[members.size()];
-	Person* p;
-
+    Person* p;
+	//int visited[members.size()]; // ISO C++ bitches about this...
+    vector<int> visited(members.size(), WHITE);
+/*
 	for(uint i = 0; i < members.size(); ++i)
 		visited[i] = WHITE;
-
+*/
 	do {
 		// find a starting point
 		for(uint i = 0; i < members.size(); ++i) {
@@ -272,7 +273,8 @@ int Pedigree::_count_components() {
 		++components;
 
 	} while(total != 0);
-
+    
+    
 	return components;
 }
 

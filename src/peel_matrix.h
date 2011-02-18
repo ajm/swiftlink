@@ -8,6 +8,7 @@ using namespace std;
 #include <map>
 #include <vector>
 #include <algorithm>
+#include <string>
 
 #include "genotype.h"
 
@@ -24,6 +25,11 @@ class PeelMatrixKey {
     
  public :
     PeelMatrixKey() {}
+    
+    PeelMatrixKey(vector<unsigned int>& cutset, vector<unsigned int>& assignments) {
+        reassign(cutset, assignments);
+    }
+
     ~PeelMatrixKey() {}
 
     PeelMatrixKey(const PeelMatrixKey& pmk) {
@@ -34,10 +40,21 @@ class PeelMatrixKey {
         if(this != &rhs) {
             key = rhs.key;
         }
+
+        return *this;
     }
 
 //    void add(A& key, B& val);
 //    bool remove(A& key);
+
+    void reassign(vector<unsigned int>& cutset, vector<unsigned int>& assignments) {
+        for(unsigned int i = 0; i < cutset.size(); ++i) {
+            add(
+                cutset[i], 
+                static_cast<enum phased_genotype>(assignments[i])
+            );
+        }
+    }
 
     void add(unsigned int k, enum phased_genotype value) {
         key[k] = value;
@@ -66,6 +83,14 @@ class PeelMatrixKey {
         }
 
         return true;
+    }
+
+    void print() {
+        map<unsigned int, enum phased_genotype>::iterator it;
+        
+        for(it = key.begin(); it != key.end(); it++) {
+            printf("%d=%d ", (*it).first, (*it).second);
+        }
     }
 };
 
@@ -143,11 +168,11 @@ class PeelMatrix {
     }
 
     ~PeelMatrix() {
-        delete[] data; // freed twice due to shallow default copy constructor
+        delete[] data;
     }
 
-    void set_keys(vector<unsigned int>* k) {
-        keys = *k;
+    void set_keys(vector<unsigned int>& k) {
+        keys = k;
         init_offsets();
     }
 
@@ -164,6 +189,10 @@ class PeelMatrix {
     }
     
     // TODO overload '[]' operator ?
+
+    void print() {
+        
+    }
 };
 
 #endif

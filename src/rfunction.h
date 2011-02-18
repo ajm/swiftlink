@@ -3,7 +3,7 @@
 
 using namespace std;
 
-#include <deque>
+#include <vector>
 
 #include "peel_matrix.h"
 #include "peeling.h"
@@ -15,12 +15,12 @@ class Person;
 class Rfunction {
 
     PeelMatrix pmatrix;    
-    unsigned int num_alleles; // could be 3 for L-sampler or 4 for peeling
     PeelOperation peel;
+    unsigned int num_alleles; // could be 3 for L-sampler or 4 for peeling
     Pedigree* ped;
     Person* pivot;
 
-    void generate_key(PeelMatrixKey& pmatrix_index, deque<unsigned int>& assignments);
+    void generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments);
     void evaluate_element(PeelMatrixKey& pmatrix_index, PeelMatrix* prev_matrix);
 
  public :
@@ -34,7 +34,9 @@ class Rfunction {
         pmatrix.set_keys(peel.get_cutset());
     }
     
-    PeelMatrix* get_matrix() { return &pmatrix; }
+    PeelMatrix* get_matrix() { 
+        return &pmatrix;
+    }
     
     bool evaluate(PeelMatrix* previous_matrix);
 };

@@ -1,7 +1,6 @@
 using namespace std;
 
 #include <cmath>
-#include <deque>
 
 #include "rfunction.h"
 #include "peeling.h"
@@ -9,19 +8,8 @@ using namespace std;
 #include "genotype.h"
 
 
-// assignments is a misnomer, it does not matter which nodes these assignments
-// relate to so long as they are used in a consistent manner, ie: this assumes
-// that does this r-function, the ordering of the peel operation cutset is 
-// constant
-void Rfunction::generate_key(PeelMatrixKey& pmatrix_index, deque<unsigned int>& assignments) {
-    vector<unsigned int>* cutset = peel.get_cutset();
-
-    //fprintf(stderr, "generate_key\n");    
-
-    for(unsigned int i = 0; i < cutset->size(); ++i) {
-        //fprintf(stderr, "%d:%d\n", i, (*cutset)[i]);
-        pmatrix_index.add((*cutset)[i], static_cast<enum phased_genotype>(assignments[i]));
-    }
+void Rfunction::generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments) {
+    pmatrix_index.reassign(peel.get_cutset(), assignments);
 }
 
 void Rfunction::evaluate_element(PeelMatrixKey& pmatrix_index, PeelMatrix* prev_matrix) {
@@ -31,8 +19,6 @@ void Rfunction::evaluate_element(PeelMatrixKey& pmatrix_index, PeelMatrix* prev_
     double old_prob;
     enum phased_genotype pg;
     PeelMatrixKey prev_index(pmatrix_index);
-
-    fprintf(stderr, "evaluate_element\n");
 
     // given that 'prev_matrix' exists, we need to be able to query it
     // how this is performed depends on the 'type' of peel we are talking
@@ -83,20 +69,23 @@ void Rfunction::evaluate_element(PeelMatrixKey& pmatrix_index, PeelMatrix* prev_
 
     // (e) assign new likelihood in 'pmatrix'
     pmatrix.set(pmatrix_index, tmp);
+
+    pmatrix_index.print();
+    printf(" := %f\n", tmp);
 }
 
 // XXX can i tell if these matrix can be used together
 //
 bool Rfunction::evaluate(PeelMatrix* previous_matrix) {
     PeelMatrixKey k;
-    deque<unsigned int> q;
+    vector<unsigned int> q;
     unsigned int ndim = peel.get_cutset_size();
     unsigned int tmp;
     unsigned int i;
         
     // initialise to the first element of matrix
     for(i = 0; i < ndim; ++i) {
-        q.push_front(0);
+        q.push_back(0);
     }
 
     // enumerate all elements in ndim-dimenstional matrix
@@ -107,15 +96,15 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix) {
             evaluate_element(k, previous_matrix);
         }
         
-        tmp = q.front() + 1;
-        q.pop_front();
+        tmp = q.back() + 1;
+        q.pop_back();
         
         if(tmp < num_alleles) {
-            q.push_front(tmp);
+            q.push_back(tmp);
             tmp = ndim - q.size();
             // fill out rest with zeroes
             for(i = 0; i < tmp; ++i) {
-                q.push_front(0);
+                q.push_back(0);
             }
         }
     }

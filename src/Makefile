@@ -1,5 +1,6 @@
 CXX	:= g++
-CXXFLAGS := -g -Wall
+CXXFLAGS := -g -Wall -Werror -Wextra -pedantic -std=c++98 -pipe 
+# -Weffc++ # too hardcore...
 INCLUDES := -I.
 LIBS := 
 

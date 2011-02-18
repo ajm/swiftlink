@@ -8,13 +8,14 @@ using namespace std;
 
 #include "parser.h"
 
+
 class GeneticMap;
 class DiseaseModel;
 
 class LinkageParser : public Parser {
 	
-    GeneticMap* map;
-	DiseaseModel* dis;
+    GeneticMap& map;
+	DiseaseModel& dis;
 
 	int marker_linenum;
 	int recomb_linenum;
@@ -47,9 +48,10 @@ class LinkageParser : public Parser {
 	void marker_end();
 
  public :
-    LinkageParser(const string fn, GeneticMap* m, DiseaseModel* d) 
+    LinkageParser(const string fn, GeneticMap& m, DiseaseModel& d) 
         : Parser(fn, true), map(m), dis(d), marker_linenum(0), recomb_linenum(0), 
 		  marker_code(-1), number_of_loci(-1), program_code(-1) {
+        
 		for(int i = 0; i < 4; ++i)
 			markers_read[i] = 0;
 	}
@@ -57,7 +59,6 @@ class LinkageParser : public Parser {
     bool parse_line(const int linenum, const string line);
 	bool parse_end();
 };
-
 
 #endif
 

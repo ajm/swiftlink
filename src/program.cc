@@ -5,19 +5,19 @@ using namespace std;
 
 #include "program.h"
 
-#include "linkagefileparser.h"
+#include "linkage_parser.h"
 #include "pedigree_parser.h"
-#include "mapfileparser.h"
+#include "map_parser.h"
 
 #include "disease_model.h"
-#include "geneticmap.h"
+#include "genetic_map.h"
 #include "pedigree.h"
 
 
 bool Program::read_and_check_input() {
 
     // read in the map file
-    MapParser mp(mapfile, &map);
+    MapParser mp(mapfile, map);
 	if(! mp.parse()) {
 		fprintf(stderr, "errors parsing map file, exiting...\n");
 		return false;
@@ -29,7 +29,7 @@ bool Program::read_and_check_input() {
 	}
 
     // read 'linkage' file format config file
-    LinkageParser lp(datfile, &map, &dm);
+    LinkageParser lp(datfile, map, dm);
 	if(! lp.parse()) {
 		fprintf(stderr, "errors parsing linkage file, exiting...\n");
 		return false;

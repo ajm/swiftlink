@@ -7,7 +7,7 @@ using namespace std;
 #include <vector>
 
 #include "pedigree.h"
-#include "geneticmap.h"
+#include "genetic_map.h"
 #include "disease_model.h"
 
 

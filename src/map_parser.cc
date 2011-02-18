@@ -1,12 +1,14 @@
+using namespace std;
+
 #include <cstdio>
 #include <string>
 #include <sstream>
 
-#include "mapfileparser.h"
-#include "geneticmap.h"
+#include "map_parser.h"
+#include "genetic_map.h"
+
 
 bool MapParser::parse_line(const int linenum, const string line) {
-    Snp* snp;
     string name;
     double gdist;
     int pdist;
@@ -55,8 +57,8 @@ bool MapParser::parse_line(const int linenum, const string line) {
         return false;
     }
     
-    snp = new Snp(name, gdist, pdist);
-    map->add(snp);
+    Snp snp(name, gdist, pdist);
+    map.add(snp);
     
     return true;
 }

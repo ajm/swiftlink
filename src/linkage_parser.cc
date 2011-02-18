@@ -8,9 +8,9 @@ using namespace std;
 
 #include "trait.h"
 #include "genotype.h"
-#include "geneticmap.h"
+#include "genetic_map.h"
 #include "disease_model.h"
-#include "linkagefileparser.h"
+#include "linkage_parser.h"
 
 // see : http://linkage.rockefeller.edu/soft/linkage/sec2.6.html
 
@@ -83,8 +83,8 @@ bool LinkageParser::information_on_recombination(const int linenum) {
 				return false;
 			}
 			
-			for(int i = 0; i < int(tmp->size()); ++i) {
-				map->add_theta((*tmp)[i]);
+			for(unsigned int i = 0; i < tmp->size(); ++i) {
+				map.add_theta((*tmp)[i]);
 			}
 
 			delete tmp;
@@ -115,10 +115,10 @@ bool LinkageParser::set_sexlinked(const string s) {
 	if(s.length() == 1) {
 		switch(s[0]) {
 			case '0' :
-				dis->set_sexlinked(false);
+				dis.set_sexlinked(false);
 				return true;
 			case '1' :
-				dis->set_sexlinked(true);
+				dis.set_sexlinked(true);
 				return true;
 			default :
 				break;
@@ -283,7 +283,7 @@ bool LinkageParser::read_affection_status() {
 			// store liability classes?
 			if(int(af->size()) == 3) {
 				for(int i = 0; i < 3; ++i)
-					dis->set_penetrance((*af)[i], static_cast<enum unphased_trait>(i));
+					dis.set_penetrance((*af)[i], static_cast<enum unphased_trait>(i));
 				
 				tmp = true;
 			}
@@ -295,7 +295,7 @@ bool LinkageParser::read_affection_status() {
 			}
 
 			// seems like they are in the opposite order to numbered alleles (?)
-			dis->set_freq(1 - marker_freq);
+			dis.set_freq(1 - marker_freq);
 			
 			delete af;
 			marker_end();
@@ -310,7 +310,7 @@ bool LinkageParser::read_numbered_allele() {
 		return false;
 
 	if(marker_linenum >= 2) {
-		(*map)[markers_read[NUMBERED_ALLELES]]->set_minor_freq(marker_freq);
+		map[markers_read[NUMBERED_ALLELES]].set_minor_freq(marker_freq);
 		marker_end();
 	}
 

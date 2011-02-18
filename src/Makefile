@@ -8,9 +8,10 @@ OBJECTS	:= main.o \
     program.o \
     linkage_program.o \
     pedigree_parser.o \
-    linkagefileparser.o \
-    mapfileparser.o \
+    linkage_parser.o \
+    map_parser.o \
 	genotype.o \
+    genetic_map.o \
 	pedigree.o \
 	person.o \
 	disease_model.o \

@@ -7,7 +7,7 @@ using namespace std;
 
 #include "linkage_program.h"
 
-#include "geneticmap.h"
+#include "genetic_map.h"
 #include "pedigree.h"
 //#include "descentgraph.h"
 

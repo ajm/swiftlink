@@ -10,14 +10,14 @@ bool GeneticMap::sanity_check() {
     if(not sane) {
         fprintf(stderr, 
             "error in map data: number of markers = %d, number of thetas = %d\n", 
-            map.size(), thetas.size());
+            int(map.size()), int(thetas.size()));
     }
     
     return sane;
 }
 
 void GeneticMap::print() {
-    printf("GeneticMap: %d loci\n", map.size());
+    printf("GeneticMap: %d loci\n", int(map.size()));
 	
 	for(unsigned int i = 0; i < map.size(); ++i)
 		map[i].print();

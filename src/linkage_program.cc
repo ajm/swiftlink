@@ -35,7 +35,7 @@ bool LinkageProgram::run() {
     // for each pedigree
 	for(vector<Pedigree>::size_type i = 0; i < pedigrees.size(); ++i) {
 
-        fprintf(stderr, "processing pedigree %d (id = %s)\n", i, pedigrees[i].get_id().c_str());
+        fprintf(stderr, "processing pedigree %d (id = %s)\n", int(i), pedigrees[i].get_id().c_str());
 
         PeelSequenceGenerator psg(pedigrees[i]);
         psg.build_peel_order();

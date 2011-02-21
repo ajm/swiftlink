@@ -1,5 +1,5 @@
-#ifndef LKG_SA_DESCENTGRAPH_H_
-#define LKG_SA_DESCENTGRAPH_H_
+#ifndef LKG_SIMWALKDESCENTGRAPH_H_
+#define LKG_SIMWALKDESCENTGRAPH_H_
 
 using namespace std;
 

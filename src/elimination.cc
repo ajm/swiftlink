@@ -1,9 +1,11 @@
+using namespace std;
+
 #include <cstdlib>
 
 #include "elimination.h"
 #include "pedigree.h"
 #include "person.h"
-#include "descentgraph.h"
+#include "descent_graph.h"
 #include "genotype.h"
 
 void GenotypeElimination::_initial_elimination() {
@@ -184,7 +186,8 @@ int GenotypeElimination::_parent_homoz(int** ds,
 }
 
 void GenotypeElimination::_random_eliminate(int** ds, unsigned locus) {
-	int queue[ped->num_members()];
+	//int queue[ped->num_members()];
+    vector<int> queue(ped->num_members());
     int qindex, tmp, tmp2;
     
 	// find everyone for whom their genotype is ambiguous
@@ -196,7 +199,7 @@ void GenotypeElimination::_random_eliminate(int** ds, unsigned locus) {
 	}
 	
 	// get random person
-	tmp = queue[rand() % qindex];
+	tmp = queue[random() % qindex];
 	
 	// find all possible genotypes for tmp
 	qindex = 0;
@@ -207,7 +210,7 @@ void GenotypeElimination::_random_eliminate(int** ds, unsigned locus) {
         }
 	}
 	
-	tmp2 = queue[rand() % qindex];
+	tmp2 = queue[random() % qindex];
 	
 	ds[locus][tmp] = tmp2;
 }
@@ -285,7 +288,7 @@ void GenotypeElimination::_copy_descentstate_locus(int** src, int** dst, unsigne
     }
 }
 
-bool GenotypeElimination::random(DescentGraph& d) {
+bool GenotypeElimination::random_descentgraph(DescentGraph& d) {
     //int** descentstate = new int**[ped->num_markers()][ped->num_members()];
     int** descentstate = new int*[ped->num_markers()];
     for(int i = 0; i < int(ped->num_markers()); ++i) {

@@ -1,7 +1,10 @@
 #ifndef LKG_FOUNDERALLELEGRAPH_H_
 #define LKG_FOUNDERALLELEGRAPH_H_
 
+#include <vector>
+
 #include "genotype.h"
+
 
 class Pedigree;
 class DescentGraph;
@@ -25,9 +28,9 @@ class FounderAlleleGraph {
     
     int _get_num_neighbours(int node) const;
     bool _add(int mat_fa, int pat_fa, enum unphased_genotype g);
-    bool _check_legality(int node, int node_assignment, int *assignments);
+    bool _check_legality(int node, int node_assignment, vector<int>& assignments);
     void _assign_and_recurse(int *component, int component_size, unsigned locus, 
-                             int current_index, int *assignment, double *prob, double *best);
+                             int current_index, vector<int>& assignment, double *prob, double *best);
     double _enumerate_component(int *component, int component_size, unsigned locus);
     
  public :

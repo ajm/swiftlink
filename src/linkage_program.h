@@ -4,8 +4,12 @@
 #include "program.h"
 
 
+class Pedigree;
+
 class LinkageProgram : public Program {
     
+    bool run_pedigree(Pedigree& p);
+
  public :
     LinkageProgram(char* ped, char* map, char* dat)
 		: Program(ped, map, dat) {}
@@ -13,7 +17,6 @@ class LinkageProgram : public Program {
 	~LinkageProgram() {}
 
     bool run();
-
 };
 
 #endif

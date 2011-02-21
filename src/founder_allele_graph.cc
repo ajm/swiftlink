@@ -10,9 +10,9 @@ using namespace std;
 #include "lkg.h"
 #include "person.h"
 #include "pedigree.h"
-#include "founderallelegraph.h"
-#include "descentgraph.h"
-#include "geneticmap.h"
+#include "founder_allele_graph.h"
+#include "descent_graph.h"
+#include "genetic_map.h"
 #include "genotype.h"
 
 
@@ -76,7 +76,7 @@ bool FounderAlleleGraph::_add(int mat_fa, int pat_fa, enum unphased_genotype g) 
     return true;
 }
 
-bool FounderAlleleGraph::_check_legality(int node, int node_assignment, int *assignments) {
+bool FounderAlleleGraph::_check_legality(int node, int node_assignment, vector<int>& assignments) {
     adj_node* adj;
     int adj_assignment;
     
@@ -160,7 +160,7 @@ bool FounderAlleleGraph::populate(DescentGraph& d, unsigned locus) {
 }
 
 void FounderAlleleGraph::_assign_and_recurse(int *component, int component_size, unsigned locus, 
-                                             int current_index, int *assignment, double *prob, double *best) {
+                                             int current_index, vector<int>& assignment, double *prob, double *best) {
     int allele;
     double tmp = 1.0;
 	
@@ -202,13 +202,14 @@ void FounderAlleleGraph::_assign_and_recurse(int *component, int component_size,
 }
 
 double FounderAlleleGraph::_enumerate_component(int *component, int component_size, unsigned locus) {
-    int assignment[num_founder_alleles];
+    //int assignment[num_founder_alleles];
+    vector<int> assignment(num_founder_alleles, -1);
     double prob = 0.0;
     double best = 0.0;
     
-    for(int i = 0; i < num_founder_alleles; ++i ) {
-        assignment[i] = -1;
-    }
+//    for(int i = 0; i < num_founder_alleles; ++i ) {
+//        assignment[i] = -1;
+//    }
 
 	//printf("component_size = %d\n", component_size);
 	
@@ -220,9 +221,9 @@ double FounderAlleleGraph::_enumerate_component(int *component, int component_si
 
 bool FounderAlleleGraph::likelihood(double* prob, unsigned locus) {
     queue<unsigned> q;
-    int component[num_founder_alleles];
+    int* component = new int[num_founder_alleles];
     int cindex;
-    int visited[num_founder_alleles];
+    int* visited = new int[num_founder_alleles];
     int tmp;
     int total = num_founder_alleles;
     adj_node* tmp2;
@@ -284,6 +285,9 @@ bool FounderAlleleGraph::likelihood(double* prob, unsigned locus) {
 	} while(total != 0);
 	
 	*prob = log_prob;
+
+    delete[] visited;
+    delete[] component;
 	
 	return true;
 }

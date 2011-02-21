@@ -1,16 +1,16 @@
 using namespace std;
 
+#include <cstdio>
+#include <cstdlib>
 #include <vector>
 #include <algorithm>
-#include <cstdlib>
-#include <cstdio>
 
 #include "peeling.h"
 #include "peel_sequence_generator.h"
 
 
 PeelOperation PeelSequenceGenerator::get_random_operation(vector<PeelOperation>& v) {
-    return v[rand() % v.size()];
+    return v[random() % v.size()];
 }
 
 // XXX add any heuristics related to peel operation selection here

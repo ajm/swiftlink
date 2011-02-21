@@ -3,16 +3,15 @@ using namespace std;
 #include <cstdio>
 #include <cmath>
 #include <cstring>
+#include <algorithm>
 
-#include "descentgraph.h"
+#include "descent_graph.h"
 #include "pedigree.h"
-#include "geneticmap.h"
+#include "genetic_map.h"
 #include "genotype.h"
-#include "founderallelegraph.h"
+#include "founder_allele_graph.h"
 #include "elimination.h"
 
-
-// TODO: replace memcpy with c++ style copy
 
 DescentGraph::DescentGraph(Pedigree* ped, GeneticMap* map) 
     : ped(ped), map(map), prob(0.0) {
@@ -29,8 +28,10 @@ DescentGraph::DescentGraph(const DescentGraph& d)
 	: ped(d.ped), map(d.map), prob(d.prob), 
 	  marker_transmission(d.marker_transmission),
       graph_size(d.graph_size) {
-	data = new char[graph_size * ped->num_markers()];
-	memcpy(data, d.data, graph_size * ped->num_markers());
+
+    unsigned int data_length = graph_size * ped->num_markers();
+	data = new char[data_length];
+    copy(d.data, d.data + data_length, data);
 }
 
 DescentGraph::~DescentGraph() {
@@ -38,7 +39,7 @@ DescentGraph::~DescentGraph() {
 }
 
 DescentGraph& DescentGraph::operator=(const DescentGraph& d) {
-    //printf("DescentGraph=\n");
+    
 	if(&d != this) {
 		ped = d.ped;
 		map = d.map;
@@ -47,16 +48,19 @@ DescentGraph& DescentGraph::operator=(const DescentGraph& d) {
 		marker_transmission = d.marker_transmission;
         
         delete[] data;
+
+        unsigned int data_length = graph_size * ped->num_markers();
     
-    	data = new char[graph_size * ped->num_markers()];
-		memcpy(data, d.data, graph_size * ped->num_markers());
+    	data = new char[data_length];
+        copy(d.data, d.data + data_length, data);
 	}
 
 	return *this;
 }
 
 void DescentGraph::copy_from(DescentGraph& d, unsigned start, unsigned end) {
-    memcpy(data + start, d.data + start, end - start);
+    //memcpy(data + start, d.data + start, end - start);
+    copy(d.data + start, d.data + end, data);
 }
 
 unsigned DescentGraph::data_length() {
@@ -81,7 +85,7 @@ void DescentGraph::set_bit(unsigned i, char b) {
 
 bool DescentGraph::random() {
     GenotypeElimination ge(ped);
-    return ge.random(*this);
+    return ge.random_descentgraph(*this);
 }
 
 int DescentGraph::_offset(unsigned person_id, unsigned locus, enum parentage p) {

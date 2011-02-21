@@ -5,6 +5,7 @@ using namespace std;
 
 #include <limits>
 
+
 enum parentage { 
 	MATERNAL,
 	PATERNAL

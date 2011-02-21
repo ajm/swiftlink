@@ -1,10 +1,12 @@
 #ifndef LKG_GENOTYPEELIMINATION_H_
 #define LKG_GENOTYPEELIMINATION_H_
 
+using namespace std;
+
 #include "pedigree.h"
 #include "person.h"
 #include "genotype.h"
-#include "descentgraph.h"
+#include "descent_graph.h"
 
 
 class GenotypeElimination {
@@ -47,7 +49,7 @@ class GenotypeElimination {
     }
     
     bool elimination();
-    bool random(DescentGraph& d);
+    bool random_descentgraph(DescentGraph& d);
 //    virtual void random_descentgraph(DescentGraph* d) = 0;
 };
 

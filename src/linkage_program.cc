@@ -2,70 +2,78 @@ using namespace std;
 
 #include <cstdio>
 #include <cstdlib>
-//#include <ctime>
+#include <ctime>
 #include <vector>
 
-#include "linkage_program.h"
-
-#include "genetic_map.h"
-#include "pedigree.h"
 #include "peel_sequence_generator.h"
-#include "peeling.h"
+#include "simwalk_descent_graph.h"
+#include "simulated_annealing.h"
+#include "linkage_program.h"
+#include "genetic_map.h"
 #include "peel_matrix.h"
 #include "rfunction.h"
-//#include "descentgraph.h"
+#include "pedigree.h"
+#include "peeling.h"
 
 
 bool LinkageProgram::run() {
-	//SA_DescentGraph* ans;
+    bool ret = true;
 
-	//srand(time(NULL));
+    // XXX need to know how to do this properly, 
+    // look up better random numbers for simulations etc
+    srandom(time(NULL));
 
-//	for(unsigned int i = 0; i < pedigrees.size(); ++i) {
-//        fprintf(stderr, "processing pedigree %d (id = %s)\n", i, pedigrees[i].get_id().c_str());
+    for(unsigned int i = 0; i < pedigrees.size(); ++i) {
+        ret &= run_pedigree(pedigrees[i]);
+    }
+
+    return ret;
+}
+
+bool LinkageProgram::run_pedigree(Pedigree& p) {
+    unsigned int iterations = 1600 * p.num_members() * p.num_markers() * 20 * 2;
+
+    fprintf(stderr, "processing pedigree %s\n", p.get_id().c_str());
+
+    // RUN SIMULATED ANNEALING
+    SimulatedAnnealing sa(&p, &map);
+    SimwalkDescentGraph* sdg = sa.optimise(iterations);
+
+    delete sdg;
+    
+    // RUN MARKOV CHAIN
+
+    
+    // PEELING + CALCULATION OF LOD SCORES
+    PeelSequenceGenerator psg(p);
+    psg.build_peel_order();
+    psg.print();
         
-		//SimulatedAnnealing sa(pedigrees[i], &map);
-		//ans = sa.optimise(1600 * pedigrees[i]->num_members() * pedigrees[i]->num_markers() * 20 * 2);
-
-		// ???
-		
-		//delete ans;
-//	}
-
-    // for each pedigree
-	for(vector<Pedigree>::size_type i = 0; i < pedigrees.size(); ++i) {
-
-        fprintf(stderr, "processing pedigree %d (id = %s)\n", int(i), pedigrees[i].get_id().c_str());
-
-        PeelSequenceGenerator psg(pedigrees[i]);
-        psg.build_peel_order();
-        psg.print();
-        
-        // setup r-functions
-        vector<PeelOperation>& ops = psg.get_peel_order();
+    // setup r-functions
+    vector<PeelOperation>& ops = psg.get_peel_order();
         
         
-        vector<Rfunction> rfunctions;
-        for(vector<PeelOperation>::size_type j = 0; j < ops.size(); ++j) {
-            Rfunction rf(ops[j], &pedigrees[i], 4);
-            rfunctions.push_back(rf);
-        }
+    vector<Rfunction> rfunctions;
+    for(vector<PeelOperation>::size_type j = 0; j < ops.size(); ++j) {
+        Rfunction rf(ops[j], &p, 4);
+        rfunctions.push_back(rf);
+    }
 
-        // perform the peel for every locus
-        PeelMatrix* last = NULL;
-        for(vector<Rfunction>::size_type j = 0; j < rfunctions.size(); ++j) {
-            Rfunction& rf = rfunctions[j];
+    // perform the peel for every locus
+    PeelMatrix* last = NULL;
+    for(vector<Rfunction>::size_type j = 0; j < rfunctions.size(); ++j) {
+        Rfunction& rf = rfunctions[j];
 
-            fprintf(stderr, "rfunction %d\n", int(j));
+        fprintf(stderr, "rfunction %d\n", int(j));
             
-            if(not rf.evaluate(last)) {
-                fprintf(stderr, "bad R function\n");
-                return 1;
-            }
-            
-            last = rf.get_matrix();
+        if(not rf.evaluate(last)) {
+            fprintf(stderr, "bad R function\n");
+            return 1;
         }
-	}
+            
+        last = rf.get_matrix();
+    }
+
 
 	return true;
 }

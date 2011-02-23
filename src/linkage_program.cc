@@ -9,6 +9,7 @@ using namespace std;
 #include "simwalk_descent_graph.h"
 #include "simulated_annealing.h"
 #include "linkage_program.h"
+#include "markov_chain.h"
 #include "genetic_map.h"
 #include "peel_matrix.h"
 #include "rfunction.h"
@@ -31,18 +32,28 @@ bool LinkageProgram::run() {
 }
 
 bool LinkageProgram::run_pedigree(Pedigree& p) {
-    unsigned int iterations = 1600 * p.num_members() * p.num_markers() * 20 * 2;
+    unsigned int iterations = 10000; //800 * p.num_members() * p.num_markers() * 10 * 2;
 
     fprintf(stderr, "processing pedigree %s\n", p.get_id().c_str());
 
     // RUN SIMULATED ANNEALING
     SimulatedAnnealing sa(&p, &map);
-    SimwalkDescentGraph* sdg = sa.optimise(iterations);
+    SimwalkDescentGraph* sdg1 = sa.optimise(iterations);
 
-    delete sdg;
+    printf("sa final prob = %f\n", sdg1->get_prob());
+    
     
     // RUN MARKOV CHAIN
+    MarkovChain mc(&p, &map);
+    SimwalkDescentGraph* sdg2 = mc.run(sdg1, iterations);
+    
+    printf("mcmc final prob = %f\n", sdg2->get_prob());
+    
+    
+    delete sdg1;
+    delete sdg2;
 
+    return true;
     
     // PEELING + CALCULATION OF LOD SCORES
     PeelSequenceGenerator psg(p);

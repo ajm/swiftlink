@@ -55,6 +55,7 @@ class Progress {
         }
     }
 
+    // XXX add a variadic, format string args
     void finish() { 
         complete(); 
     }

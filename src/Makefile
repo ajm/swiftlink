@@ -20,6 +20,7 @@ OBJECTS	:= \
     peel_sequence_generator.o \
    	rfunction.o \
     simulated_annealing.o \
+	markov_chain.o \
     program.o \
     linkage_program.o \
     main.o

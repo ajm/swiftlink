@@ -8,6 +8,7 @@ using namespace std;
 #include "genetic_map.h"
 #include "simwalk_descent_graph.h"
 #include "simulated_annealing.h"
+#include "progress.h"
 
 
 bool SimulatedAnnealing::accept_metropolis(double new_prob, double old_prob) {
@@ -32,12 +33,18 @@ SimwalkDescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
 
 	current = new SimwalkDescentGraph(ped, map);
 	current->random();
-	current->haplotype_likelihood();
+	//current->haplotype_likelihood();
+    current->likelihood();
+
+    printf("start prob = %f\n", current->get_prob());
 
 	temp = new SimwalkDescentGraph(ped, map);
 	best = new SimwalkDescentGraph(ped, map);
 
 	*best = *current;
+
+    Progress p("Simulated Annealing:", iterations);
+    p.start();
 
 	for(unsigned i = 0; i < iterations; ++i) {
 		*temp = *current;
@@ -50,6 +57,8 @@ SimwalkDescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
 		//temp->haplotype_likelihood(&prob);
         temp->likelihood(&prob); 
 		
+        p.increment();
+
 // XXX of course, this all involves massive amounts of copying
 // need everything to work on a per-loci basis, ie: likelihood calculations
 // and all this...
@@ -81,6 +90,8 @@ SimwalkDescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
     	}
 */
 	}
+
+    p.finish();
 		
 	delete temp;
 	delete current;

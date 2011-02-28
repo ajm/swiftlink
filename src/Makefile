@@ -23,6 +23,7 @@ OBJECTS	:= \
 	markov_chain.o \
     program.o \
     linkage_program.o \
+    progress.o \
     main.o
 
 app: $(OBJECTS)

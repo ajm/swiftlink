@@ -42,7 +42,6 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
 
     printf("sa final prob = %f\n", sdg1->get_prob());
     
-    
     // RUN MARKOV CHAIN
     MarkovChain mc(&p, &map);
     SimwalkDescentGraph* sdg2 = mc.run(sdg1, iterations);

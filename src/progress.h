@@ -27,6 +27,7 @@ class Progress {
     void start();
     void increment();
     void finish();
+    void error(const string& err);
 
 };
 

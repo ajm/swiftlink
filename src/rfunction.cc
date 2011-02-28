@@ -31,8 +31,8 @@ void Rfunction::evaluate_element(PeelMatrixKey& pmatrix_index, PeelMatrix* prev_
         case CHILD_PEEL :
             // 1. add pivot later
             // 2. remove parents now
-            prev_index.remove(pivot->get_maternalid());
-            prev_index.remove(pivot->get_paternalid());
+            prev_index.remove(pivot->get_maternalid()); // XXX this work should be cached
+            prev_index.remove(pivot->get_paternalid()); // XXX this work should be cached
             break;
             
         case PARTNER_PEEL :
@@ -40,7 +40,7 @@ void Rfunction::evaluate_element(PeelMatrixKey& pmatrix_index, PeelMatrix* prev_
             break;
         
         case PARENT_PEEL :  // XXX don't bother with yet    
-        case LAST_PEEL :    // XXX never seen here?
+        case LAST_PEEL :    // XXX never seen here? just a sum, handle in 'Rfunction::evaluate'
         default :
             abort();
     }
@@ -49,9 +49,9 @@ void Rfunction::evaluate_element(PeelMatrixKey& pmatrix_index, PeelMatrix* prev_
     for(unsigned int i = 0; i < num_alleles; ++i) {
         
         //fprintf(stderr, "evaluate_element, allele=%d\n", i);
-
+        
         pg = static_cast<enum phased_genotype>(i);
-
+        
         // finish making the key for the previous rfunction
         prev_index.add(peel.get_pivot(), pg);
 

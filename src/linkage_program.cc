@@ -14,6 +14,7 @@ using namespace std;
 #include "peel_matrix.h"
 #include "rfunction.h"
 #include "pedigree.h"
+#include "progress.h"
 #include "peeling.h"
 
 
@@ -50,10 +51,14 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     
     
     delete sdg1;
-    delete sdg2;
 
-    return true;
     
+    // XXX put all peeling sequence calculation + evaluation code 
+    // in own module, this is not the final form as it need to peel
+    // over many descent graphs + all loci not just this one, but this is just
+    // placeholder to get started...
+
+
     // PEELING + CALCULATION OF LOD SCORES
     PeelSequenceGenerator psg(p);
     psg.build_peel_order();
@@ -61,8 +66,8 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
         
     // setup r-functions
     vector<PeelOperation>& ops = psg.get_peel_order();
-        
-        
+    
+    
     vector<Rfunction> rfunctions;
     for(vector<PeelOperation>::size_type j = 0; j < ops.size(); ++j) {
         Rfunction rf(ops[j], &p, 4);
@@ -70,21 +75,31 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     }
 
     // perform the peel for every locus
+    Progress prog("Peeling:", rfunctions.size());
     PeelMatrix* last = NULL;
     for(vector<Rfunction>::size_type j = 0; j < rfunctions.size(); ++j) {
         Rfunction& rf = rfunctions[j];
-
-        fprintf(stderr, "rfunction %d\n", int(j));
             
         if(not rf.evaluate(last)) {
-            fprintf(stderr, "bad R function\n");
-            return 1;
+            prog.error("bad R function");
+            goto peel_error;
         }
-            
+        
+        prog.increment();
+        
         last = rf.get_matrix();
     }
 
+    prog.finish();
 
+
+    delete sdg2;
 	return true;
+
+
+peel_error :
+
+    delete sdg2;
+    return false;
 }
 

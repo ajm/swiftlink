@@ -16,7 +16,7 @@ void Progress::update_progress() {
     printf("\r%s%s %2d%% %s", 
         PROGRESS_COLOUR, 
         label.c_str(), 
-        increments_count / increments_per_percent, 
+        int((increments_count / double(increments_total)) * 100), 
         END_COLOUR);
     fflush(stdout);
 }
@@ -35,13 +35,23 @@ void Progress::start() {
 void Progress::increment() {
 
     increments_count++;
-        
-    if((increments_count % increments_per_percent) == 0) {
+    
+    if((increments_per_percent == 0) or \
+        ((increments_count % increments_per_percent) == 0)) {
+
         update_progress();
     }
 }
 
 void Progress::finish() { 
     complete(); 
+}
+
+void Progress::error(const string& err) {
+    printf("\r%s%s %s %s\n",
+        ERROR_COLOUR,
+        label.c_str(),
+        err.c_str(),
+        END_COLOUR);
 }
 

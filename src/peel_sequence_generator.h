@@ -30,7 +30,6 @@ class PeelSequenceGenerator {
   public :
     PeelSequenceGenerator(Pedigree& p) 
         : ped(p), state(p) {}
-    ~PeelSequenceGenerator() {}
 
     PeelOperation get_random_operation(vector<PeelOperation>& v);
     PeelOperation get_best_operation_heuristic(vector<PeelOperation>& v);

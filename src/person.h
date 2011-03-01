@@ -9,6 +9,7 @@ using namespace std;
 #include <vector>
 
 #include "genotype.h"
+#include "trait.h"
 
 
 const unsigned int UNKNOWN_PARENT = ~0u;
@@ -176,7 +177,7 @@ class Person {
 	}
 
     bool peel_operation(PeelOperation& p, PeelingState& state);
-    double get_disease_prob(enum phased_genotype pg);
+    double get_disease_prob(enum phased_trait pt);
 };
 
 #endif

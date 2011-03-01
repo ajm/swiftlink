@@ -7,10 +7,12 @@ using namespace std;
 
 #include "peel_matrix.h"
 #include "peeling.h"
-#include "pedigree.h"
+#include "trait.h"
 
 
+class Pedigree;
 class Person;
+class SimwalkDescentGraph;
 
 class Rfunction {
 
@@ -21,24 +23,18 @@ class Rfunction {
     Person* pivot;
 
     void generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments);
-    void evaluate_element(PeelMatrixKey& pmatrix_index, PeelMatrix* prev_matrix);
+    bool affected_trait(enum phased_trait pt, int allele);
+    double get_disease_probability(enum phased_trait m, enum phased_trait p, int maternal_allele, int paternal_allele);
+    double get_recombination_probability(SimwalkDescentGraph* dg, int maternal_allele, int paternal_allele);
+    void evaluate_child_peel(PeelMatrixKey& pmatrix_index, PeelMatrix* prev_matrix, SimwalkDescentGraph* dg);
+    void evaluate_element(PeelMatrixKey& pmatrix_index, PeelMatrix* prev_matrix, SimwalkDescentGraph* dg);
 
  public :
-    Rfunction(PeelOperation po, Pedigree* p, unsigned int alleles)
-        : pmatrix(po.get_cutset_size(), alleles), 
-        peel(po), 
-        num_alleles(alleles), 
-        ped(p) {
-        
-        pivot = ped->get_by_index(peel.get_pivot());
-        pmatrix.set_keys(peel.get_cutset());
-    }
+    Rfunction(PeelOperation po, Pedigree* p, unsigned int alleles);
     
-    PeelMatrix* get_matrix() { 
-        return &pmatrix;
-    }
+    PeelMatrix* get_matrix() { return &pmatrix; }
     
-    bool evaluate(PeelMatrix* previous_matrix);
+    bool evaluate(PeelMatrix* previous_matrix, SimwalkDescentGraph* dg);
 };
 
 #endif

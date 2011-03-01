@@ -29,8 +29,8 @@ void Person::init_probs(DiseaseModel& dm) {
         dm.get_penetrance_prob(get_affection(), TRAIT_HOMO_U);
 }
 
-double Person::get_disease_prob(enum phased_genotype pg) {
-    return disease_prob[pg];
+double Person::get_disease_prob(enum phased_trait pt) {
+    return disease_prob[pt];
 }
 
 bool Person::mendelian_errors() const {

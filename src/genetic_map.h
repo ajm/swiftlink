@@ -9,6 +9,8 @@ using namespace std;
 #include <vector>
 
 
+// XXX create a super class 'marker'
+// or maybe I will just ignore more polymorphic markers
 class Snp {
 
     string name;

@@ -1,5 +1,6 @@
 CXX	:= g++
-CXXFLAGS := -g -Wall -Werror -Wextra -pedantic -std=c++98 -pipe 
+#CXXFLAGS := -g -Wall -Werror -Wextra -pedantic -std=c++98 -pipe 
+CXXFLAGS := -g -Wall -Wextra -pedantic -std=c++98 -pipe
 # -Weffc++ # too hardcore...
 INCLUDES := -I.
 LIBS := 
@@ -24,6 +25,7 @@ OBJECTS	:= \
     program.o \
     linkage_program.o \
     progress.o \
+	peeler.o \
     main.o
 
 app: $(OBJECTS)

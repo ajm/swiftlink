@@ -48,17 +48,14 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     MarkovChain mc(&p, &map);
     SimwalkDescentGraph* sdg2 = mc.run(sdg1, iterations);
     
-    printf("mcmc final prob = %f\n", sdg2->get_prob());
-    
-    delete sdg1;
+    printf("mcmc final prob = %f\n", sdg2->get_prob());    
 
     Peeler peeler(&p, &map);
-    if(not peeler.peel(sdg2)) {
-        delete sdg2;    
-        return false;
-    }
+    bool peelresult = peeler.peel(sdg2);
 
+    delete sdg1;
     delete sdg2;
-	return true;
+    
+	return peelresult;
 }
 

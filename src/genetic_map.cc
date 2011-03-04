@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cmath>
 
 #include "genetic_map.h"
 
@@ -28,5 +29,14 @@ void GeneticMap::print() {
 		printf("\t%f\n", exp(thetas[i]));
 
 	printf("\n");
+}
+
+double GeneticMap::haldane(double m) {
+    return 0.5 * (1.0 - exp(-2.0 * m));
+}
+
+double GeneticMap::get_theta_halfway(unsigned int i) {
+    return haldane(get_marker(i+1).get_g_distance() - 
+                   get_marker(i).get_g_distance());
 }
 

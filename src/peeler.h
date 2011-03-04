@@ -17,7 +17,6 @@ class Peeler {
     
     Pedigree* ped;
     GeneticMap* map;
-    PeelSequenceGenerator psg;
     vector<Rfunction> rfunctions;
         
  public :

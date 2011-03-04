@@ -52,6 +52,8 @@ class GeneticMap {
     vector<Snp> map;
     vector<double> thetas; // both stored in log e
     vector<double> inverse_thetas;
+
+    double haldane(double m);
     
  public :
     GeneticMap() {}
@@ -96,6 +98,7 @@ class GeneticMap {
 
     bool sanity_check();
 	void print();
+    double get_theta_halfway(unsigned int i);
 };
 
 #endif

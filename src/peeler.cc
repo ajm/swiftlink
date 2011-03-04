@@ -13,14 +13,15 @@ using namespace std;
 #include "rfunction.h"
 
 
-Peeler::Peeler(Pedigree* p, GeneticMap* g) : ped(p), map(g), psg(*ped) {
+Peeler::Peeler(Pedigree* p, GeneticMap* g) : ped(p), map(g) {
     
+    PeelSequenceGenerator psg(*ped);
     psg.build_peel_order();
 
     vector<PeelOperation>& ops = psg.get_peel_order();
     
     for(vector<PeelOperation>::size_type i = 0; i < ops.size(); ++i) {
-        Rfunction rf(ops[i], ped, 4);
+        Rfunction rf(ops[i], ped, map, 4);
         rfunctions.push_back(rf);
     }
 }
@@ -33,7 +34,9 @@ bool Peeler::peel(SimwalkDescentGraph* sdg) {
     
     Progress prog("Peeling:", rfunctions.size() * map->num_markers());
 
-    for(unsigned int i = 0; i < map->num_markers(); ++i) {
+    // minus 1 because we want to look between markers
+    // m-t-m-t-m-t-m where m is a marker and t is a trait location
+    for(unsigned int i = 0; i < map->num_markers() - 1; ++i) {
         
         PeelMatrix* last = NULL;
 
@@ -43,7 +46,7 @@ bool Peeler::peel(SimwalkDescentGraph* sdg) {
             // XXX rf is getting reused over and over again
             // 'clear'? contains or set a dirty bit somewhere?
             
-            if(not rf.evaluate(last, sdg)) {
+            if(not rf.evaluate(last, sdg, i)) {
                 prog.error("bad R function");
                 return false;
             }

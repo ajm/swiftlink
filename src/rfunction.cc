@@ -123,6 +123,21 @@ void Rfunction::evaluate_child_peel(
     }
 
     pmatrix.set(pmatrix_index, tmp);
+
+    pmatrix_index.print();
+    printf(" := %f\n", tmp);
+}
+
+void Rfunction::evaluate_partner_peel(
+                    PeelMatrixKey& pmatrix_index, 
+                    PeelMatrix* prev_matrix, 
+                    SimwalkDescentGraph* dg,
+                    unsigned int locus_index) {
+
+    // TODO
+    
+    pmatrix_index.print();
+    printf(" := %f\n", tmp);
 }
 
 void Rfunction::evaluate_element(
@@ -142,15 +157,18 @@ void Rfunction::evaluate_element(
     // XXX this could all be sped up with template probably (?)
     switch(peel.get_type()) {
         case CHILD_PEEL :
+            printf("child\n");
             evaluate_child_peel(pmatrix_index, prev_matrix, dg, locus_index);
-            return;
+            break;
             
         case PARTNER_PEEL :
-            // 1. add pivot later
+            printf("partner\n");
+            evaluate_partner_peel(pmatrix_index, prev_matrix, dg, locus_index);
             break;
         
-        case PARENT_PEEL :  // XXX don't bother with yet    
+        case PARENT_PEEL :  // XXX don't bother with yet
         case LAST_PEEL :    // XXX never seen here? just a sum, handle in 'Rfunction::evaluate'
+            printf("other\n");
         default :
             abort();
     }

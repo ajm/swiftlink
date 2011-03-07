@@ -17,6 +17,9 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g) : ped(p), map(g) {
     
     PeelSequenceGenerator psg(*ped);
     psg.build_peel_order();
+    psg.print();
+
+    exit(0);
 
     vector<PeelOperation>& ops = psg.get_peel_order();
     

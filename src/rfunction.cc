@@ -102,7 +102,9 @@ void Rfunction::evaluate_child_peel(
     enum phased_trait pat_trait;
     PeelMatrixKey prev_index(pmatrix_index);
     
-    
+    // XXX this will not always work
+    // need to differentiate from the first child in a marriage being
+    // peeled and every subsequent child
     prev_index.remove(pivot->get_maternalid()); // XXX this work should be cached(?)
     prev_index.remove(pivot->get_paternalid()); // XXX this work should be cached(?)
 
@@ -133,6 +135,8 @@ void Rfunction::evaluate_partner_peel(
                     PeelMatrix* prev_matrix, 
                     SimwalkDescentGraph* dg,
                     unsigned int locus_index) {
+    
+    double tmp;
 
     // TODO
     

@@ -67,6 +67,19 @@ class PeelMatrixKey {
     int get(unsigned int i) {
         return static_cast<int>(key[i]);
     }
+
+    // XXX i don't mean 'are they equal', but are the keys in 'key' the same
+    bool same_keys(PeelMatrixKey& pmk) {
+        map<unsigned int, enum phased_genotype>::iterator it;
+        
+        for(it = key.start(); it != key.end(); it++) {
+            if(pmk.key.find(*it) == pmk.key.end()) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
     
     // ensure this key can address everything for everything in the
     // vector 'keys'

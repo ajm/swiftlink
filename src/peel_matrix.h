@@ -67,19 +67,6 @@ class PeelMatrixKey {
     int get(unsigned int i) {
         return static_cast<int>(key[i]);
     }
-
-    // XXX i don't mean 'are they equal', but are the keys in 'key' the same
-    bool same_keys(PeelMatrixKey& pmk) {
-        map<unsigned int, enum phased_genotype>::iterator it;
-        
-        for(it = key.start(); it != key.end(); it++) {
-            if(pmk.key.find(*it) == pmk.key.end()) {
-                return false;
-            }
-        }
-        
-        return true;
-    }
     
     // ensure this key can address everything for everything in the
     // vector 'keys'
@@ -184,8 +171,31 @@ class PeelMatrix {
         delete[] data;
     }
 
+    bool key_intersection(PeelMatrix* pm, 
+        vector<unsigned int>& missing, vector<unsigned int>& additional) {
+        
+        unsigned int ikey;
+
+        missing = keys;
+        additional = pm->keys;
+
+        // this looks bad (n^2), but the number of dimensions is pretty 
+        // constrained
+        for(unsigned int i = 0; i < keys.size(); ++i) {
+            ikey = keys[i];
+
+            if(binary_search(additional.begin(), additional.end(), ikey)) {
+                remove(missing.begin(), missing.end(), ikey);
+                remove(additional.begin(), additional.end(), ikey);
+            }
+        }
+        
+        return (missing.size() == 0) and (additional.size() == 0);
+    }
+
     void set_keys(vector<unsigned int>& k) {
         keys = k;
+        sort(keys.begin(), keys.end()); // needed to do a comparison later...
         init_offsets();
     }
 

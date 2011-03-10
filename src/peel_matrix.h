@@ -10,7 +10,8 @@ using namespace std;
 #include <algorithm>
 #include <string>
 
-#include "genotype.h"
+//#include "genotype.h"
+#include "trait.h"
 
 
 //template<class A, class B>
@@ -21,7 +22,7 @@ class PeelMatrixKey {
     // nodeid,unphased_genotype
     // nodeid,phased_genotype
 //    map<A,B> key;
-    map<unsigned int, enum phased_genotype> key;
+    map<unsigned int, enum phased_trait> key;
     
  public :
     PeelMatrixKey() {}
@@ -51,12 +52,12 @@ class PeelMatrixKey {
         for(unsigned int i = 0; i < cutset.size(); ++i) {
             add(
                 cutset[i], 
-                static_cast<enum phased_genotype>(assignments[i])
+                static_cast<enum phased_trait>(assignments[i])
             );
         }
     }
 
-    void add(unsigned int k, enum phased_genotype value) {
+    void add(unsigned int k, enum phased_trait value) {
         key[k] = value;
     }
     
@@ -64,8 +65,8 @@ class PeelMatrixKey {
         key.erase(k);
     }
 
-    int get(unsigned int i) {
-        return static_cast<int>(key[i]);
+    enum phased_trait get(unsigned int i) {
+        return key[i];
     }
     
     // ensure this key can address everything for everything in the
@@ -86,7 +87,7 @@ class PeelMatrixKey {
     }
 
     void print() {
-        map<unsigned int, enum phased_genotype>::iterator it;
+        map<unsigned int, enum phased_trait>::iterator it;
         
         for(it = key.begin(); it != key.end(); it++) {
             printf("%d=%d ", (*it).first, (*it).second);
@@ -177,6 +178,11 @@ class PeelMatrix {
         unsigned int ikey;
 
         missing = keys;
+
+        if(!pm) {
+            return false;
+        }
+
         additional = pm->keys;
 
         // this looks bad (n^2), but the number of dimensions is pretty 
@@ -185,8 +191,8 @@ class PeelMatrix {
             ikey = keys[i];
 
             if(binary_search(additional.begin(), additional.end(), ikey)) {
-                remove(missing.begin(), missing.end(), ikey);
-                remove(additional.begin(), additional.end(), ikey);
+                remove(missing.begin(),     missing.end(),    ikey);
+                remove(additional.begin(),  additional.end(), ikey);
             }
         }
         

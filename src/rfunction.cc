@@ -134,12 +134,13 @@ void Rfunction::evaluate_child_peel(
             for(unsigned int i = 0; i < missing.size(); ++i) {
                 fprintf(stderr, "missing[%d] = %d\n", i, missing[i]);
             }
+            pmatrix_index.print();
             abort();
         }
     }
 
-    fprintf(stderr, "%d missing people\n%d additional people\n", \
-        missing.size(), additional.size());
+//    fprintf(stderr, "%d missing people\n%d additional people\n",
+//        missing.size(), additional.size());
     
 //    // XXX this will not always work
 //    // need to differentiate from the first child in a marriage being
@@ -175,7 +176,7 @@ void Rfunction::evaluate_partner_peel(
                     SimwalkDescentGraph* dg,
                     unsigned int locus_index) {
     
-    double tmp;
+    double tmp = 0.0;
 
     // TODO
     

@@ -185,15 +185,29 @@ class PeelMatrix {
 
         additional = pm->keys;
 
+        for(unsigned int i = 0; i < missing.size(); ++i) {
+            fprintf(stderr, "missing[%d] = %d\n", i, missing[i]);
+        }
+        for(unsigned int i = 0; i < additional.size(); ++i) {
+            fprintf(stderr, "additional[%d] = %d\n", i, additional[i]);
+        }
+
         // this looks bad (n^2), but the number of dimensions is pretty 
         // constrained
         for(unsigned int i = 0; i < keys.size(); ++i) {
             ikey = keys[i];
 
             if(binary_search(additional.begin(), additional.end(), ikey)) {
-                remove(missing.begin(),     missing.end(),    ikey);
-                remove(additional.begin(),  additional.end(), ikey);
+                missing.erase(find(missing.begin(), missing.end(), ikey));
+                additional.erase(find(additional.begin(), additional.end(), ikey));
             }
+        }
+
+        for(unsigned int i = 0; i < missing.size(); ++i) {
+            fprintf(stderr, "missing[%d] = %d\n", i, missing[i]);
+        }
+        for(unsigned int i = 0; i < additional.size(); ++i) {
+            fprintf(stderr, "additional[%d] = %d\n", i, additional[i]);
         }
         
         return (missing.size() == 0) and (additional.size() == 0);

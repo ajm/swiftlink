@@ -82,6 +82,27 @@ class PeelOperation {
     void print() const {
         unsigned int tmp = cutset.size();
 
+        switch(type) {
+            case NULL_PEEL:
+                printf("null ");
+                break;
+            case CHILD_PEEL:
+                printf("child ");
+                break;
+            case PARENT_PEEL:
+                printf("parent ");
+                break;
+            case PARTNER_PEEL:
+                printf("partner ");
+                break;
+            case LAST_PEEL:
+                printf("last ");
+                break;
+            default:
+                printf("error ");
+                break;
+        }
+
         printf("pivot = %d, cutset = (", pivot);
         for(unsigned int i = 0; i < tmp; ++i) {
             printf("%d", cutset[i]);

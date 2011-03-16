@@ -23,6 +23,10 @@ class Rfunction {
     GeneticMap* map;
     Pedigree* ped;
     Person* pivot;
+    
+    vector<unsigned int> missing;
+    vector<unsigned int> additional;
+    
 
     void generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments);
     bool affected_trait(enum phased_trait pt, int allele);

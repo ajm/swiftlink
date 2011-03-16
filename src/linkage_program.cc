@@ -36,6 +36,8 @@ bool LinkageProgram::run() {
 bool LinkageProgram::run_pedigree(Pedigree& p) {
     unsigned int iterations = 10000; //800 * p.num_members() * p.num_markers() * 10 * 2;
 
+    p.print();  
+
     printf("processing pedigree %s\n", p.get_id().c_str());
 
     // RUN SIMULATED ANNEALING

@@ -41,6 +41,8 @@ bool Peeler::peel(SimwalkDescentGraph* sdg) {
     // m-t-m-t-m-t-m where m is a marker and t is a trait location
     for(unsigned int i = 0; i < map->num_markers() - 1; ++i) {
         
+        fprintf(stderr, "\n\nPeeling locus %d\n\n", int(i));
+        
         PeelMatrix* last = NULL;
 
         for(vector<Rfunction>::size_type j = 0; j < rfunctions.size(); ++j) {

@@ -101,53 +101,12 @@ void Rfunction::evaluate_child_peel(
     enum phased_trait mat_trait;
     enum phased_trait pat_trait;
     PeelMatrixKey prev_index(pmatrix_index);
-    vector<unsigned int> missing;
-    vector<unsigned int> additional;
-
-
-    if(prev_matrix and not pmatrix.key_intersection(prev_matrix, missing, additional)) {
-        // keys are the same, ie: when peeling sibs in the same nuclear
-        // family
-        
-        // get rid of the additional things
-        //  - should be the parents
-        if(additional.size() != 2) {
-            fprintf(stderr, "too many people to remove! (%s %d)\n", __FILE__, __LINE__);
-            for(unsigned int i = 0; i < additional.size(); ++i) {
-                fprintf(stderr, "additional[%d] = %d\n", i, additional[i]);
-            }
-            abort();
-        }
-
-        prev_index.remove(additional[0]);
-        prev_index.remove(additional[1]);
-
-        // add the missing things
-        //  - should only be the pivot? 
-        //      * true: in a simple peel
-        //      * false: more in a complex one, but only the pivot will
-        //               need to be added because the rest will be in the 
-        //               pmatrix_index
-        // XXX only simple peeling sequences for now...
-        if(missing.size() != 1) {
-            fprintf(stderr, "too many people to add! (%s %d)\n", __FILE__, __LINE__);
-            for(unsigned int i = 0; i < missing.size(); ++i) {
-                fprintf(stderr, "missing[%d] = %d\n", i, missing[i]);
-            }
-            pmatrix_index.print();
-            abort();
-        }
-    }
-
-//    fprintf(stderr, "%d missing people\n%d additional people\n",
-//        missing.size(), additional.size());
     
-//    // XXX this will not always work
-//    // need to differentiate from the first child in a marriage being
-//    // peeled and every subsequent child
-//    prev_index.remove(pivot->get_maternalid()); // XXX this work should be cached(?)
-//    prev_index.remove(pivot->get_paternalid()); // XXX this work should be cached(?)
-
+    
+    for(unsigned i = 0; i < missing.size(); ++i) {
+        prev_index.remove(missing[i]);
+    }
+    
     mat_trait = pmatrix_index.get(pivot->get_maternalid());
     pat_trait = pmatrix_index.get(pivot->get_paternalid());
     
@@ -166,7 +125,11 @@ void Rfunction::evaluate_child_peel(
 
     pmatrix.set(pmatrix_index, tmp);
 
+    printf("pmatrix_index = ");
     pmatrix_index.print();
+    printf(", prev_index = ");
+    prev_index.print();
+    printf(", (missing = %d, additional = %d) ", int(missing.size()), int(additional.size()));
     printf(" := %f\n", tmp);
 }
 
@@ -177,10 +140,21 @@ void Rfunction::evaluate_partner_peel(
                     unsigned int locus_index) {
     
     double tmp = 0.0;
+    PeelMatrixKey prev_index(pmatrix_index);
 
     // TODO
+    for(unsigned i = 0; i < missing.size(); ++i) {
+        prev_index.remove(missing[i]);
+    }
     
+    
+
+    
+    printf("pmatrix_index = ");
     pmatrix_index.print();
+    printf(", prev_index = ");
+    prev_index.print();
+    printf(", (missing = %d, additional = %d) ", int(missing.size()), int(additional.size()));
     printf(" := %f\n", tmp);
 }
 
@@ -226,6 +200,38 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, SimwalkDescentGraph* dg, u
     unsigned int ndim = peel.get_cutset_size();
     unsigned int tmp;
     unsigned int i;
+    
+    // ascertain whether previous matrix is compatible with the current matrix
+    // given the current r-function being applied to the pedigree
+    missing.clear();
+    additional.clear();
+
+    if(not pmatrix.key_intersection(previous_matrix, missing, additional)) {
+        if(additional.size() > 2) {
+            fprintf(stderr, "too many people to remove! (%s %d)\n", __FILE__, __LINE__);
+            for(unsigned int i = 0; i < additional.size(); ++i) {
+                fprintf(stderr, "additional[%d] = %d\n", i, additional[i]);
+            }
+            abort();
+        }
+/*
+        if(prev_matrix) {
+            prev_index.remove(additional[0]);
+            prev_index.remove(additional[1]);
+        }
+*/
+/*
+        if(missing.size() > 2) {
+            fprintf(stderr, "too many people to add! (%s %d)\n", __FILE__, __LINE__);
+            for(unsigned int i = 0; i < missing.size(); ++i) {
+                fprintf(stderr, "missing[%d] = %d\n", i, missing[i]);
+            }
+            abort();
+        }
+*/
+    }
+    
+    // generate all assignments to iterate through n-dimensional matrix
         
     // initialise to the first element of matrix
     for(i = 0; i < ndim; ++i) {

@@ -2,6 +2,7 @@ using namespace std;
 
 #include <cstdio>
 #include <vector>
+#include <algorithm>
 #include <queue>
 
 #include "lkg.h"
@@ -54,6 +55,12 @@ bool Person::mendelian_errors() const {
 	return false;
 }
 
+void Person::add_mate(Person* p) {
+    if(find(mates.begin(), mates.end(), p) == mates.end()) {
+        mates.push_back(p);
+    }
+}
+
 void Person::fill_in_relationships() {
 	Person* p;
 	
@@ -62,12 +69,14 @@ void Person::fill_in_relationships() {
 		
 		if(p->get_mother() == id) {
 			children.push_back(p);
-			mates.push_back(ped->get_by_name(p->get_father()));
+			//mates.push_back(ped->get_by_name(p->get_father()));
+			add_mate(ped->get_by_name(p->get_father()));
 		}
 
 		if(p->get_father() == id) {
 			children.push_back(p);
-			mates.push_back(ped->get_by_name(p->get_mother()));
+			//mates.push_back(ped->get_by_name(p->get_mother()));
+		    add_mate(ped->get_by_name(p->get_mother()));
 		}
 	}
 }
@@ -115,6 +124,14 @@ void Person::print() const {
 			gender_str().c_str(),
 			affection_str().c_str(),
             int(genotypes.size()));
+    printf( "\tchildren: ");
+    for(unsigned i = 0; i < children.size(); ++i)
+        printf("%d ", children[i]->internal_id);
+    printf( "\n");
+    printf( "\tmates: ");
+    for(unsigned i = 0; i < mates.size(); ++i)
+        printf("%d ", mates[i]->internal_id);
+    printf( "\n");
 }
 
 //----------
@@ -156,10 +173,16 @@ bool Person::ripe_above(PeelingState& ps) {
 }
 
 bool Person::ripe_below(PeelingState& ps) {
-    return offspring_peeled(ps);
+    return not isfounder() and offspring_peeled(ps);
 }
 
 bool Person::ripe_across(PeelingState& ps) {
+/*
+    printf("[%d]\n", internal_id);
+    printf("\toffspring_peeled = %s\n", offspring_peeled(ps) ? "true" : "false");
+    printf("\tparents_peeled = %s\n", parents_peeled(ps) ? "true" : "false");
+    printf("\tnumber of unpeeled mates = %d\n", count_unpeeled(mates, ps));
+*/
     return  offspring_peeled(ps) and \
             parents_peeled(ps) and \
             (count_unpeeled(mates, ps) == 1);
@@ -197,7 +220,6 @@ bool Person::peel_operation(PeelOperation& p, PeelingState& state) {
 //        get_cutset(p, state);
 //        return true;
 //    }
-
     
     if(ripe_all(state)) {
         p.set_type(LAST_PEEL);

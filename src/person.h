@@ -86,7 +86,7 @@ class Person {
     bool ripe(PeelingState& ps);
     void neighbours(vector<unsigned int>& nodes);
     void get_cutset(PeelOperation& operation, PeelingState& state);
-
+    void add_mate(Person* p);
 
  public :
 	Person(const string name, const string father_name, const string mother_name, 

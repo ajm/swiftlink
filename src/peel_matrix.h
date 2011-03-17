@@ -231,10 +231,45 @@ class PeelMatrix {
         data[generate_index(pmk)] = value;
     }
     
-    // TODO overload '[]' operator ?
-
+    // XXX stolen from Rfunction
+    void generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments) {
+        pmatrix_index.reassign(keys, assignments);
+    }
+    
     void print() {
+        PeelMatrixKey k;
+        vector<unsigned int> q;
+        unsigned int ndim = keys.size();
+        unsigned int tmp;
+        unsigned int i;
         
+        // initialise to the first element of matrix
+        for(i = 0; i < ndim; ++i) {
+            q.push_back(0);
+        }
+
+        // enumerate all elements in ndim-dimenstional matrix
+        while(not q.empty()) {
+            
+            if(q.size() == ndim) {
+                generate_key(k, q);
+                
+                k.print();
+                printf(" := %f\n", get(k));
+            }
+            
+            tmp = q.back() + 1;
+            q.pop_back();
+            
+            if(tmp < 4) {
+                q.push_back(tmp);
+                tmp = ndim - q.size();
+                // fill out rest with zeroes
+                for(i = 0; i < tmp; ++i) {
+                    q.push_back(0);
+                }
+            }
+        }
     }
 };
 

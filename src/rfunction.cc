@@ -92,13 +92,30 @@ double Rfunction::get_recombination_probability(
     return tmp;
 }
 
+void Rfunction::evaluate_last_peel(
+                    PeelMatrixKey& pmatrix_index, 
+                    PeelMatrix* prev_matrix) {  
+    
+    double tmp = 0.0;
+    enum phased_trait pivot_trait;
+        
+    for(unsigned i = 0; i < num_alleles; ++i) {
+        pivot_trait = static_cast<enum phased_trait>(i);
+        pmatrix_index.add(pivot->get_internalid(), pivot_trait);
+        
+        tmp += prev_matrix->get(pmatrix_index);
+    }
+    
+    fprintf(stderr, "\nfinal prob = %f\n", tmp);
+}
+
 void Rfunction::evaluate_child_peel(
                     PeelMatrixKey& pmatrix_index, 
                     PeelMatrix* prev_matrix, 
                     SimwalkDescentGraph* dg,
                     unsigned int locus_index) {
 
-    double tmp;
+    double tmp = 0.0;
     double recombination_prob;
     double disease_prob;
     double old_prob;
@@ -115,8 +132,8 @@ void Rfunction::evaluate_child_peel(
     mat_trait = pmatrix_index.get(pivot->get_maternalid());
     pat_trait = pmatrix_index.get(pivot->get_paternalid());
     
-    // iterate over all descent graphs to determine child trait based on 
-    // parents' traits
+    // iterate over all descent graphs to determine child trait 
+    // based on parents' traits
     for(int i = 0; i < 2; ++i) {
         for(int j = 0; j < 2; ++j) {
             
@@ -134,35 +151,32 @@ void Rfunction::evaluate_child_peel(
             disease_prob        = get_disease_probability(piv_trait);
             recombination_prob  = get_recombination_probability(dg, locus_index, i, j);
             old_prob            = prev_matrix != NULL ? prev_matrix->get(prev_index) : 1.0;
+            
+//            printf("d=%f r=%f o=%f\n", disease_prob, recombination_prob, old_prob);
 
             tmp += (disease_prob * recombination_prob * old_prob);
             
             
-            printf("pmatrix_index = ");
-            pmatrix_index.print();
-            printf(", prev_index = ");
-            prev_index.print();
-            printf(", (missing = %d, additional = %d) ", int(missing.size()), int(additional.size()));
-            printf(" := %f\n", tmp);
+//            printf("pmatrix_index = "); pmatrix_index.print();
+//            printf(", prev_index = ");  prev_index.print();
+//            printf(", (missing = %d, additional = %d)\n", 
+//                int(missing.size()), int(additional.size()));
         }
     }
-
-    pmatrix.set(pmatrix_index, tmp);
-
     
+    pmatrix.set(pmatrix_index, tmp);
+//    printf("new value := %f\n", tmp);
 }
 
 void Rfunction::evaluate_partner_peel(
                     PeelMatrixKey& pmatrix_index, 
-                    PeelMatrix* prev_matrix, 
-                    SimwalkDescentGraph* dg,
-                    unsigned int locus_index) {
+                    PeelMatrix* prev_matrix) {
     
     double tmp = 0.0;
     PeelMatrixKey prev_index(pmatrix_index);
     enum phased_trait pivot_trait;
     unsigned pivot_id = pivot->get_internalid();
-
+    
     if(missing.size() != 0) {
         fprintf(stderr, "there should be no missing keys in a 'partner' peel! (%s %d)\n", 
             __FILE__, __LINE__);
@@ -173,13 +187,22 @@ void Rfunction::evaluate_partner_peel(
         pivot_trait = static_cast<enum phased_trait>(i);
         prev_index.add(pivot_id, pivot_trait);
         
-        printf("pmatrix_index = ");
-        pmatrix_index.print();
-        printf(", prev_index = ");
-        prev_index.print();
-        printf(", (missing = %d, additional = %d) ", int(missing.size()), int(additional.size()));
-        printf(" := %f\n", tmp);
+        if(prev_matrix and not prev_matrix->is_legal(prev_index)) {
+            fprintf(stderr, "key generated is illegal! (%s %d)\n", __FILE__, __LINE__);
+            abort();
+        }
+        
+        tmp += (get_disease_probability(pivot_trait) * prev_matrix->get(prev_index));
+        
+//        printf("pmatrix_index = ");
+//        pmatrix_index.print();
+//        printf(", prev_index = ");
+//        prev_index.print();
+//        printf(", (missing = %d, additional = %d) ", int(missing.size()), int(additional.size()));
+//        printf(" := %f\n", tmp);
     }
+    
+    pmatrix.set(pmatrix_index, tmp);
 }
 
 void Rfunction::evaluate_element(
@@ -199,18 +222,17 @@ void Rfunction::evaluate_element(
     // XXX this could all be sped up with template probably (?)
     switch(peel.get_type()) {
         case CHILD_PEEL :
-            printf("child\n");
+//            printf("child\n");
             evaluate_child_peel(pmatrix_index, prev_matrix, dg, locus_index);
             break;
             
         case PARTNER_PEEL :
-            printf("partner\n");
-            evaluate_partner_peel(pmatrix_index, prev_matrix, dg, locus_index);
+//            printf("partner\n");
+            evaluate_partner_peel(pmatrix_index, prev_matrix);
             break;
         
-        case PARENT_PEEL :  // XXX don't bother with yet
-        case LAST_PEEL :    // XXX never seen here? just a sum, handle in 'Rfunction::evaluate'
-            printf("other\n");
+        case PARENT_PEEL :  // XXX don't bother with yet (drop through to abort)
+        case LAST_PEEL :    // XXX never seen here
         default :
             abort();
     }
@@ -224,6 +246,14 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, SimwalkDescentGraph* dg, u
     unsigned int ndim = peel.get_cutset_size();
     unsigned int tmp;
     unsigned int i;
+    
+    
+    // nothing in the cutset to be enumerated
+    if(peel.get_type() == LAST_PEEL) {
+        evaluate_last_peel(k, previous_matrix);
+        return true;
+    }
+    
     
     // ascertain whether previous matrix is compatible with the current matrix
     // given the current r-function being applied to the pedigree
@@ -262,6 +292,7 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, SimwalkDescentGraph* dg, u
         }
     }
     
+/*    
     fprintf(stderr, "\n\n");
     fprintf(stderr, "pivot = %d\n", pivot->get_internalid());
     for(unsigned int i = 0; i < missing.size(); ++i) {
@@ -270,10 +301,7 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, SimwalkDescentGraph* dg, u
     for(unsigned int i = 0; i < additional.size(); ++i) {
         fprintf(stderr, "additional[%d] = %d\n", i, additional[i]);
     }
-    
-    
-    
-    
+*/
     
     // generate all assignments to iterate through n-dimensional matrix
     

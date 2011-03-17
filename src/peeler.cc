@@ -35,13 +35,13 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g) : ped(p), map(g) {
 // placeholder to get started...
 bool Peeler::peel(SimwalkDescentGraph* sdg) {
     
-    Progress prog("Peeling:", rfunctions.size() * map->num_markers());
+//    Progress prog("Peeling:", rfunctions.size() * map->num_markers());
 
     // minus 1 because we want to look between markers
     // m-t-m-t-m-t-m where m is a marker and t is a trait location
     for(unsigned int i = 0; i < map->num_markers() - 1; ++i) {
         
-        fprintf(stderr, "\n\nPeeling locus %d\n\n", int(i));
+        //fprintf(stderr, "\n\nPeeling locus %d\n\n", int(i));
         
         PeelMatrix* last = NULL;
 
@@ -52,19 +52,25 @@ bool Peeler::peel(SimwalkDescentGraph* sdg) {
             // 'clear'? contains or set a dirty bit somewhere?
             
             if(not rf.evaluate(last, sdg, i)) {
-                prog.error("bad R function");
+//                prog.error("bad R function");
                 return false;
             }
             
-            prog.increment();
+//            prog.increment();
             
             last = rf.get_matrix();
+            
+            printf("\nRfunction %d\n\n", int(j));
+            last->print();
         }
+        
+        // XXX XXX
+        break;
 
         // XXX print the likelihood?
     }
 
-    prog.finish();
+//    prog.finish();
 
     return true;
 }

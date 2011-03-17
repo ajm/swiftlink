@@ -68,8 +68,10 @@ class GeneticMap {
     }
     
     void add_theta(double d) {
-        thetas.push_back(log(d));
-        inverse_thetas.push_back(log1p(-d));
+        //thetas.push_back(log(d));
+        //inverse_thetas.push_back(log1p(-d));
+        thetas.push_back(d);
+        inverse_thetas.push_back(1.0 - d);
     }
     
     Snp& get_marker(unsigned int i) { 

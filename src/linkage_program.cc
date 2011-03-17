@@ -34,9 +34,10 @@ bool LinkageProgram::run() {
 }
 
 bool LinkageProgram::run_pedigree(Pedigree& p) {
+/*
     unsigned int iterations = 10000; //800 * p.num_members() * p.num_markers() * 10 * 2;
 
-    p.print();  
+    //p.print();  
 
     printf("processing pedigree %s\n", p.get_id().c_str());
 
@@ -51,12 +52,22 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     SimwalkDescentGraph* sdg2 = mc.run(sdg1, iterations);
     
     printf("mcmc final prob = %f\n", sdg2->get_prob());    
+*/
+
+    double prob;
+
+    SimwalkDescentGraph sdg(&p, &map);
+    sdg.random();
+    sdg.likelihood(&prob);
+
+    printf("DescentGraph Likelihood = %f\n\n", prob);
 
     Peeler peeler(&p, &map);
-    bool peelresult = peeler.peel(sdg2);
+    //bool peelresult = peeler.peel(sdg2);
+    bool peelresult = peeler.peel(&sdg);
 
-    delete sdg1;
-    delete sdg2;
+    //delete sdg1;
+    //delete sdg2;
     
 	return peelresult;
 }

@@ -46,7 +46,7 @@ bool Rfunction::affected_trait(enum phased_trait pt, int allele) {
     return false;
 }
 
-double Rfunction::get_disease_probability(
+enum phased_trait Rfunction::get_phased_trait(
                     enum phased_trait m, enum phased_trait p, 
                     int maternal_allele, int paternal_allele) {
 
@@ -60,7 +60,11 @@ double Rfunction::get_disease_probability(
     else {
         pt = p_affected ? TRAIT_UA : TRAIT_UU;
     }
+    
+    return pt;
+}
 
+double Rfunction::get_disease_probability(enum phased_trait pt) {
     return pivot->get_disease_prob(pt);
 }
 
@@ -98,10 +102,11 @@ void Rfunction::evaluate_child_peel(
     double recombination_prob;
     double disease_prob;
     double old_prob;
+    enum phased_trait piv_trait;
     enum phased_trait mat_trait;
     enum phased_trait pat_trait;
     PeelMatrixKey prev_index(pmatrix_index);
-    
+    bool add_pivot = additional.size() == 1;
     
     for(unsigned i = 0; i < missing.size(); ++i) {
         prev_index.remove(missing[i]);
@@ -115,22 +120,36 @@ void Rfunction::evaluate_child_peel(
     for(int i = 0; i < 2; ++i) {
         for(int j = 0; j < 2; ++j) {
             
-            disease_prob        = get_disease_probability(mat_trait, pat_trait, i, j);
+            piv_trait = get_phased_trait(mat_trait, pat_trait, i, j);
+            
+            if(add_pivot) {
+                prev_index.add(pivot->get_internalid(), piv_trait);
+            }
+            
+            if(prev_matrix and not prev_matrix->is_legal(prev_index)) {
+                fprintf(stderr, "key generated is illegal! (%s %d)\n", __FILE__, __LINE__);
+                abort();
+            }
+            
+            disease_prob        = get_disease_probability(piv_trait);
             recombination_prob  = get_recombination_probability(dg, locus_index, i, j);
             old_prob            = prev_matrix != NULL ? prev_matrix->get(prev_index) : 1.0;
 
             tmp += (disease_prob * recombination_prob * old_prob);
+            
+            
+            printf("pmatrix_index = ");
+            pmatrix_index.print();
+            printf(", prev_index = ");
+            prev_index.print();
+            printf(", (missing = %d, additional = %d) ", int(missing.size()), int(additional.size()));
+            printf(" := %f\n", tmp);
         }
     }
 
     pmatrix.set(pmatrix_index, tmp);
 
-    printf("pmatrix_index = ");
-    pmatrix_index.print();
-    printf(", prev_index = ");
-    prev_index.print();
-    printf(", (missing = %d, additional = %d) ", int(missing.size()), int(additional.size()));
-    printf(" := %f\n", tmp);
+    
 }
 
 void Rfunction::evaluate_partner_peel(
@@ -141,21 +160,26 @@ void Rfunction::evaluate_partner_peel(
     
     double tmp = 0.0;
     PeelMatrixKey prev_index(pmatrix_index);
+    enum phased_trait pivot_trait;
+    unsigned pivot_id = pivot->get_internalid();
 
-    // TODO
-    for(unsigned i = 0; i < missing.size(); ++i) {
-        prev_index.remove(missing[i]);
+    if(missing.size() != 0) {
+        fprintf(stderr, "there should be no missing keys in a 'partner' peel! (%s %d)\n", 
+            __FILE__, __LINE__);
+        abort();
     }
     
-    
-
-    
-    printf("pmatrix_index = ");
-    pmatrix_index.print();
-    printf(", prev_index = ");
-    prev_index.print();
-    printf(", (missing = %d, additional = %d) ", int(missing.size()), int(additional.size()));
-    printf(" := %f\n", tmp);
+    for(unsigned i = 0; i < num_alleles; ++i) {
+        pivot_trait = static_cast<enum phased_trait>(i);
+        prev_index.add(pivot_id, pivot_trait);
+        
+        printf("pmatrix_index = ");
+        pmatrix_index.print();
+        printf(", prev_index = ");
+        prev_index.print();
+        printf(", (missing = %d, additional = %d) ", int(missing.size()), int(additional.size()));
+        printf(" := %f\n", tmp);
+    }
 }
 
 void Rfunction::evaluate_element(
@@ -207,32 +231,52 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, SimwalkDescentGraph* dg, u
     additional.clear();
 
     if(not pmatrix.key_intersection(previous_matrix, missing, additional)) {
-        if(additional.size() > 2) {
-            fprintf(stderr, "too many people to remove! (%s %d)\n", __FILE__, __LINE__);
-            for(unsigned int i = 0; i < additional.size(); ++i) {
-                fprintf(stderr, "additional[%d] = %d\n", i, additional[i]);
-            }
-            abort();
-        }
-/*
-        if(prev_matrix) {
-            prev_index.remove(additional[0]);
-            prev_index.remove(additional[1]);
-        }
-*/
-/*
+
         if(missing.size() > 2) {
-            fprintf(stderr, "too many people to add! (%s %d)\n", __FILE__, __LINE__);
-            for(unsigned int i = 0; i < missing.size(); ++i) {
+            fprintf(stderr, "too many people to remove! (%s %d)\n", __FILE__, __LINE__);
+            for(unsigned i = 0; i < missing.size(); ++i) {
                 fprintf(stderr, "missing[%d] = %d\n", i, missing[i]);
             }
             abort();
         }
-*/
+
+        if(additional.size() > 1) { // XXX
+            fprintf(stderr, "wrong number of additional keys: %d (%s %d)\n", 
+                int(additional.size()), __FILE__, __LINE__);
+            for(unsigned i = 0; i < additional.size(); ++i) {
+                fprintf(stderr, "additional[%d] = %d\n", i, additional[i]);
+            }
+            abort();
+        }
+        
+        if((additional.size() == 1) and (additional[0] != pivot->get_internalid())) {
+            fprintf(stderr, "additional key is not the pivot! (additional[0] = %d) (%s %d)\n",
+                int(additional[0]), __FILE__, __LINE__);
+            abort();
+        }
+        
+        if((additional.size() == 0) and not pivot->isleaf()) {
+            fprintf(stderr, "only leaf nodes do not have additional keys (%s %d)\n",
+                __FILE__, __LINE__);
+            abort();
+        }
     }
     
+    fprintf(stderr, "\n\n");
+    fprintf(stderr, "pivot = %d\n", pivot->get_internalid());
+    for(unsigned int i = 0; i < missing.size(); ++i) {
+        fprintf(stderr, "missing[%d] = %d\n", i, missing[i]);
+    }
+    for(unsigned int i = 0; i < additional.size(); ++i) {
+        fprintf(stderr, "additional[%d] = %d\n", i, additional[i]);
+    }
+    
+    
+    
+    
+    
     // generate all assignments to iterate through n-dimensional matrix
-        
+    
     // initialise to the first element of matrix
     for(i = 0; i < ndim; ++i) {
         q.push_back(0);

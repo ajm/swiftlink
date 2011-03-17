@@ -30,12 +30,13 @@ class Rfunction {
 
     void generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments);
     bool affected_trait(enum phased_trait pt, int allele);
-    double get_disease_probability(
+    enum phased_trait get_phased_trait(
                     enum phased_trait m, 
                     enum phased_trait p, 
                     int maternal_allele, 
                     int paternal_allele
         );
+    double get_disease_probability(enum phased_trait pt);
     double get_recombination_probability(
                     SimwalkDescentGraph* dg, 
                     unsigned int locus_index, 

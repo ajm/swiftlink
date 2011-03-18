@@ -91,7 +91,7 @@ double Rfunction::get_recombination_probability(
     
     return tmp;
 }
-
+/*
 void Rfunction::evaluate_last_peel(
                     PeelMatrixKey& pmatrix_index, 
                     PeelMatrix* prev_matrix) {  
@@ -106,9 +106,11 @@ void Rfunction::evaluate_last_peel(
         tmp += prev_matrix->get(pmatrix_index);
     }
     
-    fprintf(stderr, "\nfinal prob = %f\n", tmp);
-}
+    printf("\nfinal prob = %f\n", tmp);
 
+    
+}
+*/
 void Rfunction::evaluate_child_peel(
                     PeelMatrixKey& pmatrix_index, 
                     PeelMatrix* prev_matrix, 
@@ -152,7 +154,8 @@ void Rfunction::evaluate_child_peel(
             recombination_prob  = get_recombination_probability(dg, locus_index, i, j);
             old_prob            = prev_matrix != NULL ? prev_matrix->get(prev_index) : 1.0;
             
-//            printf("d=%f r=%f o=%f\n", disease_prob, recombination_prob, old_prob);
+//            if((disease_prob != 0.0) and (recombination_prob != 0.0) and (old_prob != 0.0))
+//                printf("d=%f r=%f o=%f\n", disease_prob, recombination_prob, old_prob);
 
             tmp += (disease_prob * recombination_prob * old_prob);
             
@@ -247,13 +250,13 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, SimwalkDescentGraph* dg, u
     unsigned int tmp;
     unsigned int i;
     
-    
+/*
     // nothing in the cutset to be enumerated
     if(peel.get_type() == LAST_PEEL) {
         evaluate_last_peel(k, previous_matrix);
         return true;
     }
-    
+*/
     
     // ascertain whether previous matrix is compatible with the current matrix
     // given the current r-function being applied to the pedigree

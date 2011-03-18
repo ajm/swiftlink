@@ -42,7 +42,7 @@ class DiseaseModel {
     
     double get_penetrance_prob(enum affection a, enum unphased_trait t);
     double get_apriori_prob(enum affection a, enum unphased_trait t);
-    void init_probs();
+    void finish_init();
 
     void set(enum simple_disease_model d);
     

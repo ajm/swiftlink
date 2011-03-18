@@ -26,6 +26,7 @@ OBJECTS	:= \
     linkage_program.o \
     progress.o \
 	peeler.o \
+	lod_calculator.o \
     main.o
 
 app: $(OBJECTS)

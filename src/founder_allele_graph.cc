@@ -277,11 +277,15 @@ bool FounderAlleleGraph::likelihood(double* prob, unsigned locus) {
 		// if no valid assignment of founder alleles exists, then one 
 		// element in a product is zero and hence so is the overall likelihood
 		if((tmp_prob = _enumerate_component(component, cindex, locus)) == 0.0) {
+		    delete[] visited;
+		    delete[] component;
+		
 			return false;
 		}
 		
 		// product of all legal assignments
 		log_prob += log(tmp_prob);
+		
 	} while(total != 0);
 	
 	*prob = log_prob;

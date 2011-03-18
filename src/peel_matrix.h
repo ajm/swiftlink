@@ -136,6 +136,8 @@ class PeelMatrix {
         size = pow(static_cast<double>(values_per_dimension), 
                    static_cast<int>(number_of_dimensions));
         data = new double[size];
+        
+        //printf("size = %d\n", size);
     }
 
     PeelMatrix(const PeelMatrix& rhs) {
@@ -230,7 +232,25 @@ class PeelMatrix {
     void set(PeelMatrixKey& pmk, double value) {
         data[generate_index(pmk)] = value;
     }
+/*
+    void set_raw(unsigned int index, double value) {
+        data[index] = value;
+    }
     
+    double get_raw(unsigned int index) {
+        return data[index];
+    }
+*/
+    double sum() {
+        double tmp = 0.0;
+        
+        for(unsigned i = 0; i < size; ++i) {
+            tmp += data[i];
+        }
+        
+        return tmp;
+    }
+
     // XXX stolen from Rfunction
     void generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments) {
         pmatrix_index.reassign(keys, assignments);

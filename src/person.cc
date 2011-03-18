@@ -124,14 +124,26 @@ void Person::print() const {
 			gender_str().c_str(),
 			affection_str().c_str(),
             int(genotypes.size()));
+    
     printf( "\tchildren: ");
     for(unsigned i = 0; i < children.size(); ++i)
         printf("%d ", children[i]->internal_id);
     printf( "\n");
+    
     printf( "\tmates: ");
     for(unsigned i = 0; i < mates.size(); ++i)
         printf("%d ", mates[i]->internal_id);
     printf( "\n");
+    
+    printf( "\tprobabilities:\n");
+    printf( "\t\tTRAIT_AA = %f\n"
+            "\t\tTRAIT_AU = %f\n"
+            "\t\tTRAIT_UA = %f\n"
+            "\t\tTRAIT_UU = %f\n",
+            disease_prob[TRAIT_AA],
+            disease_prob[TRAIT_AU],
+            disease_prob[TRAIT_UA],
+            disease_prob[TRAIT_UU]);
 }
 
 //----------

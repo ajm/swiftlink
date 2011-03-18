@@ -7,6 +7,7 @@ using namespace std;
 
 #include "peeling.h"
 #include "rfunction.h"
+#include "lod_calculator.h"
 
 
 class Pedigree;
@@ -18,7 +19,8 @@ class Peeler {
     Pedigree* ped;
     GeneticMap* map;
     vector<Rfunction> rfunctions;
-        
+    LodCalculator lod;
+    
  public :
     Peeler(Pedigree* p, GeneticMap* g);
 

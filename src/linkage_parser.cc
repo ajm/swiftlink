@@ -1,8 +1,3 @@
-using namespace std;
-
-#include <cstdio>
-#include <cstdlib>
-#include <string>
 #include <vector>
 #include <sstream>
 
@@ -373,6 +368,10 @@ bool LinkageParser::parse_line(const int linenum, const string line) {
 
 bool LinkageParser::parse_end() {
 	// handle incompletely read markers
-	return marker_linenum == 0;
+	if(marker_linenum != 0)
+	    return false;
+	
+	dis.finish_init();
+	return true;
 }
 

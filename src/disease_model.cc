@@ -12,6 +12,24 @@ void DiseaseModel::print() {
 	printf("\tdisease freq: %f\n", frequency);
 	printf("\tpenetrance: %f, %f, %f\n", penetrance[0], penetrance[1], penetrance[2]);
 	printf("\n");
+	
+	for(int i = 0; i < 3; ++i) {
+        for(int j = 0; j < 3; ++j) {
+            printf("\tapriori_prob[%d][%d] = %f\n", 
+                i, j, apriori_prob[i][j]);
+        }
+    }
+    
+    for(int i = 0; i < 3; ++i) {
+        for(int j = 0; j < 3; ++j) {
+            printf("\tpenetrance_prob[%d][%d] = %f\n", 
+                i, j, penetrance_prob[i][j]);
+        }
+    }
+    printf( "\n(first index is: UNKNOWN_AFFECTION, UNAFFECTED, AFFECTED)\n" 
+            "(second index is: TRAIT_HOMO_U, TRAIT_HETERO, TRAIT_HOMO_A)\n");
+    
+	printf("\n");
 }
 
 void DiseaseModel::set_autosomal_recessive() {
@@ -22,7 +40,7 @@ void DiseaseModel::set_autosomal_recessive() {
     set_penetrance(0.0, TRAIT_HETERO);
     set_penetrance(1.0, TRAIT_HOMO_A);
 
-    init_probs();
+    finish_init();
 }
 
 void DiseaseModel::set(enum simple_disease_model d) {
@@ -51,7 +69,7 @@ double DiseaseModel::get_apriori_prob(enum affection a, enum unphased_trait t) {
 // this is essentially an expansion of the disease model to distributions
 // of what the trait might be in an individual given their affection status
 // this info will be used by the Person objects
-void DiseaseModel::init_probs() {
+void DiseaseModel::finish_init() {
 	double affected_total;
     double unaffected_total;
     double unknown_total;

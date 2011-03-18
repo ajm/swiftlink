@@ -9,6 +9,7 @@ using namespace std;
 #include "simwalk_descent_graph.h"
 #include "simulated_annealing.h"
 #include "linkage_program.h"
+#include "disease_model.h"
 #include "markov_chain.h"
 #include "genetic_map.h"
 #include "peel_matrix.h"
@@ -21,12 +22,15 @@ using namespace std;
 
 bool LinkageProgram::run() {
     bool ret = true;
+    
+    dm.print();
 
     // XXX need to know how to do this properly, 
     // look up better random numbers for simulations etc
     srandom(time(NULL));
 
     for(unsigned int i = 0; i < pedigrees.size(); ++i) {
+        pedigrees[i].print();
         ret &= run_pedigree(pedigrees[i]);
     }
 
@@ -34,8 +38,7 @@ bool LinkageProgram::run() {
 }
 
 bool LinkageProgram::run_pedigree(Pedigree& p) {
-/*
-    unsigned int iterations = 10000; //800 * p.num_members() * p.num_markers() * 10 * 2;
+    unsigned int iterations = 1000; //800 * p.num_members() * p.num_markers() * 10 * 2;
 
     //p.print();  
 
@@ -52,22 +55,13 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     SimwalkDescentGraph* sdg2 = mc.run(sdg1, iterations);
     
     printf("mcmc final prob = %f\n", sdg2->get_prob());    
-*/
-
-    double prob;
-
-    SimwalkDescentGraph sdg(&p, &map);
-    sdg.random();
-    sdg.likelihood(&prob);
-
-    printf("DescentGraph Likelihood = %f\n\n", prob);
+    
 
     Peeler peeler(&p, &map);
-    //bool peelresult = peeler.peel(sdg2);
-    bool peelresult = peeler.peel(&sdg);
-
-    //delete sdg1;
-    //delete sdg2;
+    bool peelresult = peeler.peel(sdg2);
+    
+    delete sdg1;
+    delete sdg2;
     
 	return peelresult;
 }

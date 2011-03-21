@@ -6,6 +6,7 @@ using namespace std;
 #include <cmath>
 #include <cstdlib>
 
+#include "peeler.h"
 
 class SimwalkDescentGraph;
 class Pedigree;
@@ -16,17 +17,19 @@ class MarkovChain {
 
 	Pedigree* ped;
 	GeneticMap* map;
+	Peeler peel;
     double burnin_proportion;
 
     bool accept_metropolis(double new_prob, double old_prob);
 
  public:
 	MarkovChain(Pedigree* p, GeneticMap* m) 
-	    : ped(p), map(m), burnin_proportion(0.1) {}
+	    : ped(p), map(m), peel(p, m), burnin_proportion(0.1) {}
     
 	~MarkovChain() {}
 
-    SimwalkDescentGraph* run(SimwalkDescentGraph* seed, unsigned iterations);
+    void run(SimwalkDescentGraph* seed, unsigned iterations);
+    Peeler* get_peeler();
 };
 
 #endif

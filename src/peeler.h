@@ -25,6 +25,7 @@ class Peeler {
     Peeler(Pedigree* p, GeneticMap* g);
 
     bool peel(SimwalkDescentGraph* sdg);
+    void print();
 };
 
 #endif

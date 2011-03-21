@@ -117,11 +117,13 @@ class PeelMatrix {
     }
     
     void init_offsets() {
+        //printf("init_offsets\n");
         offsets.resize(keys.size());
         
         for(unsigned int i = 0; i < keys.size(); ++i) {
-            offsets.push_back(pow(static_cast<double>(values_per_dimension), 
-                                  static_cast<int>(i)));
+            offsets[i] = pow(values_per_dimension, i);
+            //printf("pow(%d,%d) = %f\n", values_per_dimension, i, pow(values_per_dimension, i));
+            //printf("\toffsets[%d] = %d\n", i, offsets[i]);
         }
     }
     
@@ -133,8 +135,7 @@ class PeelMatrix {
         values_per_dimension(val_dim) {
         
         //init_offsets();
-        size = pow(static_cast<double>(values_per_dimension), 
-                   static_cast<int>(number_of_dimensions));
+        size = pow(values_per_dimension, number_of_dimensions);
         data = new double[size];
         
         //printf("size = %d\n", size);
@@ -275,7 +276,8 @@ class PeelMatrix {
                 generate_key(k, q);
                 
                 k.print();
-                printf(" := %f\n", get(k));
+                printf(" (offset = %d)\t", generate_index(k));
+                printf(" := %e\n", get(k));
             }
             
             tmp = q.back() + 1;

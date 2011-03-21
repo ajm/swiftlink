@@ -36,7 +36,7 @@ SimwalkDescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
 	//current->haplotype_likelihood();
     current->likelihood();
 
-    printf("start prob = %f\n", current->get_prob());
+    printf("random descent graph prob = %f\n", current->get_prob());
 
 	temp = new SimwalkDescentGraph(ped, map);
 	best = new SimwalkDescentGraph(ped, map);

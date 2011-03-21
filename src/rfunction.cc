@@ -154,8 +154,10 @@ void Rfunction::evaluate_child_peel(
             recombination_prob  = get_recombination_probability(dg, locus_index, i, j);
             old_prob            = prev_matrix != NULL ? prev_matrix->get(prev_index) : 1.0;
             
-//            if((disease_prob != 0.0) and (recombination_prob != 0.0) and (old_prob != 0.0))
-//                printf("d=%f r=%f o=%f\n", disease_prob, recombination_prob, old_prob);
+            //if((disease_prob != 0.0) and (recombination_prob != 0.0) and (old_prob != 0.0))
+            //    printf("d=%e r=%e o=%e\t%e\n", 
+            //        disease_prob, recombination_prob, old_prob, 
+            //        disease_prob * recombination_prob * old_prob);
 
             tmp += (disease_prob * recombination_prob * old_prob);
             
@@ -168,6 +170,7 @@ void Rfunction::evaluate_child_peel(
     }
     
     pmatrix.set(pmatrix_index, tmp);
+    //printf("tmp = %e\n", tmp);
 //    printf("new value := %f\n", tmp);
 }
 

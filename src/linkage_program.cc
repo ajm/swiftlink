@@ -38,31 +38,27 @@ bool LinkageProgram::run() {
 }
 
 bool LinkageProgram::run_pedigree(Pedigree& p) {
-    unsigned int iterations = 1000; //800 * p.num_members() * p.num_markers() * 10 * 2;
-
-    //p.print();  
+    unsigned iterations = 1000; //800 * p.num_members() * p.num_markers() * 10 * 2;
+    SimwalkDescentGraph* opt;
 
     printf("processing pedigree %s\n", p.get_id().c_str());
 
-    // RUN SIMULATED ANNEALING
+    // run simulated annealing
     SimulatedAnnealing sa(&p, &map);
-    SimwalkDescentGraph* sdg1 = sa.optimise(iterations);
-
-    printf("sa final prob = %f\n", sdg1->get_prob());
+    opt = sa.optimise(iterations);
+    printf("optimised prob = %f\n", opt->get_prob());
     
-    // RUN MARKOV CHAIN
+    // run markov chain
     MarkovChain mc(&p, &map);
-    SimwalkDescentGraph* sdg2 = mc.run(sdg1, iterations);
+    mc.run(opt, iterations);
     
-    printf("mcmc final prob = %f\n", sdg2->get_prob());    
+    // print out results
+    Peeler* peel = mc.get_peeler();
+    peel->print();
     
-
-    Peeler peeler(&p, &map);
-    bool peelresult = peeler.peel(sdg2);
+        
+    delete opt;
     
-    delete sdg1;
-    delete sdg2;
-    
-	return peelresult;
+	return true; // XXX can this fail?
 }
 

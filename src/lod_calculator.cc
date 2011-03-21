@@ -1,6 +1,7 @@
 using namespace std;
 
 #include <cmath>
+#include <limits>
 
 #include "genetic_map.h"
 #include "pedigree.h"
@@ -8,15 +9,10 @@ using namespace std;
 
 
 LodCalculator::LodCalculator(Pedigree* p, GeneticMap* g) 
-    : ped(p), map(g) {
+    : ped(p), map(g), initialised(g->num_markers() - 1, false), count(0) {
     
     lod_scores = new double[map->num_markers() - 1];
-    
-    // XXX initialisation is a pain, really needs to be log(0) or -inf
-    for(unsigned i = 0; i < (map->num_markers() - 1); ++i)
-        lod_scores[i] = 0.0;
-    
-    random_prob = log10(1.0 / pow(2, float(ped->num_members() - ped->num_founders())));
+    random_prob = log10(1.0 / pow(2, double(ped->num_members() - ped->num_founders())));
 }
 
 LodCalculator::~LodCalculator() {
@@ -33,10 +29,12 @@ double LodCalculator::log_add(double a, double b) {
 }
 
 void LodCalculator::add(unsigned locus, double prob) {
-    lod_scores[locus] = log_add(
-                            lod_scores[locus], 
-                            log10(prob) - random_prob
-                        );
+    
+    lod_scores[locus] = initialised[locus] ? 
+        log_add(lod_scores[locus], log10(prob) - random_prob) : 
+        log10(prob), initialised[locus] = true;
+    if(locus == 0)
+        count++;
 }
 
 double LodCalculator::get(unsigned locus) {
@@ -44,9 +42,14 @@ double LodCalculator::get(unsigned locus) {
 }
 
 void LodCalculator::print() {
+    double tot = log10(count);
+    printf("count = %d (tot = %e)\n", count, tot);
     printf("\nLOCUS\tLOD\n");
     for(unsigned i = 0; i < (map->num_markers() - 1); ++i) {
-        printf("%d\t%f\n", i, lod_scores[i]);
+        printf("%d\t%f\n", 
+            i, lod_scores[i] == -numeric_limits<double>::infinity() ? 
+                    lod_scores[i] : 
+                    lod_scores[i] - tot);
     }
 }
 

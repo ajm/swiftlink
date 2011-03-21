@@ -32,7 +32,7 @@ SimwalkDescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
 	double prob;
 
 	current = new SimwalkDescentGraph(ped, map);
-	current->random();
+	current->random_descentgraph();
 	//current->haplotype_likelihood();
     current->likelihood();
 

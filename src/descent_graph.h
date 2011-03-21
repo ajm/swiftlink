@@ -51,7 +51,7 @@ class DescentGraph {
 	bool likelihood();
     bool haplotype_likelihood(double *prob);
 	bool haplotype_likelihood();
-    bool random();
+    bool random_descentgraph();
 	void print();
     
     void copy_from(DescentGraph& d, unsigned start, unsigned end);

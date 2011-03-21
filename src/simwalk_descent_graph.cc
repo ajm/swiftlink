@@ -13,7 +13,7 @@ using namespace std;
 unsigned SimwalkDescentGraph::_geometric() {
 	unsigned c = 1;
 	
-	printf("random (%u / %f) = %e\n", random(), double(RAND_MAX), random() / double(RAND_MAX));
+	//printf("random (%ld / %f) = %e\n", random(), double(RAND_MAX), random() / double(RAND_MAX));
 
 	while(1) {
 		if((random() / double(RAND_MAX)) < 0.5) {
@@ -36,13 +36,13 @@ void SimwalkDescentGraph::step() {
 	vector<unsigned> loci;
 	unsigned steps = _geometric();
 	
-	printf("step\n\tsteps = %d\n", steps);
+	//printf("step\n\tsteps = %d\n", steps);
 		
 	//unsigned l = get_random_locus();
 	for(unsigned i = 0; i < steps; ++i) {
 		unsigned l = get_random_locus();
 		
-		printf("\tlocus = %d\n", l);
+		//printf("\tlocus = %d\n", l);
 
 		switch(select_transition_rule()) {
 			case 0 :

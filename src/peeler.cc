@@ -60,12 +60,12 @@ bool Peeler::peel(SimwalkDescentGraph* sdg) {
             
             last = rf.get_matrix();
             
-            printf("\nRfunction %d\n\n", int(j));
-            last->print();
+            //printf("\nRfunction %d\n\n", int(j));
+            //last->print();
         }
         
         lod.add(i, last->sum());
-        printf("locus %d prob = %e\n", i, last->sum());
+        //printf("locus %d prob = %e\n", i, last->sum());
 
     }
 

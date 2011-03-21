@@ -83,7 +83,7 @@ void DescentGraph::set_bit(unsigned i, char b) {
     data[i] = b;
 }
 
-bool DescentGraph::random() {
+bool DescentGraph::random_descentgraph() {
     GenotypeElimination ge(ped);
     return ge.random_descentgraph(*this);
 }

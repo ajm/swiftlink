@@ -91,7 +91,7 @@ double Rfunction::get_recombination_probability(
     
     return tmp;
 }
-/*
+
 void Rfunction::evaluate_last_peel(
                     PeelMatrixKey& pmatrix_index, 
                     PeelMatrix* prev_matrix) {  
@@ -103,14 +103,20 @@ void Rfunction::evaluate_last_peel(
         pivot_trait = static_cast<enum phased_trait>(i);
         pmatrix_index.add(pivot->get_internalid(), pivot_trait);
         
-        tmp += prev_matrix->get(pmatrix_index);
+        if(prev_matrix and not prev_matrix->is_legal(pmatrix_index)) {
+            fprintf(stderr, "key generated is illegal! (%s %d)\n", __FILE__, __LINE__);
+            abort();
+        }
+        
+        tmp += (get_disease_probability(pivot_trait) * prev_matrix->get(pmatrix_index));
     }
     
-    printf("\nfinal prob = %f\n", tmp);
-
+    tmp /= 4.0;
     
+    pmatrix_index.add(pivot->get_internalid(), (enum phased_trait)0);
+    pmatrix.set(pmatrix_index, tmp); 
 }
-*/
+
 void Rfunction::evaluate_child_peel(
                     PeelMatrixKey& pmatrix_index, 
                     PeelMatrix* prev_matrix, 
@@ -253,13 +259,13 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, SimwalkDescentGraph* dg, u
     unsigned int tmp;
     unsigned int i;
     
-/*
+
     // nothing in the cutset to be enumerated
     if(peel.get_type() == LAST_PEEL) {
         evaluate_last_peel(k, previous_matrix);
         return true;
     }
-*/
+
     
     // ascertain whether previous matrix is compatible with the current matrix
     // given the current r-function being applied to the pedigree

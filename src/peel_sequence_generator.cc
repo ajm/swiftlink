@@ -80,24 +80,24 @@ bool PeelSequenceGenerator::build_peel_order() {
         int unpeeled = 0;
 
         all_possible_peels(unpeeled); // populates 'tmp'
-/*        
+        
         // everyone is peeled, so we are done
         if(unpeeled == 0) {
             break;
         }
-*/
+
         if((unpeeled != 0) and (tmp.size() == 0)) {
             fprintf(stderr, "Error, %s failed to produce a valid peeling sequence\n", __func__ );
             return false;
         }
         
         PeelOperation p = get_best_operation(tmp);
-        
+/*
         if(p.get_type() == LAST_PEEL) {
             state.set_peeled(p.get_pivot());
             break;
         }
-        
+*/        
         peelorder.push_back(p);
         state.set_peeled(p.get_pivot());
     }

@@ -290,3 +290,7 @@ void DescentGraph::print() {
     printf("\n");
 }
 
+double DescentGraph::trans_prob() {
+    return _transmission_prob();
+}
+

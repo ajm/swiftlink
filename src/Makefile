@@ -12,21 +12,22 @@ OBJECTS	:= \
     simwalk_descent_graph.o \
     founder_allele_graph.o \
     descent_graph.o \
-	elimination.o \
+    elimination.o \
     pedigree.o \
     person.o \
     genotype.o \
     genetic_map.o \
-	disease_model.o \
+    disease_model.o \
     peel_sequence_generator.o \
-   	rfunction.o \
+    rfunction.o \
     simulated_annealing.o \
-	markov_chain.o \
+    markov_chain.o \
     program.o \
     linkage_program.o \
     progress.o \
-	peeler.o \
-	lod_calculator.o \
+    peeler.o \
+    lod_calculator.o \
+    peel_matrix.o \
     main.o
 
 app: $(OBJECTS)

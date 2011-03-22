@@ -53,12 +53,10 @@ class Rfunction {
                     PeelMatrixKey& pmatrix_index, 
                     PeelMatrix* prev_matrix
                 );
-/*
     void evaluate_last_peel(
                     PeelMatrixKey& pmatrix_index, 
                     PeelMatrix* prev_matrix
                 );
-*/
     void evaluate_element(
                     PeelMatrixKey& pmatrix_index, 
                     PeelMatrix* prev_matrix, 

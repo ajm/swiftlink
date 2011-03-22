@@ -25,7 +25,7 @@ class LodCalculator {
     LodCalculator(Pedigree* p, GeneticMap* g);
     ~LodCalculator();
     
-    void add(unsigned locus, double prob);
+    void add(unsigned locus, double prob, double trans);
     double get(unsigned locus);
     void print();
 };

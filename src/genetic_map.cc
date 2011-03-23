@@ -5,8 +5,8 @@
 
 
 bool GeneticMap::sanity_check() {
-    bool sane = (map.size() == (thetas.size() - 1)) and \
-           (map.size() == (inverse_thetas.size() - 1));
+    bool sane = ((map.size() - 1) == thetas.size()) and \
+           ((map.size() - 1) == inverse_thetas.size());
 
     if(not sane) {
         fprintf(stderr, 
@@ -36,7 +36,6 @@ double GeneticMap::haldane(double m) {
 }
 
 double GeneticMap::get_theta_halfway(unsigned int i) {
-    return haldane(get_marker(i+1).get_g_distance() - 
-                   get_marker(i).get_g_distance());
+    return haldane((get_marker(i+1).get_g_distance() - get_marker(i).get_g_distance()) / 2.0);
 }
 

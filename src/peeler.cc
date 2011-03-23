@@ -2,6 +2,7 @@ using namespace std;
 
 #include <cstdio>
 #include <vector>
+#include <cmath>
 
 #include "peel_sequence_generator.h"
 #include "peeling.h"
@@ -18,8 +19,6 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g) : ped(p), map(g), lod(p, g) {
     PeelSequenceGenerator psg(*ped);
     psg.build_peel_order();
     psg.print();
-
-    //exit(0);
 
     vector<PeelOperation>& ops = psg.get_peel_order();
     
@@ -40,16 +39,10 @@ bool Peeler::peel(SimwalkDescentGraph* sdg) {
     // minus 1 because we want to look between markers
     // m-t-m-t-m-t-m where m is a marker and t is a trait location
     for(unsigned i = 0; i < map->num_markers() - 1; ++i) {
-        
-        //fprintf(stderr, "\n\nPeeling locus %d\n\n", int(i));
-        
         PeelMatrix* last = NULL;
 
         for(unsigned j = 0; j < rfunctions.size(); ++j) {
             Rfunction& rf = rfunctions[j];
-
-            // XXX rf is getting reused over and over again
-            // 'clear'? contents or set a dirty bit somewhere?
             
             if(not rf.evaluate(last, sdg, i)) {
 //                prog.error("bad R function");
@@ -64,16 +57,14 @@ bool Peeler::peel(SimwalkDescentGraph* sdg) {
             //last->print();
         }
         
-        lod.add(i, last->get_result(), sdg->trans_prob());
+        lod.add(i, last->get_result(), sdg->trans_prob() / log(10));
         
         if(i == 0)
-            printf("locus %d prob = %e\n", i, last->get_result());
+            printf("locus %d prob = %e trans = %e\n", i, log(last->get_result()), sdg->trans_prob());
 
     }
 
 //    prog.finish();
-
-    //lod.print();
 
     return true;
 }

@@ -34,8 +34,8 @@ void LodCalculator::add(unsigned locus, double prob, double trans) {
         printf("locus = %d, prob = %e\n", locus, prob);
 */
     lod_scores[locus] = initialised[locus] ? 
-        log_add(lod_scores[locus], log10(prob) - trans /*random_prob*/) : 
-        log10(prob) - trans /*random_prob*/, initialised[locus] = true;
+        log_add(lod_scores[locus], log10(prob) - trans) : 
+        log10(prob) - trans, initialised[locus] = true;
     if(locus == 0)
         count++;
 }
@@ -52,7 +52,7 @@ void LodCalculator::print() {
         printf("%d\t%f\n", 
             i, lod_scores[i] == -numeric_limits<double>::infinity() ? 
                     lod_scores[i] : 
-                    (lod_scores[i] - tot) - random_prob);
+                    (lod_scores[i] - tot) - /*random_prob*/ -8.125);
     }
 }
 

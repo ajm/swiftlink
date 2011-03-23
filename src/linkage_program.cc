@@ -38,7 +38,7 @@ bool LinkageProgram::run() {
 }
 
 bool LinkageProgram::run_pedigree(Pedigree& p) {
-    unsigned iterations = 1000000; //800 * p.num_members() * p.num_markers() * 10 * 2;
+    unsigned iterations = 100000; //800 * p.num_members() * p.num_markers() * 10 * 2;
     SimwalkDescentGraph* opt;
 
     printf("processing pedigree %s\n", p.get_id().c_str());

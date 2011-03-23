@@ -84,6 +84,7 @@ double Rfunction::get_recombination_probability(
             1.0 - half_recomb_prob : half_recomb_prob;
     tmp *= dg->get(pivot->get_internalid(), locus_index+1, MATERNAL) == maternal_allele ? \
             1.0 - half_recomb_prob : half_recomb_prob;
+            
     tmp *= dg->get(pivot->get_internalid(), locus_index,   PATERNAL) == paternal_allele ? \
             1.0 - half_recomb_prob : half_recomb_prob;
     tmp *= dg->get(pivot->get_internalid(), locus_index+1, PATERNAL) == paternal_allele ? \

@@ -59,8 +59,7 @@ bool Peeler::peel(SimwalkDescentGraph* sdg) {
         
         lod.add(i, last->get_result(), sdg->trans_prob() / log(10));
         
-        if(i == 0)
-            printf("locus %d prob = %e trans = %e\n", i, log(last->get_result()), sdg->trans_prob());
+        printf("locus %d prob = %e\n", i, log(last->get_result()));
 
     }
 

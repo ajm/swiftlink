@@ -21,7 +21,7 @@ void MarkovChain::run(SimwalkDescentGraph* seed, unsigned iterations) {
 	SimwalkDescentGraph* current;
 	SimwalkDescentGraph* temp;
 	double prob;
-    unsigned burnin_steps = iterations * burnin_proportion;
+    unsigned burnin_steps = unsigned(iterations * burnin_proportion);
     
     
     current = new SimwalkDescentGraph(ped, map);

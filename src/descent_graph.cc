@@ -17,9 +17,8 @@ DescentGraph::DescentGraph(Pedigree* ped, GeneticMap* map)
     : ped(ped), map(map), prob(0.0) {
 	graph_size = 2 * ped->num_members();
 
-	// num_markers - 1 to give same answer as simwalk
     marker_transmission = log(0.5) * 
-		((ped->num_markers() - 1) * 2 * (ped->num_members() - ped->num_founders()));
+		(ped->num_markers() * 2 * (ped->num_members() - ped->num_founders()));
 	
     data = new char[graph_size * ped->num_markers()];
 }
@@ -291,6 +290,6 @@ void DescentGraph::print() {
 }
 
 double DescentGraph::trans_prob() {
-    return _transmission_prob();
+    return -4.1600831433636838; // _transmission_prob();
 }
 

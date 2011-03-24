@@ -34,7 +34,7 @@ class PeelingState {
 };
 
 class PeelOperation {
-    unsigned int pivot;
+    int pivot;
     enum peeloperation type;
     vector<unsigned int> cutset;
     

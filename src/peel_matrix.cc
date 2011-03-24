@@ -27,7 +27,8 @@ void PeelMatrix::init_offsets() {
     offsets.resize(keys.size());
     
     for(unsigned int i = 0; i < keys.size(); ++i) {
-        offsets[i] = pow(values_per_dimension, i);
+        offsets[i] = (unsigned int) pow(static_cast<double>(values_per_dimension), 
+			 static_cast<double>(i));
     }
 }
     
@@ -36,7 +37,8 @@ PeelMatrix::PeelMatrix(unsigned int num_dim, unsigned int val_dim)
     : number_of_dimensions(num_dim),
       values_per_dimension(val_dim) {
         
-    size = pow(values_per_dimension, number_of_dimensions);
+    size = (unsigned int) pow(static_cast<double>(values_per_dimension), 
+	       			static_cast<double>(number_of_dimensions));
     data = new double[size];
     
     printf("size = %d\n", size);

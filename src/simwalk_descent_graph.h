@@ -15,18 +15,20 @@ using namespace std;
 class SimwalkDescentGraph : public DescentGraph {
 
     unsigned _geometric();
-    int select_transition_rule();
+    unsigned select_next_locus(unsigned locus);
+    int select_transition_rule(unsigned person);
     inline unsigned get_random(unsigned i);
     unsigned get_random_person();
     unsigned get_random_nonleaf();
     unsigned get_random_nonfounder();
     unsigned get_random_locus();
-    enum parentage get_random_parent();void transition_t0(unsigned locus);
+    enum parentage get_random_parent();
+    void transition_t0(unsigned person, unsigned locus);
     void transition_t0(unsigned id, unsigned locus, enum parentage p);
-    void transition_t1(unsigned locus);
+    void transition_t1(unsigned person, unsigned locus);
     void transition_t1(Person* p, unsigned locus);
-    void transition_t2a(unsigned locus);
-    void transition_t2b(unsigned locus);
+    void transition_t2a(unsigned person, unsigned locus);
+    void transition_t2b(unsigned person, unsigned locus);
     void transition_t2(unsigned id, unsigned locus, bool same_gender);
 
  public:

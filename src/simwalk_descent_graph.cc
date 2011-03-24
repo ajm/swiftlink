@@ -8,6 +8,7 @@ using namespace std;
 #include "person.h"
 #include "descent_graph.h"
 #include "simwalk_descent_graph.h"
+#include "genetic_map.h"
 
 
 unsigned SimwalkDescentGraph::_geometric() {
@@ -33,65 +34,80 @@ unsigned SimwalkDescentGraph::_geometric() {
 // t1 - non-leaves
 // t2 - non-leaves (people with spouses)
 void SimwalkDescentGraph::step() {
-	vector<unsigned> loci;
+	//vector<unsigned> loci;
 	unsigned steps = _geometric();
+	unsigned l = get_random_locus();
 	
-	//printf("step\n\tsteps = %d\n", steps);
-		
-	//unsigned l = get_random_locus();
 	for(unsigned i = 0; i < steps; ++i) {
-		unsigned l = get_random_locus();
-		
-		//printf("\tlocus = %d\n", l);
+	
+	    // could select a neighbouring individual, I don't think sw does this 
+	    // for the random walk case
+	    // (a neighbor is a parent, sib, spouse, child or the individual themselves again)
+	    unsigned p = get_random_person();
 
-		switch(select_transition_rule()) {
+		switch(select_transition_rule(p)) {
 			case 0 :
-				transition_t0(l);
+				transition_t0(p,l);
 				break;
 			case 1 :
-				transition_t1(l);
+				transition_t1(p,l);
 				break;
 			case 2 :
-				transition_t2a(l);
+				transition_t2a(p,l);
 				break;
 			case 3 :
-				transition_t2b(l);
+				transition_t2b(p,l);
 				break;
 			default:
 				break;
 		}
 
-		loci.push_back(l);
-/*
-		if(l < ped->num_markers())
-			l++;
-		else 
-			l = get_random_locus();
-*/
+		//loci.push_back(l);
+		
+		l = select_next_locus(l);
 	}
 		
 	// TODO recalculate likelihood for all loci
 	//for(unsigned i = 0; i < loci.size(); ++i) {}
 }
 
-// perform t0 > t1 > t2
-// 3/6 : 2/6 : 1/6 ???
-int SimwalkDescentGraph::select_transition_rule() {
-	//return get_random(4);
-	double r = random() / double(RAND_MAX);
+unsigned SimwalkDescentGraph::select_next_locus(unsigned locus) {
+    double r = random() / double(RAND_MAX);
+    
+    if(r < 0.3333) {
+        return locus == 0 ? locus : locus - 1;
+    }
+    else if(r < 0.6666) {
+        return locus;
+    }
+    else {
+        return locus == (map->num_markers() - 1) ? locus : locus + 1;
+    }
+}
 
-    //return 0;
-
-	if(r < 0.5)
-		return 0;
-
-	if(r < 0.833)
-		return 1;
-
-	if((random() / double(RAND_MAX)) < 0.5)
+int SimwalkDescentGraph::select_transition_rule(unsigned person) {
+	Person* p = ped->get_by_index(person);
+	
+	if(p->isleaf()) { // t1 & t2 require spouses
+	    return 0;
+	}
+	
+	if(not p->isfounder()) {
+        if((random() / double(RAND_MAX)) < 0.75) {
+            return 0;
+        }
+    }
+    
+	if((random() / double(RAND_MAX)) < 0.6) {
+	    return 1;
+	}	
+	
+	if((random() / double(RAND_MAX)) < 0.5) {
 		return 2;
-	else
+	}
+	else {
 		return 3;
+    }
 }
 
 unsigned SimwalkDescentGraph::get_random(unsigned i) {
@@ -125,8 +141,8 @@ enum parentage SimwalkDescentGraph::get_random_parent() {
 
 // select random individual, locus, maternal or paternal, 
 // switch 0 -> 1 or 1 -> 0
-void SimwalkDescentGraph::transition_t0(unsigned locus) {
-	transition_t0(get_random_nonfounder(), locus, get_random_parent());
+void SimwalkDescentGraph::transition_t0(unsigned person, unsigned locus) {
+	transition_t0(person, locus, get_random_parent());
 }
 
 void SimwalkDescentGraph::transition_t0(unsigned id, unsigned locus, enum parentage p) {
@@ -136,8 +152,8 @@ void SimwalkDescentGraph::transition_t0(unsigned id, unsigned locus, enum parent
 // select random individual, locus, 
 // for each child, 
 //		if you inherit from maternal change to paternal + vice versa
-void SimwalkDescentGraph::transition_t1(unsigned locus) {		
-	transition_t1(ped->get_by_index(get_random_nonleaf()), locus);
+void SimwalkDescentGraph::transition_t1(unsigned person, unsigned locus) {		
+	transition_t1(ped->get_by_index(person), locus);
 }
 
 // select random individual, locus, 
@@ -153,12 +169,12 @@ void SimwalkDescentGraph::transition_t1(Person* p, unsigned locus) {
 	
 // see appendix a1 of simwalk paper for implementing t2a + t2b in terms
 // of t0 and t1
-void SimwalkDescentGraph::transition_t2a(unsigned locus) {
-	transition_t2(get_random_nonleaf(), locus, false);
+void SimwalkDescentGraph::transition_t2a(unsigned person, unsigned locus) {
+	transition_t2(person, locus, false);
 }
 
-void SimwalkDescentGraph::transition_t2b(unsigned locus) {
-	transition_t2(get_random_nonleaf(), locus, true);
+void SimwalkDescentGraph::transition_t2b(unsigned person, unsigned locus) {
+	transition_t2(person, locus, true);
 }
 
 void SimwalkDescentGraph::transition_t2(unsigned id, unsigned locus, bool same_gender) {

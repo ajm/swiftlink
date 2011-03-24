@@ -16,8 +16,8 @@ bool MarkovChain::accept_metropolis(double new_prob, double old_prob) {
     double r = random() / double(RAND_MAX);
     
     fprintf(stderr, "\n");
-    fprintf(stderr, "r = %e\n", log(r));
-    fprintf(stderr, "dx = %e\n", new_prob - old_prob);
+    fprintf(stderr, "r = %e\n", r);
+    fprintf(stderr, "dx = %e\n", exp(new_prob - old_prob));
     fprintf(stderr, "%s\n", r < (new_prob - old_prob) ? "ACCEPT" : "REJECT");
 
     return r < (new_prob - old_prob);
@@ -66,7 +66,7 @@ void MarkovChain::run(SimwalkDescentGraph* seed, unsigned iterations) {
 			continue;
 		}
 		
-		//printf("legal!\n");
+		fprintf(stderr, "LEGAL\n");
 	
         // separate for now, just in case I want to add any stat gathering...
 		if(i < burnin_steps) {

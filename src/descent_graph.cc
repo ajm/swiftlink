@@ -273,7 +273,8 @@ void DescentGraph::print() {
 	int pat, mat;
 	Person* p;
 	
-    printf("DescentGraph: ");
+    //printf("DescentGraph: ");
+    fprintf(stderr, "DescentGraph: ");
     for(int locus = 0; locus < int(ped->num_markers()); ++locus) {
         for(unsigned i = 0; i  < ped->num_members(); ++i) {
             p = ped->get_by_index(i);
@@ -282,11 +283,13 @@ void DescentGraph::print() {
                 mat = get(i, locus, MATERNAL);
                 pat = get(i, locus, PATERNAL);
                 
-                printf("%d%d", mat, pat);
+                //printf("%d%d", mat, pat);
+                fprintf(stderr, "%d%d", mat, pat);
             }
         }
     }
-    printf("\n");
+    //printf("\n");
+    fprintf(stderr, "\n");
 }
 
 double DescentGraph::trans_prob() {

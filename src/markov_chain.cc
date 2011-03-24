@@ -13,7 +13,16 @@ using namespace std;
 
 
 bool MarkovChain::accept_metropolis(double new_prob, double old_prob) {
-	return log(random() / double(RAND_MAX)) < (new_prob - old_prob);
+    double r = random() / double(RAND_MAX);
+    
+    fprintf(stderr, "\n");
+    fprintf(stderr, "r = %e\n", log(r));
+    fprintf(stderr, "dx = %e\n", new_prob - old_prob);
+    fprintf(stderr, "%s\n", r < (new_prob - old_prob) ? "ACCEPT" : "REJECT");
+
+    return r < (new_prob - old_prob);
+
+//	return log(random() / double(RAND_MAX)) < (new_prob - old_prob);
 }
 
 void MarkovChain::run(SimwalkDescentGraph* seed, unsigned iterations) {
@@ -53,6 +62,7 @@ void MarkovChain::run(SimwalkDescentGraph* seed, unsigned iterations) {
         // need everything to work on a per-loci basis, ie: likelihood calculations
         // and all this...
 		if(temp->illegal()) {
+		    fprintf(stderr, "ILLEGAL\n");
 			continue;
 		}
 		
@@ -64,6 +74,8 @@ void MarkovChain::run(SimwalkDescentGraph* seed, unsigned iterations) {
         }
         else if(accept_metropolis(temp->get_prob(), current->get_prob())) {
             *current = *temp;
+            fprintf(stderr, "\ncurrent prob = %e\n", current->get_prob());
+            current->print();
         }
 /*
 		if(best->get_prob() < current->get_prob()) {

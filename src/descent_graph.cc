@@ -200,10 +200,10 @@ double DescentGraph::_recombination_prob() {
         if( p->isfounder() )
             continue;
         
-        for(unsigned j = 0; j < 2; ++j ) { // mother and father
+        for(unsigned j = 0; j < 2; ++j) { // mother and father
             last = get(i, 0, static_cast<enum parentage>(j));
             
-            for(unsigned k = 1; k < ped->num_markers(); ++k ) { // every loci
+            for(unsigned k = 1; k < ped->num_markers(); ++k) { // every loci
                 current = get(i, k, static_cast<enum parentage>(j));
 				
                 tmp += (last != current) ? \
@@ -293,6 +293,6 @@ void DescentGraph::print() {
 }
 
 double DescentGraph::trans_prob() {
-    return -4.1600831433636838; // _transmission_prob();
+    return marker_transmission; //+ _recombination_prob(); //_transmission_prob();
 }
 

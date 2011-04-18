@@ -213,6 +213,9 @@ double FounderAlleleGraph::_enumerate_component(int *component, int component_si
 
 	//printf("component_size = %d\n", component_size);
 	
+	if (component_size == 1)
+	    return 1.0;
+	
     _assign_and_recurse(component, component_size, locus, 
                         0, assignment, &prob, &best);
     

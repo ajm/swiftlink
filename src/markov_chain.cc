@@ -13,13 +13,13 @@ using namespace std;
 
 
 bool MarkovChain::accept_metropolis(double new_prob, double old_prob) {
-    double r = random() / double(RAND_MAX);
-    
+    double r = log(random() / double(RAND_MAX));
+/*
     fprintf(stderr, "\n");
     fprintf(stderr, "r = %e\n", r);
-    fprintf(stderr, "dx = %e\n", exp(new_prob - old_prob));
+    fprintf(stderr, "dx = %e\n", new_prob - old_prob));
     fprintf(stderr, "%s\n", r < (new_prob - old_prob) ? "ACCEPT" : "REJECT");
-
+*/
     return r < (new_prob - old_prob);
 
 //	return log(random() / double(RAND_MAX)) < (new_prob - old_prob);
@@ -62,11 +62,14 @@ void MarkovChain::run(SimwalkDescentGraph* seed, unsigned iterations) {
         // need everything to work on a per-loci basis, ie: likelihood calculations
         // and all this...
 		if(temp->illegal()) {
-		    fprintf(stderr, "ILLEGAL\n");
+//		    fprintf(stderr, "ILLEGAL\n");
 			continue;
 		}
 		
-		fprintf(stderr, "LEGAL\n");
+//		fprintf(stderr, "LEGAL\n");
+
+        //printf("%e\n", current->get_prob());
+
 	
         // separate for now, just in case I want to add any stat gathering...
 		if(i < burnin_steps) {
@@ -74,7 +77,7 @@ void MarkovChain::run(SimwalkDescentGraph* seed, unsigned iterations) {
         }
         else if(accept_metropolis(temp->get_prob(), current->get_prob())) {
             *current = *temp;
-            fprintf(stderr, "\ncurrent prob = %e\n", current->get_prob());
+            fprintf(stderr, "\ncurrent prob = %f\n", current->get_prob());
             current->print();
         }
 /*

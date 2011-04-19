@@ -16,9 +16,15 @@ using namespace std;
 DescentGraph::DescentGraph(Pedigree* ped, GeneticMap* map) 
     : ped(ped), map(map), prob(0.0) {
 	graph_size = 2 * ped->num_members();
-
+/*
     marker_transmission = log(0.5) * 
 		(ped->num_markers() * 2 * (ped->num_members() - ped->num_founders()));
+*/
+
+	// ajm: don't bother calculating the whole likelihood as this is just a 
+	// constant for a given pedigree
+	marker_transmission = log(0.5) * 
+		(2 * (ped->num_members() - ped->num_founders()));
 	
     data = new char[graph_size * ped->num_markers()];
 }

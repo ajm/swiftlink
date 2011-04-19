@@ -24,6 +24,7 @@ bool LinkageProgram::run() {
     bool ret = true;
     
     dm.print();
+    map.print();
 
     // XXX need to know how to do this properly, 
     // look up better random numbers for simulations etc

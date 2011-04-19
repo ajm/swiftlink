@@ -77,8 +77,8 @@ void MarkovChain::run(SimwalkDescentGraph* seed, unsigned iterations) {
         }
         else if(accept_metropolis(temp->get_prob(), current->get_prob())) {
             *current = *temp;
-            fprintf(stderr, "\ncurrent prob = %f\n", current->get_prob());
-            current->print();
+            //fprintf(stderr, "\ncurrent prob = %f\n", current->get_prob());
+            //current->print();
         }
 /*
 		if(best->get_prob() < current->get_prob()) {

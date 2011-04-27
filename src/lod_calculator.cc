@@ -48,12 +48,13 @@ double LodCalculator::get(unsigned locus) {
 void LodCalculator::print() {
     double tot = log10(count);
     printf("count = %d (tot = %e)\n", count, tot);
+    printf("%f\n", lod_scores[0] - tot);
     printf("\nLOCUS\tLOD\n");
     for(unsigned i = 0; i < (map->num_markers() - 1); ++i) {
         printf("%d\t%f\n", 
             i, lod_scores[i] == -numeric_limits<double>::infinity() ? 
                     lod_scores[i] : 
-                    (lod_scores[i] - tot) - /*random_prob*/ /*-8.125*/ -8.000);
+                    (lod_scores[i] - tot) - /*-8.125*/ -8.125);
     }
 }
 

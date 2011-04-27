@@ -122,9 +122,13 @@ class PeelMatrix {
     double get(PeelMatrixKey& pmk);
     void set(PeelMatrixKey& pmk, double value);
     double get_result();
+
+    double sum();
+    void normalise();
     
     void generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments);
-    void print();};
+    void print();
+};
 
 #endif
 

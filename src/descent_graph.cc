@@ -16,10 +16,10 @@ using namespace std;
 DescentGraph::DescentGraph(Pedigree* ped, GeneticMap* map) 
     : ped(ped), map(map), prob(0.0) {
 	graph_size = 2 * ped->num_members();
-/*
-    marker_transmission = log(0.5) * 
-		(ped->num_markers() * 2 * (ped->num_members() - ped->num_founders()));
-*/
+
+//    marker_transmission = log(0.5) * 
+//		(ped->num_markers() * 2 * (ped->num_members() - ped->num_founders()));
+
 
 	// ajm: don't bother calculating the whole likelihood as this is just a 
 	// constant for a given pedigree
@@ -27,6 +27,10 @@ DescentGraph::DescentGraph(Pedigree* ped, GeneticMap* map)
 		(2 * (ped->num_members() - ped->num_founders()));
 	
     data = new char[graph_size * ped->num_markers()];
+    
+    for(unsigned i = 0; i < graph_size * ped->num_markers(); ++i) {
+        data[i] = 0;
+    }
 }
 
 DescentGraph::DescentGraph(const DescentGraph& d) 
@@ -280,7 +284,7 @@ void DescentGraph::print() {
 	Person* p;
 	
     //printf("DescentGraph: ");
-    fprintf(stderr, "DescentGraph: ");
+    fprintf(stdout, "DescentGraph: ");
     for(int locus = 0; locus < int(ped->num_markers()); ++locus) {
         for(unsigned i = 0; i  < ped->num_members(); ++i) {
             p = ped->get_by_index(i);
@@ -290,15 +294,17 @@ void DescentGraph::print() {
                 pat = get(i, locus, PATERNAL);
                 
                 //printf("%d%d", mat, pat);
-                fprintf(stderr, "%d%d", mat, pat);
+                fprintf(stdout, "%d%d", mat, pat);
             }
         }
     }
     //printf("\n");
-    fprintf(stderr, "\n");
+    fprintf(stdout, "\n");
 }
 
+// this seems to be what simwalk2 gets for 'transmission-of-the-markers'
+// line ~37200
 double DescentGraph::trans_prob() {
-    return marker_transmission; //+ _recombination_prob(); //_transmission_prob();
+    return marker_transmission;// + _recombination_prob();
 }
 

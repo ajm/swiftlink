@@ -41,7 +41,17 @@ bool LinkageProgram::run() {
 bool LinkageProgram::run_pedigree(Pedigree& p) {
     unsigned iterations = 1000000; //800 * p.num_members() * p.num_markers() * 10 * 2;
     SimwalkDescentGraph* opt;
+
+    opt = new SimwalkDescentGraph(&p, &map);
+    opt->random_descentgraph();
+    opt->likelihood();
     
+    Peeler peeler(&p, &map);
+    peeler.peel(opt);
+    
+    delete opt;
+    return true;
+
 /*    
     opt = new SimwalkDescentGraph(&p, &map);
     

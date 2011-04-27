@@ -26,7 +26,12 @@ void GeneticMap::print() {
 	printf("\n");
 	printf("  thetas:\n");
 	for(unsigned int i = 0; i < thetas.size(); ++i)
-		printf("\t%f\n", exp(thetas[i]));
+		printf("\t%e\n", exp(thetas[i]));
+    
+    printf("\n");
+    printf("  half-thetas:\n");
+    for(unsigned int i = 0; i < thetas.size(); ++i)
+        printf("\t%e\n", get_theta_halfway(i));
 
 	printf("\n");
 }

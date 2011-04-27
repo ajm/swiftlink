@@ -10,7 +10,6 @@ using namespace std;
 #include "genetic_map.h"
 #include "pedigree.h"
 #include "simwalk_descent_graph.h"
-#include "progress.h"
 #include "rfunction.h"
 
 
@@ -33,13 +32,9 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g) : ped(p), map(g), lod(p, g) {
 // over many descent graphs + all loci not just this one, but this is just
 // placeholder to get started...
 bool Peeler::peel(SimwalkDescentGraph* sdg) {
-    
-//    Progress prog("Peeling:", rfunctions.size() * (map->num_markers() - 1));
-/*
-    printf("=====\n");
+        
+    printf("\n");
     sdg->print();
-    sdg->
-    */
 
     // minus 1 because we want to look between markers
     // m-t-m-t-m-t-m where m is a marker and t is a trait location
@@ -50,30 +45,31 @@ bool Peeler::peel(SimwalkDescentGraph* sdg) {
             Rfunction& rf = rfunctions[j];
             
             if(not rf.evaluate(last, sdg, i)) {
-//                prog.error("bad R function");
                 return false;
             }
-            
-//            prog.increment();
-            
+                        
             last = rf.get_matrix();
             
-            //printf("\nRfunction %d\n\n", int(j));
-            //last->print();
+            printf("\nRfunction %d\n\n", int(j));
+            last->print();
         }
         
         lod.add(i, last->get_result(), sdg->trans_prob() / log(10));
         
-        //printf("locus %d prob = %e\n", i, log(last->get_result()));
+        printf("locus = %d, prob = %f (P(G^) = %f, Trans(G^) = %f)\n", 
+               i, 
+               log(last->get_result()), 
+               sdg->get_prob(), 
+               sdg->trans_prob()
+            );
 
+        //ajm
+        exit(-1);
     }
-
-//    prog.finish();
-
+    
     return true;
 }
 
 void Peeler::print() {
     lod.print();
 }
-

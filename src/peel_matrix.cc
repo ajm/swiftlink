@@ -131,6 +131,28 @@ double PeelMatrix::get_result() {
     return data[0];
 }
 
+double PeelMatrix::sum() {
+    double tmp = 0.0;
+    
+    for(unsigned i = 0; i < size; ++i) {
+        tmp += data[i];
+    }
+        
+    return tmp;
+}
+
+void PeelMatrix::normalise() {
+    double matrix_sum = sum();
+    
+    if(matrix_sum == 0.0) {
+        fprintf(stderr, "error: %s:%d, zero sum in normalise\n", __func__, __LINE__);
+    }
+    
+    for(unsigned i = 0; i < size; ++i) {
+        data[i] /= matrix_sum;
+    }
+}
+
 // XXX stolen from Rfunction
 void PeelMatrix::generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments) {
     pmatrix_index.reassign(keys, assignments);

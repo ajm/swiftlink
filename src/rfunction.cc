@@ -34,10 +34,10 @@ bool Rfunction::affected_trait(enum phased_trait pt, int allele) {
     
     switch(allele) {
         case 0 :
-            return (pt == TRAIT_AU) or (pt == TRAIT_AA) ? true : false;
+            return (pt == TRAIT_AU) or (pt == TRAIT_AA);
 
         case 1 :
-            return (pt == TRAIT_UA) or (pt == TRAIT_AA) ? true : false;
+            return (pt == TRAIT_UA) or (pt == TRAIT_AA);
         
         default :
             abort();
@@ -108,14 +108,20 @@ void Rfunction::evaluate_last_peel(
             fprintf(stderr, "key generated is illegal! (%s %d)\n", __FILE__, __LINE__);
             abort();
         }
-        
+
+
+        printf("\n\ttrait=%d d=%e o=%e\t= %e\n", 
+               pivot_trait,
+               get_disease_probability(pivot_trait), prev_matrix->get(pmatrix_index), 
+               get_disease_probability(pivot_trait) * prev_matrix->get(pmatrix_index));
+
+
         tmp += (get_disease_probability(pivot_trait) * prev_matrix->get(pmatrix_index));
     }
-    
-    tmp /= 4.0;
-    
+        
     pmatrix_index.add(pivot->get_internalid(), (enum phased_trait)0);
-    pmatrix.set(pmatrix_index, tmp); 
+    pmatrix.set(pmatrix_index, tmp);
+    printf("\nfinal prob := %e\n", tmp);
 }
 
 void Rfunction::evaluate_child_peel(
@@ -143,8 +149,8 @@ void Rfunction::evaluate_child_peel(
     
     // iterate over all descent graphs to determine child trait 
     // based on parents' traits
-    for(int i = 0; i < 2; ++i) {
-        for(int j = 0; j < 2; ++j) {
+    for(int i = 0; i < 2; ++i) {        // maternal
+        for(int j = 0; j < 2; ++j) {    // paternal
             
             piv_trait = get_phased_trait(mat_trait, pat_trait, i, j);
             
@@ -161,24 +167,19 @@ void Rfunction::evaluate_child_peel(
             recombination_prob  = get_recombination_probability(dg, locus_index, i, j);
             old_prob            = prev_matrix != NULL ? prev_matrix->get(prev_index) : 1.0;
             
-            //if((disease_prob != 0.0) and (recombination_prob != 0.0) and (old_prob != 0.0))
-            //    printf("d=%e r=%e o=%e\t%e\n", 
-            //        disease_prob, recombination_prob, old_prob, 
-            //        disease_prob * recombination_prob * old_prob);
+
+                printf("\n\t%d%d trait=%d d=%e r=%e o=%e\t= %e\n", 
+                       i, j, piv_trait,
+                       disease_prob, recombination_prob, old_prob, 
+                       disease_prob * recombination_prob * old_prob);
+
 
             tmp += (disease_prob * recombination_prob * old_prob);
-            
-            
-//            printf("pmatrix_index = "); pmatrix_index.print();
-//            printf(", prev_index = ");  prev_index.print();
-//            printf(", (missing = %d, additional = %d)\n", 
-//                int(missing.size()), int(additional.size()));
         }
     }
     
     pmatrix.set(pmatrix_index, tmp);
-    //printf("tmp = %e\n", tmp);
-//    printf("new value := %f\n", tmp);
+    printf(" := %e\n", tmp);
 }
 
 void Rfunction::evaluate_partner_peel(
@@ -204,18 +205,19 @@ void Rfunction::evaluate_partner_peel(
             fprintf(stderr, "key generated is illegal! (%s %d)\n", __FILE__, __LINE__);
             abort();
         }
+
+        
+        printf("\n\ttrait=%d d=%e o=%e\t= %e\n", 
+               pivot_trait,
+               get_disease_probability(pivot_trait), prev_matrix->get(prev_index), 
+               get_disease_probability(pivot_trait) * prev_matrix->get(prev_index));
+
         
         tmp += (get_disease_probability(pivot_trait) * prev_matrix->get(prev_index));
-        
-//        printf("pmatrix_index = ");
-//        pmatrix_index.print();
-//        printf(", prev_index = ");
-//        prev_index.print();
-//        printf(", (missing = %d, additional = %d) ", int(missing.size()), int(additional.size()));
-//        printf(" := %f\n", tmp);
     }
     
     pmatrix.set(pmatrix_index, tmp);
+    printf(" := %e\n", tmp);
 }
 
 void Rfunction::evaluate_element(
@@ -305,16 +307,21 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, SimwalkDescentGraph* dg, u
         }
     }
     
-/*    
-    fprintf(stderr, "\n\n");
-    fprintf(stderr, "pivot = %d\n", pivot->get_internalid());
-    for(unsigned int i = 0; i < missing.size(); ++i) {
-        fprintf(stderr, "missing[%d] = %d\n", i, missing[i]);
+    
+    
+
+    printf("\n\nRFUNCTION EVALUATION\n");
+    printf("pivot = %d\n", pivot->get_internalid());
+    printf("type = %s\n", peel.get_type() == CHILD_PEEL ? "child" : "partner");
+    for(unsigned i = 0; i < missing.size(); ++i) {
+        printf("missing[%d] = %d\n", i, missing[i]);
     }
-    for(unsigned int i = 0; i < additional.size(); ++i) {
-        fprintf(stderr, "additional[%d] = %d\n", i, additional[i]);
+    for(unsigned i = 0; i < additional.size(); ++i) {
+        printf("additional[%d] = %d\n", i, additional[i]);
     }
-*/
+
+    
+    
     
     // generate all assignments to iterate through n-dimensional matrix
     
@@ -328,6 +335,7 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, SimwalkDescentGraph* dg, u
         
         if(q.size() == ndim) {
             generate_key(k, q);
+            k.print(); //ajm
             evaluate_element(k, previous_matrix, dg, locus_index);
         }
         
@@ -343,7 +351,11 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, SimwalkDescentGraph* dg, u
             }
         }
     }
-
+    
+    if(peel.get_type() == CHILD_PEEL) {
+        pmatrix.normalise();
+    }
+    
     return true;
 }
 

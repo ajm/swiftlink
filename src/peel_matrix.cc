@@ -153,6 +153,16 @@ void PeelMatrix::normalise() {
     }
 }
 
+void PeelMatrix::divide_by(double x) {
+    if(x == 0.0) {
+        fprintf(stderr, "error: %s:%d, zero sum in normalise\n", __func__, __LINE__);
+    }
+    
+    for(unsigned i = 0; i < size; ++i) {
+        data[i] /= x;
+    }
+}
+
 // XXX stolen from Rfunction
 void PeelMatrix::generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments) {
     pmatrix_index.reassign(keys, assignments);

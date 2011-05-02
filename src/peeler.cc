@@ -32,10 +32,10 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g) : ped(p), map(g), lod(p, g) {
 // over many descent graphs + all loci not just this one, but this is just
 // placeholder to get started...
 bool Peeler::peel(SimwalkDescentGraph* sdg) {
-        
+    /*
     printf("\n");
     sdg->print();
-
+     */
     // minus 1 because we want to look between markers
     // m-t-m-t-m-t-m where m is a marker and t is a trait location
     for(unsigned i = 0; i < map->num_markers() - 1; ++i) {
@@ -55,16 +55,16 @@ bool Peeler::peel(SimwalkDescentGraph* sdg) {
         }
         
         lod.add(i, last->get_result(), sdg->trans_prob() / log(10));
-        
+        /*
         printf("locus = %d, prob = %f (P(G^) = %f, Trans(G^) = %f)\n", 
                i, 
                log(last->get_result()), 
                sdg->get_prob(), 
                sdg->trans_prob()
             );
-
+        */
         //ajm
-        exit(-1);
+        //exit(-1);
     }
     
     return true;

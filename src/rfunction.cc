@@ -99,7 +99,7 @@ void Rfunction::evaluate_last_peel(
     
     double tmp = 0.0;
     enum phased_trait pivot_trait;
-        
+            
     for(unsigned i = 0; i < num_alleles; ++i) {
         pivot_trait = static_cast<enum phased_trait>(i);
         pmatrix_index.add(pivot->get_internalid(), pivot_trait);
@@ -108,13 +108,11 @@ void Rfunction::evaluate_last_peel(
             fprintf(stderr, "key generated is illegal! (%s %d)\n", __FILE__, __LINE__);
             abort();
         }
-
-
+        
         printf("\n\ttrait=%d d=%e o=%e\t= %e\n", 
                pivot_trait,
                get_disease_probability(pivot_trait), prev_matrix->get(pmatrix_index), 
                get_disease_probability(pivot_trait) * prev_matrix->get(pmatrix_index));
-
 
         tmp += (get_disease_probability(pivot_trait) * prev_matrix->get(pmatrix_index));
     }
@@ -167,13 +165,13 @@ void Rfunction::evaluate_child_peel(
             recombination_prob  = get_recombination_probability(dg, locus_index, i, j);
             old_prob            = prev_matrix != NULL ? prev_matrix->get(prev_index) : 1.0;
             
-
-                printf("\n\t%d%d trait=%d d=%e r=%e o=%e\t= %e\n", 
-                       i, j, piv_trait,
-                       disease_prob, recombination_prob, old_prob, 
-                       disease_prob * recombination_prob * old_prob);
-
-
+            normalisation_total += (disease_prob * recombination_prob);
+            
+            printf("\n\t%d%d trait=%d d=%e r=%e o=%e\t= %e\n", 
+                    i, j, piv_trait,
+                    disease_prob, recombination_prob, old_prob, 
+                    disease_prob * recombination_prob * old_prob);
+            
             tmp += (disease_prob * recombination_prob * old_prob);
         }
     }
@@ -205,14 +203,12 @@ void Rfunction::evaluate_partner_peel(
             fprintf(stderr, "key generated is illegal! (%s %d)\n", __FILE__, __LINE__);
             abort();
         }
-
         
         printf("\n\ttrait=%d d=%e o=%e\t= %e\n", 
                pivot_trait,
                get_disease_probability(pivot_trait), prev_matrix->get(prev_index), 
                get_disease_probability(pivot_trait) * prev_matrix->get(prev_index));
 
-        
         tmp += (get_disease_probability(pivot_trait) * prev_matrix->get(prev_index));
     }
     
@@ -261,6 +257,9 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, SimwalkDescentGraph* dg, u
     unsigned int ndim = peel.get_cutset_size();
     unsigned int tmp;
     unsigned int i;
+    
+    
+    normalisation_total = 0.0;
     
 
     // nothing in the cutset to be enumerated
@@ -351,11 +350,12 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, SimwalkDescentGraph* dg, u
             }
         }
     }
-    
+
     if(peel.get_type() == CHILD_PEEL) {
-        pmatrix.normalise();
+        //pmatrix.normalise();
+        pmatrix.divide_by(normalisation_total);
     }
-    
+
     return true;
 }
 

@@ -24,6 +24,8 @@ class Rfunction {
     Pedigree* ped;
     Person* pivot;
     
+    double normalisation_total;
+        
     vector<unsigned int> missing;
     vector<unsigned int> additional;
     

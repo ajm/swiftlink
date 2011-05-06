@@ -55,7 +55,7 @@ void MarkovChain::run(SimwalkDescentGraph* seed, unsigned iterations) {
         // perform peeling
 		if((i >= burnin_steps) and ((i % 1000) == 0)) {
 		    //printf("peel!\n");
-		    peel.peel(current);
+		    peel.process(static_cast<DescentGraph*>(current));
 		}
 
         // XXX of course, this all involves massive amounts of copying

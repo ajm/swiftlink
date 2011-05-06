@@ -12,7 +12,7 @@ using namespace std;
 
 class Pedigree;
 class GeneticMap;
-class SimwalkDescentGraph;
+class DescentGraph;
 
 class Peeler {
     
@@ -24,7 +24,9 @@ class Peeler {
  public :
     Peeler(Pedigree* p, GeneticMap* g);
 
-    bool peel(SimwalkDescentGraph* sdg);
+    double calc_trait_prob();
+    double peel(DescentGraph* dg, unsigned locus);
+    bool process(DescentGraph* dg);
     void print();
 };
 

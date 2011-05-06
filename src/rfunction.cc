@@ -7,7 +7,7 @@ using namespace std;
 #include "peel_matrix.h"
 #include "genotype.h"
 #include "pedigree.h"
-#include "simwalk_descent_graph.h"
+#include "descent_graph.h"
 #include "trait.h"
 #include "genetic_map.h"
 
@@ -72,7 +72,7 @@ double Rfunction::get_disease_probability(enum phased_trait pt) {
 // a genetic marker
 // TODO XXX make this generic so it can do arbitrary points between markers
 double Rfunction::get_recombination_probability(
-                    SimwalkDescentGraph* dg, unsigned int locus_index,
+                    DescentGraph* dg, unsigned int locus_index,
                     int maternal_allele, int paternal_allele) {
 
     double tmp = 1.0;
@@ -125,7 +125,7 @@ void Rfunction::evaluate_last_peel(
 void Rfunction::evaluate_child_peel(
                     PeelMatrixKey& pmatrix_index, 
                     PeelMatrix* prev_matrix, 
-                    SimwalkDescentGraph* dg,
+                    DescentGraph* dg,
                     unsigned int locus_index) {
 
     double tmp = 0.0;
@@ -163,10 +163,9 @@ void Rfunction::evaluate_child_peel(
             
             disease_prob        = get_disease_probability(piv_trait);
             //recombination_prob  = 0.25 ;  // <---- do this when calculating P(T)
-            recombination_prob  = 0.25 * get_recombination_probability(dg, locus_index, i, j);
+            recombination_prob  = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus_index, i, j);
             old_prob            = prev_matrix != NULL ? prev_matrix->get(prev_index) : 1.0;
             
-            normalisation_total += (disease_prob * recombination_prob);
 /*            
             printf("\n\t%d%d trait=%d d=%e r=%e o=%e\t= %e\n", 
                     i, j, piv_trait,
@@ -220,7 +219,7 @@ void Rfunction::evaluate_partner_peel(
 void Rfunction::evaluate_element(
                     PeelMatrixKey& pmatrix_index, 
                     PeelMatrix* prev_matrix, 
-                    SimwalkDescentGraph* dg, 
+                    DescentGraph* dg, 
                     unsigned int locus_index) {
     
     // given that 'prev_matrix' exists, we need to be able to query it
@@ -234,12 +233,10 @@ void Rfunction::evaluate_element(
     // XXX this could all be sped up with template probably (?)
     switch(peel.get_type()) {
         case CHILD_PEEL :
-//            printf("child\n");
             evaluate_child_peel(pmatrix_index, prev_matrix, dg, locus_index);
             break;
             
         case PARTNER_PEEL :
-//            printf("partner\n");
             evaluate_partner_peel(pmatrix_index, prev_matrix);
             break;
         
@@ -252,7 +249,7 @@ void Rfunction::evaluate_element(
 
 // XXX can i tell if these matrix can be used together
 //
-bool Rfunction::evaluate(PeelMatrix* previous_matrix, SimwalkDescentGraph* dg, unsigned int locus_index) {
+bool Rfunction::evaluate(PeelMatrix* previous_matrix, DescentGraph* dg, unsigned int locus_index) {
     PeelMatrixKey k;
     vector<unsigned int> q;
     unsigned int ndim = peel.get_cutset_size();
@@ -260,9 +257,6 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, SimwalkDescentGraph* dg, u
     unsigned int i;
     
     
-    normalisation_total = 0.0;
-    
-
     // nothing in the cutset to be enumerated
     if(peel.get_type() == LAST_PEEL) {
         evaluate_last_peel(k, previous_matrix);
@@ -308,7 +302,6 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, SimwalkDescentGraph* dg, u
     }
     
     
-    
 /*
     printf("\n\nRFUNCTION EVALUATION\n");
     printf("pivot = %d\n", pivot->get_internalid());
@@ -320,7 +313,6 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, SimwalkDescentGraph* dg, u
         printf("additional[%d] = %d\n", i, additional[i]);
     }
 */
-    
     
     
     // generate all assignments to iterate through n-dimensional matrix
@@ -351,12 +343,7 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, SimwalkDescentGraph* dg, u
             }
         }
     }
-/*
-    if(peel.get_type() == CHILD_PEEL) {
-        //pmatrix.normalise();
-        //pmatrix.divide_by(normalisation_total);
-    }
-*/
+    
     return true;
 }
 

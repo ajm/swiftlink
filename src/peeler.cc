@@ -9,7 +9,7 @@ using namespace std;
 #include "peeler.h"
 #include "genetic_map.h"
 #include "pedigree.h"
-#include "simwalk_descent_graph.h"
+#include "descent_graph.h"
 #include "rfunction.h"
 
 
@@ -25,51 +25,41 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g) : ped(p), map(g), lod(p, g) {
         Rfunction rf(ops[i], ped, map, 4);
         rfunctions.push_back(rf);
     }
+    
+    lod.set_trait_prob(calc_trait_prob());
 }
 
-// XXX put all peeling sequence calculation + evaluation code 
-// in own module, this is not the final form as it need to peel
-// over many descent graphs + all loci not just this one, but this is just
-// placeholder to get started...
-bool Peeler::peel(SimwalkDescentGraph* sdg) {
-    
-    //printf("\n");
-    //sdg->print();
-    
+double Peeler::calc_trait_prob() {
+    return this->peel(NULL, 0);
+}
+
+bool Peeler::process(DescentGraph* dg) {
     // minus 1 because we want to look between markers
     // m-t-m-t-m-t-m where m is a marker and t is a trait location
     for(unsigned i = 0; i < map->num_markers() - 1; ++i) {
-        PeelMatrix* last = NULL;
-
-        for(unsigned j = 0; j < rfunctions.size(); ++j) {
-            Rfunction& rf = rfunctions[j];
-            
-            if(not rf.evaluate(last, sdg, i)) {
-                return false;
-            }
-                        
-            last = rf.get_matrix();
-            
-            //printf("\nRfunction %d\n\n", int(j));
-            //last->print();
-        }
-        
-        lod.add(i, last->get_result(), sdg->trans_prob() / log(10));
-/*
-        printf("locus = %d, prob = %f (P(G^) = %f, Trans(G^) = %f)\n", 
-               i, 
-               log10(last->get_result()), 
-               sdg->get_prob() / log(10.0), 
-               sdg->trans_prob() / log(10.0)
-            );
-*/
-        //ajm
-        //exit(-1);
+        lod.add(i, this->peel(dg, i) - dg->trans_prob()); // this is all in base e
     }
     
     return true;
 }
 
+double Peeler::peel(DescentGraph* dg, unsigned locus) {
+    PeelMatrix* last = NULL;
+
+    for(unsigned i = 0; i < rfunctions.size(); ++i) {
+        Rfunction& rf = rfunctions[i];
+        
+        if(not rf.evaluate(last, dg, locus)) {
+            return false;
+        }
+        
+        last = rf.get_matrix();
+    }
+    
+    return log(last->get_result()); // TODO : convert all peel code to log likelihood?
+}
+
 void Peeler::print() {
     lod.print();
 }
+

@@ -125,7 +125,6 @@ class PeelMatrix {
 
     double sum();
     void normalise();
-    void divide_by(double x);
     
     void generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments);
     void print();

@@ -70,16 +70,16 @@ double DiseaseModel::get_apriori_prob(enum affection a, enum unphased_trait t) {
 // of what the trait might be in an individual given their affection status
 // this info will be used by the Person objects
 void DiseaseModel::finish_init() {
-	double affected_total;
-    double unaffected_total;
-    double unknown_total;
+	//double affected_total;
+    //double unaffected_total;
+    //double unknown_total;
     
 
     // don't actually normalise these because the penetrace is the probability
     // of developing the phenotype, given that you have the genetic trait
     // so they don't necessarily sum to 1
-    affected_total = 1.0;
-    unaffected_total = 1.0;
+    //affected_total = 1.0;
+    //unaffected_total = 1.0;
 
 /*
     // XXX no, wrong. this is actually "given the affection status" what is the

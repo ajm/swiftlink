@@ -12,7 +12,7 @@ using namespace std;
 
 class Pedigree;
 class Person;
-class SimwalkDescentGraph;
+class DescentGraph;
 class GeneticMap;
 
 class Rfunction {
@@ -23,8 +23,6 @@ class Rfunction {
     GeneticMap* map;
     Pedigree* ped;
     Person* pivot;
-    
-    double normalisation_total;
         
     vector<unsigned int> missing;
     vector<unsigned int> additional;
@@ -40,7 +38,7 @@ class Rfunction {
                 );
     double get_disease_probability(enum phased_trait pt);
     double get_recombination_probability(
-                    SimwalkDescentGraph* dg, 
+                    DescentGraph* dg, 
                     unsigned int locus_index, 
                     int maternal_allele, 
                     int paternal_allele
@@ -48,7 +46,7 @@ class Rfunction {
     void evaluate_child_peel(
                     PeelMatrixKey& pmatrix_index, 
                     PeelMatrix* prev_matrix, 
-                    SimwalkDescentGraph* dg, 
+                    DescentGraph* dg, 
                     unsigned int locus_index
                 );
     void evaluate_partner_peel(
@@ -62,7 +60,7 @@ class Rfunction {
     void evaluate_element(
                     PeelMatrixKey& pmatrix_index, 
                     PeelMatrix* prev_matrix, 
-                    SimwalkDescentGraph* dg, 
+                    DescentGraph* dg, 
                     unsigned int locus_index
                 );
 
@@ -71,7 +69,7 @@ class Rfunction {
     
     PeelMatrix* get_matrix() { return &pmatrix; }
     
-    bool evaluate(PeelMatrix* previous_matrix, SimwalkDescentGraph* dg, unsigned int locus_index);
+    bool evaluate(PeelMatrix* previous_matrix, DescentGraph* dg, unsigned int locus_index);
 };
 
 #endif

@@ -4,6 +4,7 @@ using namespace std;
 #include <iostream>
 #include <sstream>
 #include <string>
+//#include <iomanip>
 
 #include "disease_model.h"
 #include "trait.h"
@@ -20,17 +21,29 @@ string DiseaseModel::debug_string() {
                            << penetrance[2] << endl;
     ss << endl;
     
+    // I hate not doing this inline, like a fmt string...
+    // I know about setprecision(n) inline, but that set it permanently
+    // which is 'surprising'
+    ss.precision(3);
+    
     for(int i = 0; i < 3; ++i) {
         for(int j = 0; j < 3; ++j) {        
-            ss << "\tapriori_prob[" << i << "][" << j << "] = " << apriori_prob[i][j] << endl;
+            ss << "\tapriori_prob[" << i << "][" << j << "] = " \
+               << scientific << apriori_prob[i][j] << endl;
         }
     }
     
     for(int i = 0; i < 3; ++i) {
         for(int j = 0; j < 3; ++j) {        
-            ss << "\tpenetrance_prob[" << i << "][" << j << "] = " << penetrance_prob[i][j] << endl;
+            ss << "\tpenetrance_prob[" << i << "][" << j << "] = " \
+               << scientific << penetrance_prob[i][j] << endl;
         }
     }
+    
+    ss << endl;
+    
+    ss << "(1st index: UNKNOWN_AFFECTION, UNAFFECTED, AFFECTED)" << endl; 
+    ss << "(2nd index: TRAIT_HOMO_U, TRAIT_HETERO, TRAIT_HOMO_A)" << endl;
     
     ss << endl;
     

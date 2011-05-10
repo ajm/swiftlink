@@ -23,8 +23,10 @@ using namespace std;
 bool LinkageProgram::run() {
     bool ret = true;
     
-    dm.print();
+    fprintf(stderr, "%s", dm.debug_string().c_str());
     map.print();
+    
+    exit(-1);
 
     // XXX need to know how to do this properly, 
     // look up better random numbers for simulations etc

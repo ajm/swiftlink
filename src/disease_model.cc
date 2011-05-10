@@ -1,10 +1,41 @@
 using namespace std;
 
 #include <cstdio>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 #include "disease_model.h"
 #include "trait.h"
 
+
+string DiseaseModel::debug_string() {
+    stringstream ss;
+    
+    ss << "DiseaseModel:" << endl;
+    ss << "\tsex linked: " << (sexlinked ? "true" : "false") << endl;
+    ss << "\tdisease freq: " << frequency << endl;
+    ss << "\tpenetrance: " << penetrance[0] << ", " 
+                           << penetrance[1] << ", " 
+                           << penetrance[2] << endl;
+    ss << endl;
+    
+    for(int i = 0; i < 3; ++i) {
+        for(int j = 0; j < 3; ++j) {        
+            ss << "\tapriori_prob[" << i << "][" << j << "] = " << apriori_prob[i][j] << endl;
+        }
+    }
+    
+    for(int i = 0; i < 3; ++i) {
+        for(int j = 0; j < 3; ++j) {        
+            ss << "\tpenetrance_prob[" << i << "][" << j << "] = " << penetrance_prob[i][j] << endl;
+        }
+    }
+    
+    ss << endl;
+    
+    return ss.str();
+}
 
 void DiseaseModel::print() {
     printf("DiseaseModel:\n");

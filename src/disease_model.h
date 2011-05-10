@@ -1,6 +1,10 @@
 #ifndef LKG_DISEASEMODEL_H_
 #define LKG_DISEASEMODEL_H_
 
+using namespace std;
+
+#include <string>
+
 #include "trait.h"
 #include "person.h" // for enum affection
 
@@ -47,6 +51,7 @@ class DiseaseModel {
     void set(enum simple_disease_model d);
     
 	void print();
+	string debug_string();
 };
 
 #endif

@@ -9,6 +9,13 @@ using namespace std;
 #include "parser.h"
 
 
+enum linkagefile_loci {
+    QUANTITATIVE_VARIABLE,
+    AFFECTION_STATUS,
+    BINARY_FACTOR,
+    NUMBERED_ALLELES
+};
+
 class GeneticMap;
 class DiseaseModel;
 

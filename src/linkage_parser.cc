@@ -83,7 +83,10 @@ bool LinkageParser::information_on_recombination(const int linenum) {
 				return false;
 			}
 			
-			for(unsigned int i = 0; i < tmp->size(); ++i) {
+			// XXX : value zero is often for the trait marker
+			// and is not at a single position in the genetic map
+			// for multi-point analysis 
+			for(unsigned i = 1; i < tmp->size(); ++i) {
 				map.add_theta((*tmp)[i]);
 			}
 
@@ -258,6 +261,12 @@ bool LinkageParser::read_affection_status() {
 	stringstream ss;
 	vector<double>* af;
 	bool tmp;
+	
+	if(total_markers_read() != 0) {
+	    fprintf(stderr, "error: %s, line %d: trait marker must be the first marker in linkage file\n",
+							filename.c_str(), linenum);
+	    return false;
+	}
 
 	switch(marker_linenum) {
 		case 0 :
@@ -318,7 +327,7 @@ bool LinkageParser::read_affection_status() {
 }
 
 bool LinkageParser::read_numbered_allele() {
-	if(! read_abstract_marker())
+	if(! read_abstract_marker()) 
 		return false;
 
 	if(marker_linenum >= 2) {
@@ -355,8 +364,11 @@ bool LinkageParser::read_marker_code(const string s) {
 
 int LinkageParser::total_markers_read() {
 	int tmp = 0;
-	for(int i = 0; i < 4; ++i)
+	
+	for(int i = 0; i < 4; ++i) {
 		tmp += markers_read[i];
+    }
+		
 	return tmp;
 }
 
@@ -371,10 +383,7 @@ bool LinkageParser::parse_line(const int linenum, const string line) {
 	if(linenum < 3) {
 		return general_information(linenum);
 	}
-
-//	printf("   --> number_of_loci: %d, markers_read: %d\n", 
-//		number_of_loci, total_markers_read());
-
+    
 	if(total_markers_read() < number_of_loci) {
 		return description_of_loci(linenum);
 	}
@@ -384,8 +393,16 @@ bool LinkageParser::parse_line(const int linenum, const string line) {
 
 bool LinkageParser::parse_end() {
 	// handle incompletely read markers
-	if(marker_linenum != 0)
+	if(marker_linenum != 0) {
+	    fprintf(stderr, "error: %s: unexpected EOF\n", filename.c_str());
 	    return false;
+	}
+	    
+	if(markers_read[AFFECTION_STATUS] != 1) {
+	    fprintf(stderr, "error: %s: did not read trait marker\n", 
+				filename.c_str());
+	    return false;
+	}
 	
 	dis.finish_init();
 	

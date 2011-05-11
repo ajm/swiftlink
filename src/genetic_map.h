@@ -5,11 +5,16 @@ using namespace std;
 
 #include <cstdio>
 #include <cmath>
-#include <string>
+
 #include <vector>
+#include <iostream>
+#include <sstream>
+#include <string>
+
+#include "debug.h"
 
 
-// XXX create a super class 'marker'
+// XXX create a super class 'marker'?
 // or maybe I will just ignore more polymorphic markers
 class Snp {
 
@@ -39,11 +44,19 @@ class Snp {
     string get_name() { return name; }
     double get_g_distance() { return genetic_distance; }
     unsigned int get_p_distance() { return physical_distance; }
-
-	void print() {
-		printf("\t%s\t%f\t%u\t(minor=%f, major=%f)\n",
-			name.c_str(), genetic_distance, physical_distance,
-			minor_freq, major_freq);
+	
+	string debug_string() {
+	    stringstream ss;
+	    
+	    ss.precision(DEBUG_FP_PRECISION);
+	    
+	    ss << "\t" << name \
+	       << "\t" << fixed << genetic_distance \
+	       << "\t" << physical_distance \
+	       << "\t(minor=" << fixed << minor_freq \
+	       << ", major=" << fixed << major_freq << ")";
+	    
+	    return ss.str();
 	}
 };
 
@@ -99,7 +112,8 @@ class GeneticMap {
     }
 
     bool sanity_check();
-	void print();
+	string debug_string();
+	
     double get_theta_halfway(unsigned int i);
 };
 

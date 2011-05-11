@@ -23,8 +23,8 @@ using namespace std;
 bool LinkageProgram::run() {
     bool ret = true;
     
-    fprintf(stderr, "%s", dm.debug_string().c_str());
-    map.print();
+    fprintf(stderr, "%s\n", dm.debug_string().c_str());
+    fprintf(stderr, "%s\n", map.debug_string().c_str());
     
     
 

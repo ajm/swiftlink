@@ -1,5 +1,11 @@
+using namespace std;
+
 #include <cstdio>
 #include <cmath>
+
+#include <iostream>
+#include <sstream>
+#include <string>
 
 #include "genetic_map.h"
 
@@ -17,23 +23,23 @@ bool GeneticMap::sanity_check() {
     return sane;
 }
 
-void GeneticMap::print() {
-    printf("GeneticMap: %d loci\n", int(map.size()));
-	
-	for(unsigned int i = 0; i < map.size(); ++i)
-		map[i].print();
-		
-	printf("\n");
-	printf("  thetas:\n");
-	for(unsigned int i = 0; i < thetas.size(); ++i)
-		printf("\t%e\n", exp(thetas[i]));
+string GeneticMap::debug_string() {
+    stringstream ss;
     
-    printf("\n");
-    printf("  half-thetas:\n");
-    for(unsigned int i = 0; i < thetas.size(); ++i)
-        printf("\t%e\n", get_theta_halfway(i));
-
-	printf("\n");
+    ss.precision(DEBUG_FP_PRECISION);
+    
+    ss << "GeneticMap: " << map.size() << " loci" << endl;
+    
+    for(unsigned i = 0; i < map.size(); ++i) {
+        ss << scientific << map[i].debug_string() << endl;
+    }
+    
+    ss << "  thetas:" << endl;
+    for(unsigned i = 0; i < thetas.size(); ++i) {
+        ss << "\t" << scientific << thetas[i] << endl;
+    }
+    
+    return ss.str();
 }
 
 double GeneticMap::haldane(double m) {

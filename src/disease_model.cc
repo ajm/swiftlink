@@ -43,7 +43,6 @@ string DiseaseModel::debug_string() {
     ss << endl;
     ss << "(1st index: UNKNOWN_AFFECTION, UNAFFECTED, AFFECTED)" << endl; 
     ss << "(2nd index: TRAIT_HOMO_U, TRAIT_HETERO, TRAIT_HOMO_A)" << endl;
-    ss << endl;
     
     return ss.str();
 }

@@ -11,8 +11,8 @@ class LinkageProgram : public Program {
     bool run_pedigree(Pedigree& p);
 
  public :
-    LinkageProgram(char* ped, char* map, char* dat)
-		: Program(ped, map, dat) {}
+    LinkageProgram(char* ped, char* map, char* dat, bool verbose)
+		: Program(ped, map, dat, verbose) {}
     
 	~LinkageProgram() {}
 

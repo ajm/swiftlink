@@ -5,15 +5,23 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <unistd.h>
 
 #include "linkage_program.h"
+//#include "haplotype_program.h"
 
+
+enum analysistype {
+    LINKAGE,
+    HAPLOTYPE
+};
 
 char*   mapfile;
 char*   pedfile;
 char*   datfile;
 bool    verbose;
+enum analysistype analysis;
 
 void _usage(char *prog) {
 	fprintf(stderr,
@@ -21,6 +29,7 @@ void _usage(char *prog) {
 			"\t-p <pedigree file>\n"
 			"\t-m <map file>\n"
 			"\t-d <data file>\n"
+			"\t-a <linkage|haplotype> (default: linkage)"
 			"\t-v verbose\n"
 			"\t-h print usage information\n"
 			"\n", 
@@ -43,7 +52,7 @@ void _meow(void) {
 	exit(EXIT_SUCCESS);
 }
 
-static void _handle_args(int argc, char **argv) {
+void _handle_args(int argc, char **argv) {
 	extern char *optarg;
     extern int optopt;
 	int ch;
@@ -51,30 +60,53 @@ static void _handle_args(int argc, char **argv) {
 	
 	mapfile = pedfile = datfile = NULL;
 	verbose = false;
+	analysis = LINKAGE;
 	
-	while ((ch = getopt(argc, argv, ":p:d:m:vhc")) != -1) {
+	while ((ch = getopt(argc, argv, ":p:d:m:a:vhc")) != -1) {
 		switch (ch) {
 			case 'p':
 				pedfile = optarg;
 				break;
+				
 			case 'm':
 				mapfile = optarg;
 				break;
+				
 			case 'd':
 				datfile = optarg;
 				break;
+				
 			case 'v':
 				verbose = true;
 				break;
+				
+		    case 'a':
+		        if(strcmp(optarg, "linkage") == 0) {
+		            analysis = LINKAGE;
+		        }
+		        else if(strcmp(optarg, "haplotype") == 0) {
+		            analysis = HAPLOTYPE;
+		        }
+		        else {
+		            fprintf(stderr, "%s: option '-a' can only accept 'linkage' or "
+		                "'haplotype' as arguments ('%s' given)\n",
+		                argv[0], optarg);
+		            exit(-1);
+		        }
+		        break;
+		        
 			case 'h':
 				_usage(argv[0]);
 				exit(EXIT_SUCCESS);
+				
 			case 'c':
 				_meow();
+				
             case ':':
                 fprintf(stderr, "%s: option '-%c' requires an argument\n", 
                         argv[0], optopt);
                 break;
+                
 			case '?':
 			default:
                 fprintf(stderr, "%s: option '-%c' invalid, ignoring...\n", 
@@ -104,14 +136,40 @@ static void _handle_args(int argc, char **argv) {
 	}
 }
 
-int main(int argc, char **argv) {
-	_handle_args(argc, argv);
-    
-    LinkageProgram lp(pedfile, mapfile, datfile);
+int linkage_analysis() {
+    LinkageProgram lp(pedfile, mapfile, datfile, verbose);
     
 	if(lp.run()) {
 		return EXIT_SUCCESS;
 	}
+	
+	return EXIT_FAILURE;
+}
+
+int haplotype_analysis() {
+/*
+    HaplotypeProgram hp(pedfile, mapfile, datfile, verbose);
+    
+	if(hp.run()) {
+		return EXIT_SUCCESS;
+	}
+*/	
+	return EXIT_FAILURE;
+}
+
+int main(int argc, char **argv) {
+	_handle_args(argc, argv);
+    
+    switch(analysis) {
+        case LINKAGE :
+            return linkage_analysis();
+            
+        case HAPLOTYPE :
+            return haplotype_analysis();
+        
+        default :
+            break;
+    }
 
 	return EXIT_FAILURE;
 }

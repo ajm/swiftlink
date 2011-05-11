@@ -6,6 +6,8 @@ using namespace std;
 #include <cstdio>
 #include <cstdlib>
 #include <string>
+#include <iostream>
+#include <sstream>
 #include <vector>
 
 #include "genotype.h"
@@ -168,7 +170,6 @@ class Person {
     // pedigree construction / validation
 	bool mendelian_errors() const;
 	void fill_in_relationships();
-	void print() const;
 
 	// so I can sort, I don't care for a specific (strong) ordering, 
 	// I just want all the founders first
@@ -178,6 +179,8 @@ class Person {
 
     bool peel_operation(PeelOperation& p, PeelingState& state);
     double get_disease_prob(enum phased_trait pt);
+    
+    string debug_string();
 };
 
 #endif

@@ -87,7 +87,7 @@ class Pedigree {
 	bool exists(const string& id);
 	
 	bool sanity_check();
-	void print() const;
+	string debug_string();
 };
 
 #endif

@@ -4,6 +4,9 @@ using namespace std;
 #include <vector>
 #include <algorithm>
 #include <queue>
+#include <string>
+#include <iostream>
+#include <sstream>
 
 #include "lkg.h"
 #include "person.h"
@@ -12,6 +15,7 @@ using namespace std;
 #include "peeling.h"
 #include "disease_model.h"
 #include "trait.h"
+#include "debug.h"
 
 
 void Person::init_probs(DiseaseModel& dm) {
@@ -111,39 +115,35 @@ string Person::affection_str() const {
 	return "unspecified";
 }
 
-void Person::print() const {
-	printf( "\tid: %s (%d)\n"
-            "\tfather: %s (%d)\n"
-            "\tmother: %s (%d)\n"
-            "\tgender: %s\n"
-            "\taffection: %s\n"
-            "\tnumber of markers: %d\n",
-			id.c_str(),     internal_id,
-			father.c_str(), paternal_id,
-			mother.c_str(), maternal_id,
-			gender_str().c_str(),
-			affection_str().c_str(),
-            int(genotypes.size()));
+string Person::debug_string() {
+    stringstream ss;
     
-    printf( "\tchildren: ");
+    ss.precision(DEBUG_FP_PRECISION);
+    
+    ss << "\tid: " << id << "(" << internal_id << ")" << endl \
+       << "\tfather: " << father << "(" << paternal_id << ")" << endl \
+       << "\tmother: " << mother << "(" << maternal_id << ")" << endl \
+       << "\tgender: " << gender_str() << endl \
+       << "\taffection: " << affection_str() << endl \
+       << "\tnumber of markers: " << genotypes.size() << endl;
+       
+    ss << "\tchildren:";
     for(unsigned i = 0; i < children.size(); ++i)
-        printf("%d ", children[i]->internal_id);
-    printf( "\n");
+        ss << children[i]->internal_id << " ";
+    ss << endl;
     
-    printf( "\tmates: ");
+    ss << "\tmates:";
     for(unsigned i = 0; i < mates.size(); ++i)
-        printf("%d ", mates[i]->internal_id);
-    printf( "\n");
+        ss << mates[i]->internal_id << " ";
+    ss << endl;
     
-    printf( "\tprobabilities:\n");
-    printf( "\t\tTRAIT_AA = %f\n"
-            "\t\tTRAIT_AU = %f\n"
-            "\t\tTRAIT_UA = %f\n"
-            "\t\tTRAIT_UU = %f\n",
-            disease_prob[TRAIT_AA],
-            disease_prob[TRAIT_AU],
-            disease_prob[TRAIT_UA],
-            disease_prob[TRAIT_UU]);
+    ss << "\tprobabilities:" << endl \
+       << "\t\tTRAIT_AA = " << fixed << disease_prob[TRAIT_AA] << endl \
+       << "\t\tTRAIT_AU = " << fixed << disease_prob[TRAIT_AU] << endl \
+       << "\t\tTRAIT_UA = " << fixed << disease_prob[TRAIT_UA] << endl \
+       << "\t\tTRAIT_UU = " << fixed << disease_prob[TRAIT_UU] << endl;
+       
+    return ss.str(); 
 }
 
 //----------

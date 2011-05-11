@@ -24,10 +24,11 @@ class Program {
 	vector<Pedigree> pedigrees;
 	GeneticMap map;
 	DiseaseModel dm;
+	bool verbose;
 	
  public :
-	Program(char* ped, char* map, char* dat)
-		: pedfile(ped), mapfile(map), datfile(dat) {
+	Program(char* ped, char* map, char* dat, bool verbose)
+		: pedfile(ped), mapfile(map), datfile(dat), verbose(verbose) {
 
         if(! read_and_check_input()) {
             exit(1);

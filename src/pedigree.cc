@@ -2,6 +2,8 @@ using namespace std;
 
 #include <cstdio>
 #include <string>
+#include <iostream>
+#include <sstream>
 #include <algorithm>
 #include <queue>
 
@@ -278,11 +280,15 @@ int Pedigree::_count_components() {
 	return components;
 }
 
-void Pedigree::print() const {
-	printf("Pedigree: %s\n", id.c_str());
-	for(uint i = 0; i < members.size(); ++i) {
-		members[i].print();
-		printf("\n");
-	}
+string Pedigree::debug_string() {
+    stringstream ss;
+    
+    ss << "Pedigree: " << id << endl;
+    
+    for(unsigned i = 0; i < members.size(); ++i) {
+        ss << members[i].debug_string() << endl;
+    }
+        
+    return ss.str();
 }
 

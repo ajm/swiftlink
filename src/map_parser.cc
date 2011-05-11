@@ -57,7 +57,7 @@ bool MapParser::parse_line(const int linenum, const string line) {
         return false;
     }
 
-    gdist /= 100.0;
+    gdist /= 100.0; // XXX get to morgans
     
     Snp snp(name, gdist, pdist);
     map.add(snp);
@@ -65,7 +65,9 @@ bool MapParser::parse_line(const int linenum, const string line) {
     return true;
 }
 
-bool MapParser::parse_end() { 
-    return true; //map.sanity_check();
+bool MapParser::parse_end() {
+    // annoyingly, the map cannot be sanity checked, because
+    // the linkage file needs to be read first 
+    return true;
 }
 

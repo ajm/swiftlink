@@ -8,6 +8,7 @@
 #include "linkage_parser.h"
 
 // see : http://linkage.rockefeller.edu/soft/linkage/sec2.6.html
+// for file format information
 
 bool LinkageParser::unsupported(string s) {
 	fprintf(stderr, "Apologises: \"%s\" not supported\n", s.c_str());
@@ -40,17 +41,20 @@ bool LinkageParser::description_of_loci(const int linenum) {
 		}
 	}
 
-//	printf("LOCI: %s\n", loci2str((linkagefile_loci_t)marker_code));
-
 	switch(marker_code) {
+	
 		case QUANTITATIVE_VARIABLE :
 			return read_quantitative_variable();
+			
 		case AFFECTION_STATUS :
 			return read_affection_status();
+			
 		case BINARY_FACTOR :
 			return read_binary_factor();
+			
 		case NUMBERED_ALLELES :
 			return read_numbered_allele();
+			
 		default :
 			break;
 	}
@@ -69,6 +73,7 @@ bool LinkageParser::information_on_recombination(const int linenum) {
 	switch(recomb_linenum) {
 		case 0 : // ignore
 			break;
+			
 		case 1 :
 			tmp = get_doubles();
 			if(!tmp) {
@@ -83,10 +88,11 @@ bool LinkageParser::information_on_recombination(const int linenum) {
 			}
 
 			delete tmp;
-
 			break;
+			
 		case 2 : // ignore
 			break;
+			
 		default :
 			return false;
 	}
@@ -98,11 +104,13 @@ bool LinkageParser::information_on_recombination(const int linenum) {
 
 bool LinkageParser::set_numloci(const string s) {
 	stringstream ss(s);
+	
 	if((ss >> number_of_loci).fail()) {
 		fprintf(stderr, "error: %s, line 1: number of loci \"%s\" is not an integer\n",
 				filename.c_str(), s.c_str());
 		return false;
 	}
+	
 	return true;
 }
 
@@ -128,11 +136,13 @@ bool LinkageParser::set_sexlinked(const string s) {
 
 bool LinkageParser::set_programcode(const string s) {
 	stringstream ss(s);
+	
 	if((ss >> program_code).fail()) {
 		fprintf(stderr, "error: %s, line 1: program code \"%s\" is not an integer\n",
 				filename.c_str(), s.c_str());
 		return false;
 	}
+	
 	return true;
 }
 
@@ -161,6 +171,7 @@ bool LinkageParser::check_num_loci() {
 	fprintf(stderr, "error: %s: number of loci from line 1 (%d) and "
 				"length of loci ordering from line 3 (%d) should match\n",
 				filename.c_str(), number_of_loci, int(tokens.size()));
+	
 	return false;
 }
 
@@ -195,8 +206,6 @@ bool LinkageParser::read_abstract_marker() {
 	vector<double>* af;
 	stringstream ss;
 
-	//printf("read_abstract_marker\n");
-
 	switch(marker_linenum) {
 		case 0 :
 			ss << tokens[1];
@@ -216,6 +225,15 @@ bool LinkageParser::read_abstract_marker() {
 			if(marker_alleles != int(af->size())) {
 				fprintf(stderr, "error: %s, line %d: expected %d alleles, but read %d\n",
 							filename.c_str(), linenum, marker_alleles, int(af->size()));
+			    return false;
+			}
+			
+			// XXX assume everything is a SNP
+			// or a trait for now, at least
+			if(marker_alleles != 2) {
+			    fprintf(stderr, "error: %s, line %d: this program is only designed to handle markers with 2 alleles\n",
+							filename.c_str(), linenum);
+			    return false;
 			}
 			
 			// XXX only suitable for SNPs and traits
@@ -223,6 +241,7 @@ bool LinkageParser::read_abstract_marker() {
 			
 			delete af;
 			marker_linenum++;
+			
 			return true;
 			
 		default :
@@ -239,8 +258,6 @@ bool LinkageParser::read_affection_status() {
 	stringstream ss;
 	vector<double>* af;
 	bool tmp;
-
-	//printf("read_affection_status\n");
 
 	switch(marker_linenum) {
 		case 0 :
@@ -346,7 +363,6 @@ int LinkageParser::total_markers_read() {
 void LinkageParser::marker_end() { 
 	marker_linenum = 0; 
 	markers_read[marker_code]++; 
-//	printf("\n\n"); 
 }
 
 bool LinkageParser::parse_line(const int linenum, const string line) {
@@ -372,6 +388,7 @@ bool LinkageParser::parse_end() {
 	    return false;
 	
 	dis.finish_init();
+	
 	return true;
 }
 

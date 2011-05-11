@@ -12,7 +12,7 @@ using namespace std;
 enum simple_disease_model {
     SIMPLE_AUTOSOMAL_RECESSIVE,
     SIMPLE_AUTOSOMAL_DOMINANT
-    // XXX more...
+    // XXX more?
 };
 
 class DiseaseModel {
@@ -22,8 +22,10 @@ class DiseaseModel {
 	double penetrance_prob[3][3];
 	bool sexlinked;
 
+
     double get_prob(double prob[3][3], enum affection a, enum unphased_trait t);    
     void set_autosomal_recessive();
+    void set_autosomal_dominant();
 	
  public :
 	DiseaseModel() 
@@ -46,11 +48,10 @@ class DiseaseModel {
     
     double get_penetrance_prob(enum affection a, enum unphased_trait t);
     double get_apriori_prob(enum affection a, enum unphased_trait t);
-    void finish_init();
-
-    void set(enum simple_disease_model d);
     
-	void print();
+    void set(enum simple_disease_model d);
+    void finish_init();
+    
 	string debug_string();
 };
 

@@ -14,10 +14,11 @@ class HaplotypeWriter {
 	DescentGraph* dg;
 	Pedigree* ped;
 	GeneticMap* map;
+	bool verbose;
 
  public:
-	HaplotypeWriter(string fname, DescentGraph* d, Pedigree* p, GeneticMap* g) 
-		: filename(fname), dg(d), ped(p), map(g) {}
+	HaplotypeWriter(DescentGraph* d, Pedigree* p, GeneticMap* g, const char* fname, bool verbose) 
+		: filename(fname), dg(d), ped(p), map(g), verbose(verbose) {}
 	~HaplotypeWriter() {}
 
 	bool write();

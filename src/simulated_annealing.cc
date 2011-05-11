@@ -36,8 +36,6 @@ SimwalkDescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
 	//current->haplotype_likelihood();
     current->likelihood();
 
-    printf("random descent graph prob = %f\n", current->get_prob());
-
 	temp = new SimwalkDescentGraph(ped, map);
 	best = new SimwalkDescentGraph(ped, map);
 
@@ -59,36 +57,20 @@ SimwalkDescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
 		
         p.increment();
 
-// XXX of course, this all involves massive amounts of copying
-// need everything to work on a per-loci basis, ie: likelihood calculations
-// and all this...
+        // XXX of course, this all involves massive amounts of copying
+        // need everything to work on a per-loci basis, ie: likelihood calculations
+        // and all this...
 		if(temp->illegal()) {
 			continue;
 		}
 			
 		if(accept_annealing(temp->get_prob(), current->get_prob(), temperature)) {
 			*current = *temp;
-/*
-			fprintf(stdout, "%d %f %f (%f) ACCEPT\n", \
-		                i, \
-		                current->get_prob() / log(10), \
-		                best->get_prob() / log(10), \
-		                temperature);
-*/
         }
 
 		if(best->get_prob() < current->get_prob()) {
 		    *best = *current;
 		}
-/*
-		if((i % 10000) == 0) {
-		    fprintf(stdout, "%d %f %f (%f)\n", \
-		                i, \
-		                current->get_prob() / log(10), \
-		                best->get_prob() / log(10), \
-		                temperature);
-    	}
-*/
 	}
 
     p.finish();

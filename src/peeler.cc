@@ -13,7 +13,8 @@ using namespace std;
 #include "rfunction.h"
 
 
-Peeler::Peeler(Pedigree* p, GeneticMap* g) : ped(p), map(g), lod(p, g) {
+Peeler::Peeler(Pedigree* p, GeneticMap* g) 
+    : ped(p), map(g), lod(p, g) {
     
     PeelSequenceGenerator psg(*ped);
     psg.build_peel_order();
@@ -59,7 +60,7 @@ double Peeler::peel(DescentGraph* dg, unsigned locus) {
     return log(last->get_result()); // TODO : convert all peel code to log likelihood?
 }
 
-void Peeler::print() {
-    lod.print();
+double Peeler::get(unsigned locus) {
+    return lod.get(locus);
 }
 

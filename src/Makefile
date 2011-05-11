@@ -28,6 +28,7 @@ OBJECTS	:= \
     peeler.o \
     lod_calculator.o \
     peel_matrix.o \
+	linkage_writer.o \
     main.o
 
 app: $(OBJECTS)

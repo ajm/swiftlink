@@ -4,12 +4,13 @@ using namespace std;
 #include <string>
 #include <fstream>
 
-#include "haplotypewriter.h"
-#include "descentgraph.h"
-#include "founderallelegraph.h"
-#include "geneticmap.h"
+#include "haplotype_writer.h"
+#include "descent_graph.h"
+#include "founder_allele_graph.h"
+#include "genetic_map.h"
 #include "pedigree.h"
 #include "person.h"
+
 
 // this is how genehunter writes out haplotypes
 bool HaplotypeWriter::write() {
@@ -19,9 +20,6 @@ bool HaplotypeWriter::write() {
     int maternal_alleles[ped->num_members()][ped->num_markers()];
     FounderAlleleGraph fag(map, ped);
     double prob;
-    
-    
-	//dg->print();
 
     // fill in alleles
     for(unsigned j = 0; j < ped->num_markers(); ++j) {

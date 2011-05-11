@@ -8,11 +8,13 @@ using namespace std;
 #include "simwalk_descent_graph.h"
 #include "simulated_annealing.h"
 #include "linkage_program.h"
+#include "linkage_writer.h"
 #include "disease_model.h"
 #include "markov_chain.h"
 #include "genetic_map.h"
 #include "pedigree.h"
 #include "peeler.h"
+
 
 bool LinkageProgram::run() {
     bool ret = true;
@@ -41,10 +43,10 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     //unsigned iterations = 800 * p.num_members() * p.num_markers() * 10 * 2;
     unsigned iterations = 100000; // for testing
     SimwalkDescentGraph* opt;
+    Peeler* peel;
     
     if(verbose) {
-        fprintf(stderr, "processing pedigree %s\n", 
-                    p.get_id().c_str());
+        fprintf(stderr, "processing pedigree %s\n", p.get_id().c_str());
     }
 
     // run simulated annealing
@@ -53,13 +55,13 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     
     // run markov chain
     MarkovChain mc(&p, &map);
-    mc.run(opt, iterations);
-    
-    // print out results
-    Peeler* peel = mc.get_peeler();
-    peel->print();
+    peel = mc.run(opt, iterations);
     
     delete opt;
+    
+    // write out results
+    LinkageWriter lw(&map, peel, "linkage.txt", verbose);
+    lw.write();
     
 	return true;
 }

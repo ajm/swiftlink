@@ -27,7 +27,6 @@ class LodCalculator {
     
     void add(unsigned locus, double prob);
     double get(unsigned locus);
-    void print();
     void set_trait_prob(double p);
 };
 

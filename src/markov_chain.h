@@ -28,8 +28,7 @@ class MarkovChain {
     
 	~MarkovChain() {}
 
-    void run(SimwalkDescentGraph* seed, unsigned iterations);
-    Peeler* get_peeler();
+    Peeler* run(SimwalkDescentGraph* seed, unsigned iterations);
 };
 
 #endif

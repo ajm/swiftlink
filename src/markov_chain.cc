@@ -14,19 +14,11 @@ using namespace std;
 
 bool MarkovChain::accept_metropolis(double new_prob, double old_prob) {
     double r = log(random() / double(RAND_MAX));
-/*
-    fprintf(stderr, "\n");
-    fprintf(stderr, "r = %e\n", r);
-    fprintf(stderr, "dx = %e\n", new_prob - old_prob));
-    fprintf(stderr, "%s\n", r < (new_prob - old_prob) ? "ACCEPT" : "REJECT");
-*/
-    return r < (new_prob - old_prob);
 
-//	return log(random() / double(RAND_MAX)) < (new_prob - old_prob);
+    return r < (new_prob - old_prob);
 }
 
-void MarkovChain::run(SimwalkDescentGraph* seed, unsigned iterations) {
-//    SimwalkDescentGraph* best;
+Peeler* MarkovChain::run(SimwalkDescentGraph* seed, unsigned iterations) {
 	SimwalkDescentGraph* current;
 	SimwalkDescentGraph* temp;
 	double prob;
@@ -37,9 +29,7 @@ void MarkovChain::run(SimwalkDescentGraph* seed, unsigned iterations) {
     *current = *seed;
 
 	temp = new SimwalkDescentGraph(ped, map);
-//	best = new SimwalkDescentGraph(ped, map);
 
-//	*best = *current;
 
     Progress p("Markov Chain:", iterations);
     p.start();
@@ -62,41 +52,23 @@ void MarkovChain::run(SimwalkDescentGraph* seed, unsigned iterations) {
         // need everything to work on a per-loci basis, ie: likelihood calculations
         // and all this...
 		if(temp->illegal()) {
-//		    fprintf(stderr, "ILLEGAL\n");
 			continue;
 		}
-		
-//		fprintf(stderr, "LEGAL\n");
-
-        //printf("%e\n", current->get_prob());
-
-	
+        
         // separate for now, just in case I want to add any stat gathering...
 		if(i < burnin_steps) {
 			*current = *temp;
         }
         else if(accept_metropolis(temp->get_prob(), current->get_prob())) {
             *current = *temp;
-            //fprintf(stderr, "\ncurrent prob = %f\n", current->get_prob());
-            //current->print();
         }
-/*
-		if(best->get_prob() < current->get_prob()) {
-		    *best = *current;
-		}
-*/
 	}
 
     p.finish();
 		
 	delete temp;
 	delete current;
-
-//	return best;
+	
+	return &peel;
 }
-
-Peeler* MarkovChain::get_peeler() {
-    return &peel;
-}
-
 

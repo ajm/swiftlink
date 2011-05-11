@@ -41,17 +41,17 @@ void LodCalculator::add(unsigned locus, double prob) {
         count++;
 }
 
-double LodCalculator::get(unsigned locus) {
-    return lod_scores[locus];
-}
-
-void LodCalculator::print() {
-    double tot = log10(count);
+/*
+void LodCalculator::finish() {
+    double total = log10(count);
     
-    printf("\nLOCUS\tLOD\n");
-
     for(unsigned i = 0; i < (map->num_markers() - 1); ++i) {
-        printf("%d\t%f\n", i, ((lod_scores[i] - tot) - trait_prob) / log(10.0));
+        lod_scores[i] = (lod_scores[i] - total - trait_prob) / log(10.0);
     }
+}
+*/
+
+double LodCalculator::get(unsigned locus) {
+    return (lod_scores[locus] - log10(count) - trait_prob) / log(10.0);
 }
 

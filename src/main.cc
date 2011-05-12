@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 #include "linkage_program.h"
-//#include "haplotype_program.h"
+#include "haplotype_program.h"
 
 
 enum analysistype {
@@ -147,13 +147,12 @@ int linkage_analysis() {
 }
 
 int haplotype_analysis() {
-/*
     HaplotypeProgram hp(pedfile, mapfile, datfile, verbose);
     
 	if(hp.run()) {
 		return EXIT_SUCCESS;
 	}
-*/	
+	
 	return EXIT_FAILURE;
 }
 

@@ -4,85 +4,67 @@ using namespace std;
 #include <cstdlib>
 #include <ctime>
 #include <vector>
+#include <iostream>
+#include <string>
+#include <sstream>
 
-#include "linkageprogram.h"
-#include "linkagefileparser.h"
-#include "pedfileparser.h"
-#include "mapfileparser.h"
-#include "geneticmap.h"
-#include "diseasemodel.h"
-#include "descentgraph.h"
-#include "geneticalgorithm.h"
-#include "simulatedannealing.h"
-#include "haplotypewriter.h"
-#include "configparser.h"
+#include "haplotype_program.h"
+#include "genetic_map.h"
+#include "disease_model.h"
+#include "descent_graph.h"
+#include "simwalk_descent_graph.h"
+#include "simulated_annealing.h"
+#include "haplotype_writer.h"
+#include "pedigree.h"
 
 
 bool HaplotypeProgram::run() {
-    return run_ga();
-}
-
-bool HaplotypeProgram::run_ga() {
-	DescentGraph* ans;
-
-	if(! read_and_check_input()) {
-		return false;
-	}
-/*    
-    for(int i = 0; i < int(pedigrees.size()); ++i)
-		pedigrees[i]->print();
-	
-	map.print();
-	dm.print();
-*/    
-    srand(time(NULL));
+    bool ret = true;
     
-    ConfigParser cp("config.txt");
-    if(! cp.parse())
-		return false;
-//    unsigned population = 100;
-//    unsigned iterations = 1000;
-//    unsigned elitism = 0;
-	
-	for(int i = 0; i < int(pedigrees.size()); ++i) {
-		GeneticAlgorithm ga(pedigrees[i], &map);
-		ans = ga.optimise(cp.population, cp.iterations, cp.elitism, 
-		                  cp.crossover, cp.selection, cp.selection_size, cp.selection_prob);
-		
-		//printf("result = %f\n", ans->get_prob() / log(10));
-	
-		HaplotypeWriter hw("haplotype.txt", ans, pedigrees[i], &map);
-		hw.write();
-		
-		delete ans;
-	}
-	
-	return true;
+    if(verbose) {
+        fprintf(stderr, "%s\n", dm.debug_string().c_str());
+        fprintf(stderr, "%s\n", map.debug_string().c_str());
+    }
+
+    // TODO XXX need to know how to do this properly, 
+    // look up better random numbers for simulations etc
+    srandom(time(NULL));
+
+    for(unsigned int i = 0; i < pedigrees.size(); ++i) {
+        if(verbose) {
+            fprintf(stderr, "%s\n", pedigrees[i].debug_string().c_str());
+        }
+        
+        ret &= run_pedigree_sa(pedigrees[i]);
+    }
+
+    return ret;
 }
 
-bool HaplotypeProgram::run_sa() {
-	SA_DescentGraph* ans;
+bool HaplotypeProgram::run_pedigree_sa(Pedigree& p) {
+    //unsigned iterations = 800 * p.num_members() * p.num_markers() * 10 * 2;
+    unsigned iterations = 100000; // for testing
+    SimwalkDescentGraph* opt;
+        
+    if(verbose) {
+        fprintf(stderr, "processing pedigree %s\n", p.get_id().c_str());
+    }
 
-	if(! read_and_check_input()) {
-		return false;
-	}
+    // run simulated annealing
+    // XXX TODO this is using the wrong objective function,
+    // it is optimising the descent graph likelihood, not the 
+    // descent state likelihood 
+    SimulatedAnnealing sa(&p, &map);
+    opt = sa.optimise(iterations);
+    
+    stringstream ss;
+    ss << "haplotype_" << p.get_id() << ".txt";
+    
+    HaplotypeWriter hw(static_cast<DescentGraph*>(opt), &p, &map, ss.str().c_str(), verbose);
+    hw.write();
+    
+    delete opt;
 
-	srand(time(NULL));
-
-	ConfigParser cp("config.txt");
-    if(! cp.parse())
-		return false;
-
-	for(int i = 0; i < int(pedigrees.size()); ++i) {
-		SimulatedAnnealing sa(pedigrees[i], &map);
-		ans = sa.optimise(1600 * pedigrees[i]->num_members() * pedigrees[i]->num_markers() * 20 * 2);
-
-		HaplotypeWriter hw("haplotype.txt", ans, pedigrees[i], &map);
-		hw.write();
-		
-		delete ans;
-	}
-
-	return true;
+    return true;
 }
 

@@ -7,13 +7,13 @@
 class HaplotypeProgram : public Program {
     
  public :
-    HaplotypeProgram(char* ped, char* map, char* dat)
-		: Program(ped, map, dat) {}
+    HaplotypeProgram(char* ped, char* map, char* dat, bool verbose)
+		: Program(ped, map, dat, verbose) {}
     
-	~HaplotypeProgram();
+	~HaplotypeProgram() {}
 
     bool run();
-
+    bool run_pedigree_sa(Pedigree& p);
 };
 
 #endif

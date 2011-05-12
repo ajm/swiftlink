@@ -24,11 +24,13 @@ OBJECTS	:= \
     markov_chain.o \
     program.o \
     linkage_program.o \
+	haplotype_program.o \
     progress.o \
     peeler.o \
     lod_calculator.o \
     peel_matrix.o \
 	linkage_writer.o \
+	haplotype_writer.o \
     main.o
 
 app: $(OBJECTS)

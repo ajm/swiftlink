@@ -69,6 +69,10 @@ class DescentGraph {
 
 	double get_prob() const { return prob; }
 	bool illegal() const { return prob == LOG_ILLEGAL; }
+	
+	char get_opposite(unsigned person_id, unsigned locus, enum parentage p);
+	double evaluate_diff(DescentGraphDiff& diff);
+	void apply_diff(DescentGraph& diff);
 };
 
 #endif

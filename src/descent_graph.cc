@@ -6,6 +6,7 @@ using namespace std;
 #include <algorithm>
 
 #include "descent_graph.h"
+#include "descent_graph_diff.h"
 #include "pedigree.h"
 #include "genetic_map.h"
 #include "genotype.h"
@@ -153,8 +154,6 @@ bool DescentGraph::likelihood(double *p) {
         *p = prob = LOG_ILLEGAL;
         return false;
 	}
-    
-//    printf("trans = %f\nprior = %f\n", trans / log(10), prior / log(10));
 	
     *p = prob = trans + prior;
 	
@@ -178,8 +177,6 @@ bool DescentGraph::haplotype_likelihood(double *p) {
 	}
 	
     *p = prob = trans + prior;
-
-	//printf("trans = %.4f, prior = %.4f\n", trans / log(10), prior / log(10));
 	
     return true;
 }
@@ -283,7 +280,6 @@ void DescentGraph::print() {
 	int pat, mat;
 	Person* p;
 	
-    //printf("DescentGraph: ");
     fprintf(stdout, "DescentGraph: ");
     for(int locus = 0; locus < int(ped->num_markers()); ++locus) {
         for(unsigned i = 0; i  < ped->num_members(); ++i) {
@@ -293,18 +289,92 @@ void DescentGraph::print() {
                 mat = get(i, locus, MATERNAL);
                 pat = get(i, locus, PATERNAL);
                 
-                //printf("%d%d", mat, pat);
                 fprintf(stdout, "%d%d", mat, pat);
             }
         }
     }
-    //printf("\n");
+    
     fprintf(stdout, "\n");
 }
 
 // this seems to be what simwalk2 gets for 'transmission-of-the-markers'
 // line ~37200
 double DescentGraph::trans_prob() {
-    return marker_transmission;// + _recombination_prob();
+    return marker_transmission;
+}
+
+char DescentGraph::get_opposite(unsigned person_id, unsigned locus, enum parentage p) {
+    return data[_offset(person_id, locus, p)] == 0 ? 1 : 0;
+}
+
+// TODO XXX 
+// this is wrong, I should refactor the likelihood
+// code to be locus-by-locus and then reimplement everything
+// in terms of that...
+
+// TODO a work in progress...
+
+// i don't need to store anything for transmission probability, that is easy
+// just look at what has changed by looking at the neighbouring loci and
+// comparing it with what it was previously
+
+// for sum prior prob i need to either :
+// (a) a cache of probabilities one for each locus and rerun the founder
+//     allele graph calculations
+// (b) refine the founder allele graphs, so it is kept in memory for each 
+//     locus and alter the assignments for the components that it affects
+
+bool DescentGraph::evaluate_diff(DescentGraphDiff& diff, double* prob) {
+    double diff_prob = 0.0;
+    double orig_prob = 0.0;
+    unsigned personid = diff.get_person();
+    unsigned locus = diff.get_locus();
+    enum parentage parent = diff.get_parent();
+    char value = get_opposite(personid, locus, parent);
+
+    // update transmission probability
+    // on the left
+    if(locus != 0) {
+        if(get(personid, locus-1, parent) == value) {
+            diff_prob += map->get_inverse_theta(locus-1);
+            orig_prob += map->get_theta(locus-1);
+        }
+        else {
+            diff_prob += map->get_theta(locus-1);
+            orig_prob += map->get_inverse_theta(locus-1);
+        }
+    }
+    
+    // on the right
+    if(locus != (map->num_markers() - 1)) {
+        if(get(personid, locus+1, parent) == value) {
+            diff_prob += map->get_inverse_theta(locus);
+            orig_prob += map->get_theta(locus);
+        }
+        else {
+            diff_prob += map->get_theta(locus);
+            orig_prob += map->get_inverse_theta(locus);
+        }
+    }
+    
+    
+    // update prior probability
+    // notes: for now just run the whole founder allele graph again 
+    // for the single locus
+    double tmp_prob;
+    FounderAlleleGraph fag(map, ped);
+    if(not fag.populate(*this, locus)) {
+        return false;
+    }
+    if(not fag.likelihood(&tmp_prob, locus)) {
+		return false;
+    }
+    
+    // what do I compare this against?
+    
+}
+
+void DescentGraph::apply_diff(DescentGraph& diff) {
+    flip_bit(diff.get_person(), diff.get_locus(), diff.get_parent());
 }
 

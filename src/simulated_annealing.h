@@ -7,7 +7,7 @@ using namespace std;
 #include <cstdlib>
 
 
-class SimwalkDescentGraph;
+class DescentGraph;
 class Pedigree;
 class GeneticMap;
 
@@ -31,7 +31,7 @@ class SimulatedAnnealing {
     
 	~SimulatedAnnealing() {}
 
-    SimwalkDescentGraph* optimise(unsigned iterations);
+    DescentGraph* optimise(unsigned iterations);
 };
 
 #endif

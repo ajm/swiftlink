@@ -33,7 +33,7 @@ unsigned SimwalkSampler::_geometric() {
 // t1 - non-leaves
 // t2 - non-leaves (people with spouses)
 DescentGraphDiff SimwalkSampler::step() {
-	unsigned steps = _geometric();
+	//unsigned steps = _geometric();
 	unsigned l = get_random_locus();
 	
 //	for(unsigned i = 0; i < steps; ++i) {
@@ -42,11 +42,14 @@ DescentGraphDiff SimwalkSampler::step() {
 	    // for the random walk case
 	    // (a neighbor is a parent, sib, spouse, child or the individual themselves again)
 	    unsigned p = get_random_person();
-
+	    
+	    return transition_t0(p,l);
+/*
 		switch(select_transition_rule(p)) {
 			case 0 :
 				return transition_t0(p,l);
 				//break;
+*/
 /*
 			case 1 :
 				transition_t1(p,l);
@@ -60,10 +63,10 @@ DescentGraphDiff SimwalkSampler::step() {
 				transition_t2b(p,l);
 				break;
 */
-			default:
+/*			default:
 				break;
 		}
-		
+*/		
 //		l = select_next_locus(l);
 //	}
 }
@@ -83,7 +86,7 @@ unsigned SimwalkSampler::select_next_locus(unsigned locus) {
 }
 
 int SimwalkSampler::select_transition_rule(unsigned person) {
-	Person* p = ped->get_by_index(person);
+	//Person* p = ped->get_by_index(person);
 	
 	return 0;
 /*
@@ -139,7 +142,7 @@ DescentGraphDiff SimwalkSampler::transition_t0(unsigned person, unsigned locus) 
 }
 
 void SimwalkSampler::transition_t0(unsigned id, unsigned locus, enum parentage p) {
-	flip_bit(id, locus, p);
+	//flip_bit(id, locus, p);
 }
 
 /*

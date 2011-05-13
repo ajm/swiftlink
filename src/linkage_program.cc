@@ -6,6 +6,7 @@ using namespace std;
 #include <vector>
 
 #include "simwalk_descent_graph.h"
+#include "descent_graph.h"
 #include "simulated_annealing.h"
 #include "linkage_program.h"
 #include "linkage_writer.h"
@@ -41,8 +42,8 @@ bool LinkageProgram::run() {
 
 bool LinkageProgram::run_pedigree(Pedigree& p) {
     //unsigned iterations = 800 * p.num_members() * p.num_markers() * 10 * 2;
-    unsigned iterations = 100000; // for testing
-    SimwalkDescentGraph* opt;
+    unsigned iterations = 10000000; // for testing
+    DescentGraph* opt;
     Peeler* peel;
     
     if(verbose) {
@@ -53,11 +54,15 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     SimulatedAnnealing sa(&p, &map);
     opt = sa.optimise(iterations);
     
+    return true; // XXX
+    
     // run markov chain
     MarkovChain mc(&p, &map);
-    peel = mc.run(opt, iterations);
+    SimwalkDescentGraph* sdg = new SimwalkDescentGraph(*opt);
+    peel = mc.run(sdg, iterations);
     
     delete opt;
+    delete sdg;
     
     // write out results
     LinkageWriter lw(&map, peel, "linkage.txt", verbose);

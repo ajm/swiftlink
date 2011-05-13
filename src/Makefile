@@ -9,9 +9,9 @@ OBJECTS	:= \
     pedigree_parser.o \
     linkage_parser.o \
     map_parser.o \
+	descent_graph.o \
     simwalk_descent_graph.o \
     founder_allele_graph.o \
-    descent_graph.o \
     elimination.o \
     pedigree.o \
     person.o \
@@ -24,13 +24,13 @@ OBJECTS	:= \
     markov_chain.o \
     program.o \
     linkage_program.o \
-	haplotype_program.o \
     progress.o \
     peeler.o \
     lod_calculator.o \
     peel_matrix.o \
 	linkage_writer.o \
 	haplotype_writer.o \
+	simwalk_sampler.o \
     main.o
 
 app: $(OBJECTS)

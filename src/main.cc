@@ -147,12 +147,13 @@ int linkage_analysis() {
 }
 
 int haplotype_analysis() {
+/*
     HaplotypeProgram hp(pedfile, mapfile, datfile, verbose);
     
 	if(hp.run()) {
 		return EXIT_SUCCESS;
 	}
-	
+*/
 	return EXIT_FAILURE;
 }
 

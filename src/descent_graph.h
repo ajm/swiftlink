@@ -4,12 +4,14 @@
 using namespace std;
 
 #include <limits>
+#include "descent_graph_diff.h"
 
-
+/*
 enum parentage { 
 	MATERNAL,
 	PATERNAL
 };
+*/
 
 const double LOG_ILLEGAL = -numeric_limits<double>::max();
 
@@ -25,7 +27,8 @@ class DescentGraph {
 
  private:
 	double prob;
-    double marker_transmission; // cache for transmission prob    
+    double marker_transmission; // cache for transmission prob
+    double* sum_prior_probs;    // cache for sum of prior probs    
     int graph_size; 			// size of descent graph at one loci, 
 								// for indexing data
 	
@@ -71,8 +74,8 @@ class DescentGraph {
 	bool illegal() const { return prob == LOG_ILLEGAL; }
 	
 	char get_opposite(unsigned person_id, unsigned locus, enum parentage p);
-	double evaluate_diff(DescentGraphDiff& diff);
-	void apply_diff(DescentGraph& diff);
+	bool evaluate_diff(DescentGraphDiff& diff, double* prob);
+	void apply_diff(DescentGraphDiff& diff);
 };
 
 #endif

@@ -6,8 +6,10 @@ using namespace std;
 
 #include "pedigree.h"
 #include "genetic_map.h"
-#include "simwalk_descent_graph.h"
+#include "descent_graph.h"
+#include "descent_graph_diff.h"
 #include "simulated_annealing.h"
+#include "simwalk_sampler.h"
 #include "progress.h"
 
 
@@ -25,58 +27,46 @@ bool SimulatedAnnealing::accept_annealing(double new_prob, double old_prob, doub
     return r < p;
 }
 
-SimwalkDescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
-    SimwalkDescentGraph* best;
-	SimwalkDescentGraph* current;
-	SimwalkDescentGraph* temp;
+DescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
+	SimwalkSampler ss(ped, map);
+	DescentGraph current(ped, map);
+	DescentGraph* best;
 	double prob;
 
-	current = new SimwalkDescentGraph(ped, map);
-	current->random_descentgraph();
+	current.random_descentgraph();
 	//current->haplotype_likelihood();
-    current->likelihood();
+    current.likelihood();
 
-	temp = new SimwalkDescentGraph(ped, map);
-	best = new SimwalkDescentGraph(ped, map);
+	best = new DescentGraph(current);
 
-	*best = *current;
 
     Progress p("Simulated Annealing:", iterations);
     p.start();
 
 	for(unsigned i = 0; i < iterations; ++i) {
-		*temp = *current;
-			
+		
 		if((i % (iterations / TEMPERATURE_CHANGES)) == 0) {
 		    temperature *= TEMPERATURE_CHANGE_FACTOR;
         }
 
-		temp->step();
-		//temp->haplotype_likelihood(&prob);
-        temp->likelihood(&prob); 
-		
+		DescentGraphDiff dgd = ss.step();
+        
         p.increment();
-
-        // XXX of course, this all involves massive amounts of copying
-        // need everything to work on a per-loci basis, ie: likelihood calculations
-        // and all this...
-		if(temp->illegal()) {
-			continue;
-		}
+        
+        if(not current.evaluate_diff(dgd, &prob)) {
+            continue;
+        }
 			
-		if(accept_annealing(temp->get_prob(), current->get_prob(), temperature)) {
-			*current = *temp;
+		if(accept_annealing(prob, current.get_prob(), temperature)) {
+			current.apply_diff(dgd);
         }
 
-		if(best->get_prob() < current->get_prob()) {
-		    *best = *current;
+		if(best->get_prob() < current.get_prob()) {
+		    *best = current;
 		}
 	}
 
     p.finish();
-		
-	delete temp;
-	delete current;
 
 	return best;
 }

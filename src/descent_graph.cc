@@ -16,6 +16,7 @@ using namespace std;
 
 DescentGraph::DescentGraph(Pedigree* ped, GeneticMap* map) 
     : ped(ped), map(map), prob(0.0) {
+    
 	graph_size = 2 * ped->num_members();
 
 //    marker_transmission = log(0.5) * 
@@ -32,6 +33,8 @@ DescentGraph::DescentGraph(Pedigree* ped, GeneticMap* map)
     for(unsigned i = 0; i < graph_size * ped->num_markers(); ++i) {
         data[i] = 0;
     }
+    
+    sum_prior_probs = new double[ped->num_markers()];
 }
 
 DescentGraph::DescentGraph(const DescentGraph& d) 
@@ -41,11 +44,19 @@ DescentGraph::DescentGraph(const DescentGraph& d)
 
     unsigned int data_length = graph_size * ped->num_markers();
 	data = new char[data_length];
-    copy(d.data, d.data + data_length, data);
+    copy(d.data, 
+         d.data + data_length, 
+         data);
+    
+    sum_prior_probs = new double[ped->num_markers()];
+    copy(d.sum_prior_probs, 
+         d.sum_prior_probs + ped->num_markers(), 
+         sum_prior_probs);
 }
 
 DescentGraph::~DescentGraph() {
 	delete[] data;
+	delete[] sum_prior_probs;
 }
 
 DescentGraph& DescentGraph::operator=(const DescentGraph& d) {
@@ -57,12 +68,18 @@ DescentGraph& DescentGraph::operator=(const DescentGraph& d) {
 		graph_size = d.graph_size;
 		marker_transmission = d.marker_transmission;
         
-        delete[] data;
+        //delete[] data;
 
         unsigned int data_length = graph_size * ped->num_markers();
     
-    	data = new char[data_length];
-        copy(d.data, d.data + data_length, data);
+    	//data = new char[data_length];
+        copy(d.data, 
+             d.data + data_length, 
+             data);
+        
+        copy(d.sum_prior_probs, \
+             d.sum_prior_probs + ped->num_markers(), \
+             sum_prior_probs);
 	}
 
 	return *this;
@@ -243,6 +260,8 @@ bool DescentGraph::_sum_prior_prob(double *prob) {
             //printf("bad fag likelihood\n");
 			return false;
         }
+        
+        sum_prior_probs[i] = tmp_prob;
 		
 		return_prob += tmp_prob;
     }
@@ -324,7 +343,7 @@ char DescentGraph::get_opposite(unsigned person_id, unsigned locus, enum parenta
 // (b) refine the founder allele graphs, so it is kept in memory for each 
 //     locus and alter the assignments for the components that it affects
 
-bool DescentGraph::evaluate_diff(DescentGraphDiff& diff, double* prob) {
+bool DescentGraph::evaluate_diff(DescentGraphDiff& diff, double* new_prob) {
     double diff_prob = 0.0;
     double orig_prob = 0.0;
     unsigned personid = diff.get_person();
@@ -361,20 +380,25 @@ bool DescentGraph::evaluate_diff(DescentGraphDiff& diff, double* prob) {
     // update prior probability
     // notes: for now just run the whole founder allele graph again 
     // for the single locus
-    double tmp_prob;
+    double diff_sumprior_prob;
     FounderAlleleGraph fag(map, ped);
     if(not fag.populate(*this, locus)) {
         return false;
     }
-    if(not fag.likelihood(&tmp_prob, locus)) {
+    if(not fag.likelihood(&diff_sumprior_prob, locus)) {
 		return false;
     }
     
-    // what do I compare this against?
+    diff.set_sumprior(diff_sumprior_prob);
     
+    *new_prob = prob - orig_prob + diff_prob - sum_prior_probs[locus] + diff_sumprior_prob;
+    
+    
+    return true;
 }
 
-void DescentGraph::apply_diff(DescentGraph& diff) {
+void DescentGraph::apply_diff(DescentGraphDiff& diff) {
     flip_bit(diff.get_person(), diff.get_locus(), diff.get_parent());
+    sum_prior_probs[diff.get_locus()] = diff.get_sumprior();
 }
 

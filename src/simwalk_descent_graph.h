@@ -37,6 +37,9 @@ class SimwalkDescentGraph : public DescentGraph {
     
 	SimwalkDescentGraph(const SimwalkDescentGraph& sdg) 
 		: DescentGraph(sdg) {}
+		
+	SimwalkDescentGraph(const DescentGraph& sdg) 
+		: DescentGraph(sdg) {}
 
 	~SimwalkDescentGraph() {}
 	

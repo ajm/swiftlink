@@ -9,13 +9,14 @@ using namespace std;
 #include "genotype.h"
 #include "pedigree.h"
 #include "person.h"
-#include "descent_graph.h"
+#include "genetic_map.h"
 #include "descent_graph_diff.h"
 
 
 class SimwalkSampler {
 
-    DescentGraph dg;
+    Pedigree* ped;
+    GeneticMap* map;
 
     unsigned _geometric();
     unsigned select_next_locus(unsigned locus);
@@ -37,7 +38,7 @@ class SimwalkSampler {
 
  public:
 	SimwalkSampler(Pedigree* ped, GeneticMap* map) 
-		: dg(ped, map) {}
+		: ped(ped), map(map) {}
     
 	~SimwalkSampler() {}
 	

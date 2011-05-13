@@ -42,7 +42,7 @@ bool LinkageProgram::run() {
 
 bool LinkageProgram::run_pedigree(Pedigree& p) {
     //unsigned iterations = 800 * p.num_members() * p.num_markers() * 10 * 2;
-    unsigned iterations = 10000000; // for testing
+    unsigned iterations = 10000; // for testing
     DescentGraph* opt;
     Peeler* peel;
     
@@ -53,6 +53,8 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     // run simulated annealing
     SimulatedAnnealing sa(&p, &map);
     opt = sa.optimise(iterations);
+    
+    delete opt;
     
     return true; // XXX
     

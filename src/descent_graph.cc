@@ -276,7 +276,7 @@ bool DescentGraph::_best_prior_prob(double *prob) {
 	FounderAlleleGraph fag(map, ped);
     
 	for(unsigned i = 0; i < ped->num_markers(); ++i) {
-		fag.reset(); // strictly necessary?
+		fag.reset();
         
         if(not fag.populate(*this, i)) {
 			//printf("bad fag populate\n");
@@ -382,6 +382,7 @@ bool DescentGraph::evaluate_diff(DescentGraphDiff& diff, double* new_prob) {
     // for the single locus
     double diff_sumprior_prob;
     FounderAlleleGraph fag(map, ped);
+    fag.reset();
     if(not fag.populate(*this, locus)) {
         return false;
     }

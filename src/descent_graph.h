@@ -31,6 +31,7 @@ class DescentGraph {
     double* sum_prior_probs;    // cache for sum of prior probs    
     int graph_size; 			// size of descent graph at one loci, 
 								// for indexing data
+	int recombinations;
 	
 	double _transmission_prob();
 	double _recombination_prob();
@@ -72,6 +73,7 @@ class DescentGraph {
 
 	double get_prob() const { return prob; }
 	bool illegal() const { return prob == LOG_ILLEGAL; }
+	int num_recombinations() { return recombinations; }
 	
 	char get_opposite(unsigned person_id, unsigned locus, enum parentage p);
 	bool evaluate_diff(DescentGraphDiff& diff, double* prob);

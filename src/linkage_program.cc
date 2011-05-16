@@ -42,7 +42,7 @@ bool LinkageProgram::run() {
 
 bool LinkageProgram::run_pedigree(Pedigree& p) {
     //unsigned iterations = 800 * p.num_members() * p.num_markers() * 10 * 2;
-    unsigned iterations = 10000; // for testing
+    unsigned iterations = 1000000; // for testing
     DescentGraph* opt;
     Peeler* peel;
     
@@ -54,21 +54,15 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     SimulatedAnnealing sa(&p, &map);
     opt = sa.optimise(iterations);
     
-    delete opt;
-    
-    return true; // XXX
-    
     // run markov chain
     MarkovChain mc(&p, &map);
-    SimwalkDescentGraph* sdg = new SimwalkDescentGraph(*opt);
-    peel = mc.run(sdg, iterations);
-    
-    delete opt;
-    delete sdg;
+    peel = mc.run(opt, iterations);
     
     // write out results
     LinkageWriter lw(&map, peel, "linkage.txt", verbose);
     lw.write();
+    
+    delete opt;
     
 	return true;
 }

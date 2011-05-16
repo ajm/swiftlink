@@ -13,7 +13,7 @@ class GeneticMap;
 
 const double START_TEMPERATURE = 100.0;
 const double TEMPERATURE_CHANGE_FACTOR = 0.99;
-const int TEMPERATURE_CHANGES = 800;
+const unsigned int TEMPERATURE_CHANGES = 800;
 
 
 class SimulatedAnnealing {

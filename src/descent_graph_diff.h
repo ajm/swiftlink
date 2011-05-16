@@ -18,6 +18,8 @@ class DescentGraphDiff {
     unsigned locus;
     enum parentage parent;
     double sum_prior_prob;
+    double prob;
+    int recombinations;
 
   public :        
     DescentGraphDiff(unsigned person, unsigned locus, enum parentage parent)
@@ -30,7 +32,13 @@ class DescentGraphDiff {
     enum parentage get_parent() { return parent; }
     
     double get_sumprior() { return sum_prior_prob; }
-    void set_sumprior(double sum_prior) { sum_prior_prob = sum_prior; }
+    void set_sumprior(double p) { sum_prior_prob = p; }
+    
+    double get_prob() { return prob; }
+    void set_prob(double p) { prob = p; }
+    
+    int get_recombinations() { return recombinations; }
+    void set_recombinations(int r) { recombinations = r; }
 };
 
 #endif

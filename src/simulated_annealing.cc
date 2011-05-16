@@ -36,10 +36,13 @@ DescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
 	current.random_descentgraph();
 	//current->haplotype_likelihood();
     current.likelihood();
-
+    
 	best = new DescentGraph(current);
-
-
+    
+    if(iterations < TEMPERATURE_CHANGES) {
+        iterations = TEMPERATURE_CHANGES;
+    }
+    
     Progress p("Simulated Annealing:", iterations);
     p.start();
 
@@ -56,14 +59,29 @@ DescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
         if(not current.evaluate_diff(dgd, &prob)) {
             continue;
         }
-			
+		
 		if(accept_annealing(prob, current.get_prob(), temperature)) {
 			current.apply_diff(dgd);
+			/*
+			double tmp_prob;
+		    current.likelihood(&tmp_prob);
+    		printf("%d: complete = %f, diff = %f\n", i, tmp_prob, prob);
+		    */
         }
-
+        
 		if(best->get_prob() < current.get_prob()) {
 		    *best = current;
 		}
+		
+		// finish early if there are no recombinations
+		// XXX could a descent graph exist that has a lower likelihood, but a 
+		// few recombinations?
+		if(current.num_recombinations() == 0) {
+		    fprintf(stderr, "\nsimulated annealing, early termination\n");
+		    break;
+		}
+		
+		//fprintf(stderr, "%d %d\n", i, current.num_recombinations());
 	}
 
     p.finish();

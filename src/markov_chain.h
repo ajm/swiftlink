@@ -8,7 +8,7 @@ using namespace std;
 
 #include "peeler.h"
 
-class SimwalkDescentGraph;
+class DescentGraph;
 class Pedigree;
 class GeneticMap;
 
@@ -28,7 +28,7 @@ class MarkovChain {
     
 	~MarkovChain() {}
 
-    Peeler* run(SimwalkDescentGraph* seed, unsigned iterations);
+    Peeler* run(DescentGraph* seed, unsigned iterations);
 };
 
 #endif

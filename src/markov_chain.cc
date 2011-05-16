@@ -6,10 +6,12 @@ using namespace std;
 
 #include "pedigree.h"
 #include "genetic_map.h"
-#include "simwalk_descent_graph.h"
+#include "descent_graph.h"
+#include "descent_graph_diff.h"
 #include "markov_chain.h"
 #include "progress.h"
 #include "peeler.h"
+#include "simwalk_sampler.h"
 
 
 bool MarkovChain::accept_metropolis(double new_prob, double old_prob) {
@@ -18,56 +20,52 @@ bool MarkovChain::accept_metropolis(double new_prob, double old_prob) {
     return r < (new_prob - old_prob);
 }
 
-Peeler* MarkovChain::run(SimwalkDescentGraph* seed, unsigned iterations) {
-	SimwalkDescentGraph* current;
-	SimwalkDescentGraph* temp;
+Peeler* MarkovChain::run(DescentGraph* seed, unsigned iterations) {
+	DescentGraph current(*seed);
+	SimwalkSampler ss(ped, map);
 	double prob;
-    unsigned burnin_steps = unsigned(iterations * burnin_proportion);
+    unsigned burnin_steps = unsigned(iterations * burnin_proportion); // XXX 
     
-    
-    current = new SimwalkDescentGraph(ped, map);
-    *current = *seed;
-
-	temp = new SimwalkDescentGraph(ped, map);
-
 
     Progress p("Markov Chain:", iterations);
     p.start();
 
 	for(unsigned i = 0; i < iterations; ++i) {
-		*temp = *current;
 
-		temp->step();
-        temp->likelihood(&prob); 
-		
+        DescentGraphDiff dgd = ss.step();
+        
         p.increment();
         
-        // perform peeling
-		if((i >= burnin_steps) and ((i % 1000) == 0)) {
-		    //printf("peel!\n");
-		    peel.process(static_cast<DescentGraph*>(current));
-		}
-
-        // XXX of course, this all involves massive amounts of copying
-        // need everything to work on a per-loci basis, ie: likelihood calculations
-        // and all this...
-		if(temp->illegal()) {
-			continue;
-		}
+        if((i % 1000) == 0) {
+            peel.process(&current); // XXX use reference?
+        }
+        
+        if(not current.evaluate_diff(dgd, &prob)) {
+            continue;
+        }
         
         // separate for now, just in case I want to add any stat gathering...
 		if(i < burnin_steps) {
-			*current = *temp;
+		    current.apply_diff(dgd);
+		    /*
+		    double tmp_prob;
+		    current.likelihood(&tmp_prob);
+            printf("%d: complete = %f, diff = %f\n", i, tmp_prob, prob);
+            */
+		    continue;
         }
-        else if(accept_metropolis(temp->get_prob(), current->get_prob())) {
-            *current = *temp;
+        
+        if(accept_metropolis(prob, current.get_prob())) {
+            current.apply_diff(dgd);
         }
+        /*
+        if((i % 1000) == 0) {
+            peel.process(&current); // XXX use reference?
+        }
+        */
 	}
 
     p.finish();
-		
-	delete temp;
-	delete current;
 	
 	return &peel;
 }

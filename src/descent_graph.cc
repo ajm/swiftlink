@@ -15,7 +15,7 @@ using namespace std;
 
 
 DescentGraph::DescentGraph(Pedigree* ped, GeneticMap* map) 
-    : ped(ped), map(map), prob(0.0) {
+    : ped(ped), map(map), prob(0.0), recombinations(-1) {
     
 	graph_size = 2 * ped->num_members();
 
@@ -43,6 +43,7 @@ DescentGraph::DescentGraph(const DescentGraph& d)
       graph_size(d.graph_size) {
 
     unsigned int data_length = graph_size * ped->num_markers();
+    
 	data = new char[data_length];
     copy(d.data, 
          d.data + data_length, 
@@ -217,6 +218,8 @@ double DescentGraph::_recombination_prob() {
     // i = member of family
     // j = mother and father of i
     // k = current loci being considered
+    
+    recombinations = 0;
 	
     for(unsigned i = 0; i < ped->num_members(); ++i) { // every person
 		p = ped->get_by_index(i);
@@ -229,6 +232,10 @@ double DescentGraph::_recombination_prob() {
             
             for(unsigned k = 1; k < ped->num_markers(); ++k) { // every loci
                 current = get(i, k, static_cast<enum parentage>(j));
+                
+                if(last != current) {
+                    recombinations++;
+                }
 				
                 tmp += (last != current) ? \
 						map->get_theta(k-1) : 
@@ -350,6 +357,7 @@ bool DescentGraph::evaluate_diff(DescentGraphDiff& diff, double* new_prob) {
     unsigned locus = diff.get_locus();
     enum parentage parent = diff.get_parent();
     char value = get_opposite(personid, locus, parent);
+    int recombinations_diff = 0;
 
     // update transmission probability
     // on the left
@@ -357,10 +365,12 @@ bool DescentGraph::evaluate_diff(DescentGraphDiff& diff, double* new_prob) {
         if(get(personid, locus-1, parent) == value) {
             diff_prob += map->get_inverse_theta(locus-1);
             orig_prob += map->get_theta(locus-1);
+            recombinations_diff--;
         }
         else {
             diff_prob += map->get_theta(locus-1);
             orig_prob += map->get_inverse_theta(locus-1);
+            recombinations_diff++;
         }
     }
     
@@ -369,10 +379,12 @@ bool DescentGraph::evaluate_diff(DescentGraphDiff& diff, double* new_prob) {
         if(get(personid, locus+1, parent) == value) {
             diff_prob += map->get_inverse_theta(locus);
             orig_prob += map->get_theta(locus);
+            recombinations_diff--;
         }
         else {
             diff_prob += map->get_theta(locus);
             orig_prob += map->get_inverse_theta(locus);
+            recombinations_diff++;
         }
     }
     
@@ -380,20 +392,28 @@ bool DescentGraph::evaluate_diff(DescentGraphDiff& diff, double* new_prob) {
     // update prior probability
     // notes: for now just run the whole founder allele graph again 
     // for the single locus
+    flip_bit(personid, locus, parent); // flip
+    
     double diff_sumprior_prob;
     FounderAlleleGraph fag(map, ped);
     fag.reset();
     if(not fag.populate(*this, locus)) {
+        flip_bit(personid, locus, parent); // XXX messy
         return false;
     }
     if(not fag.likelihood(&diff_sumprior_prob, locus)) {
+        flip_bit(personid, locus, parent); // XXX messy
 		return false;
     }
     
-    diff.set_sumprior(diff_sumprior_prob);
+    flip_bit(personid, locus, parent); // flip back
+    
     
     *new_prob = prob - orig_prob + diff_prob - sum_prior_probs[locus] + diff_sumprior_prob;
     
+    diff.set_sumprior(diff_sumprior_prob);
+    diff.set_prob(*new_prob);
+    diff.set_recombinations(recombinations_diff);
     
     return true;
 }
@@ -401,5 +421,7 @@ bool DescentGraph::evaluate_diff(DescentGraphDiff& diff, double* new_prob) {
 void DescentGraph::apply_diff(DescentGraphDiff& diff) {
     flip_bit(diff.get_person(), diff.get_locus(), diff.get_parent());
     sum_prior_probs[diff.get_locus()] = diff.get_sumprior();
+    prob = diff.get_prob();
+    recombinations += diff.get_recombinations();
 }
 

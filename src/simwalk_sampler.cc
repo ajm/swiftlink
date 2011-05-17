@@ -32,7 +32,7 @@ unsigned SimwalkSampler::_geometric() {
 // t0 - non-founders (founders are a waste of time)
 // t1 - non-leaves
 // t2 - non-leaves (people with spouses)
-DescentGraphDiff SimwalkSampler::step() {
+void SimwalkSampler::step(DescentGraphDiff& dgd) {
 	//unsigned steps = _geometric();
 	unsigned l = get_random_locus();
 	
@@ -43,7 +43,9 @@ DescentGraphDiff SimwalkSampler::step() {
 	    // (a neighbor is a parent, sib, spouse, child or the individual themselves again)
 	    unsigned p = get_random_person();
 	    
-	    return transition_t0(p,l);
+	    transition_t0(dgd, p,l);
+	    return;
+	    
 /*
 		switch(select_transition_rule(p)) {
 			case 0 :
@@ -136,13 +138,8 @@ enum parentage SimwalkSampler::get_random_parent() {
 
 // select random individual, locus, maternal or paternal, 
 // switch 0 -> 1 or 1 -> 0
-DescentGraphDiff SimwalkSampler::transition_t0(unsigned person, unsigned locus) {
-	//return transition_t0(person, locus, get_random_parent());
-    return DescentGraphDiff(person, locus, get_random_parent());
-}
-
-void SimwalkSampler::transition_t0(unsigned id, unsigned locus, enum parentage p) {
-	//flip_bit(id, locus, p);
+void SimwalkSampler::transition_t0(DescentGraphDiff& dgd, unsigned person, unsigned locus) {
+    dgd.add_transition(person, locus, get_random_parent());
 }
 
 /*

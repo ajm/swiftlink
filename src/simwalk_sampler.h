@@ -26,8 +26,8 @@ class SimwalkSampler {
     unsigned get_random_nonfounder();
     unsigned get_random_locus();
     enum parentage get_random_parent();
-    DescentGraphDiff transition_t0(unsigned person, unsigned locus);
-    void transition_t0(unsigned id, unsigned locus, enum parentage p);
+    void transition_t0(DescentGraphDiff& dgd, unsigned person, unsigned locus);
+    //void transition_t0(unsigned id, unsigned locus, enum parentage p);
 /*
     void transition_t1(unsigned person, unsigned locus);
     void transition_t1(Person* p, unsigned locus);
@@ -42,7 +42,7 @@ class SimwalkSampler {
     
 	~SimwalkSampler() {}
 	
-    DescentGraphDiff step();
+    void step(DescentGraphDiff& dgd);
 };
 
 #endif

@@ -21,8 +21,9 @@ bool MarkovChain::accept_metropolis(double new_prob, double old_prob) {
 }
 
 Peeler* MarkovChain::run(DescentGraph* seed, unsigned iterations) {
-	DescentGraph current(*seed);
 	SimwalkSampler ss(ped, map);
+	DescentGraph current(*seed);
+	DescentGraphDiff dgd;
 	double prob;
     unsigned burnin_steps = unsigned(iterations * burnin_proportion); // XXX 
     
@@ -32,7 +33,7 @@ Peeler* MarkovChain::run(DescentGraph* seed, unsigned iterations) {
 
 	for(unsigned i = 0; i < iterations; ++i) {
 
-        DescentGraphDiff dgd = ss.step();
+        ss.step(dgd);
         
         p.increment();
         

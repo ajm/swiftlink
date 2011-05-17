@@ -31,6 +31,7 @@ DescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
 	SimwalkSampler ss(ped, map);
 	DescentGraph current(ped, map);
 	DescentGraph* best;
+	DescentGraphDiff dgd;
 	double prob;
 
 	current.random_descentgraph();
@@ -52,7 +53,7 @@ DescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
 		    temperature *= TEMPERATURE_CHANGE_FACTOR;
         }
 
-		DescentGraphDiff dgd = ss.step();
+		ss.step(dgd);
         
         p.increment();
         

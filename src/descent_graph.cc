@@ -7,6 +7,7 @@ using namespace std;
 
 #include "descent_graph.h"
 #include "descent_graph_diff.h"
+#include "descent_graph_types.h"
 #include "pedigree.h"
 #include "genetic_map.h"
 #include "genotype.h"
@@ -351,13 +352,17 @@ char DescentGraph::get_opposite(unsigned person_id, unsigned locus, enum parenta
 //     locus and alter the assignments for the components that it affects
 
 bool DescentGraph::evaluate_diff(DescentGraphDiff& diff, double* new_prob) {
-    double diff_prob = 0.0;
-    double orig_prob = 0.0;
-    unsigned personid = diff.get_person();
-    unsigned locus = diff.get_locus();
-    enum parentage parent = diff.get_parent();
+    
+    Transition& t = diff.get_transition(0); // XXX
+    unsigned personid =     t.get_person();
+    unsigned locus =        t.get_locus();
+    enum parentage parent = t.get_parent();
+    
     char value = get_opposite(personid, locus, parent);
     int recombinations_diff = 0;
+    double diff_prob = 0.0;
+    double orig_prob = 0.0;
+    
 
     // update transmission probability
     // on the left
@@ -419,8 +424,14 @@ bool DescentGraph::evaluate_diff(DescentGraphDiff& diff, double* new_prob) {
 }
 
 void DescentGraph::apply_diff(DescentGraphDiff& diff) {
-    flip_bit(diff.get_person(), diff.get_locus(), diff.get_parent());
-    sum_prior_probs[diff.get_locus()] = diff.get_sumprior();
+
+    Transition& t = diff.get_transition(0); // XXX
+    unsigned personid =     t.get_person();
+    unsigned locus =        t.get_locus();
+    enum parentage parent = t.get_parent();
+
+    flip_bit(personid, locus, parent);
+    sum_prior_probs[locus] = diff.get_sumprior();
     prob = diff.get_prob();
     recombinations += diff.get_recombinations();
 }

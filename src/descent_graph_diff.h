@@ -8,19 +8,15 @@
 
 
 class Transition {
+    
     unsigned person;
     unsigned locus;
     enum parentage parent;
-    
-    int index; // <-- so i can use binary_search
-    
+        
  public:
     Transition(unsigned person, unsigned locus, enum parentage parent) 
-        : person(person), locus(locus), parent(parent) {
+        : person(person), locus(locus), parent(parent) {}
     
-        index = (person * 2) + parent;    
-    }
-        
     unsigned get_person() { return person; }
     unsigned get_locus() { return locus; }
     enum parentage get_parent() { return parent; }

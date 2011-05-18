@@ -49,7 +49,7 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     if(verbose) {
         fprintf(stderr, "processing pedigree %s\n", p.get_id().c_str());
     }
-
+    
     // run simulated annealing
     SimulatedAnnealing sa(&p, &map);
     opt = sa.optimise(iterations);

@@ -37,38 +37,42 @@ void SimwalkSampler::step(DescentGraphDiff& dgd) {
 	unsigned l = get_random_locus();
 	
 	dgd.clear();
-	
-	for(unsigned i = 0; i < steps; ++i) {
-	
-	    // could select a neighbouring individual, I don't think sw does this 
-	    // for the random walk case
-	    // (a neighbor is a parent, sib, spouse, child or the individual themselves again)
-	    unsigned p = get_random_person();
-	    
-	    //transition_t0(dgd, p,l);
-	    //return;
+    
+    // corner case : even number of transitions where one transition undoes the other...
+    while(dgd.num_transitions() == 0) {
+        
+        for(unsigned i = 0; i < steps; ++i) {
+        
+            // could select a neighbouring individual, I don't think sw does this 
+            // for the random walk case
+            // (a neighbor is a parent, sib, spouse, child or the individual themselves again)
+            unsigned p = get_random_person();
+            
+            //transition_t0(dgd, p,l);
+            //return;
 
-		switch(select_transition_rule(p)) {
-			case 0 :
-				transition_t0(dgd,p,l);
-				break;
+            switch(select_transition_rule(p)) {
+                case 0 :
+                    transition_t0(dgd,p,l);
+                    break;
 
-			case 1 :
-				transition_t1(dgd,p,l);
-				break;
+                case 1 :
+                    transition_t1(dgd,p,l);
+                    break;
 
-			case 2 :
-				transition_t2a(dgd,p,l);
-				break;
+                case 2 :
+                    transition_t2a(dgd,p,l);
+                    break;
 
-			case 3 :
-				transition_t2b(dgd,p,l);
-				break;
+                case 3 :
+                    transition_t2b(dgd,p,l);
+                    break;
 
-			default:
-				break;
-		}
-	}
+                default:
+                    break;
+            }
+        }
+    }
 }
 
 /*

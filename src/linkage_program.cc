@@ -41,8 +41,8 @@ bool LinkageProgram::run() {
 }
 
 bool LinkageProgram::run_pedigree(Pedigree& p) {
-    //unsigned iterations = 800 * p.num_members() * p.num_markers() * 10 * 2;
-    unsigned iterations = 1000000; // for testing
+    unsigned iterations = 1600 * p.num_members() * p.num_markers() * 10 * 2;
+    //unsigned iterations = 1000000; // for testing
     DescentGraph* opt;
     Peeler* peel;
     

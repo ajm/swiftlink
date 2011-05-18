@@ -28,10 +28,10 @@ bool SimulatedAnnealing::accept_annealing(double new_prob, double old_prob, doub
 }
 
 DescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
-	SimwalkSampler ss(ped, map);
 	DescentGraph current(ped, map);
 	DescentGraph* best;
 	DescentGraphDiff dgd;
+	SimwalkSampler ss(ped, &current);
 	double prob;
 
 	current.random_descentgraph();
@@ -73,16 +73,13 @@ DescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
 		if(best->get_prob() < current.get_prob()) {
 		    *best = current;
 		}
-		
+        /*
 		// finish early if there are no recombinations
-		// XXX could a descent graph exist that has a lower likelihood, but a 
-		// few recombinations?
-		if(current.num_recombinations() == 0) {
+		if(best->num_recombinations() == 0) {
 		    fprintf(stderr, "\nsimulated annealing, early termination\n");
 		    break;
 		}
-		
-		//fprintf(stderr, "%d %d\n", i, current.num_recombinations());
+		*/
 	}
 
     p.finish();

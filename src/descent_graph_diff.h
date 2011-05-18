@@ -2,6 +2,7 @@
 #define LKG_DESCENTGRAPHDIFF_H_
 
 #include <vector>
+#include <algorithm>
 
 #include "descent_graph_types.h"
 
@@ -11,13 +12,24 @@ class Transition {
     unsigned locus;
     enum parentage parent;
     
+    int index; // <-- so i can use binary_search
+    
  public:
     Transition(unsigned person, unsigned locus, enum parentage parent) 
-        : person(person), locus(locus), parent(parent) {}
+        : person(person), locus(locus), parent(parent) {
+    
+        index = (person * 2) + parent;    
+    }
         
     unsigned get_person() { return person; }
     unsigned get_locus() { return locus; }
     enum parentage get_parent() { return parent; }
+    
+    bool operator==(const Transition& t) const {
+		return (person == t.person) and \
+		       (locus == t.locus) and \
+		       (parent == t.parent);
+	}
 };
 
 // XXX to start off I am going to assume that all 
@@ -34,9 +46,24 @@ class DescentGraphDiff {
     DescentGraphDiff() {}        
     ~DescentGraphDiff() {}
     
+    void clear() {
+        transitions.clear();
+    }
+    
     void add_transition(unsigned person, unsigned locus, enum parentage parent) {
         Transition t(person, locus, parent);
-        transitions.push_back(t);
+        vector<Transition>::iterator it;
+        
+        // if transition already exists, then transitioning again
+        // will undo it
+        it = find(transitions.begin(), transitions.end(), t);
+        
+        if(it == transitions.end()) {
+            transitions.push_back(t);
+        }
+        else {
+            transitions.erase(it);
+        }
     }
     
     unsigned num_transitions() { return transitions.size(); }

@@ -21,9 +21,9 @@ bool MarkovChain::accept_metropolis(double new_prob, double old_prob) {
 }
 
 Peeler* MarkovChain::run(DescentGraph* seed, unsigned iterations) {
-	SimwalkSampler ss(ped, map);
 	DescentGraph current(*seed);
 	DescentGraphDiff dgd;
+	SimwalkSampler ss(ped, &current);
 	double prob;
     unsigned burnin_steps = unsigned(iterations * burnin_proportion); // XXX 
     
@@ -37,8 +37,9 @@ Peeler* MarkovChain::run(DescentGraph* seed, unsigned iterations) {
         
         p.increment();
         
-        if((i % 1000) == 0) {
+        if((i >= burnin_steps) and ((i % SAMPLE_PERIOD) == 0)) {
             peel.process(&current); // XXX use reference?
+            //printf("*\t%d\t%e\n", i, current.get_prob());
         }
         
         if(not current.evaluate_diff(dgd, &prob)) {
@@ -59,11 +60,6 @@ Peeler* MarkovChain::run(DescentGraph* seed, unsigned iterations) {
         if(accept_metropolis(prob, current.get_prob())) {
             current.apply_diff(dgd);
         }
-        /*
-        if((i % 1000) == 0) {
-            peel.process(&current); // XXX use reference?
-        }
-        */
 	}
 
     p.finish();

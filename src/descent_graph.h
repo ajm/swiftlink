@@ -40,6 +40,12 @@ class DescentGraph {
 	bool _genotype_elimination();
 	int _offset(unsigned person_id, unsigned locus, enum parentage p);
 	int _founder_allele(unsigned person_id, enum parentage p);
+	
+	char get_opposite(unsigned person_id, unsigned locus, enum parentage p);
+	void evaluate_diff_transmission(DescentGraphDiff& diff, double* new_prob, int* new_recombinations);
+	bool evaluate_diff_sumprior(DescentGraphDiff& diff, double* new_prob);
+	void write_diff(DescentGraphDiff& dgd);
+	
 
  public :
 	DescentGraph(Pedigree* ped, GeneticMap* map);
@@ -75,7 +81,6 @@ class DescentGraph {
 	bool illegal() const { return prob == LOG_ILLEGAL; }
 	int num_recombinations() { return recombinations; }
 	
-	char get_opposite(unsigned person_id, unsigned locus, enum parentage p);
 	bool evaluate_diff(DescentGraphDiff& diff, double* prob);
 	void apply_diff(DescentGraphDiff& diff);
 };

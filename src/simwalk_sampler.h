@@ -9,14 +9,15 @@ using namespace std;
 #include "genotype.h"
 #include "pedigree.h"
 #include "person.h"
-#include "genetic_map.h"
+//#include "genetic_map.h"
 #include "descent_graph_diff.h"
+#include "descent_graph_types.h"
 
 
 class SimwalkSampler {
 
     Pedigree* ped;
-    GeneticMap* map;
+    DescentGraph* dg;
 
     unsigned _geometric();
     unsigned select_next_locus(unsigned locus);
@@ -26,19 +27,17 @@ class SimwalkSampler {
     unsigned get_random_nonfounder();
     unsigned get_random_locus();
     enum parentage get_random_parent();
+    
     void transition_t0(DescentGraphDiff& dgd, unsigned person, unsigned locus);
-    //void transition_t0(unsigned id, unsigned locus, enum parentage p);
-/*
-    void transition_t1(unsigned person, unsigned locus);
-    void transition_t1(Person* p, unsigned locus);
-    void transition_t2a(unsigned person, unsigned locus);
-    void transition_t2b(unsigned person, unsigned locus);
-    void transition_t2(unsigned id, unsigned locus, bool same_gender);
-*/
+    void transition_t0(DescentGraphDiff& dgd, unsigned person, unsigned locus, enum parentage parent);
+    void transition_t1(DescentGraphDiff& dgd, unsigned person, unsigned locus);
+    void transition_t2a(DescentGraphDiff& dgd, unsigned person, unsigned locus);
+    void transition_t2b(DescentGraphDiff& dgd, unsigned person, unsigned locus);
+    void transition_t2(DescentGraphDiff& dgd, unsigned id, unsigned locus, bool same_gender);
 
  public:
-	SimwalkSampler(Pedigree* ped, GeneticMap* map) 
-		: ped(ped), map(map) {}
+	SimwalkSampler(Pedigree* ped, DescentGraph* dg) 
+		: ped(ped), dg(dg) {}
     
 	~SimwalkSampler() {}
 	

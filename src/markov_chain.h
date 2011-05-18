@@ -12,6 +12,8 @@ class DescentGraph;
 class Pedigree;
 class GeneticMap;
 
+const unsigned int SAMPLE_PERIOD = 1000;
+
 
 class MarkovChain {
 

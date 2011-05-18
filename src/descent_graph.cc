@@ -334,89 +334,116 @@ char DescentGraph::get_opposite(unsigned person_id, unsigned locus, enum parenta
     return data[_offset(person_id, locus, p)] == 0 ? 1 : 0;
 }
 
-// TODO XXX 
-// this is wrong, I should refactor the likelihood
-// code to be locus-by-locus and then reimplement everything
-// in terms of that...
-
-// TODO a work in progress...
-
-// i don't need to store anything for transmission probability, that is easy
-// just look at what has changed by looking at the neighbouring loci and
-// comparing it with what it was previously
-
-// for sum prior prob i need to either :
-// (a) a cache of probabilities one for each locus and rerun the founder
-//     allele graph calculations
-// (b) refine the founder allele graphs, so it is kept in memory for each 
-//     locus and alter the assignments for the components that it affects
-
-bool DescentGraph::evaluate_diff(DescentGraphDiff& diff, double* new_prob) {
+void DescentGraph::write_diff(DescentGraphDiff& dgd) {
     
-    Transition& t = diff.get_transition(0); // XXX
-    unsigned personid =     t.get_person();
-    unsigned locus =        t.get_locus();
-    enum parentage parent = t.get_parent();
+    for(unsigned i = 0; i < dgd.num_transitions(); ++i) {
+        Transition& t = dgd.get_transition(i);
+        
+        flip_bit(t.get_person(), 
+                 t.get_locus(), 
+                 t.get_parent());
+    }
+}
+
+bool DescentGraph::evaluate_diff_sumprior(DescentGraphDiff& diff, double* new_prob) {
+    bool ret = true;
+    unsigned locus = diff.get_transition(0).get_locus();
+    double diff_sumprior_prob;
     
-    char value = get_opposite(personid, locus, parent);
+    
+    write_diff(diff);
+    
+    FounderAlleleGraph fag(map, ped);
+    fag.reset();
+    
+    if(not fag.populate(*this, locus)) {
+        ret = false;
+        goto evaluate_diff_sumprior_end;
+    }
+    
+    if(not fag.likelihood(&diff_sumprior_prob, locus)) {
+        ret = false;
+        goto evaluate_diff_sumprior_end;
+    }
+    
+    *new_prob = diff_sumprior_prob - sum_prior_probs[locus];
+    
+ evaluate_diff_sumprior_end:
+ 
+    write_diff(diff);
+    
+    return ret;
+}
+
+void DescentGraph::evaluate_diff_transmission(DescentGraphDiff& diff, double* new_prob, int* new_recombinations) {
+
     int recombinations_diff = 0;
     double diff_prob = 0.0;
     double orig_prob = 0.0;
+    unsigned person;
+    unsigned locus;
+    enum parentage parent;
+    char value;
     
+    for(unsigned i = 0; i < diff.num_transitions(); ++i) {
+        Transition& t = diff.get_transition(i);
+        
+        person = t.get_person();
+        locus =  t.get_locus();
+        parent = t.get_parent();
+        
+        value = get_opposite(person, locus, parent);
+        
+        // update transmission probability
+        // on the left
+        if(locus != 0) {
+            if(get(person, locus-1, parent) == value) {
+                diff_prob += map->get_inverse_theta(locus-1);
+                orig_prob += map->get_theta(locus-1);
+                recombinations_diff--;
+            }
+            else {
+                diff_prob += map->get_theta(locus-1);
+                orig_prob += map->get_inverse_theta(locus-1);
+                recombinations_diff++;
+            }
+        }
+        
+        // on the right
+        if(locus != (map->num_markers() - 1)) {
+            if(get(person, locus+1, parent) == value) {
+                diff_prob += map->get_inverse_theta(locus);
+                orig_prob += map->get_theta(locus);
+                recombinations_diff--;
+            }
+            else {
+                diff_prob += map->get_theta(locus);
+                orig_prob += map->get_inverse_theta(locus);
+                recombinations_diff++;
+            }
+        }
+    
+    }
+    
+    *new_prob = diff_prob - orig_prob;
+    *new_recombinations = recombinations_diff;
+}
 
-    // update transmission probability
-    // on the left
-    if(locus != 0) {
-        if(get(personid, locus-1, parent) == value) {
-            diff_prob += map->get_inverse_theta(locus-1);
-            orig_prob += map->get_theta(locus-1);
-            recombinations_diff--;
-        }
-        else {
-            diff_prob += map->get_theta(locus-1);
-            orig_prob += map->get_inverse_theta(locus-1);
-            recombinations_diff++;
-        }
-    }
+bool DescentGraph::evaluate_diff(DescentGraphDiff& diff, double* new_prob) {
     
-    // on the right
-    if(locus != (map->num_markers() - 1)) {
-        if(get(personid, locus+1, parent) == value) {
-            diff_prob += map->get_inverse_theta(locus);
-            orig_prob += map->get_theta(locus);
-            recombinations_diff--;
-        }
-        else {
-            diff_prob += map->get_theta(locus);
-            orig_prob += map->get_inverse_theta(locus);
-            recombinations_diff++;
-        }
-    }
+    int recombinations_diff;
+    double transmission_diff;
+    double sumprior_diff;
     
-    
-    // update prior probability
-    // notes: for now just run the whole founder allele graph again 
-    // for the single locus
-    flip_bit(personid, locus, parent); // flip
-    
-    double diff_sumprior_prob;
-    FounderAlleleGraph fag(map, ped);
-    fag.reset();
-    if(not fag.populate(*this, locus)) {
-        flip_bit(personid, locus, parent); // XXX messy
+    evaluate_diff_transmission(diff, &transmission_diff, &recombinations_diff);
+
+    if(not evaluate_diff_sumprior(diff, &sumprior_diff)) {
         return false;
     }
-    if(not fag.likelihood(&diff_sumprior_prob, locus)) {
-        flip_bit(personid, locus, parent); // XXX messy
-		return false;
-    }
+        
+    *new_prob = prob + transmission_diff + sumprior_diff;
     
-    flip_bit(personid, locus, parent); // flip back
-    
-    
-    *new_prob = prob - orig_prob + diff_prob - sum_prior_probs[locus] + diff_sumprior_prob;
-    
-    diff.set_sumprior(diff_sumprior_prob);
+    diff.set_sumprior(sumprior_diff);
     diff.set_prob(*new_prob);
     diff.set_recombinations(recombinations_diff);
     
@@ -424,15 +451,13 @@ bool DescentGraph::evaluate_diff(DescentGraphDiff& diff, double* new_prob) {
 }
 
 void DescentGraph::apply_diff(DescentGraphDiff& diff) {
-
-    Transition& t = diff.get_transition(0); // XXX
-    unsigned personid =     t.get_person();
-    unsigned locus =        t.get_locus();
-    enum parentage parent = t.get_parent();
-
-    flip_bit(personid, locus, parent);
+    
+    unsigned locus = diff.get_transition(0).get_locus();
+    
+    write_diff(diff);
+    
     sum_prior_probs[locus] = diff.get_sumprior();
-    prob = diff.get_prob();
+    prob                   = diff.get_prob();
     recombinations += diff.get_recombinations();
 }
 

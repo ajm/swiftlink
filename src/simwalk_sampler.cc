@@ -8,7 +8,7 @@ using namespace std;
 #include "person.h"
 #include "descent_graph.h"
 #include "simwalk_sampler.h"
-#include "genetic_map.h"
+//#include "genetic_map.h"
 #include "descent_graph_diff.h"
 
 
@@ -33,46 +33,45 @@ unsigned SimwalkSampler::_geometric() {
 // t1 - non-leaves
 // t2 - non-leaves (people with spouses)
 void SimwalkSampler::step(DescentGraphDiff& dgd) {
-	//unsigned steps = _geometric();
+    unsigned steps = _geometric();
 	unsigned l = get_random_locus();
 	
-//	for(unsigned i = 0; i < steps; ++i) {
+	dgd.clear();
+	
+	for(unsigned i = 0; i < steps; ++i) {
 	
 	    // could select a neighbouring individual, I don't think sw does this 
 	    // for the random walk case
 	    // (a neighbor is a parent, sib, spouse, child or the individual themselves again)
 	    unsigned p = get_random_person();
 	    
-	    transition_t0(dgd, p,l);
-	    return;
-	    
-/*
+	    //transition_t0(dgd, p,l);
+	    //return;
+
 		switch(select_transition_rule(p)) {
 			case 0 :
-				return transition_t0(p,l);
-				//break;
-*/
-/*
+				transition_t0(dgd,p,l);
+				break;
+
 			case 1 :
-				transition_t1(p,l);
+				transition_t1(dgd,p,l);
 				break;
 
 			case 2 :
-				transition_t2a(p,l);
+				transition_t2a(dgd,p,l);
 				break;
 
 			case 3 :
-				transition_t2b(p,l);
+				transition_t2b(dgd,p,l);
 				break;
-*/
-/*			default:
+
+			default:
 				break;
 		}
-*/		
-//		l = select_next_locus(l);
-//	}
+	}
 }
 
+/*
 unsigned SimwalkSampler::select_next_locus(unsigned locus) {
     double r = random() / double(RAND_MAX);
     
@@ -83,15 +82,14 @@ unsigned SimwalkSampler::select_next_locus(unsigned locus) {
         return locus;
     }
     else {
-        return locus == (map->num_markers() - 1) ? locus : locus + 1;
+        return locus == (ped->num_markers() - 1) ? locus : locus + 1;
     }
 }
+*/
 
 int SimwalkSampler::select_transition_rule(unsigned person) {
-	//Person* p = ped->get_by_index(person);
+	Person* p = ped->get_by_index(person);
 	
-	return 0;
-/*
 	if(p->isleaf()) { // t1 & t2 require spouses
 	    return 0;
 	}
@@ -112,7 +110,6 @@ int SimwalkSampler::select_transition_rule(unsigned person) {
 	else {
 		return 3;
     }
-*/
 }
 
 unsigned SimwalkSampler::get_random(unsigned i) {
@@ -120,8 +117,7 @@ unsigned SimwalkSampler::get_random(unsigned i) {
 }
 
 unsigned SimwalkSampler::get_random_person() {
-	//return get_random(ped->num_members()); // XXX temporary
-    return get_random_nonfounder();
+	return get_random(ped->num_members());
 }
 
 unsigned SimwalkSampler::get_random_nonfounder() {
@@ -139,40 +135,38 @@ enum parentage SimwalkSampler::get_random_parent() {
 // select random individual, locus, maternal or paternal, 
 // switch 0 -> 1 or 1 -> 0
 void SimwalkSampler::transition_t0(DescentGraphDiff& dgd, unsigned person, unsigned locus) {
-    dgd.add_transition(person, locus, get_random_parent());
+    transition_t0(dgd, person, locus, get_random_parent());
 }
 
-/*
-
-// select random individual, locus, 
-// for each child, 
-//		if you inherit from maternal change to paternal + vice versa
-void SimwalkSampler::transition_t1(unsigned person, unsigned locus) {		
-	transition_t1(ped->get_by_index(person), locus);
+void SimwalkSampler::transition_t0(DescentGraphDiff& dgd, unsigned person, unsigned locus, enum parentage parent) {
+    dgd.add_transition(person, locus, parent);
 }
 
 // select random individual, locus, 
 // for each child, 
 //		if you inherit from maternal change to paternal + vice versa		
-void SimwalkSampler::transition_t1(Person* p, unsigned locus) {
+void SimwalkSampler::transition_t1(DescentGraphDiff& dgd, unsigned person, unsigned locus) {
+    Person* p = ped->get_by_index(person);
+
 	for(unsigned i = 0; i < p->num_children(); ++i) {
 		Person* k = p->get_child(i);
-		transition_t0(k->get_internalid(), locus, MATERNAL);
-		transition_t0(k->get_internalid(), locus, PATERNAL);
+		
+		transition_t0(dgd, k->get_internalid(), locus, MATERNAL);
+		transition_t0(dgd, k->get_internalid(), locus, PATERNAL);
 	}
 }
 	
 // see appendix a1 of simwalk paper for implementing t2a + t2b in terms
 // of t0 and t1
-void SimwalkSampler::transition_t2a(unsigned person, unsigned locus) {
-	transition_t2(person, locus, false);
+void SimwalkSampler::transition_t2a(DescentGraphDiff& dgd, unsigned person, unsigned locus) {
+	transition_t2(dgd, person, locus, false);
 }
 
-void SimwalkSampler::transition_t2b(unsigned person, unsigned locus) {
-	transition_t2(person, locus, true);
+void SimwalkSampler::transition_t2b(DescentGraphDiff& dgd, unsigned person, unsigned locus) {
+	transition_t2(dgd, person, locus, true);
 }
 
-void SimwalkSampler::transition_t2(unsigned id, unsigned locus, bool same_gender) {
+void SimwalkSampler::transition_t2(DescentGraphDiff& dgd, unsigned id, unsigned locus, bool same_gender) {
 	Person* p = ped->get_by_index(id);
 	Person* s = p->num_mates() == 1 ? \
 				p->get_mate(0) : \
@@ -182,29 +176,29 @@ void SimwalkSampler::transition_t2(unsigned id, unsigned locus, bool same_gender
 	for(unsigned i = 0; i < p->num_children(); ++i) {
 		Person* k = p->get_child(i);
 		
-		// check both parents are correct
+		// ignore step-children
 		if(s->get_internalid() != (p->ismale() ? k->get_maternalid() : k->get_paternalid()))
 			continue;
 		
 		if(same_gender) {
-			if(get(k->get_internalid(), locus, MATERNAL) == \
-			   get(k->get_internalid(), locus, PATERNAL)) {
-				transition_t0(k->get_internalid(), locus, MATERNAL);
-				transition_t0(k->get_internalid(), locus, PATERNAL);
+			if(dg->get(k->get_internalid(), locus, MATERNAL) == \
+			   dg->get(k->get_internalid(), locus, PATERNAL)) {
+			   
+				transition_t0(dgd, k->get_internalid(), locus, MATERNAL);
+				transition_t0(dgd, k->get_internalid(), locus, PATERNAL);
 			}
 		}
 		else {
-			if(get(k->get_internalid(), locus, MATERNAL) != \
-			   get(k->get_internalid(), locus, PATERNAL)) {
-				transition_t0(k->get_internalid(), locus, MATERNAL);
-				transition_t0(k->get_internalid(), locus, PATERNAL);
+			if(dg->get(k->get_internalid(), locus, MATERNAL) != \
+			   dg->get(k->get_internalid(), locus, PATERNAL)) {
+			   
+				transition_t0(dgd, k->get_internalid(), locus, MATERNAL);
+				transition_t0(dgd, k->get_internalid(), locus, PATERNAL);
 			}
 		}
 		
 		if(not p->isleaf())
-		    transition_t1(k, locus);
+		    transition_t1(dgd, k->get_internalid(), locus);
 	}
 }
-
-*/
 

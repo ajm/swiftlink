@@ -26,7 +26,7 @@ class MarkovChain {
 
  public:
 	MarkovChain(Pedigree* p, GeneticMap* m) 
-	    : ped(p), map(m), peel(p, m), burnin_proportion(0.1) {}
+	    : ped(p), map(m), peel(p, m), burnin_proportion(0.2) {}
     
 	~MarkovChain() {}
 

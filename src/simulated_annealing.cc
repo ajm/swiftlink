@@ -73,13 +73,12 @@ DescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
 		if(best->get_prob() < current.get_prob()) {
 		    *best = current;
 		}
-        /*
+        
 		// finish early if there are no recombinations
 		if(best->num_recombinations() == 0) {
 		    fprintf(stderr, "\nsimulated annealing, early termination\n");
 		    break;
 		}
-		*/
 	}
 
     p.finish();

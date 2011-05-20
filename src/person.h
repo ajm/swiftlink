@@ -76,6 +76,7 @@ class Person {
 
     // private, peeling related
     unsigned int count_unpeeled(vector<Person*>& v, PeelingState& ps);
+    unsigned int get_unpeeled_spouse(PeelingState& ps);
     bool contains_unpeeled(vector<Person*>& v, PeelingState& ps);
     bool offspring_peeled(PeelingState& ps);
     bool partners_peeled(PeelingState& ps);
@@ -86,6 +87,8 @@ class Person {
     bool ripe_all(PeelingState& ps);
     bool ripe_above_partners(PeelingState& ps);
     bool ripe(PeelingState& ps);
+    bool ripe_to_peel_down(PeelingState& ps);
+    bool ripe_parents(PeelingState& ps);
     void neighbours(vector<unsigned int>& nodes);
     void get_cutset(PeelOperation& operation, PeelingState& state);
     void add_mate(Person* p);

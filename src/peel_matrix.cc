@@ -41,6 +41,10 @@ PeelMatrix::PeelMatrix(unsigned int num_dim, unsigned int val_dim)
 	       			static_cast<double>(number_of_dimensions));
     data = new double[size];
     
+    for(unsigned i = 0; i < size; ++i) {
+        data[i] = 0.0;
+    }
+    
     printf("size = %d\n", size);
 }
 

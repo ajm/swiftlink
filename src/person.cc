@@ -189,12 +189,6 @@ bool Person::ripe_below(PeelingState& ps) {
 }
 
 bool Person::ripe_across(PeelingState& ps) {
-/*
-    printf("[%d]\n", internal_id);
-    printf("\toffspring_peeled = %s\n", offspring_peeled(ps) ? "true" : "false");
-    printf("\tparents_peeled = %s\n", parents_peeled(ps) ? "true" : "false");
-    printf("\tnumber of unpeeled mates = %d\n", count_unpeeled(mates, ps));
-*/
     return  offspring_peeled(ps) and \
             parents_peeled(ps) and \
             (count_unpeeled(mates, ps) == 1);
@@ -216,6 +210,24 @@ bool Person::ripe_above_partners(PeelingState& ps) {
     return ripe_above(ps);
 }
 
+bool Person::ripe_to_peel_down(PeelingState& ps) {
+    return (not ps.is_peeled(internal_id)) and \
+            ripe_above(ps) and \
+           (count_unpeeled(mates, ps) == 1) and \
+           (count_unpeeled(children, ps) == 1);
+}
+
+bool Person::ripe_parents(PeelingState& ps) {
+
+    if(isfounder())
+        return false;
+    
+    Person* mother = ped->get_by_index(maternal_id);
+    Person* father = ped->get_by_index(paternal_id);
+
+    return mother->ripe_to_peel_down(ps) and father->ripe_to_peel_down(ps);   
+}
+
 bool Person::ripe(PeelingState& ps) {
     return ripe_all(ps) or \
             ripe_across(ps) or \
@@ -223,15 +235,35 @@ bool Person::ripe(PeelingState& ps) {
             ripe_above_partners(ps);
 }
 
+unsigned int Person::get_unpeeled_spouse(PeelingState& ps) {
+    vector<unsigned int> unpeeled_spouses;
+    
+    for(unsigned i = 0; i < mates.size(); ++i) {
+        unsigned int spouse_id = mates[i]->get_internalid();
+        if(not ps.is_peeled(spouse_id)) {
+            unpeeled_spouses.push_back(spouse_id);
+        }
+    }
+    
+    if(unpeeled_spouses.size() != 1) {
+        fprintf(stderr, "error: a PARENT_PEEL was considered legal, but there are %d unpeeled spouses\n", int(unpeeled_spouses.size()));
+        abort();
+    }
+    
+    return unpeeled_spouses[0];
+}
+
 bool Person::peel_operation(PeelOperation& p, PeelingState& state) {
     p.set_pivot(internal_id);
     p.set_type(NULL_PEEL);
 
+/*
     // would be nice, but then I don't know what to do later...
-//    if(ripe(state)) {
-//        get_cutset(p, state);
-//        return true;
-//    }
+    if(ripe(state)) {
+        get_cutset(p, state);
+        return true;
+    }
+*/
     
     if(ripe_all(state)) {
         p.set_type(LAST_PEEL);
@@ -242,10 +274,11 @@ bool Person::peel_operation(PeelOperation& p, PeelingState& state) {
     else if(ripe_below(state)) {
         p.set_type(CHILD_PEEL);
     }
-    else if(ripe_above_partners(state)) {
+/*
+    else if(ripe_parents(state)) {
         p.set_type(PARENT_PEEL);
     }
-    
+*/
     if(p.get_type() != NULL_PEEL) {
         get_cutset(p, state);
         return true;
@@ -282,8 +315,18 @@ void Person::get_cutset(PeelOperation& operation, PeelingState& state) {
 		visited[i] = WHITE;
     }
 */    
-    visited[internal_id] = GREY;
-    q.push(internal_id);
+
+    if(operation.get_type() == PARENT_PEEL) {
+        visited[maternal_id] = GREY;
+        visited[paternal_id] = GREY;
+        
+        q.push(maternal_id);
+        q.push(paternal_id);
+    }
+    else {
+        visited[internal_id] = GREY;
+        q.push(internal_id);
+    }
 
     while(not q.empty()) {
 		tmp = q.front();
@@ -296,7 +339,7 @@ void Person::get_cutset(PeelOperation& operation, PeelingState& state) {
             tmp2 = n[i];
 
             if(not state.is_peeled(tmp2)) {
-                if(internal_id != tmp2) {
+                if((internal_id != tmp2) or (operation.get_type() == PARENT_PEEL)) {
                     operation.add_cutnode(tmp2);
                 }
                 continue;
@@ -310,6 +353,12 @@ void Person::get_cutset(PeelOperation& operation, PeelingState& state) {
         
         visited[tmp] = BLACK;
     }
+    
+    /*
+    if(operation.get_type() == PARENT_PEEL) {
+        operation.add_cutnode(maternal_id);
+        operation.add_cutnode(paternal_id);
+    }
+    */
 }
-
 

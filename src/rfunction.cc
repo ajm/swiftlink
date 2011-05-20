@@ -162,7 +162,6 @@ void Rfunction::evaluate_child_peel(
             }
             
             disease_prob        = get_disease_probability(piv_trait);
-            //recombination_prob  = 0.25 ;  // <---- do this when calculating P(T)
             recombination_prob  = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus_index, i, j);
             old_prob            = prev_matrix != NULL ? prev_matrix->get(prev_index) : 1.0;
             
@@ -180,6 +179,87 @@ void Rfunction::evaluate_child_peel(
     //printf(" := %e\n", tmp);
 }
 
+void Rfunction::evaluate_parent_peel(
+                    PeelMatrixKey& pmatrix_index, 
+                    PeelMatrix* prev_matrix, 
+                    DescentGraph* dg,
+                    unsigned int locus_index) {
+    
+    // first create a 3d matrix, of mother x father x child
+    // child is the pivot
+    //
+    // do :
+    // for gm in mother :
+    //   for gf in father :
+    //     for all descent graphs :
+    //       gc = get_phased_trait
+    //       make key
+    //       get from prev_matrix value using gm + gf + rest of enumeration
+    //       add to what is current in cell (gm, gf, gc)
+    // for gc in child
+    //   sum everything that has gc in the key
+    //
+    //
+    // ... or:
+    // i can do all the above with just a double array of length 4 initialised to zeros...
+
+    // both or neither (in case of prev_matrix == NULL) parents were in the cutset last
+    // so always add them and evaluate using a tenary expression
+    
+    double child_prob[4];
+    PeelMatrixKey prev_index(pmatrix_index);
+    enum phased_trait pivot_trait;
+    double maternal_disease_prob;
+    double paternal_disease_prob;
+    double disease_prob;
+    double recombination_prob;
+    double old_prob;
+    
+    for(unsigned i = 0; i < num_alleles; ++i)
+        child_prob[i] = 0.0;
+    
+    for(unsigned mi = 0; mi < num_alleles; ++mi) {        // mother's genotype
+        for(unsigned pi = 0; pi < num_alleles; ++pi) {    // father's genotype
+            enum phased_trait m = static_cast<enum phased_trait>(mi);
+            enum phased_trait p = static_cast<enum phased_trait>(pi);
+            
+            for(int i = 0; i < 2; ++i) {                        // maternal inheritance
+                for(int j = 0; j < 2; ++j) {                    // paternal inheritance
+                    pivot_trait = get_phased_trait(m, p, i, j);
+                    
+                    prev_index.add(pivot->get_maternalid(), m); // add mother
+                    prev_index.add(pivot->get_paternalid(), p); // add father
+                    
+                    if(prev_matrix and not prev_matrix->is_legal(prev_index)) {
+                        fprintf(stderr, "key generated is illegal! (%s %d)\n", __FILE__, __LINE__);
+                        abort();
+                    }
+                    
+                    maternal_disease_prob = get_disease_probability(m);
+                    paternal_disease_prob = get_disease_probability(p);
+                    disease_prob        = get_disease_probability(pivot_trait);
+                    recombination_prob  = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus_index, i, j);
+                    old_prob            = prev_matrix != NULL ? prev_matrix->get(prev_index) : 1.0;
+                    
+                    child_prob[pivot_trait] += \
+                        (maternal_disease_prob * \
+                         paternal_disease_prob * \
+                         disease_prob * \
+                         recombination_prob * \
+                         old_prob);
+                }
+            }
+        }
+    }
+    
+    
+    for(unsigned i = 0; i < num_alleles; ++i) {
+        enum phased_trait pivot_trait = static_cast<enum phased_trait>(i);
+        pmatrix_index.add(pivot->get_internalid(), pivot_trait);
+        pmatrix.set(pmatrix_index, child_prob[i]);
+    }
+}
+
 void Rfunction::evaluate_partner_peel(
                     PeelMatrixKey& pmatrix_index, 
                     PeelMatrix* prev_matrix) {
@@ -192,6 +272,9 @@ void Rfunction::evaluate_partner_peel(
     if(missing.size() != 0) {
         fprintf(stderr, "there should be no missing keys in a 'partner' peel! (%s %d)\n", 
             __FILE__, __LINE__);
+        for(unsigned i = 0; i < missing.size(); ++i) {  // XXX temporary
+            fprintf(stderr, " %d\n", missing[i]);
+        }
         abort();
     }
     
@@ -241,8 +324,16 @@ void Rfunction::evaluate_element(
             break;
         
         case PARENT_PEEL :  // XXX don't bother with yet (drop through to abort)
+            //fprintf(stderr, "error: PARENT_PEEL is not implemented (%s:%d)\n", __FILE__, __LINE__);
+            evaluate_parent_peel(pmatrix_index, prev_matrix, dg, locus_index);
+            abort();
+            
         case LAST_PEEL :    // XXX never seen here
+            fprintf(stderr, "error: LAST_PEEL is not dealt with here (%s:%d)\n", __FILE__, __LINE__);
+            abort();
+            
         default :
+            fprintf(stderr, "error: default should never be reached! (%s:%d)\n", __FILE__, __LINE__);
             abort();
     }
 }
@@ -271,6 +362,11 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, DescentGraph* dg, unsigned
 
     if(not pmatrix.key_intersection(previous_matrix, missing, additional)) {
 
+        //
+        // XXX there was obviously some rationale behind all these
+        // error conditions, i need to remember what they are and
+        // comment accordingly
+        //
         if(missing.size() > 2) {
             fprintf(stderr, "too many people to remove! (%s %d)\n", __FILE__, __LINE__);
             for(unsigned i = 0; i < missing.size(); ++i) {
@@ -294,7 +390,7 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, DescentGraph* dg, unsigned
             abort();
         }
         
-        if((additional.size() == 0) and not pivot->isleaf()) {
+        if((additional.size() == 0) and not (pivot->isleaf() or pivot->isfounder())) {
             fprintf(stderr, "only leaf nodes do not have additional keys (%s %d)\n",
                 __FILE__, __LINE__);
             abort();

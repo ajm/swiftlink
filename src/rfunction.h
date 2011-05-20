@@ -49,6 +49,11 @@ class Rfunction {
                     DescentGraph* dg, 
                     unsigned int locus_index
                 );
+    void evaluate_parent_peel(
+                    PeelMatrixKey& pmatrix_index, 
+                    PeelMatrix* prev_matrix, 
+                    DescentGraph* dg,
+                    unsigned int locus_index);
     void evaluate_partner_peel(
                     PeelMatrixKey& pmatrix_index, 
                     PeelMatrix* prev_matrix

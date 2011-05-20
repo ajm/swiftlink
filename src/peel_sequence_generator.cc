@@ -7,6 +7,7 @@ using namespace std;
 
 #include "peeling.h"
 #include "peel_sequence_generator.h"
+#include "person.h"
 
 
 PeelOperation PeelSequenceGenerator::get_random_operation(vector<PeelOperation>& v) {
@@ -37,6 +38,15 @@ PeelOperation PeelSequenceGenerator::get_best_operation_heuristic(vector<PeelOpe
 PeelOperation PeelSequenceGenerator::get_best_operation(vector<PeelOperation>& v) {    
 
     sort(v.begin(), v.end());
+    
+    
+    // XXX
+    printf("\n");
+    for(unsigned i = 0; i < v.size(); ++i) {
+        printf("\t");
+        v[i].print();
+    }
+    
 
     vector<PeelOperation>::iterator it = v.begin();
     unsigned int cs_size = v[0].get_cutset_size();
@@ -97,9 +107,22 @@ bool PeelSequenceGenerator::build_peel_order() {
             state.set_peeled(p.get_pivot());
             break;
         }
-*/        
+*/
+        // XXX
+        printf("\nselected: ");
+        p.print();
+        printf("\n\n");
+
         peelorder.push_back(p);
-        state.set_peeled(p.get_pivot());
+        
+        if(p.get_type() == PARENT_PEEL) {
+            Person* pivot = ped.get_by_index(p.get_pivot());
+            state.set_peeled(pivot->get_maternalid());
+            state.set_peeled(pivot->get_paternalid());
+        }
+        else {
+            state.set_peeled(p.get_pivot());
+        }
     }
 
     return true;

@@ -114,7 +114,7 @@ class PeelOperation {
     }
 
     bool operator<(const PeelOperation& p) const {
-		return cutset.size() < p.cutset.size();
+		return get_cutset_size() < p.get_cutset_size();
 	}
 };
 

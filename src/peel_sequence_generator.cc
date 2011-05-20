@@ -84,7 +84,7 @@ void PeelSequenceGenerator::all_possible_peels(int& unpeeled) {
     }
 }
 
-bool PeelSequenceGenerator::build_peel_order() {
+void PeelSequenceGenerator::build_peel_order() {
 
     while(true) {
         int unpeeled = 0;
@@ -98,7 +98,7 @@ bool PeelSequenceGenerator::build_peel_order() {
 
         if((unpeeled != 0) and (tmp.size() == 0)) {
             fprintf(stderr, "Error, %s failed to produce a valid peeling sequence\n", __func__ );
-            return false;
+            abort();
         }
         
         PeelOperation p = get_best_operation(tmp);
@@ -124,8 +124,6 @@ bool PeelSequenceGenerator::build_peel_order() {
             state.set_peeled(p.get_pivot());
         }
     }
-
-    return true;
 }
 
 vector<PeelOperation>& PeelSequenceGenerator::get_peel_order() {

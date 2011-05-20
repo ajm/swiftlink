@@ -37,7 +37,7 @@ class PeelSequenceGenerator {
     
     void all_possible_peels(int& unpeeled);
 
-    bool build_peel_order();
+    void build_peel_order();
     vector<PeelOperation>& get_peel_order();
     void print();
 };

@@ -75,23 +75,25 @@ class Person {
     void init_probs(DiseaseModel& dm);
 
     // private, peeling related
-    unsigned int count_unpeeled(vector<Person*>& v, PeelingState& ps);
-    unsigned int get_unpeeled_spouse(PeelingState& ps);
-    bool contains_unpeeled(vector<Person*>& v, PeelingState& ps);
+    unsigned count_unpeeled(vector<Person*>& v, PeelingState& ps);
+    unsigned get_unpeeled_mate(PeelingState& ps);
     bool offspring_peeled(PeelingState& ps);
     bool partners_peeled(PeelingState& ps);
     bool parents_peeled(PeelingState& ps);
+    bool ripe_above_singular_mate(PeelingState& ps);
     bool ripe_above(PeelingState& ps);
-    bool ripe_below(PeelingState& ps);
-    bool ripe_across(PeelingState& ps);
-    bool ripe_all(PeelingState& ps);
-    bool ripe_above_partners(PeelingState& ps);
-    bool ripe(PeelingState& ps);
+    
+    bool ripe_to_peel_across(PeelingState& ps);
+    bool ripe_to_peel_final(PeelingState& ps);
     bool ripe_to_peel_down(PeelingState& ps);
-    bool ripe_parents(PeelingState& ps);
+    bool ripe_to_peel_up(PeelingState& ps);
+    
     void neighbours(vector<unsigned int>& nodes);
     void get_cutset(PeelOperation& operation, PeelingState& state);
     void add_mate(Person* p);
+    bool is_parent(unsigned int i);
+    
+    
 
  public :
 	Person(const string name, const string father_name, const string mother_name, 

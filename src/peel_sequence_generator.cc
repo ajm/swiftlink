@@ -62,6 +62,47 @@ PeelOperation PeelSequenceGenerator::get_best_operation(vector<PeelOperation>& v
     return get_best_operation_heuristic(tmp);
 }
 
+bool PeelSequenceGenerator::creates_simple_peel_sequence(PeelOperation& po) {
+    
+    //printf("*testing: ");
+    //po.print();
+    
+    // this is the first thing to be peeled
+    if(peelorder.size() == 0)
+        return true;
+    
+    PeelOperation& prev = peelorder.back();
+    
+    // in the case of CHILD_PEEL, the cutsets are the same
+    if(prev.get_cutset() == po.get_cutset()) {
+        return true;
+    }
+    
+    // the cutset of prev has a member removed
+    // CHILD_PEEL, PARENT_PEEL, LAST_PEEL this is the 'pivot'
+    // PARENT_PEEL this is the two parents of the 'pivot'
+    
+    
+    // CUTSETS ARE IDENTICAL _OR_
+    // EVERY NODE IN PEELSET IS EITHER IN THE PREVIOUS
+    // CUTSET OR ELSE IS A FOUNDER OR A LEAF
+    // (THEN THE FIRST TEST CAN BE REMOVED ON LINE 70)
+    
+    vector<unsigned>& new_peelset = po.get_peelset();
+    vector<unsigned>& old_cutset = prev.get_cutset();
+    
+    for(unsigned i = 0; i < new_peelset.size(); ++i) {
+        if(find(old_cutset.begin(), old_cutset.end(), new_peelset[i]) == old_cutset.end()) {
+            Person* per = ped.get_by_index(new_peelset[i]);
+            if(not (per->isfounder() or per->isleaf())) {
+                return false;
+            }
+        }
+    }
+        
+    return true;
+}
+
 // create a list of all the possible peels from peripheral families
 // the actual details of what a peel is, is coded in the person class
 void PeelSequenceGenerator::all_possible_peels(int& unpeeled) {
@@ -78,7 +119,9 @@ void PeelSequenceGenerator::all_possible_peels(int& unpeeled) {
             per = ped.get_by_index(i);
 
             if(per->peel_operation(p, state)) {
-                tmp.push_back(p);
+                if(creates_simple_peel_sequence(p)) {
+                    tmp.push_back(p);
+                }
             }
         }
     }
@@ -115,14 +158,8 @@ void PeelSequenceGenerator::build_peel_order() {
 
         peelorder.push_back(p);
         
-        if(p.get_type() == PARENT_PEEL) {
-            Person* pivot = ped.get_by_index(p.get_pivot());
-            state.set_peeled(pivot->get_maternalid());
-            state.set_peeled(pivot->get_paternalid());
-        }
-        else {
-            state.set_peeled(p.get_pivot());
-        }
+        state.toggle_peel_operation(p);
+        state.print();
     }
 }
 

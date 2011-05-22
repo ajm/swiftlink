@@ -147,17 +147,8 @@ string Person::debug_string() {
 }
 
 //----------
-bool Person::contains_unpeeled(vector<Person*>& v, PeelingState& ps) {
 
-    for(unsigned int i = 0; i < v.size(); ++i) {
-        if(not ps.is_peeled(v[i]->internal_id))
-            return true;
-    }
-
-    return false;
-}
-
-unsigned int Person::count_unpeeled(vector<Person*>& v, PeelingState& ps) {
+unsigned Person::count_unpeeled(vector<Person*>& v, PeelingState& ps) {
     unsigned int count = 0;
 
     for(unsigned int i = 0; i < v.size(); ++i) {
@@ -169,11 +160,11 @@ unsigned int Person::count_unpeeled(vector<Person*>& v, PeelingState& ps) {
 }
 
 bool Person::offspring_peeled(PeelingState& ps) {
-    return not contains_unpeeled(children, ps);
+    return count_unpeeled(children, ps) == 0;
 }
 
 bool Person::partners_peeled(PeelingState& ps) {
-    return not contains_unpeeled(mates, ps);
+    return count_unpeeled(mates, ps) == 0;
 }
 
 bool Person::parents_peeled(PeelingState& ps) {
@@ -184,76 +175,74 @@ bool Person::ripe_above(PeelingState& ps) {
     return parents_peeled(ps);
 }
 
-bool Person::ripe_below(PeelingState& ps) {
+bool Person::ripe_to_peel_up(PeelingState& ps) {
     return not isfounder() and offspring_peeled(ps);
 }
 
-bool Person::ripe_across(PeelingState& ps) {
+bool Person::ripe_to_peel_across(PeelingState& ps) {
     return  offspring_peeled(ps) and \
             parents_peeled(ps) and \
             (count_unpeeled(mates, ps) == 1);
 }
 
-bool Person::ripe_all(PeelingState& ps) {
+bool Person::ripe_to_peel_final(PeelingState& ps) {
     return  offspring_peeled(ps) and \
             parents_peeled(ps) and \
             partners_peeled(ps);
 }
 
-bool Person::ripe_above_partners(PeelingState& ps) {
-    
-    for(unsigned int i = 0; i < mates.size(); ++i) {
-        if(not mates[i]->ripe_above(ps))
-            return false;
-    }
-
-    return ripe_above(ps);
-}
-
-bool Person::ripe_to_peel_down(PeelingState& ps) {
-    return (not ps.is_peeled(internal_id)) and \
-            ripe_above(ps) and \
-           (count_unpeeled(mates, ps) == 1) and \
-           (count_unpeeled(children, ps) == 1);
-}
-
-bool Person::ripe_parents(PeelingState& ps) {
-
-    if(isfounder())
-        return false;
-    
-    Person* mother = ped->get_by_index(maternal_id);
-    Person* father = ped->get_by_index(paternal_id);
-
-    return mother->ripe_to_peel_down(ps) and father->ripe_to_peel_down(ps);   
-}
-
-bool Person::ripe(PeelingState& ps) {
-    return ripe_all(ps) or \
-            ripe_across(ps) or \
-            ripe_below(ps) or \
-            ripe_above_partners(ps);
-}
-
-unsigned int Person::get_unpeeled_spouse(PeelingState& ps) {
-    vector<unsigned int> unpeeled_spouses;
+bool Person::ripe_above_singular_mate(PeelingState& ps) {
+    Person* p;
+    int count = 0;
     
     for(unsigned i = 0; i < mates.size(); ++i) {
-        unsigned int spouse_id = mates[i]->get_internalid();
-        if(not ps.is_peeled(spouse_id)) {
-            unpeeled_spouses.push_back(spouse_id);
+        if(not ps.is_peeled(mates[i]->get_internalid())) {
+            p = mates[i];
+            count++;
         }
     }
     
-    if(unpeeled_spouses.size() != 1) {
-        fprintf(stderr, "error: a PARENT_PEEL was considered legal, but there are %d unpeeled spouses\n", int(unpeeled_spouses.size()));
-        abort();
+    if(count != 1)
+        return false;
+    
+    return p->ripe_above(ps);
+}
+
+unsigned Person::get_unpeeled_mate(PeelingState& ps) {
+    
+    for(unsigned i = 0; i < mates.size(); ++i) {
+        unsigned pid = mates[i]->get_internalid();
+        
+        if(not ps.is_peeled(pid)) {
+            return pid;
+        }
     }
     
-    return unpeeled_spouses[0];
+    return UNKNOWN_ID;
+}
+
+/*
+ 
+ it must be:
+    ripe above this node
+    there only be one unpeeled mate node
+    ripe above the unpeeled mate node
+    one child to peel down to (XXX temporary)
+    that child is via the unpeeled mate
+ 
+ */
+
+bool Person::ripe_to_peel_down(PeelingState& ps) {
+    return ripe_above(ps) and \
+           ripe_above_singular_mate(ps) and \
+           (count_unpeeled(children, ps) == 1);
 }
 
 bool Person::peel_operation(PeelOperation& p, PeelingState& state) {
+    if(state.is_peeled(internal_id)) {
+        return false;
+    }
+    
     p.set_pivot(internal_id);
     p.set_type(NULL_PEEL);
 
@@ -265,21 +254,22 @@ bool Person::peel_operation(PeelOperation& p, PeelingState& state) {
     }
 */
     
-    if(ripe_all(state)) {
+    if(ripe_to_peel_final(state)) {
         p.set_type(LAST_PEEL);
     }
-    else if(ripe_across(state)) {
+    else if(ripe_to_peel_across(state)) {
         p.set_type(PARTNER_PEEL);
     }
-    else if(ripe_below(state)) {
+    else if(ripe_to_peel_up(state)) {
         p.set_type(CHILD_PEEL);
     }
-/*
-    else if(ripe_parents(state)) {
+    else if(ripe_to_peel_down(state)) {
         p.set_type(PARENT_PEEL);
+        p.add_peelnode(get_unpeeled_mate(state));
     }
-*/
+
     if(p.get_type() != NULL_PEEL) {
+        p.add_peelnode(internal_id);
         get_cutset(p, state);
         return true;
     }
@@ -303,31 +293,34 @@ void Person::neighbours(vector<unsigned int>& nodes) {
         nodes.push_back(mates[i]->internal_id);
 }
 
+bool Person::is_parent(unsigned int i) {
+    return (i == maternal_id) or (i == paternal_id);
+}
+
 void Person::get_cutset(PeelOperation& operation, PeelingState& state) {
     queue<unsigned int> q;
     vector<unsigned int> n;
-    //unsigned int visited[ped->num_members()]; // ISO C++ bitches...
     vector<int> visited(ped->num_members(), WHITE);
     unsigned int tmp, tmp2;
     Person* p;
-/*
+
+    
+    state.toggle_peel_operation(operation);
+    
+    visited[internal_id] = GREY;
+    q.push(internal_id);
+
+/*    
+    // XXX this assumes that we are generating a simple peeling 
+    // sequence on an arbitrary graph...
     for(unsigned int i = 0; i < ped->num_members(); ++i) {
-		visited[i] = WHITE;
+        if(state.is_peeled(i)) {
+            visited[i] = GREY;
+            q.push(i);
+            break;
+        }
     }
-*/    
-
-    if(operation.get_type() == PARENT_PEEL) {
-        visited[maternal_id] = GREY;
-        visited[paternal_id] = GREY;
-        
-        q.push(maternal_id);
-        q.push(paternal_id);
-    }
-    else {
-        visited[internal_id] = GREY;
-        q.push(internal_id);
-    }
-
+*/
     while(not q.empty()) {
 		tmp = q.front();
 		q.pop();
@@ -339,9 +332,9 @@ void Person::get_cutset(PeelOperation& operation, PeelingState& state) {
             tmp2 = n[i];
 
             if(not state.is_peeled(tmp2)) {
-                if((internal_id != tmp2) or (operation.get_type() == PARENT_PEEL)) {
+                //if(tmp2 != internal_id) {
                     operation.add_cutnode(tmp2);
-                }
+                //}
                 continue;
             }
 
@@ -354,11 +347,5 @@ void Person::get_cutset(PeelOperation& operation, PeelingState& state) {
         visited[tmp] = BLACK;
     }
     
-    /*
-    if(operation.get_type() == PARENT_PEEL) {
-        operation.add_cutnode(maternal_id);
-        operation.add_cutnode(paternal_id);
-    }
-    */
+    state.toggle_peel_operation(operation);
 }
-

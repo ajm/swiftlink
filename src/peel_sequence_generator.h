@@ -34,6 +34,7 @@ class PeelSequenceGenerator {
     PeelOperation get_random_operation(vector<PeelOperation>& v);
     PeelOperation get_best_operation_heuristic(vector<PeelOperation>& v);
     PeelOperation get_best_operation(vector<PeelOperation>& v);
+    bool creates_simple_peel_sequence(PeelOperation& po);
     
     void all_possible_peels(int& unpeeled);
 

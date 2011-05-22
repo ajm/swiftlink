@@ -326,7 +326,7 @@ void Rfunction::evaluate_element(
         case PARENT_PEEL :  // XXX don't bother with yet (drop through to abort)
             //fprintf(stderr, "error: PARENT_PEEL is not implemented (%s:%d)\n", __FILE__, __LINE__);
             evaluate_parent_peel(pmatrix_index, prev_matrix, dg, locus_index);
-            abort();
+            break;
             
         case LAST_PEEL :    // XXX never seen here
             fprintf(stderr, "error: LAST_PEEL is not dealt with here (%s:%d)\n", __FILE__, __LINE__);
@@ -357,6 +357,9 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, DescentGraph* dg, unsigned
     
     // ascertain whether previous matrix is compatible with the current matrix
     // given the current r-function being applied to the pedigree
+    
+    // missing: indices not in the current r-function
+    // additional: extra indices in the previous r-function
     missing.clear();
     additional.clear();
 
@@ -367,6 +370,16 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, DescentGraph* dg, unsigned
         // error conditions, i need to remember what they are and
         // comment accordingly
         //
+        
+        // missing
+        //  CHILD_PEEL if the last peel was child as well, there would be a perfect intersections (this code would not have been reached)
+        //  CHILD_PEEL contents of peelset, ie: the child, would be in missing
+        // 
+        //  PARTNER_PEEL contents of peelset, ie: the partner, would be in missing
+        //
+        //  PARENT_PEEL contents of peelset, ie: both parents, would be in missing
+        // 
+        // change to: if missing != peelset
         if(missing.size() > 2) {
             fprintf(stderr, "too many people to remove! (%s %d)\n", __FILE__, __LINE__);
             for(unsigned i = 0; i < missing.size(); ++i) {
@@ -375,6 +388,8 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, DescentGraph* dg, unsigned
             abort();
         }
 
+        // addition is of size 1 when CHILD_PEEL, PARTNER_PEEL, it is the person being peeled (child or partner)
+        // in PARENT_PEEL it is size 2
         if(additional.size() > 1) { // XXX
             fprintf(stderr, "wrong number of additional keys: %d (%s %d)\n", 
                 int(additional.size()), __FILE__, __LINE__);
@@ -390,12 +405,16 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, DescentGraph* dg, unsigned
             abort();
         }
         
+        // this is the first peel
         if((additional.size() == 0) and not (pivot->isleaf() or pivot->isfounder())) {
             fprintf(stderr, "only leaf nodes do not have additional keys (%s %d)\n",
                 __FILE__, __LINE__);
             abort();
         }
     }
+    // else if not a child peel abort
+    
+    
     
     
 /*

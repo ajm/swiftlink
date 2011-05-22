@@ -4,6 +4,7 @@
 using namespace std;
 
 #include <vector>
+#include <algorithm>
 #include <cstdio>
 
 #include "pedigree.h"
@@ -17,48 +18,41 @@ enum peeloperation {
     LAST_PEEL
 };
 
-class PeelingState {
-    vector<bool> peeled;
-
-  public :
-    PeelingState(Pedigree& p) 
-        : peeled(p.num_members(), false) {}
-
-    bool is_peeled(unsigned int i) {
-        return peeled[i];
-    }
-
-    void set_peeled(unsigned int i) {
-        peeled[i] = true;
-    }
-};
-
 class PeelOperation {
     int pivot;
     enum peeloperation type;
     vector<unsigned int> cutset;
+    vector<unsigned int> peelset;
     
-  public :
+    public :
     PeelOperation() 
-        : pivot(-1) {}
+    : pivot(-1) {}
     
     PeelOperation(unsigned int pivot_node) 
-        : pivot(pivot_node) {}
-
+    : pivot(pivot_node) {}
+    
     ~PeelOperation() {}
     
     unsigned int get_pivot() const { 
         return pivot;
     }
-
+    
     void set_pivot(unsigned int p) {
         pivot = p;
+    }
+    
+    void set_type(enum peeloperation po) {
+        type = po;
+    }
+    
+    enum peeloperation get_type() {
+        return type;
     }
     
     unsigned int get_cutset_size() const { 
         return cutset.size();
     }
-
+    
     vector<unsigned int>& get_cutset() {
         return cutset;
     }
@@ -70,18 +64,32 @@ class PeelOperation {
         }
         cutset.push_back(c);
     }
-
-    void set_type(enum peeloperation po) {
-        type = po;
+    
+    void remove_cutnode(unsigned int c) {
+        vector<unsigned int>::iterator it = find(cutset.begin(), cutset.end(), c);
+        if(it != cutset.end())
+            cutset.erase(it);
     }
-
-    enum peeloperation get_type() {
-        return type;
+    
+    unsigned int get_peelset_size() const { 
+        return peelset.size();
+    }
+    
+    vector<unsigned int>& get_peelset() {
+        return peelset;
+    }
+    
+    void add_peelnode(unsigned int c) {
+        for(unsigned int i = 0; i < peelset.size(); ++i) {
+            if(peelset[i] == c)
+                return;
+        }
+        peelset.push_back(c);
     }
     
     void print() const {
-        unsigned int tmp = cutset.size();
-
+        unsigned int tmp;
+        
         switch(type) {
             case NULL_PEEL:
                 printf("null ");
@@ -102,20 +110,64 @@ class PeelOperation {
                 printf("error ");
                 break;
         }
-
+        
         printf("pivot = %d, cutset = (", pivot);
-        for(unsigned int i = 0; i < tmp; ++i) {
+        tmp = cutset.size();
+        for(unsigned i = 0; i < tmp; ++i) {
             printf("%d", cutset[i]);
             if(i != (tmp-1)) {
                 putchar(',');
             }
         }
+        printf("), peelset = (");
+        tmp = peelset.size();
+        for(unsigned i = 0; i < tmp; ++i) {
+            printf("%d", peelset[i]);
+            if(i != (tmp-1)) {
+                putchar(',');
+            }
+        }
         printf(")\n");
+        
     }
-
+    
     bool operator<(const PeelOperation& p) const {
 		return get_cutset_size() < p.get_cutset_size();
 	}
+};
+
+class PeelingState {
+    vector<bool> peeled;
+
+  public :
+    PeelingState(Pedigree& p) 
+        : peeled(p.num_members(), false) {}
+
+    bool is_peeled(unsigned int i) {
+        return peeled[i];
+    }
+
+    void set_peeled(unsigned int i) {
+        peeled[i] = true;
+    }
+    
+    void toggle_peeled(unsigned int i) {
+        peeled[i] = peeled[i] ? false : true;
+    }
+    
+    void toggle_peel_operation(PeelOperation& operation) {
+        vector<unsigned>& tmp = operation.get_peelset();
+        
+        for(unsigned i = 0; i < tmp.size(); ++i) {
+            toggle_peeled(tmp[i]);
+        }
+    }
+    
+    void print() {
+        for(unsigned i = 0; i < peeled.size(); ++i) {
+            printf("%d\t%s\n", i, peeled[i] ? "peeled" : "unpeeled");
+        }
+    }
 };
 
 #endif

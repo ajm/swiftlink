@@ -46,6 +46,11 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     DescentGraph* opt;
     Peeler* peel;
     
+    
+    Peeler test(&p, &map);
+    exit(0);
+    
+    
     if(verbose) {
         fprintf(stderr, "processing pedigree %s\n", p.get_id().c_str());
     }

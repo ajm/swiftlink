@@ -31,7 +31,10 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g)
 }
 
 double Peeler::calc_trait_prob() {
-    return this->peel(NULL, 0);
+    double tmp = this->peel(NULL,0);
+    printf("P(T) = %e\n", tmp / log(10));
+    return tmp;
+    //return this->peel(NULL, 0);
 }
 
 bool Peeler::process(DescentGraph* dg) {

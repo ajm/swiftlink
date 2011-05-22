@@ -19,27 +19,13 @@ enum peeloperation {
 };
 
 class PeelOperation {
-    int pivot;
     enum peeloperation type;
-    vector<unsigned int> cutset;
-    vector<unsigned int> peelset;
+    vector<unsigned int> cutset; // what is being peeled on to by this operation
+    vector<unsigned int> peelset; // what is being peeled by this operation
     
     public :
-    PeelOperation() 
-    : pivot(-1) {}
-    
-    PeelOperation(unsigned int pivot_node) 
-    : pivot(pivot_node) {}
-    
+    PeelOperation() {}
     ~PeelOperation() {}
-    
-    unsigned int get_pivot() const { 
-        return pivot;
-    }
-    
-    void set_pivot(unsigned int p) {
-        pivot = p;
-    }
     
     void set_type(enum peeloperation po) {
         type = po;
@@ -79,6 +65,10 @@ class PeelOperation {
         return peelset;
     }
     
+    unsigned get_peelnode(unsigned i) {
+        return peelset[i];
+    }
+    
     void add_peelnode(unsigned int c) {
         for(unsigned int i = 0; i < peelset.size(); ++i) {
             if(peelset[i] == c)
@@ -111,15 +101,7 @@ class PeelOperation {
                 break;
         }
         
-        printf("pivot = %d, cutset = (", pivot);
-        tmp = cutset.size();
-        for(unsigned i = 0; i < tmp; ++i) {
-            printf("%d", cutset[i]);
-            if(i != (tmp-1)) {
-                putchar(',');
-            }
-        }
-        printf("), peelset = (");
+        printf("peelset = (");
         tmp = peelset.size();
         for(unsigned i = 0; i < tmp; ++i) {
             printf("%d", peelset[i]);
@@ -127,7 +109,19 @@ class PeelOperation {
                 putchar(',');
             }
         }
-        printf(")\n");
+        printf(") ");
+        
+        printf("cutset = (");
+        tmp = cutset.size();
+        for(unsigned i = 0; i < tmp; ++i) {
+            printf("%d", cutset[i]);
+            if(i != (tmp-1)) {
+                putchar(',');
+            }
+        }
+        printf(") ");
+        
+        printf("\n");
         
     }
     

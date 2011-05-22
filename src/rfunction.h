@@ -22,7 +22,7 @@ class Rfunction {
     unsigned int num_alleles; // could be 3 for L-sampler or 4 for peeling
     GeneticMap* map;
     Pedigree* ped;
-    Person* pivot;
+    //Person* pivot;
         
     vector<unsigned int> missing;
     vector<unsigned int> additional;
@@ -36,10 +36,11 @@ class Rfunction {
                     int maternal_allele, 
                     int paternal_allele
                 );
-    double get_disease_probability(enum phased_trait pt);
+    double get_disease_probability(unsigned person_id, enum phased_trait pt);
     double get_recombination_probability(
                     DescentGraph* dg, 
-                    unsigned int locus_index, 
+                    unsigned int locus_index,
+                    unsigned int person_id,
                     int maternal_allele, 
                     int paternal_allele
                 );

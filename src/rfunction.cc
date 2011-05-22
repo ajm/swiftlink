@@ -22,7 +22,6 @@ Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned int 
     if(alleles != 4)
         abort(); // XXX assumption for now...
 
-    pivot = ped->get_by_index(peel.get_pivot());
     pmatrix.set_keys(peel.get_cutset());
 }
 
@@ -64,15 +63,19 @@ enum phased_trait Rfunction::get_phased_trait(
     return pt;
 }
 
-double Rfunction::get_disease_probability(enum phased_trait pt) {
-    return pivot->get_disease_prob(pt);
+double Rfunction::get_disease_probability(unsigned person_id, enum phased_trait pt) {
+    Person* per;
+    
+    per = ped->get_by_index(person_id);
+    
+    return per->get_disease_prob(pt);
 }
 
 // XXX this needs to be somewhere that is not at the same position as 
 // a genetic marker
 // TODO XXX make this generic so it can do arbitrary points between markers
 double Rfunction::get_recombination_probability(
-                    DescentGraph* dg, unsigned int locus_index,
+                    DescentGraph* dg, unsigned int locus_index, unsigned person_id,
                     int maternal_allele, int paternal_allele) {
 
     double tmp = 1.0;
@@ -80,15 +83,11 @@ double Rfunction::get_recombination_probability(
     
     half_recomb_prob = map->get_theta_halfway(locus_index);
     
-    tmp *= dg->get(pivot->get_internalid(), locus_index,   MATERNAL) == maternal_allele ? \
-            1.0 - half_recomb_prob : half_recomb_prob;
-    tmp *= dg->get(pivot->get_internalid(), locus_index+1, MATERNAL) == maternal_allele ? \
-            1.0 - half_recomb_prob : half_recomb_prob;
+    tmp *= dg->get(person_id, locus_index,   MATERNAL) == maternal_allele ? 1.0 - half_recomb_prob : half_recomb_prob;
+    tmp *= dg->get(person_id, locus_index+1, MATERNAL) == maternal_allele ? 1.0 - half_recomb_prob : half_recomb_prob;
             
-    tmp *= dg->get(pivot->get_internalid(), locus_index,   PATERNAL) == paternal_allele ? \
-            1.0 - half_recomb_prob : half_recomb_prob;
-    tmp *= dg->get(pivot->get_internalid(), locus_index+1, PATERNAL) == paternal_allele ? \
-            1.0 - half_recomb_prob : half_recomb_prob;
+    tmp *= dg->get(person_id, locus_index,   PATERNAL) == paternal_allele ? 1.0 - half_recomb_prob : half_recomb_prob;
+    tmp *= dg->get(person_id, locus_index+1, PATERNAL) == paternal_allele ? 1.0 - half_recomb_prob : half_recomb_prob;
     
     return tmp;
 }
@@ -98,28 +97,32 @@ void Rfunction::evaluate_last_peel(
                     PeelMatrix* prev_matrix) {  
     
     double tmp = 0.0;
-    enum phased_trait pivot_trait;
+    enum phased_trait last_trait;
+    unsigned last_id = peel.get_peelnode(0);
+    
+    
+    if(peel.get_peelset_size() != 1) {
+        fprintf(stderr, "peelset must be size 1 (%s:%d)\n", __FILE__, __LINE__);
+        abort();
+    }
             
     for(unsigned i = 0; i < num_alleles; ++i) {
-        pivot_trait = static_cast<enum phased_trait>(i);
-        pmatrix_index.add(pivot->get_internalid(), pivot_trait);
+        last_trait = static_cast<enum phased_trait>(i);
+        pmatrix_index.add(last_id, last_trait);
         
         if(prev_matrix and not prev_matrix->is_legal(pmatrix_index)) {
             fprintf(stderr, "key generated is illegal! (%s %d)\n", __FILE__, __LINE__);
             abort();
         }
-/*
-        printf("\n\ttrait=%d d=%e o=%e\t= %e\n", 
-               pivot_trait,
-               get_disease_probability(pivot_trait), prev_matrix->get(pmatrix_index), 
-               get_disease_probability(pivot_trait) * prev_matrix->get(pmatrix_index));
-*/
-        tmp += (get_disease_probability(pivot_trait) * prev_matrix->get(pmatrix_index));
-    }
         
-    pmatrix_index.add(pivot->get_internalid(), (enum phased_trait)0);
+        tmp += (\
+                get_disease_probability(last_id, last_trait) * \
+                prev_matrix->get(pmatrix_index) \
+            );
+    }
+    
+    pmatrix_index.add(last_id, (enum phased_trait)0);
     pmatrix.set(pmatrix_index, tmp);
-    //printf("\nfinal prob := %e\n", tmp);
 }
 
 void Rfunction::evaluate_child_peel(
@@ -128,32 +131,40 @@ void Rfunction::evaluate_child_peel(
                     DescentGraph* dg,
                     unsigned int locus_index) {
 
-    double tmp = 0.0;
+    PeelMatrixKey prev_index(pmatrix_index);
     double recombination_prob;
     double disease_prob;
     double old_prob;
-    enum phased_trait piv_trait;
+    double tmp = 0.0;
+    enum phased_trait kid_trait;
     enum phased_trait mat_trait;
     enum phased_trait pat_trait;
-    PeelMatrixKey prev_index(pmatrix_index);
-    bool add_pivot = additional.size() == 1;
+    bool add_child = additional.size() == 1;
+    unsigned kid_id = peel.get_peelnode(0);
+    Person* kid = ped->get_by_index(kid_id);
+    
+    
+    if(peel.get_peelset_size() != 1) {
+        fprintf(stderr, "peelset must be size 1 (%s:%d)\n", __FILE__, __LINE__);
+        abort();
+    }
     
     for(unsigned i = 0; i < missing.size(); ++i) {
         prev_index.remove(missing[i]);
     }
     
-    mat_trait = pmatrix_index.get(pivot->get_maternalid());
-    pat_trait = pmatrix_index.get(pivot->get_paternalid());
+    mat_trait = pmatrix_index.get(kid->get_maternalid());
+    pat_trait = pmatrix_index.get(kid->get_paternalid());
     
     // iterate over all descent graphs to determine child trait 
     // based on parents' traits
     for(int i = 0; i < 2; ++i) {        // maternal
         for(int j = 0; j < 2; ++j) {    // paternal
             
-            piv_trait = get_phased_trait(mat_trait, pat_trait, i, j);
+            kid_trait = get_phased_trait(mat_trait, pat_trait, i, j);
             
-            if(add_pivot) {
-                prev_index.add(pivot->get_internalid(), piv_trait);
+            if(add_child) {
+                prev_index.add(kid_id, kid_trait);
             }
             
             if(prev_matrix and not prev_matrix->is_legal(prev_index)) {
@@ -161,22 +172,15 @@ void Rfunction::evaluate_child_peel(
                 abort();
             }
             
-            disease_prob        = get_disease_probability(piv_trait);
-            recombination_prob  = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus_index, i, j);
+            disease_prob        = get_disease_probability(kid_id, kid_trait);
+            recombination_prob  = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus_index, kid_id, i, j);
             old_prob            = prev_matrix != NULL ? prev_matrix->get(prev_index) : 1.0;
             
-/*            
-            printf("\n\t%d%d trait=%d d=%e r=%e o=%e\t= %e\n", 
-                    i, j, piv_trait,
-                    disease_prob, recombination_prob, old_prob, 
-                    disease_prob * recombination_prob * old_prob);
-*/
             tmp += (disease_prob * recombination_prob * old_prob);
         }
     }
     
     pmatrix.set(pmatrix_index, tmp);
-    //printf(" := %e\n", tmp);
 }
 
 void Rfunction::evaluate_parent_peel(
@@ -215,6 +219,41 @@ void Rfunction::evaluate_parent_peel(
     double recombination_prob;
     double old_prob;
     
+    
+    //fprintf(stderr, "evaluate_parent_peel\n");
+    
+    
+    if(peel.get_peelset_size() != 2) {
+        fprintf(stderr, "peelset must be size 2 (%s:%d)\n", __FILE__, __LINE__);
+        abort();
+    }
+    
+    if(missing.size() != 1) {
+        fprintf(stderr, "missing must be size 1 (%s:%d)\n", __FILE__, __LINE__);
+        abort();
+    }
+    
+    // additional can be length 0,1 or 2
+    
+    
+    for(unsigned i = 0; i < missing.size(); ++i) {
+        prev_index.remove(missing[i]);
+    }
+/*
+    for(unsigned i = 0; i < missing.size(); ++i)
+        printf("missing: %d\n", int(missing[i]));
+    
+    for(unsigned i = 0; i < additional.size(); ++i)
+        printf("additional: %d\n", int(additional[i]));
+*/
+    unsigned piv_id = missing[0];
+    Person* p = ped->get_by_index(piv_id);
+    unsigned mat_id = p->get_maternalid();
+    unsigned pat_id = p->get_paternalid();
+    
+    bool add_mother = find(additional.begin(), additional.end(), mat_id) != additional.end();
+    bool add_father = find(additional.begin(), additional.end(), pat_id) != additional.end();
+    
     for(unsigned i = 0; i < num_alleles; ++i)
         child_prob[i] = 0.0;
     
@@ -227,18 +266,25 @@ void Rfunction::evaluate_parent_peel(
                 for(int j = 0; j < 2; ++j) {                    // paternal inheritance
                     pivot_trait = get_phased_trait(m, p, i, j);
                     
-                    prev_index.add(pivot->get_maternalid(), m); // add mother
-                    prev_index.add(pivot->get_paternalid(), p); // add father
+                    if(prev_matrix != NULL) {
+                        if(add_mother)
+                            prev_index.add(mat_id, m); // add mother
+                        if(add_father)
+                            prev_index.add(pat_id, p); // add father
+                    }
+                    
+                    //prev_index.print();
+                    //printf("\n");
                     
                     if(prev_matrix and not prev_matrix->is_legal(prev_index)) {
-                        fprintf(stderr, "key generated is illegal! (%s %d)\n", __FILE__, __LINE__);
+                        fprintf(stderr, "key generated is illegal! (%s:%d)\n", __FILE__, __LINE__);
                         abort();
                     }
                     
-                    maternal_disease_prob = get_disease_probability(m);
-                    paternal_disease_prob = get_disease_probability(p);
-                    disease_prob        = get_disease_probability(pivot_trait);
-                    recombination_prob  = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus_index, i, j);
+                    maternal_disease_prob = get_disease_probability(mat_id, m);
+                    paternal_disease_prob = get_disease_probability(pat_id, p);
+                    disease_prob        = get_disease_probability(piv_id, pivot_trait);
+                    recombination_prob  = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus_index, piv_id, i, j);
                     old_prob            = prev_matrix != NULL ? prev_matrix->get(prev_index) : 1.0;
                     
                     child_prob[pivot_trait] += \
@@ -255,7 +301,7 @@ void Rfunction::evaluate_parent_peel(
     
     for(unsigned i = 0; i < num_alleles; ++i) {
         enum phased_trait pivot_trait = static_cast<enum phased_trait>(i);
-        pmatrix_index.add(pivot->get_internalid(), pivot_trait);
+        pmatrix_index.add(piv_id, pivot_trait);
         pmatrix.set(pmatrix_index, child_prob[i]);
     }
 }
@@ -266,37 +312,34 @@ void Rfunction::evaluate_partner_peel(
     
     double tmp = 0.0;
     PeelMatrixKey prev_index(pmatrix_index);
-    enum phased_trait pivot_trait;
-    unsigned pivot_id = pivot->get_internalid();
+        
+    unsigned partner_id;
+    enum phased_trait partner_trait;    
     
-    if(missing.size() != 0) {
-        fprintf(stderr, "there should be no missing keys in a 'partner' peel! (%s %d)\n", 
-            __FILE__, __LINE__);
-        for(unsigned i = 0; i < missing.size(); ++i) {  // XXX temporary
-            fprintf(stderr, " %d\n", missing[i]);
-        }
+    if(additional.size() != 1) {
+        fprintf(stderr, "PARTNER_PEEL can only peel a single node (tried to peel %d) (%s:%d)\n", int(additional.size()), __FILE__, __LINE__);
         abort();
     }
     
+    partner_id = additional[0];
+    
     for(unsigned i = 0; i < num_alleles; ++i) {
-        pivot_trait = static_cast<enum phased_trait>(i);
-        prev_index.add(pivot_id, pivot_trait);
+        partner_trait = static_cast<enum phased_trait>(i);
+        
+        prev_index.add(partner_id, partner_trait);
         
         if(prev_matrix and not prev_matrix->is_legal(prev_index)) {
             fprintf(stderr, "key generated is illegal! (%s %d)\n", __FILE__, __LINE__);
             abort();
         }
-/*
-        printf("\n\ttrait=%d d=%e o=%e\t= %e\n", 
-               pivot_trait,
-               get_disease_probability(pivot_trait), prev_matrix->get(prev_index), 
-               get_disease_probability(pivot_trait) * prev_matrix->get(prev_index));
-*/
-        tmp += (get_disease_probability(pivot_trait) * prev_matrix->get(prev_index));
+        
+        tmp += (\
+                get_disease_probability(partner_id, partner_trait) * \
+                prev_matrix->get(prev_index)\
+            );
     }
     
     pmatrix.set(pmatrix_index, tmp);
-    //printf(" := %e\n", tmp);
 }
 
 void Rfunction::evaluate_element(
@@ -353,81 +396,18 @@ bool Rfunction::evaluate(PeelMatrix* previous_matrix, DescentGraph* dg, unsigned
         evaluate_last_peel(k, previous_matrix);
         return true;
     }
-
     
-    // ascertain whether previous matrix is compatible with the current matrix
-    // given the current r-function being applied to the pedigree
-    
-    // missing: indices not in the current r-function
+    // missing: indices not in the previous r-function
     // additional: extra indices in the previous r-function
+    // this is ascertained by comparing the cutsets (used to index peel_matrices)
+    // XXX should this be done in the constructor? can't be there is a different peelmatrix per
+    // locus, maybe performed lazily, then never again?
     missing.clear();
     additional.clear();
-
-    if(not pmatrix.key_intersection(previous_matrix, missing, additional)) {
-
-        //
-        // XXX there was obviously some rationale behind all these
-        // error conditions, i need to remember what they are and
-        // comment accordingly
-        //
-        
-        // missing
-        //  CHILD_PEEL if the last peel was child as well, there would be a perfect intersections (this code would not have been reached)
-        //  CHILD_PEEL contents of peelset, ie: the child, would be in missing
-        // 
-        //  PARTNER_PEEL contents of peelset, ie: the partner, would be in missing
-        //
-        //  PARENT_PEEL contents of peelset, ie: both parents, would be in missing
-        // 
-        // change to: if missing != peelset
-        if(missing.size() > 2) {
-            fprintf(stderr, "too many people to remove! (%s %d)\n", __FILE__, __LINE__);
-            for(unsigned i = 0; i < missing.size(); ++i) {
-                fprintf(stderr, "missing[%d] = %d\n", i, missing[i]);
-            }
-            abort();
-        }
-
-        // addition is of size 1 when CHILD_PEEL, PARTNER_PEEL, it is the person being peeled (child or partner)
-        // in PARENT_PEEL it is size 2
-        if(additional.size() > 1) { // XXX
-            fprintf(stderr, "wrong number of additional keys: %d (%s %d)\n", 
-                int(additional.size()), __FILE__, __LINE__);
-            for(unsigned i = 0; i < additional.size(); ++i) {
-                fprintf(stderr, "additional[%d] = %d\n", i, additional[i]);
-            }
-            abort();
-        }
-        
-        if((additional.size() == 1) and (additional[0] != pivot->get_internalid())) {
-            fprintf(stderr, "additional key is not the pivot! (additional[0] = %d) (%s %d)\n",
-                int(additional[0]), __FILE__, __LINE__);
-            abort();
-        }
-        
-        // this is the first peel
-        if((additional.size() == 0) and not (pivot->isleaf() or pivot->isfounder())) {
-            fprintf(stderr, "only leaf nodes do not have additional keys (%s %d)\n",
-                __FILE__, __LINE__);
-            abort();
-        }
-    }
-    // else if not a child peel abort
     
+    // XXX check that missing is the same as peel.peelset
     
-    
-    
-/*
-    printf("\n\nRFUNCTION EVALUATION\n");
-    printf("pivot = %d\n", pivot->get_internalid());
-    printf("type = %s\n", peel.get_type() == CHILD_PEEL ? "child" : "partner");
-    for(unsigned i = 0; i < missing.size(); ++i) {
-        printf("missing[%d] = %d\n", i, missing[i]);
-    }
-    for(unsigned i = 0; i < additional.size(); ++i) {
-        printf("additional[%d] = %d\n", i, additional[i]);
-    }
-*/
+    pmatrix.key_intersection(previous_matrix, missing, additional);
     
     
     // generate all assignments to iterate through n-dimensional matrix

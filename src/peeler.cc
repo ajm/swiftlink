@@ -27,14 +27,22 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g)
         rfunctions.push_back(rf);
     }
     
-    lod.set_trait_prob(calc_trait_prob());
+    trait_prob = calc_trait_prob();
+        
+    lod.set_trait_prob(trait_prob);
+}
+
+double Peeler::get_trait_prob() {
+    return trait_prob;
 }
 
 double Peeler::calc_trait_prob() {
+    /*
     double tmp = this->peel(NULL,0);
     printf("P(T) = %e\n", tmp / log(10));
     return tmp;
-    //return this->peel(NULL, 0);
+    */
+    return this->peel(NULL, 0);
 }
 
 bool Peeler::process(DescentGraph* dg) {

@@ -20,10 +20,12 @@ class Peeler {
     GeneticMap* map;
     vector<Rfunction> rfunctions;
     LodCalculator lod;
+    double trait_prob;
     
  public :
     Peeler(Pedigree* p, GeneticMap* g);
 
+    double get_trait_prob();
     double calc_trait_prob();
     double peel(DescentGraph* dg, unsigned locus);
     bool process(DescentGraph* dg);

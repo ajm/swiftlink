@@ -243,7 +243,7 @@ bool Person::peel_operation(PeelOperation& p, PeelingState& state) {
         return false;
     }
     
-    p.set_pivot(internal_id);
+    //p.set_pivot(internal_id);
     p.set_type(NULL_PEEL);
 
 /*

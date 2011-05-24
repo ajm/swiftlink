@@ -44,12 +44,7 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     unsigned iterations = 1600 * p.num_members() * p.num_markers() * 10 * 2;
     //unsigned iterations = 1000000; // for testing
     DescentGraph* opt;
-    Peeler* peel;
-    
-    
-    Peeler test(&p, &map);
-    exit(0);
-    
+    Peeler* peel;    
     
     if(verbose) {
         fprintf(stderr, "processing pedigree %s\n", p.get_id().c_str());

@@ -175,8 +175,13 @@ bool Person::ripe_above(PeelingState& ps) {
     return parents_peeled(ps);
 }
 
+bool Person::ripe_above_at_least_one_parent(PeelingState& ps) {
+    return ped->get_by_index(maternal_id)->ripe_above(ps) or \
+           ped->get_by_index(paternal_id)->ripe_above(ps);
+}
+
 bool Person::ripe_to_peel_up(PeelingState& ps) {
-    return not isfounder() and offspring_peeled(ps);
+    return not isfounder() and offspring_peeled(ps) and ripe_above_at_least_one_parent(ps) and (count_unpeeled(mates, ps) == 0);
 }
 
 bool Person::ripe_to_peel_across(PeelingState& ps) {

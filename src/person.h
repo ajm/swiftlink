@@ -82,6 +82,7 @@ class Person {
     bool parents_peeled(PeelingState& ps);
     bool ripe_above_singular_mate(PeelingState& ps);
     bool ripe_above(PeelingState& ps);
+    bool ripe_above_at_least_one_parent(PeelingState& ps);
     
     bool ripe_to_peel_across(PeelingState& ps);
     bool ripe_to_peel_final(PeelingState& ps);

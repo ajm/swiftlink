@@ -63,30 +63,19 @@ PeelOperation PeelSequenceGenerator::get_best_operation(vector<PeelOperation>& v
 }
 
 bool PeelSequenceGenerator::creates_simple_peel_sequence(PeelOperation& po) {
-    
-    //printf("*testing: ");
-    //po.print();
-    
     // this is the first thing to be peeled
     if(peelorder.size() == 0)
         return true;
+        
+    if(po.get_type() == LAST_PEEL)
+        return true;
     
     PeelOperation& prev = peelorder.back();
-    
+
     // in the case of CHILD_PEEL, the cutsets are the same
     if(prev.get_cutset() == po.get_cutset()) {
         return true;
     }
-    
-    // the cutset of prev has a member removed
-    // CHILD_PEEL, PARENT_PEEL, LAST_PEEL this is the 'pivot'
-    // PARENT_PEEL this is the two parents of the 'pivot'
-    
-    
-    // CUTSETS ARE IDENTICAL _OR_
-    // EVERY NODE IN PEELSET IS EITHER IN THE PREVIOUS
-    // CUTSET OR ELSE IS A FOUNDER OR A LEAF
-    // (THEN THE FIRST TEST CAN BE REMOVED ON LINE 70)
     
     vector<unsigned>& new_peelset = po.get_peelset();
     vector<unsigned>& old_cutset = prev.get_cutset();
@@ -101,6 +90,25 @@ bool PeelSequenceGenerator::creates_simple_peel_sequence(PeelOperation& po) {
     }
         
     return true;
+
+/*
+    vector<unsigned>& new_cutset = po.get_cutset();
+//    vector<unsigned>& old_cutset = prev.get_cutset();
+    
+    sort(new_cutset.begin(), new_cutset.end());
+    sort(old_cutset.begin(), old_cutset.end());
+    
+    vector<unsigned> tmp(new_cutset.size());
+    vector<unsigned>::iterator it;
+    
+    it = set_intersection(new_cutset.begin(), 
+                          new_cutset.end(), 
+                          old_cutset.begin(), 
+                          old_cutset.end(), 
+                          tmp.begin());
+    
+    return int(it - tmp.begin()) != 0;
+*/
 }
 
 // create a list of all the possible peels from peripheral families
@@ -109,10 +117,10 @@ void PeelSequenceGenerator::all_possible_peels(int& unpeeled) {
     Person* per;
 
     tmp.clear();
-
-    for(unsigned int i = 0; i < ped.num_members(); ++i) {
+    
+    for(unsigned i = 0; i < ped.num_members(); ++i) {
         PeelOperation p;
-
+        
         if(not state.is_peeled(i)) {
             unpeeled++;
             

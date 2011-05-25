@@ -229,7 +229,7 @@ void Rfunction::evaluate_parent_peel(
     }
     
     if(missing.size() != 1) {
-        fprintf(stderr, "missing must be size 1 (%s:%d)\n", __FILE__, __LINE__);
+        fprintf(stderr, "missing must be size 1, read %d (%s:%d)\n", int(missing.size()), __FILE__, __LINE__);
         abort();
     }
     
@@ -283,7 +283,7 @@ void Rfunction::evaluate_parent_peel(
                     
                     maternal_disease_prob = get_disease_probability(mat_id, m);
                     paternal_disease_prob = get_disease_probability(pat_id, p);
-                    disease_prob        = get_disease_probability(piv_id, pivot_trait);
+                    disease_prob        = get_disease_probability(piv_id, pivot_trait); // TODO XXX i think this is used twice! XXX
                     recombination_prob  = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus_index, piv_id, i, j);
                     old_prob            = prev_matrix != NULL ? prev_matrix->get(prev_index) : 1.0;
                     

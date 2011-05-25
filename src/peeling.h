@@ -69,6 +69,10 @@ class PeelOperation {
         return peelset[i];
     }
     
+    unsigned get_cutnode(unsigned i) {
+        return cutset[i];
+    }
+    
     void add_peelnode(unsigned int c) {
         for(unsigned int i = 0; i < peelset.size(); ++i) {
             if(peelset[i] == c)

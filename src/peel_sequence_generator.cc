@@ -177,9 +177,21 @@ vector<PeelOperation>& PeelSequenceGenerator::get_peel_order() {
 
 void PeelSequenceGenerator::print() {
     
-    for(unsigned int i = 0; i < peelorder.size(); ++i) {
+    for(unsigned i = 0; i < peelorder.size(); ++i) {
         printf("rfunction %d: ", i);
         peelorder[i].print(); // XXX this is not ideal
+        
+        vector<unsigned>& tmp = peelorder[i].get_peelset();
+        printf(" (dependent on : ");
+        for(unsigned j = 0; j < tmp.size(); ++j) {
+            for(unsigned k = 0; k < i; ++k) {
+                if((not peelorder[k].is_used()) and peelorder[k].in_cutset(tmp[j])) {
+                    printf("%d ", k);
+                    peelorder[k].set_used();
+                }
+            }
+        }
+        printf(")\n");
     }
 }
 

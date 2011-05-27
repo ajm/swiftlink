@@ -22,10 +22,28 @@ class PeelOperation {
     enum peeloperation type;
     vector<unsigned int> cutset; // what is being peeled on to by this operation
     vector<unsigned int> peelset; // what is being peeled by this operation
+    bool used;
     
-    public :
-    PeelOperation() {}
+ public :
+    PeelOperation() : used(false) {}
     ~PeelOperation() {}
+    
+    void set_used() {
+        used = true;
+    }
+    
+    bool is_used() {
+        return used;
+    }
+    
+    bool in_cutset(unsigned node) {
+        for(unsigned i = 0; i < cutset.size(); ++i) {
+            if(cutset[i] == node) {
+                return true;
+            }
+        }
+        return false;
+    }
     
     void set_type(enum peeloperation po) {
         type = po;
@@ -125,8 +143,7 @@ class PeelOperation {
         }
         printf(") ");
         
-        printf("\n");
-        
+        //printf("\n");
     }
     
     bool operator<(const PeelOperation& p) const {

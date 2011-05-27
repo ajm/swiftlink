@@ -215,7 +215,7 @@ void Rfunction::evaluate_parent_peel(
     enum phased_trait pivot_trait;
     double maternal_disease_prob;
     double paternal_disease_prob;
-    double disease_prob;
+    //double disease_prob;
     double recombination_prob;
     double old_prob;
     
@@ -283,14 +283,14 @@ void Rfunction::evaluate_parent_peel(
                     
                     maternal_disease_prob = get_disease_probability(mat_id, m);
                     paternal_disease_prob = get_disease_probability(pat_id, p);
-                    disease_prob        = get_disease_probability(piv_id, pivot_trait); // TODO XXX i think this is used twice! XXX
+                    //disease_prob        = get_disease_probability(piv_id, pivot_trait); // TODO XXX i think this is used twice! XXX
                     recombination_prob  = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus_index, piv_id, i, j);
                     old_prob            = prev_matrix != NULL ? prev_matrix->get(prev_index) : 1.0;
                     
                     child_prob[pivot_trait] += \
                         (maternal_disease_prob * \
                          paternal_disease_prob * \
-                         disease_prob * \
+                         /*disease_prob * \*/
                          recombination_prob * \
                          old_prob);
                 }

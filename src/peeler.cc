@@ -23,7 +23,7 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g)
     vector<PeelOperation>& ops = psg.get_peel_order();
     
     for(vector<PeelOperation>::size_type i = 0; i < ops.size(); ++i) {
-        Rfunction rf(ops[i], ped, map, 4);
+        Rfunction rf(ops[i], ped, map, 4, rfunctions, i);
         rfunctions.push_back(rf);
     }
     

@@ -12,17 +12,218 @@ using namespace std;
 #include "genetic_map.h"
 
 
-Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned int alleles)
+Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned alleles, vector<Rfunction>& previous_functions, unsigned index)
     : pmatrix(po.get_cutset_size(), alleles), 
       peel(po), 
       num_alleles(alleles), 
       map(m),
-      ped(p) {
+      ped(p),
+      function_used(false),
+      function_index(index) {
         
     if(alleles != 4)
         abort(); // XXX assumption for now...
 
     pmatrix.set_keys(peel.get_cutset());
+    
+    find_previous_functions(previous_functions);
+
+    printf("RFUNCTION: %d ", function_index);
+    peel.print();
+    printf("(deps: %d %d)\n", 
+        previous_rfunction1 == NULL ? -1 : previous_rfunction1->function_index, 
+        previous_rfunction2 == NULL ? -1 : previous_rfunction2->function_index);
+}
+
+void Rfunction::find_previous_functions(vector<Rfunction>& functions) {
+    switch(peel.get_type()) {
+        case CHILD_PEEL:
+            find_child_functions(functions);
+            break;
+            
+        case PARTNER_PEEL:
+            find_partner_functions(functions);
+            break;
+            
+        case PARENT_PEEL:
+            find_parent_functions(functions);
+            break;
+            
+        case LAST_PEEL:
+            find_last_functions(functions);
+            break;
+            
+        default:
+            fprintf(stderr, "error: default should never be reached! (%s:%d)\n", __FILE__, __LINE__);
+            abort();
+    }
+}
+
+bool Rfunction::contains_cutnodes(vector<unsigned>& nodes) {
+    vector<unsigned>& cutset = peel.get_cutset();
+    
+    for(unsigned i = 0; i < nodes.size(); ++i) {
+        if(find(cutset.begin(), cutset.end(), nodes[i]) == cutset.end())
+            return false;
+    }
+    
+    return true;
+}
+
+bool Rfunction::is_used() {
+    return function_used;
+}
+
+void Rfunction::set_used() {
+    function_used = true;
+}
+
+void Rfunction::find_function_containing(vector<Rfunction>& functions, vector<unsigned>& nodes, Rfunction** func) {
+    
+    for(unsigned i = 0; i < functions.size(); ++i) {
+        if(functions[i].is_used()) {
+            continue;
+        }
+        
+        if(functions[i].contains_cutnodes(nodes)) {
+            *func = &functions[i];
+            functions[i].set_used();
+            break;
+        }
+    }
+}
+
+void Rfunction::find_child_functions(vector<Rfunction>& functions) {
+
+    vector<unsigned>& peelset = peel.get_peelset();
+    
+    Person* p = ped->get_by_index(peelset[0]);
+
+    vector<unsigned> tmp;
+    tmp.push_back(p->get_maternalid());
+    tmp.push_back(p->get_paternalid());
+    
+    previous_rfunction1 = NULL;
+    previous_rfunction2 = NULL;
+    
+    find_function_containing(functions, tmp, &previous_rfunction1);
+    
+    // don't even bother looking if the child is a leaf
+    if(p->isleaf()) {
+        return;
+    }
+    
+    find_function_containing(functions, peelset, &previous_rfunction2);
+    
+    if(previous_rfunction2 == NULL) {
+        fprintf(stderr, "error: non-leaf child node not found in any previous function (%s:%d)\n", 
+            __FILE__, __LINE__);
+        abort();
+    }
+}
+
+void Rfunction::find_partner_functions(vector<Rfunction>& functions) {
+    
+    vector<unsigned>& peelset = peel.get_peelset();
+    vector<unsigned>& cutset = peel.get_cutset();
+    
+    Person* p = ped->get_by_index(peelset[0]);
+    
+    vector<unsigned> tmp;
+    tmp.push_back(peelset[0]);
+    
+    for(unsigned i = 0; i < p->num_mates(); ++i) {
+        unsigned tmp2 = p->get_mate(i)->get_internalid();
+        for(unsigned j = 0; j < cutset.size(); ++j) {
+            if(cutset[j] == tmp2) {
+                tmp.push_back(tmp2);
+            }
+        }
+    }
+        
+    if(tmp.size() != 2) {
+        fprintf(stderr, "error: ambiguous which mate is being peeled on to (%s:%d)\n", 
+            __FILE__, __LINE__);
+        abort();
+    }
+    
+    previous_rfunction1 = NULL;
+    previous_rfunction2 = NULL;
+    
+    find_function_containing(functions, tmp, &previous_rfunction1);
+    
+    
+    if(p->isfounder()) {
+        return;
+    }
+    
+    find_function_containing(functions, peelset, &previous_rfunction2);
+    
+    if(previous_rfunction2 == NULL) {
+        fprintf(stderr, "error: non-founder node not found in any previous function (%s:%d)\n", 
+            __FILE__, __LINE__);
+        abort();
+    }
+}
+
+void Rfunction::find_parent_functions(vector<Rfunction>& functions) {
+
+    vector<unsigned>& peelset = peel.get_peelset();
+    Person* mother;
+    Person* father;
+    Person* tmp;
+    
+    previous_rfunction1 = NULL;
+    previous_rfunction2 = NULL;
+    
+    tmp = ped->get_by_index(peelset[0]);
+    if(tmp->ismale()) {
+        father = tmp;
+        mother = ped->get_by_index(peelset[1]);
+    }
+    else {
+        mother = tmp;
+        father = ped->get_by_index(peelset[1]);
+    }
+    
+    vector<unsigned> tmp2;
+    tmp2.push_back(mother->get_internalid());
+    
+    find_function_containing(functions, tmp2, &previous_rfunction1);
+    
+    tmp2.clear();
+    tmp2.push_back(father->get_internalid());
+    
+    find_function_containing(functions, tmp2, &previous_rfunction2);
+
+    if((not mother->isfounder()) and (previous_rfunction1 == NULL)) {
+        fprintf(stderr, "error: non-founder node not found in any previous function (%s:%d)\n", 
+            __FILE__, __LINE__);
+        abort();
+    }
+
+    if((not father->isfounder()) and (previous_rfunction2 == NULL)) {
+        fprintf(stderr, "error: non-founder node not found in any previous function (%s:%d)\n", 
+            __FILE__, __LINE__);
+        abort();
+    }
+}
+
+void Rfunction::find_last_functions(vector<Rfunction>& functions) {
+    vector<unsigned>& peelset = peel.get_peelset();
+    
+    previous_rfunction1 = NULL;
+    previous_rfunction2 = NULL;
+
+    find_function_containing(functions, peelset, &previous_rfunction1);
+    
+    if(previous_rfunction1 == NULL) {
+        fprintf(stderr, "error: last node not found in any previous function (%s:%d)\n", 
+            __FILE__, __LINE__);
+        abort();
+    }
+    
+    find_function_containing(functions, peelset, &previous_rfunction2);
 }
 
 void Rfunction::generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments) {

@@ -19,14 +19,48 @@ class Rfunction {
 
     PeelMatrix pmatrix;    
     PeelOperation peel;
-    unsigned int num_alleles; // could be 3 for L-sampler or 4 for peeling
+    unsigned num_alleles; // could be 3 for L-sampler or 4 for peeling
     GeneticMap* map;
     Pedigree* ped;
-    //Person* pivot;
-        
-    vector<unsigned int> missing;
-    vector<unsigned int> additional;
     
+    // these have different meanings for different peeling operations
+    //
+    // CHILD_PEEL
+    //      1. same as what is being peel to (or NULL, if it does not exist)
+    //      2. cutset containing the child (or NULL, if child is a leaf)
+    //
+    // PARTNER_PEEL
+    //      1. cutset containing marriage (CANNOT BE NULL)
+    //      2. cutset containing the person being peeled (or NULL, if person is a founder)
+    //
+    // PARENT_PEEL
+    //      1. cutset containing mother (or NULL, if mother is a founder)
+    //      2. cutset containing father (or NULL, if father is a founder)
+    //
+    // LAST_PEEL
+    //      1. cutset containing person being peeled
+    //      2. NULL
+    //      
+    Rfunction* previous_rfunction1;
+    Rfunction* previous_rfunction2;
+    bool function_used;
+    unsigned function_index;
+    
+    vector<unsigned> missing;
+    vector<unsigned> additional;
+    
+    
+    bool is_used();
+    void set_used();
+    void find_previous_functions(vector<Rfunction>& functions);
+    bool contains_cutnodes(vector<unsigned>& nodes);
+    void find_function_containing(vector<Rfunction>& functions, 
+                                  vector<unsigned>& nodes, 
+                                  Rfunction** func);
+    void find_child_functions(vector<Rfunction>& functions);
+    void find_partner_functions(vector<Rfunction>& functions);
+    void find_parent_functions(vector<Rfunction>& functions);
+    void find_last_functions(vector<Rfunction>& functions);
 
     void generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments);
     bool affected_trait(enum phased_trait pt, int allele);
@@ -44,6 +78,7 @@ class Rfunction {
                     int maternal_allele, 
                     int paternal_allele
                 );
+    
     void evaluate_child_peel(
                     PeelMatrixKey& pmatrix_index, 
                     PeelMatrix* prev_matrix, 
@@ -71,7 +106,7 @@ class Rfunction {
                 );
 
  public :
-    Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned int alleles);
+    Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned alleles, vector<Rfunction>& previous_functions, unsigned index);
     
     PeelMatrix* get_matrix() { return &pmatrix; }
     

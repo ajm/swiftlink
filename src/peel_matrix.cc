@@ -13,13 +13,11 @@ using namespace std;
 
 unsigned int PeelMatrix::generate_index(PeelMatrixKey& pmk) {
     unsigned int index = 0;
-    unsigned int tmp;
 
     for(unsigned int i = 0; i < keys.size(); ++i) {
-        tmp = keys[i];
         index += (offsets[i] * pmk.get(keys[i]));
     }
-        
+    
     return index;
 }
     

@@ -46,9 +46,6 @@ class Rfunction {
     bool function_used;
     unsigned function_index;
     
-    vector<unsigned> missing;
-    vector<unsigned> additional;
-    
     
     bool is_used();
     void set_used();
@@ -81,36 +78,27 @@ class Rfunction {
     
     void evaluate_child_peel(
                     PeelMatrixKey& pmatrix_index, 
-                    PeelMatrix* prev_matrix, 
                     DescentGraph* dg, 
-                    unsigned int locus_index
-                );
+                    unsigned int locus_index);
     void evaluate_parent_peel(
                     PeelMatrixKey& pmatrix_index, 
-                    PeelMatrix* prev_matrix, 
                     DescentGraph* dg,
                     unsigned int locus_index);
-    void evaluate_partner_peel(
-                    PeelMatrixKey& pmatrix_index, 
-                    PeelMatrix* prev_matrix
-                );
-    void evaluate_last_peel(
-                    PeelMatrixKey& pmatrix_index, 
-                    PeelMatrix* prev_matrix
-                );
+    void evaluate_partner_peel(PeelMatrixKey& pmatrix_index);
+    void evaluate_last_peel(PeelMatrixKey& pmatrix_index);
     void evaluate_element(
                     PeelMatrixKey& pmatrix_index, 
-                    PeelMatrix* prev_matrix, 
                     DescentGraph* dg, 
-                    unsigned int locus_index
-                );
+                    unsigned int locus_index);
 
  public :
     Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned alleles, vector<Rfunction>& previous_functions, unsigned index);
     
     PeelMatrix* get_matrix() { return &pmatrix; }
-    
-    bool evaluate(PeelMatrix* previous_matrix, DescentGraph* dg, unsigned int locus_index);
+    double get(PeelMatrixKey& pmk) { return pmatrix.get(pmk); }
+    double get_result() { return pmatrix.get_result(); }
+    void print() { pmatrix.print(); }
+    void evaluate(DescentGraph* dg, unsigned int locus_index);
 };
 
 #endif

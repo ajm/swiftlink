@@ -38,15 +38,6 @@ PeelOperation PeelSequenceGenerator::get_best_operation_heuristic(vector<PeelOpe
 PeelOperation PeelSequenceGenerator::get_best_operation(vector<PeelOperation>& v) {    
 
     sort(v.begin(), v.end());
-    
-    
-    // XXX
-    printf("\n");
-    for(unsigned i = 0; i < v.size(); ++i) {
-        printf("\t");
-        v[i].print();
-    }
-    
 
     vector<PeelOperation>::iterator it = v.begin();
     unsigned int cs_size = v[0].get_cutset_size();
@@ -159,15 +150,11 @@ void PeelSequenceGenerator::build_peel_order() {
             break;
         }
 */
-        // XXX
-        printf("\nselected: ");
-        p.print();
-        printf("\n\n");
 
         peelorder.push_back(p);
         
         state.toggle_peel_operation(p);
-        state.print();
+        //state.print();
     }
 }
 

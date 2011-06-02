@@ -23,15 +23,20 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g)
     vector<PeelOperation>& ops = psg.get_peel_order();
     
     for(vector<PeelOperation>::size_type i = 0; i < ops.size(); ++i) {
-        Rfunction rf(ops[i], ped, map, 4, rfunctions, i);
+        Rfunction* rf = new Rfunction(ops[i], ped, map, 4, rfunctions, i);
         rfunctions.push_back(rf);
     }
     
     trait_prob = calc_trait_prob();
     
-    printf("P(T) = %e\n", trait_prob);
+    printf("P(T) = %e\n", trait_prob / log(10));
         
     lod.set_trait_prob(trait_prob);
+}
+
+Peeler::~Peeler() {
+    for(unsigned i = 0; i < rfunctions.size(); ++i)
+        delete rfunctions[i];
 }
 
 double Peeler::get_trait_prob() {
@@ -55,18 +60,18 @@ bool Peeler::process(DescentGraph* dg) {
 double Peeler::peel(DescentGraph* dg, unsigned locus) {
 
     for(unsigned i = 0; i < rfunctions.size(); ++i) {
-        Rfunction& rf = rfunctions[i];
-        rf.evaluate(dg, locus);
+        Rfunction* rf = rfunctions[i];
+        rf->evaluate(dg, locus);
         
         if(dg == NULL) {
             printf("\nRFUNC %d\n", int(i));
-            rf.print();
+            rf->print();
         }
     }
     
-    Rfunction& rf = rfunctions.back();
+    Rfunction* rf = rfunctions.back();
     
-    return log(rf.get_result()); // TODO : convert all peel code to log likelihood?
+    return log(rf->get_result()); // TODO : convert all peel code to log likelihood?
 }
 
 double Peeler::get(unsigned locus) {

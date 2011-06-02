@@ -159,6 +159,12 @@ void PeelMatrix::normalise() {
 void PeelMatrix::generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments) {
     pmatrix_index.reassign(keys, assignments);
 }
+
+void PeelMatrix::print_keys() {
+    for(unsigned i = 0; i < keys.size(); ++i)
+        printf("%d ", int(keys[i]));
+    printf("\n");
+}
     
 void PeelMatrix::print() {
     PeelMatrixKey k;

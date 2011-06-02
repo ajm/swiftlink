@@ -128,6 +128,7 @@ class PeelMatrix {
     
     void generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments);
     void print();
+    void print_keys();
 };
 
 #endif

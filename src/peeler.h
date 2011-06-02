@@ -18,12 +18,13 @@ class Peeler {
     
     Pedigree* ped;
     GeneticMap* map;
-    vector<Rfunction> rfunctions;
+    vector<Rfunction*> rfunctions;
     LodCalculator lod;
     double trait_prob;
     
  public :
     Peeler(Pedigree* p, GeneticMap* g);
+    ~Peeler();
 
     double get_trait_prob();
     double calc_trait_prob();

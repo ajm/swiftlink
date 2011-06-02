@@ -12,7 +12,7 @@ using namespace std;
 #include "genetic_map.h"
 
 
-Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned alleles, vector<Rfunction>& previous_functions, unsigned index)
+Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned alleles, vector<Rfunction*>& previous_functions, unsigned index)
     : pmatrix(po.get_cutset_size(), alleles), 
       peel(po), 
       num_alleles(alleles), 
@@ -35,7 +35,7 @@ Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned alle
         previous_rfunction2 == NULL ? -1 : previous_rfunction2->function_index);
 }
 
-void Rfunction::find_previous_functions(vector<Rfunction>& functions) {
+void Rfunction::find_previous_functions(vector<Rfunction*>& functions) {
     switch(peel.get_type()) {
         case CHILD_PEEL:
             find_child_functions(functions);
@@ -78,22 +78,22 @@ void Rfunction::set_used() {
     function_used = true;
 }
 
-void Rfunction::find_function_containing(vector<Rfunction>& functions, vector<unsigned>& nodes, Rfunction** func) {
+void Rfunction::find_function_containing(vector<Rfunction*>& functions, vector<unsigned>& nodes, Rfunction** func) {
     
     for(unsigned i = 0; i < functions.size(); ++i) {
-        if(functions[i].is_used()) {
+        if(functions[i]->is_used()) {
             continue;
         }
         
-        if(functions[i].contains_cutnodes(nodes)) {
-            *func = &functions[i];
-            functions[i].set_used();
+        if(functions[i]->contains_cutnodes(nodes)) {
+            *func = functions[i];
+            functions[i]->set_used();
             break;
         }
     }
 }
 
-void Rfunction::find_child_functions(vector<Rfunction>& functions) {
+void Rfunction::find_child_functions(vector<Rfunction*>& functions) {
 
     vector<unsigned>& peelset = peel.get_peelset();
     
@@ -122,7 +122,7 @@ void Rfunction::find_child_functions(vector<Rfunction>& functions) {
     }
 }
 
-void Rfunction::find_partner_functions(vector<Rfunction>& functions) {
+void Rfunction::find_partner_functions(vector<Rfunction*>& functions) {
     
     vector<unsigned>& peelset = peel.get_peelset();
     vector<unsigned>& cutset = peel.get_cutset();
@@ -166,7 +166,7 @@ void Rfunction::find_partner_functions(vector<Rfunction>& functions) {
     }
 }
 
-void Rfunction::find_parent_functions(vector<Rfunction>& functions) {
+void Rfunction::find_parent_functions(vector<Rfunction*>& functions) {
 
     vector<unsigned>& peelset = peel.get_peelset();
     Person* mother;
@@ -209,7 +209,7 @@ void Rfunction::find_parent_functions(vector<Rfunction>& functions) {
     }
 }
 
-void Rfunction::find_last_functions(vector<Rfunction>& functions) {
+void Rfunction::find_last_functions(vector<Rfunction*>& functions) {
     vector<unsigned>& peelset = peel.get_peelset();
     
     previous_rfunction1 = NULL;
@@ -372,10 +372,30 @@ void Rfunction::evaluate_parent_peel(
     double old_prob2;
     
     enum phased_trait pivot_trait;
+    enum phased_trait mat_trait;
+    enum phased_trait pat_trait;
     unsigned piv_id = peel.get_cutnode(0);
     Person* p = ped->get_by_index(piv_id);
     unsigned mat_id = p->get_maternalid();
     unsigned pat_id = p->get_paternalid();
+    
+    
+    if(!dg) {
+        printf("rfunction1: ");
+        if(previous_rfunction1 != NULL)
+            previous_rfunction1->print_keys();
+        else
+            printf("\n");
+            
+        printf("rfunction2: ");
+        if(previous_rfunction2 != NULL)
+            previous_rfunction2->print_keys();
+        else
+            printf("\n");
+        
+        pmatrix_index.print();
+        printf("\n\n");
+    }
     
         
     for(unsigned i = 0; i < num_alleles; ++i)
@@ -383,22 +403,35 @@ void Rfunction::evaluate_parent_peel(
     
     for(unsigned mi = 0; mi < num_alleles; ++mi) {        // mother's genotype
         for(unsigned pi = 0; pi < num_alleles; ++pi) {    // father's genotype
-            enum phased_trait m = static_cast<enum phased_trait>(mi);
-            enum phased_trait p = static_cast<enum phased_trait>(pi);
+            mat_trait = static_cast<enum phased_trait>(mi);
+            pat_trait = static_cast<enum phased_trait>(pi);
+            
+            pmatrix_index.add(mat_id, mat_trait); // add mother
+            pmatrix_index.add(pat_id, pat_trait); // add father
+
+            maternal_disease_prob = get_disease_probability(mat_id, mat_trait);
+            paternal_disease_prob = get_disease_probability(pat_id, pat_trait);
+            
+            old_prob1 = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
+            old_prob2 = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
+            
+            //if(previous_rfunction1 != NULL)
+            //    previous_rfunction1->print();
+            
+            /*
+            if(!dg)
+                printf("%d=%d %d=%d : mdp = %e, pdp = %e, rp = %e, op1 = %e, op2 = %e\n", \
+                    int(mat_id), int(mi), int(pat_id), int(pi), \
+                    maternal_disease_prob, paternal_disease_prob, recombination_prob, \
+                    old_prob1, old_prob2);
+            */
             
             for(int i = 0; i < 2; ++i) {        // maternal inheritance
                 for(int j = 0; j < 2; ++j) {    // paternal inheritance
-                    pivot_trait = get_phased_trait(m, p, i, j);
+                    pivot_trait = get_phased_trait(mat_trait, pat_trait, i, j);        
                     
-                    pmatrix_index.add(mat_id, m); // add mother
-                    pmatrix_index.add(pat_id, p); // add father
-
-                    maternal_disease_prob = get_disease_probability(mat_id, m);
-                    paternal_disease_prob = get_disease_probability(pat_id, p);
                     recombination_prob    = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus_index, piv_id, i, j);
-                    old_prob1             = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
-                    old_prob2             = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
-                    
+                                        
                     child_prob[pivot_trait] += \
                         (maternal_disease_prob * \
                          paternal_disease_prob * \

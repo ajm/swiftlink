@@ -49,15 +49,15 @@ class Rfunction {
     
     bool is_used();
     void set_used();
-    void find_previous_functions(vector<Rfunction>& functions);
+    void find_previous_functions(vector<Rfunction*>& functions);
     bool contains_cutnodes(vector<unsigned>& nodes);
-    void find_function_containing(vector<Rfunction>& functions, 
+    void find_function_containing(vector<Rfunction*>& functions, 
                                   vector<unsigned>& nodes, 
                                   Rfunction** func);
-    void find_child_functions(vector<Rfunction>& functions);
-    void find_partner_functions(vector<Rfunction>& functions);
-    void find_parent_functions(vector<Rfunction>& functions);
-    void find_last_functions(vector<Rfunction>& functions);
+    void find_child_functions(vector<Rfunction*>& functions);
+    void find_partner_functions(vector<Rfunction*>& functions);
+    void find_parent_functions(vector<Rfunction*>& functions);
+    void find_last_functions(vector<Rfunction*>& functions);
 
     void generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments);
     bool affected_trait(enum phased_trait pt, int allele);
@@ -92,12 +92,14 @@ class Rfunction {
                     unsigned int locus_index);
 
  public :
-    Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned alleles, vector<Rfunction>& previous_functions, unsigned index);
+    Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned alleles, 
+                vector<Rfunction*>& previous_functions, unsigned index);
     
     PeelMatrix* get_matrix() { return &pmatrix; }
     double get(PeelMatrixKey& pmk) { return pmatrix.get(pmk); }
     double get_result() { return pmatrix.get_result(); }
     void print() { pmatrix.print(); }
+    void print_keys() { pmatrix.print_keys(); }
     void evaluate(DescentGraph* dg, unsigned int locus_index);
 };
 

@@ -36,6 +36,7 @@ class Rfunction {
     // PARENT_PEEL
     //      1. cutset containing mother (or NULL, if mother is a founder)
     //      2. cutset containing father (or NULL, if father is a founder)
+    //      3. cutset containing mother x father peeled upwards (or NULL if that has not happened yet)
     //
     // LAST_PEEL
     //      1. cutset containing person being peeled
@@ -43,6 +44,7 @@ class Rfunction {
     //      
     Rfunction* previous_rfunction1;
     Rfunction* previous_rfunction2;
+    Rfunction* previous_rfunction3; // only used by PARENT_PEEL
     bool function_used;
     unsigned function_index;
     

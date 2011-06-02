@@ -26,13 +26,18 @@ Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned alle
 
     pmatrix.set_keys(peel.get_cutset());
     
+    previous_rfunction1 = NULL;
+    previous_rfunction2 = NULL;
+    previous_rfunction3 = NULL;
+    
     find_previous_functions(previous_functions);
 
     printf("RFUNCTION: %d ", function_index);
     peel.print();
-    printf("(deps: %d %d)\n", 
+    printf("(deps: %d %d %d)\n", 
         previous_rfunction1 == NULL ? -1 : previous_rfunction1->function_index, 
-        previous_rfunction2 == NULL ? -1 : previous_rfunction2->function_index);
+        previous_rfunction2 == NULL ? -1 : previous_rfunction2->function_index,
+        previous_rfunction3 == NULL ? -1 : previous_rfunction3->function_index);
 }
 
 void Rfunction::find_previous_functions(vector<Rfunction*>& functions) {
@@ -103,9 +108,6 @@ void Rfunction::find_child_functions(vector<Rfunction*>& functions) {
     tmp.push_back(p->get_maternalid());
     tmp.push_back(p->get_paternalid());
     
-    previous_rfunction1 = NULL;
-    previous_rfunction2 = NULL;
-    
     find_function_containing(functions, tmp, &previous_rfunction1);
     
     // don't even bother looking if the child is a leaf
@@ -147,9 +149,6 @@ void Rfunction::find_partner_functions(vector<Rfunction*>& functions) {
         abort();
     }
     
-    previous_rfunction1 = NULL;
-    previous_rfunction2 = NULL;
-    
     find_function_containing(functions, tmp, &previous_rfunction1);
     
     
@@ -173,9 +172,6 @@ void Rfunction::find_parent_functions(vector<Rfunction*>& functions) {
     Person* father;
     Person* tmp;
     
-    previous_rfunction1 = NULL;
-    previous_rfunction2 = NULL;
-    
     tmp = ped->get_by_index(peelset[0]);
     if(tmp->ismale()) {
         father = tmp;
@@ -187,6 +183,12 @@ void Rfunction::find_parent_functions(vector<Rfunction*>& functions) {
     }
     
     vector<unsigned> tmp2;
+    tmp2.push_back(mother->get_internalid());
+    tmp2.push_back(father->get_internalid());
+    
+    find_function_containing(functions, tmp2, &previous_rfunction3);
+    
+    tmp2.clear();
     tmp2.push_back(mother->get_internalid());
     
     find_function_containing(functions, tmp2, &previous_rfunction1);
@@ -211,9 +213,6 @@ void Rfunction::find_parent_functions(vector<Rfunction*>& functions) {
 
 void Rfunction::find_last_functions(vector<Rfunction*>& functions) {
     vector<unsigned>& peelset = peel.get_peelset();
-    
-    previous_rfunction1 = NULL;
-    previous_rfunction2 = NULL;
 
     find_function_containing(functions, peelset, &previous_rfunction1);
     
@@ -359,6 +358,8 @@ void Rfunction::evaluate_child_peel(
     pmatrix.set(pmatrix_index, tmp);
 }
 
+// XXX to do any peeling sequence there needs to be 
+// a foreach unpeeled child in here somewhere...
 void Rfunction::evaluate_parent_peel(
                     PeelMatrixKey& pmatrix_index, 
                     DescentGraph* dg,
@@ -370,6 +371,7 @@ void Rfunction::evaluate_parent_peel(
     double recombination_prob;
     double old_prob1;
     double old_prob2;
+    double old_prob3;
     
     enum phased_trait pivot_trait;
     enum phased_trait mat_trait;
@@ -380,24 +382,6 @@ void Rfunction::evaluate_parent_peel(
     unsigned pat_id = p->get_paternalid();
     
     
-    if(!dg) {
-        printf("rfunction1: ");
-        if(previous_rfunction1 != NULL)
-            previous_rfunction1->print_keys();
-        else
-            printf("\n");
-            
-        printf("rfunction2: ");
-        if(previous_rfunction2 != NULL)
-            previous_rfunction2->print_keys();
-        else
-            printf("\n");
-        
-        pmatrix_index.print();
-        printf("\n\n");
-    }
-    
-        
     for(unsigned i = 0; i < num_alleles; ++i)
         child_prob[i] = 0.0;
     
@@ -414,30 +398,21 @@ void Rfunction::evaluate_parent_peel(
             
             old_prob1 = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
             old_prob2 = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
-            
-            //if(previous_rfunction1 != NULL)
-            //    previous_rfunction1->print();
-            
-            /*
-            if(!dg)
-                printf("%d=%d %d=%d : mdp = %e, pdp = %e, rp = %e, op1 = %e, op2 = %e\n", \
-                    int(mat_id), int(mi), int(pat_id), int(pi), \
-                    maternal_disease_prob, paternal_disease_prob, recombination_prob, \
-                    old_prob1, old_prob2);
-            */
+            old_prob3 = previous_rfunction3 != NULL ? previous_rfunction3->get(pmatrix_index) : 1.0;
             
             for(int i = 0; i < 2; ++i) {        // maternal inheritance
                 for(int j = 0; j < 2; ++j) {    // paternal inheritance
                     pivot_trait = get_phased_trait(mat_trait, pat_trait, i, j);        
                     
-                    recombination_prob    = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus_index, piv_id, i, j);
+                    recombination_prob = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus_index, piv_id, i, j);
                                         
                     child_prob[pivot_trait] += \
                         (maternal_disease_prob * \
                          paternal_disease_prob * \
                          recombination_prob * \
                          old_prob1 * \
-                         old_prob2 );
+                         old_prob2 * \
+                         old_prob3);
                 }
             }
         }

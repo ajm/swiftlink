@@ -163,6 +163,15 @@ bool Person::offspring_peeled(PeelingState& ps) {
     return count_unpeeled(children, ps) == 0;
 }
 
+bool Person::founder_mates_peeled(PeelingState& ps) {
+    for(unsigned int i = 0; i < mates.size(); ++i) {
+        if(mates[i]->isfounder() and (not ps.is_peeled(mates[i]->internal_id)))
+            return false;
+    }
+
+    return true;
+}
+
 bool Person::partners_peeled(PeelingState& ps) {
     return count_unpeeled(mates, ps) == 0;
 }
@@ -183,8 +192,8 @@ bool Person::ripe_above_at_least_one_parent(PeelingState& ps) {
 bool Person::ripe_to_peel_up(PeelingState& ps) {
     return not isfounder() and \
            offspring_peeled(ps) and \
-           ripe_above_at_least_one_parent(ps) and \
-           (count_unpeeled(mates, ps) == 0);
+           founder_mates_peeled(ps);
+           /*and ripe_above_at_least_one_parent(ps) and (count_unpeeled(mates, ps) == 0);*/
 }
 
 bool Person::ripe_to_peel_across(PeelingState& ps) {
@@ -244,7 +253,7 @@ unsigned Person::get_unpeeled_mate(PeelingState& ps) {
 
 bool Person::ripe_to_peel_down(PeelingState& ps) {
     return ripe_above(ps) and \
-           ripe_above_singular_mate(ps) and (count_unpeeled(children, ps) == 1);
+           ripe_above_singular_mate(ps);// and (count_unpeeled(children, ps) == 1);
 }
 
 bool Person::peel_operation(PeelOperation& p, PeelingState& state) {

@@ -111,12 +111,15 @@ void Rfunction::find_child_functions(vector<Rfunction*>& functions) {
     }
     
     find_function_containing(functions, peel.get_peelset(), &previous_rfunction2);
-    
+
+    // this kills some inbred stuff :-(
+/*
     if(previous_rfunction2 == NULL) {
         fprintf(stderr, "error: non-leaf child node not found in any previous function (%s:%d)\n", 
             __FILE__, __LINE__);
         abort();
     }
+*/
 }
 
 void Rfunction::find_generic_functions(vector<Rfunction*>& functions) {

@@ -43,7 +43,7 @@ PeelMatrix::PeelMatrix(unsigned int num_dim, unsigned int val_dim)
         data[i] = 0.0;
     }
     
-    printf("size = %d\n", size);
+    //printf("size = %d\n", size);
 }
 
 PeelMatrix::PeelMatrix(const PeelMatrix& rhs) {

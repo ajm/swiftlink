@@ -53,55 +53,6 @@ PeelOperation PeelSequenceGenerator::get_best_operation(vector<PeelOperation>& v
     return get_best_operation_heuristic(tmp);
 }
 
-bool PeelSequenceGenerator::creates_simple_peel_sequence(PeelOperation& po) {
-    // this is the first thing to be peeled
-    if(peelorder.size() == 0)
-        return true;
-        
-    if(po.get_type() == LAST_PEEL)
-        return true;
-    
-    PeelOperation& prev = peelorder.back();
-
-    // in the case of CHILD_PEEL, the cutsets are the same
-    if(prev.get_cutset() == po.get_cutset()) {
-        return true;
-    }
-    
-    vector<unsigned>& new_peelset = po.get_peelset();
-    vector<unsigned>& old_cutset = prev.get_cutset();
-    
-    for(unsigned i = 0; i < new_peelset.size(); ++i) {
-        if(find(old_cutset.begin(), old_cutset.end(), new_peelset[i]) == old_cutset.end()) {
-            Person* per = ped.get_by_index(new_peelset[i]);
-            if(not (per->isfounder() or per->isleaf())) {
-                return false;
-            }
-        }
-    }
-        
-    return true;
-
-/*
-    vector<unsigned>& new_cutset = po.get_cutset();
-//    vector<unsigned>& old_cutset = prev.get_cutset();
-    
-    sort(new_cutset.begin(), new_cutset.end());
-    sort(old_cutset.begin(), old_cutset.end());
-    
-    vector<unsigned> tmp(new_cutset.size());
-    vector<unsigned>::iterator it;
-    
-    it = set_intersection(new_cutset.begin(), 
-                          new_cutset.end(), 
-                          old_cutset.begin(), 
-                          old_cutset.end(), 
-                          tmp.begin());
-    
-    return int(it - tmp.begin()) != 0;
-*/
-}
-
 // create a list of all the possible peels from peripheral families
 // the actual details of what a peel is, is coded in the person class
 void PeelSequenceGenerator::all_possible_peels(int& unpeeled) {
@@ -118,9 +69,9 @@ void PeelSequenceGenerator::all_possible_peels(int& unpeeled) {
             per = ped.get_by_index(i);
 
             if(per->peel_operation(p, state)) {
-                if(creates_simple_peel_sequence(p)) {
+                //if(creates_simple_peel_sequence(p)) {
                     tmp.push_back(p);
-                }
+                //}
             }
         }
     }
@@ -154,7 +105,11 @@ void PeelSequenceGenerator::build_peel_order() {
         peelorder.push_back(p);
         
         state.toggle_peel_operation(p);
-        //state.print();
+        
+        p.print();
+        printf("\n");
+        state.print();
+        printf("\n");
     }
 }
 

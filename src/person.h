@@ -78,6 +78,7 @@ class Person {
     unsigned count_unpeeled(vector<Person*>& v, PeelingState& ps);
     unsigned get_unpeeled_mate(PeelingState& ps);
     bool offspring_peeled(PeelingState& ps);
+    bool founder_mates_peeled(PeelingState& ps);
     bool partners_peeled(PeelingState& ps);
     bool parents_peeled(PeelingState& ps);
     bool ripe_above_singular_mate(PeelingState& ps);

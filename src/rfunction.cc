@@ -28,16 +28,14 @@ Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned alle
     
     previous_rfunction1 = NULL;
     previous_rfunction2 = NULL;
-    previous_rfunction3 = NULL;
     
     find_previous_functions(previous_functions);
 
     printf("RFUNCTION: %d ", function_index);
     peel.print();
-    printf("(deps: %d %d %d)\n", 
+    printf("(deps: %d %d)\n", 
         previous_rfunction1 == NULL ? -1 : previous_rfunction1->function_index, 
-        previous_rfunction2 == NULL ? -1 : previous_rfunction2->function_index,
-        previous_rfunction3 == NULL ? -1 : previous_rfunction3->function_index);
+        previous_rfunction2 == NULL ? -1 : previous_rfunction2->function_index);
 }
 
 void Rfunction::find_previous_functions(vector<Rfunction*>& functions) {
@@ -47,21 +45,21 @@ void Rfunction::find_previous_functions(vector<Rfunction*>& functions) {
             break;
             
         case PARTNER_PEEL:
-            find_partner_functions(functions);
-            break;
-            
         case PARENT_PEEL:
-            find_parent_functions(functions);
-            break;
-            
         case LAST_PEEL:
-            find_last_functions(functions);
+            find_generic_functions(functions);
             break;
             
         default:
             fprintf(stderr, "error: default should never be reached! (%s:%d)\n", __FILE__, __LINE__);
             abort();
     }
+}
+
+bool Rfunction::contains_node(unsigned node) {
+    vector<unsigned>& cutset = peel.get_cutset();
+    
+    return find(cutset.begin(), cutset.end(), node) != cutset.end();
 }
 
 bool Rfunction::contains_cutnodes(vector<unsigned>& nodes) {
@@ -99,11 +97,8 @@ void Rfunction::find_function_containing(vector<Rfunction*>& functions, vector<u
 }
 
 void Rfunction::find_child_functions(vector<Rfunction*>& functions) {
-
-    vector<unsigned>& peelset = peel.get_peelset();
     
-    Person* p = ped->get_by_index(peelset[0]);
-
+    Person* p = ped->get_by_index(peel.get_peelnode(0));
     vector<unsigned> tmp;
     tmp.push_back(p->get_maternalid());
     tmp.push_back(p->get_paternalid());
@@ -115,7 +110,7 @@ void Rfunction::find_child_functions(vector<Rfunction*>& functions) {
         return;
     }
     
-    find_function_containing(functions, peelset, &previous_rfunction2);
+    find_function_containing(functions, peel.get_peelset(), &previous_rfunction2);
     
     if(previous_rfunction2 == NULL) {
         fprintf(stderr, "error: non-leaf child node not found in any previous function (%s:%d)\n", 
@@ -124,105 +119,15 @@ void Rfunction::find_child_functions(vector<Rfunction*>& functions) {
     }
 }
 
-void Rfunction::find_partner_functions(vector<Rfunction*>& functions) {
+void Rfunction::find_generic_functions(vector<Rfunction*>& functions) {
     
-    vector<unsigned>& peelset = peel.get_peelset();
-    vector<unsigned>& cutset = peel.get_cutset();
-    
-    Person* p = ped->get_by_index(peelset[0]);
+    unsigned peelnode = peel.get_peelnode(0);
     
     vector<unsigned> tmp;
-    tmp.push_back(peelset[0]);
-    
-    for(unsigned i = 0; i < p->num_mates(); ++i) {
-        unsigned tmp2 = p->get_mate(i)->get_internalid();
-        for(unsigned j = 0; j < cutset.size(); ++j) {
-            if(cutset[j] == tmp2) {
-                tmp.push_back(tmp2);
-            }
-        }
-    }
-        
-    if(tmp.size() != 2) {
-        fprintf(stderr, "error: ambiguous which mate is being peeled on to (%s:%d)\n", 
-            __FILE__, __LINE__);
-        abort();
-    }
+    tmp.push_back(peelnode);
     
     find_function_containing(functions, tmp, &previous_rfunction1);
-    
-    
-    if(p->isfounder()) {
-        return;
-    }
-    
-    find_function_containing(functions, peelset, &previous_rfunction2);
-    
-    if(previous_rfunction2 == NULL) {
-        fprintf(stderr, "error: non-founder node not found in any previous function (%s:%d)\n", 
-            __FILE__, __LINE__);
-        abort();
-    }
-}
-
-void Rfunction::find_parent_functions(vector<Rfunction*>& functions) {
-
-    vector<unsigned>& peelset = peel.get_peelset();
-    Person* mother;
-    Person* father;
-    Person* tmp;
-    
-    tmp = ped->get_by_index(peelset[0]);
-    if(tmp->ismale()) {
-        father = tmp;
-        mother = ped->get_by_index(peelset[1]);
-    }
-    else {
-        mother = tmp;
-        father = ped->get_by_index(peelset[1]);
-    }
-    
-    vector<unsigned> tmp2;
-    tmp2.push_back(mother->get_internalid());
-    tmp2.push_back(father->get_internalid());
-    
-    find_function_containing(functions, tmp2, &previous_rfunction3);
-    
-    tmp2.clear();
-    tmp2.push_back(mother->get_internalid());
-    
-    find_function_containing(functions, tmp2, &previous_rfunction1);
-    
-    tmp2.clear();
-    tmp2.push_back(father->get_internalid());
-    
-    find_function_containing(functions, tmp2, &previous_rfunction2);
-
-    if((not mother->isfounder()) and (previous_rfunction1 == NULL)) {
-        fprintf(stderr, "error: non-founder node not found in any previous function (%s:%d)\n", 
-            __FILE__, __LINE__);
-        abort();
-    }
-
-    if((not father->isfounder()) and (previous_rfunction2 == NULL)) {
-        fprintf(stderr, "error: non-founder node not found in any previous function (%s:%d)\n", 
-            __FILE__, __LINE__);
-        abort();
-    }
-}
-
-void Rfunction::find_last_functions(vector<Rfunction*>& functions) {
-    vector<unsigned>& peelset = peel.get_peelset();
-
-    find_function_containing(functions, peelset, &previous_rfunction1);
-    
-    if(previous_rfunction1 == NULL) {
-        fprintf(stderr, "error: last node not found in any previous function (%s:%d)\n", 
-            __FILE__, __LINE__);
-        abort();
-    }
-    
-    find_function_containing(functions, peelset, &previous_rfunction2);
+    find_function_containing(functions, tmp, &previous_rfunction2);    
 }
 
 void Rfunction::generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments) {
@@ -358,9 +263,10 @@ void Rfunction::evaluate_child_peel(
     pmatrix.set(pmatrix_index, tmp);
 }
 
+/*
 // XXX to do any peeling sequence there needs to be 
 // a foreach unpeeled child in here somewhere...
-void Rfunction::evaluate_parent_peel(
+void Rfunction::evaluate_parent_peel_old(
                     PeelMatrixKey& pmatrix_index, 
                     DescentGraph* dg,
                     unsigned int locus_index) {
@@ -424,6 +330,75 @@ void Rfunction::evaluate_parent_peel(
         pmatrix.set(pmatrix_index, child_prob[i]);
     }
 }
+*/
+
+// XXX to do any peeling sequence there needs to be 
+// a foreach unpeeled child in here somewhere...
+void Rfunction::evaluate_parent_peel(
+                    PeelMatrixKey& pmatrix_index, 
+                    DescentGraph* dg,
+                    unsigned int locus_index) {
+    
+    double child_prob[4];
+    double disease_prob;
+    double recombination_prob;
+    double old_prob1;
+    double old_prob2;
+    
+    enum phased_trait pivot_trait;
+    enum phased_trait mat_trait;
+    enum phased_trait pat_trait;
+    unsigned piv_id = peel.get_cutnode(0);
+    unsigned parent_id = peel.get_peelnode(0);
+    Person* p = ped->get_by_index(piv_id);
+    bool ismother = parent_id == p->get_maternalid();
+    unsigned other_parent_id = ismother ? \
+                                p->get_paternalid() : \
+                                p->get_maternalid();
+    
+    
+    for(unsigned i = 0; i < num_alleles; ++i)
+        child_prob[i] = 0.0;
+    
+    for(unsigned mi = 0; mi < num_alleles; ++mi) {    
+        
+        if(ismother) {
+            mat_trait = static_cast<enum phased_trait>(mi);
+            pat_trait = pmatrix_index.get(other_parent_id);
+        }
+        else {
+            pat_trait = static_cast<enum phased_trait>(mi);
+            mat_trait = pmatrix_index.get(other_parent_id);
+        }
+        
+        pmatrix_index.add(parent_id, static_cast<enum phased_trait>(mi));
+        
+        disease_prob = get_disease_probability(parent_id, static_cast<enum phased_trait>(mi));
+            
+        old_prob1 = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
+        old_prob2 = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
+        
+        for(int i = 0; i < 2; ++i) {        // maternal inheritance
+            for(int j = 0; j < 2; ++j) {    // paternal inheritance
+                pivot_trait = get_phased_trait(mat_trait, pat_trait, i, j);        
+                    
+                recombination_prob = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus_index, piv_id, i, j);
+                                        
+                child_prob[pivot_trait] += \
+                    (disease_prob * \
+                     recombination_prob * \
+                     old_prob1 * \
+                     old_prob2);
+            }
+        }
+    }
+    
+    for(unsigned i = 0; i < num_alleles; ++i) {
+        pivot_trait = static_cast<enum phased_trait>(i);
+        pmatrix_index.add(piv_id, pivot_trait);
+        pmatrix.set(pmatrix_index, child_prob[i]);
+    }
+}
 
 void Rfunction::evaluate_partner_peel(PeelMatrixKey& pmatrix_index) {
     
@@ -440,7 +415,7 @@ void Rfunction::evaluate_partner_peel(PeelMatrixKey& pmatrix_index) {
         
         tmp += (\
                 get_disease_probability(partner_id, partner_trait) * \
-                previous_rfunction1->get(pmatrix_index) * \
+                (previous_rfunction1 == NULL ? 1.0 : previous_rfunction1->get(pmatrix_index)) * \
                 (previous_rfunction2 == NULL ? 1.0 : previous_rfunction2->get(pmatrix_index)) \
             );
     }

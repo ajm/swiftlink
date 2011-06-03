@@ -30,13 +30,12 @@ class Rfunction {
     //      2. cutset containing the child (or NULL, if child is a leaf)
     //
     // PARTNER_PEEL
-    //      1. cutset containing marriage (CANNOT BE NULL)
+    //      1. cutset containing marriage if last peel was CHILD_PEEL or self and child if last peel was PARENT_PEEL (CANNOT BE NULL)
     //      2. cutset containing the person being peeled (or NULL, if person is a founder)
     //
     // PARENT_PEEL
-    //      1. cutset containing mother (or NULL, if mother is a founder)
-    //      2. cutset containing father (or NULL, if father is a founder)
-    //      3. cutset containing mother x father peeled upwards (or NULL if that has not happened yet)
+    //      1. cutset containing parent and child
+    //      2. cutset containing parent being peeled (or NULL, if parent is a founder)
     //
     // LAST_PEEL
     //      1. cutset containing person being peeled
@@ -44,7 +43,6 @@ class Rfunction {
     //      
     Rfunction* previous_rfunction1;
     Rfunction* previous_rfunction2;
-    Rfunction* previous_rfunction3; // only used by PARENT_PEEL
     bool function_used;
     unsigned function_index;
     
@@ -52,14 +50,13 @@ class Rfunction {
     bool is_used();
     void set_used();
     void find_previous_functions(vector<Rfunction*>& functions);
+    bool contains_node(unsigned node);
     bool contains_cutnodes(vector<unsigned>& nodes);
     void find_function_containing(vector<Rfunction*>& functions, 
                                   vector<unsigned>& nodes, 
                                   Rfunction** func);
     void find_child_functions(vector<Rfunction*>& functions);
-    void find_partner_functions(vector<Rfunction*>& functions);
-    void find_parent_functions(vector<Rfunction*>& functions);
-    void find_last_functions(vector<Rfunction*>& functions);
+    void find_generic_functions(vector<Rfunction*>& functions);
 
     void generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments);
     bool affected_trait(enum phased_trait pt, int allele);

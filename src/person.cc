@@ -165,7 +165,7 @@ bool Person::offspring_peeled(PeelingState& ps) {
 
 bool Person::founder_mates_peeled(PeelingState& ps) {
     for(unsigned int i = 0; i < mates.size(); ++i) {
-        if(mates[i]->isfounder() and (not ps.is_peeled(mates[i]->internal_id)))
+        if(mates[i]->isfounder() and (not ps.is_peeled(mates[i]->internal_id)) and (not is_parent(i)))
             return false;
     }
 

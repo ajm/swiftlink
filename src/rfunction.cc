@@ -266,75 +266,6 @@ void Rfunction::evaluate_child_peel(
     pmatrix.set(pmatrix_index, tmp);
 }
 
-/*
-// XXX to do any peeling sequence there needs to be 
-// a foreach unpeeled child in here somewhere...
-void Rfunction::evaluate_parent_peel_old(
-                    PeelMatrixKey& pmatrix_index, 
-                    DescentGraph* dg,
-                    unsigned int locus_index) {
-    
-    double child_prob[4];
-    double maternal_disease_prob;
-    double paternal_disease_prob;
-    double recombination_prob;
-    double old_prob1;
-    double old_prob2;
-    double old_prob3;
-    
-    enum phased_trait pivot_trait;
-    enum phased_trait mat_trait;
-    enum phased_trait pat_trait;
-    unsigned piv_id = peel.get_cutnode(0);
-    Person* p = ped->get_by_index(piv_id);
-    unsigned mat_id = p->get_maternalid();
-    unsigned pat_id = p->get_paternalid();
-    
-    
-    for(unsigned i = 0; i < num_alleles; ++i)
-        child_prob[i] = 0.0;
-    
-    for(unsigned mi = 0; mi < num_alleles; ++mi) {        // mother's genotype
-        for(unsigned pi = 0; pi < num_alleles; ++pi) {    // father's genotype
-            mat_trait = static_cast<enum phased_trait>(mi);
-            pat_trait = static_cast<enum phased_trait>(pi);
-            
-            pmatrix_index.add(mat_id, mat_trait); // add mother
-            pmatrix_index.add(pat_id, pat_trait); // add father
-
-            maternal_disease_prob = get_disease_probability(mat_id, mat_trait);
-            paternal_disease_prob = get_disease_probability(pat_id, pat_trait);
-            
-            old_prob1 = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
-            old_prob2 = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
-            old_prob3 = previous_rfunction3 != NULL ? previous_rfunction3->get(pmatrix_index) : 1.0;
-            
-            for(int i = 0; i < 2; ++i) {        // maternal inheritance
-                for(int j = 0; j < 2; ++j) {    // paternal inheritance
-                    pivot_trait = get_phased_trait(mat_trait, pat_trait, i, j);        
-                    
-                    recombination_prob = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus_index, piv_id, i, j);
-                                        
-                    child_prob[pivot_trait] += \
-                        (maternal_disease_prob * \
-                         paternal_disease_prob * \
-                         recombination_prob * \
-                         old_prob1 * \
-                         old_prob2 * \
-                         old_prob3);
-                }
-            }
-        }
-    }
-    
-    for(unsigned i = 0; i < num_alleles; ++i) {
-        pivot_trait = static_cast<enum phased_trait>(i);
-        pmatrix_index.add(piv_id, pivot_trait);
-        pmatrix.set(pmatrix_index, child_prob[i]);
-    }
-}
-*/
-
 // XXX to do any peeling sequence there needs to be 
 // a foreach unpeeled child in here somewhere...
 void Rfunction::evaluate_parent_peel(
@@ -351,7 +282,7 @@ void Rfunction::evaluate_parent_peel(
     enum phased_trait pivot_trait;
     enum phased_trait mat_trait;
     enum phased_trait pat_trait;
-    unsigned piv_id = peel.get_cutnode(0);
+    unsigned piv_id = peel.get_cutnode(0); // <----- there is no pivot, the child of the node being peeled that are in the cutset should be done one-by-one
     unsigned parent_id = peel.get_peelnode(0);
     Person* p = ped->get_by_index(piv_id);
     bool ismother = parent_id == p->get_maternalid();

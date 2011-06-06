@@ -195,7 +195,7 @@ bool Person::ripe_to_peel_up(PeelingState& ps) {
            founder_mates_peeled(ps);
            /*and ripe_above_at_least_one_parent(ps) and (count_unpeeled(mates, ps) == 0);*/
 }
-
+/*
 bool Person::ripe_to_peel_across(PeelingState& ps) {
     return  parents_peeled(ps) and 
             ( \
@@ -203,11 +203,24 @@ bool Person::ripe_to_peel_across(PeelingState& ps) {
                 (offspring_peeled(ps) and (count_unpeeled(mates, ps) == 1)) \
             );
 }
+*/
+
+bool Person::ripe_to_peel_across(PeelingState& ps) {
+    return  parents_peeled(ps) and 
+            ( \
+                (partners_peeled(ps)) or \
+                (offspring_peeled(ps) and (count_unpeeled(mates, ps) == 1)) \
+            );
+}
 
 bool Person::ripe_to_peel_final(PeelingState& ps) {
-    return  offspring_peeled(ps) and \
-            parents_peeled(ps) and \
-            partners_peeled(ps);
+    //return offspring_peeled(ps) and parents_peeled(ps) and partners_peeled(ps);
+    for(unsigned i = 0; i < ped->num_members(); ++i) {
+        if((i != internal_id) and not ps.is_peeled(i))
+            return false;
+    }
+    
+    return true;
 }
 
 bool Person::ripe_above_singular_mate(PeelingState& ps) {
@@ -253,7 +266,7 @@ unsigned Person::get_unpeeled_mate(PeelingState& ps) {
 
 bool Person::ripe_to_peel_down(PeelingState& ps) {
     return ripe_above(ps) and \
-           ripe_above_singular_mate(ps);// and (count_unpeeled(children, ps) == 1);
+           ripe_above_singular_mate(ps) and (count_unpeeled(children, ps) == 1);
 }
 
 bool Person::peel_operation(PeelOperation& p, PeelingState& state) {
@@ -281,10 +294,12 @@ bool Person::peel_operation(PeelOperation& p, PeelingState& state) {
     else if(ripe_to_peel_up(state)) {
         p.set_type(CHILD_PEEL);
     }
+    
     else if(ripe_to_peel_down(state)) {
         p.set_type(PARENT_PEEL);
         //p.add_peelnode(get_unpeeled_mate(state));
     }
+    
     if(p.get_type() != NULL_PEEL) {
         p.add_peelnode(internal_id);
         get_cutset(p, state);

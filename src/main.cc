@@ -154,6 +154,8 @@ int haplotype_analysis() {
 		return EXIT_SUCCESS;
 	}
 */
+    fprintf(stderr, "\nsorry chaps, not currently supported...\n\n");
+
 	return EXIT_FAILURE;
 }
 

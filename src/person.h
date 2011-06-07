@@ -91,7 +91,7 @@ class Person {
     bool ripe_to_peel_down(PeelingState& ps);
     bool ripe_to_peel_up(PeelingState& ps);
     
-    void neighbours(vector<unsigned int>& nodes);
+    void neighbours(vector<unsigned int>& nodes, PeelingState& ps);
     void get_cutset(PeelOperation& operation, PeelingState& state);
     void add_mate(Person* p);
     bool is_parent(unsigned int i);

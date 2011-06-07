@@ -303,7 +303,7 @@ bool Person::peel_operation(PeelOperation& p, PeelingState& state) {
     return false;
 }
 
-void Person::neighbours(vector<unsigned int>& nodes) {
+void Person::neighbours(vector<unsigned int>& nodes, PeelingState& ps) {
     nodes.clear();
 
     if(maternal_id != UNKNOWN_ID)
@@ -317,6 +317,26 @@ void Person::neighbours(vector<unsigned int>& nodes) {
 
     for(unsigned int i = 0; i < mates.size(); ++i)
         nodes.push_back(mates[i]->internal_id);
+        
+    // childrens genotypes are independent of their siblings, but in
+    // (highly?) consanguineous pedigrees you need to include them as
+    // neighbours if they have already been peeled to get their half of 
+    // the cutset that was peeled on to your parents
+    
+    // get mothers children
+    // for each one where father is the same man
+    // add to nodes if it is already peeled
+    
+    if(isfounder())
+        return;
+    
+    Person* p = ped->get_by_index(maternal_id);
+    for(unsigned i = 0; i < p->num_children(); ++i) {
+        Person* tmp = p->get_child(i);
+        if((tmp->get_paternalid() == paternal_id) and ps.is_peeled(tmp->internal_id)) {
+            nodes.push_back(tmp->internal_id);
+        }
+    }
 }
 
 bool Person::is_parent(unsigned int i) {
@@ -352,7 +372,7 @@ void Person::get_cutset(PeelOperation& operation, PeelingState& state) {
 		q.pop();
 		
         p = ped->get_by_index(tmp);
-        p->neighbours(n);
+        p->neighbours(n, state);
 
         for(unsigned int i = 0; i < n.size(); ++i) {
             tmp2 = n[i];

@@ -95,18 +95,23 @@ int SimwalkSampler::select_transition_rule(unsigned person) {
 	Person* p = ped->get_by_index(person);
 	
 	if(p->isleaf()) { // t1 & t2 require spouses
+	    type0_count++;
 	    return 0;
 	}
 	
 	if(not p->isfounder()) {
         if((random() / double(RAND_MAX)) < 0.75) {
+            type0_count++;
             return 0;
         }
     }
     
 	if((random() / double(RAND_MAX)) < 0.6) {
+	    type1_count++;
 	    return 1;
 	}	
+	
+	type2_count++;
 	
 	if((random() / double(RAND_MAX)) < 0.5) {
 		return 2;

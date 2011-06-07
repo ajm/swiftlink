@@ -180,6 +180,10 @@ bool Person::parents_peeled(PeelingState& ps) {
     return isfounder() or (ps.is_peeled(maternal_id) and ps.is_peeled(paternal_id));
 }
 
+bool Person::one_parent_peeled(PeelingState& ps) {
+    return ps.is_peeled(maternal_id) xor ps.is_peeled(paternal_id);
+}
+
 bool Person::ripe_above(PeelingState& ps) {
     return parents_peeled(ps);
 }
@@ -191,27 +195,17 @@ bool Person::ripe_above_at_least_one_parent(PeelingState& ps) {
 
 bool Person::ripe_to_peel_up(PeelingState& ps) {
     return not isfounder() and \
+           not parents_peeled(ps) and \
            offspring_peeled(ps) and \
            founder_mates_peeled(ps);
-           /*and ripe_above_at_least_one_parent(ps) and (count_unpeeled(mates, ps) == 0);*/
 }
-/*
-bool Person::ripe_to_peel_across(PeelingState& ps) {
-    return  parents_peeled(ps) and 
-            ( \
-                (partners_peeled(ps) and (count_unpeeled(children, ps) == 1)) or \
-                (offspring_peeled(ps) and (count_unpeeled(mates, ps) == 1)) \
-            );
-}
-*/
 
 bool Person::ripe_to_peel_across(PeelingState& ps) {
-    return  parents_peeled(ps) and 
-            ( \
-                (partners_peeled(ps)) or \
-                (offspring_peeled(ps) and (count_unpeeled(mates, ps) == 1)) \
-            );
+    return  (parents_peeled(ps) and offspring_peeled(ps) and (count_unpeeled(mates, ps) == 1)) or \
+            (parents_peeled(ps) and partners_peeled(ps)) or \
+            (not isfounder() and one_parent_peeled(ps) and offspring_peeled(ps) and founder_mates_peeled(ps));
 }
+
 
 bool Person::ripe_to_peel_final(PeelingState& ps) {
     //return offspring_peeled(ps) and parents_peeled(ps) and partners_peeled(ps);

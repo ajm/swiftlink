@@ -81,6 +81,7 @@ class Person {
     bool founder_mates_peeled(PeelingState& ps);
     bool partners_peeled(PeelingState& ps);
     bool parents_peeled(PeelingState& ps);
+    bool one_parent_peeled(PeelingState& ps);
     bool ripe_above_singular_mate(PeelingState& ps);
     bool ripe_above(PeelingState& ps);
     bool ripe_above_at_least_one_parent(PeelingState& ps);

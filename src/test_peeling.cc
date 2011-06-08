@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
 	}
     
 
-    Peeler test(&v[0], &map);
+    Peeler test(v[0], map);
     double trait_prob = test.get_trait_prob();
     
     printf("P(T) = %e\n", trait_prob / log(10));

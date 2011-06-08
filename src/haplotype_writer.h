@@ -12,12 +12,12 @@ class GeneticMap;
 class HaplotypeWriter {
 	string filename;
 	DescentGraph* dg;
-	Pedigree* ped;
-	GeneticMap* map;
+	Pedigree& ped;
+	GeneticMap& map;
 	bool verbose;
 
  public:
-	HaplotypeWriter(DescentGraph* d, Pedigree* p, GeneticMap* g, const char* fname, bool verbose) 
+	HaplotypeWriter(DescentGraph* d, Pedigree& p, GeneticMap& g, const char* fname, bool verbose) 
 		: filename(fname), dg(d), ped(p), map(g), verbose(verbose) {}
 	~HaplotypeWriter() {}
 

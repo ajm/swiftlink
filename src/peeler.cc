@@ -13,10 +13,10 @@ using namespace std;
 #include "rfunction.h"
 
 
-Peeler::Peeler(Pedigree* p, GeneticMap* g) 
+Peeler::Peeler(Pedigree& p, GeneticMap& g) 
     : ped(p), map(g), lod(p, g) {
     
-    PeelSequenceGenerator psg(*ped);
+    PeelSequenceGenerator psg(ped);
     psg.build_peel_order();
     psg.print();
 
@@ -47,11 +47,11 @@ double Peeler::calc_trait_prob() {
     return this->peel(NULL, 0);
 }
 
-bool Peeler::process(DescentGraph* dg) {
+bool Peeler::process(DescentGraph& dg) {
     // minus 1 because we want to look between markers
     // m-t-m-t-m-t-m where m is a marker and t is a trait location
-    for(unsigned i = 0; i < map->num_markers() - 1; ++i) {
-        lod.add(i, this->peel(dg, i) - dg->trans_prob()); // this is all in base e
+    for(unsigned i = 0; i < map.num_markers() - 1; ++i) {
+        lod.add(i, this->peel(&dg, i) - dg.trans_prob()); // this is all in base e
     }
     
     return true;

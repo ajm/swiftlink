@@ -8,7 +8,6 @@ using namespace std;
 #include "person.h"
 #include "descent_graph.h"
 #include "simwalk_sampler.h"
-//#include "genetic_map.h"
 #include "descent_graph_diff.h"
 
 
@@ -86,13 +85,13 @@ unsigned SimwalkSampler::select_next_locus(unsigned locus) {
         return locus;
     }
     else {
-        return locus == (ped->num_markers() - 1) ? locus : locus + 1;
+        return locus == (ped.num_markers() - 1) ? locus : locus + 1;
     }
 }
 */
 
 int SimwalkSampler::select_transition_rule(unsigned person) {
-	Person* p = ped->get_by_index(person);
+	Person* p = ped.get_by_index(person);
 	
 	if(p->isleaf()) { // t1 & t2 require spouses
 	    type0_count++;
@@ -126,15 +125,15 @@ unsigned SimwalkSampler::get_random(unsigned i) {
 }
 
 unsigned SimwalkSampler::get_random_person() {
-	return get_random(ped->num_members());
+	return get_random(ped.num_members());
 }
 
 unsigned SimwalkSampler::get_random_nonfounder() {
-	return get_random(ped->num_members() - ped->num_founders()) + ped->num_founders();
+	return get_random(ped.num_members() - ped.num_founders()) + ped.num_founders();
 }
 
 unsigned SimwalkSampler::get_random_locus() {
-	return get_random(ped->num_markers());
+	return get_random(ped.num_markers());
 }
 
 enum parentage SimwalkSampler::get_random_parent() {
@@ -155,7 +154,7 @@ void SimwalkSampler::transition_t0(DescentGraphDiff& dgd, unsigned person, unsig
 // for each child, 
 //		if you inherit from maternal change to paternal + vice versa		
 void SimwalkSampler::transition_t1(DescentGraphDiff& dgd, unsigned person, unsigned locus) {
-    Person* p = ped->get_by_index(person);
+    Person* p = ped.get_by_index(person);
 
 	for(unsigned i = 0; i < p->num_children(); ++i) {
 		Person* k = p->get_child(i);
@@ -176,7 +175,7 @@ void SimwalkSampler::transition_t2b(DescentGraphDiff& dgd, unsigned person, unsi
 }
 
 void SimwalkSampler::transition_t2(DescentGraphDiff& dgd, unsigned id, unsigned locus, bool same_gender) {
-	Person* p = ped->get_by_index(id);
+	Person* p = ped.get_by_index(id);
 	Person* s = p->num_mates() == 1 ? \
 				p->get_mate(0) : \
 				p->get_mate(get_random(p->num_mates()));
@@ -190,16 +189,16 @@ void SimwalkSampler::transition_t2(DescentGraphDiff& dgd, unsigned id, unsigned 
 			continue;
 		
 		if(same_gender) {
-			if(dg->get(k->get_internalid(), locus, MATERNAL) == \
-			   dg->get(k->get_internalid(), locus, PATERNAL)) {
+			if(dg.get(k->get_internalid(), locus, MATERNAL) == \
+			   dg.get(k->get_internalid(), locus, PATERNAL)) {
 			   
 				transition_t0(dgd, k->get_internalid(), locus, MATERNAL);
 				transition_t0(dgd, k->get_internalid(), locus, PATERNAL);
 			}
 		}
 		else {
-			if(dg->get(k->get_internalid(), locus, MATERNAL) != \
-			   dg->get(k->get_internalid(), locus, PATERNAL)) {
+			if(dg.get(k->get_internalid(), locus, MATERNAL) != \
+			   dg.get(k->get_internalid(), locus, PATERNAL)) {
 			   
 				transition_t0(dgd, k->get_internalid(), locus, MATERNAL);
 				transition_t0(dgd, k->get_internalid(), locus, PATERNAL);

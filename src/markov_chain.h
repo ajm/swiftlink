@@ -17,15 +17,15 @@ const unsigned int SAMPLE_PERIOD = 1000;
 
 class MarkovChain {
 
-	Pedigree* ped;
-	GeneticMap* map;
+	Pedigree& ped;
+	GeneticMap& map;
 	Peeler peel;
     double burnin_proportion;
 
     bool accept_metropolis(double new_prob, double old_prob);
 
  public:
-	MarkovChain(Pedigree* p, GeneticMap* m) 
+	MarkovChain(Pedigree& p, GeneticMap& m) 
 	    : ped(p), map(m), peel(p, m), burnin_proportion(0.2) {}
     
 	~MarkovChain() {}

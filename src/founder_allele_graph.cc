@@ -16,8 +16,10 @@ using namespace std;
 #include "genotype.h"
 
 
-FounderAlleleGraph::FounderAlleleGraph(GeneticMap* g, Pedigree* p) : map(g), ped(p) {
-    num_founder_alleles = ped->num_founders() * 2;
+FounderAlleleGraph::FounderAlleleGraph(GeneticMap& g, Pedigree& p) 
+    : map(g), ped(p) {
+    
+    num_founder_alleles = ped.num_founders() * 2;
     num_neighbours = new int[num_founder_alleles];
     adj_matrix = new adj_node*[num_founder_alleles];
     
@@ -138,8 +140,8 @@ bool FounderAlleleGraph::populate(DescentGraph& d, unsigned locus) {
     int mat_fa, pat_fa ;
 	enum unphased_genotype geno;
 	
-	for(unsigned i = 0; i < ped->num_members(); ++i) {
-		tmp = ped->get_by_index(i);
+	for(unsigned i = 0; i < ped.num_members(); ++i) {
+		tmp = ped.get_by_index(i);
         
         if(not tmp->istyped())
 			continue;
@@ -168,7 +170,7 @@ void FounderAlleleGraph::_assign_and_recurse(int *component, int component_size,
         // calculate prior probability, include in 'prob'
         for(int i = 0; i < component_size; ++i ) {
             allele = assignment[component[i]];
-            tmp *= ((allele == 1) ? map->get_major(locus) : map->get_minor(locus));
+            tmp *= ((allele == 1) ? map.get_major(locus) : map.get_minor(locus));
         }
         
         // keep track of the best assignment for this component
@@ -305,16 +307,16 @@ double FounderAlleleGraph::descentstate_likelihood(unsigned locus) {
     for(int i = 0; i < num_founder_alleles; ++i) {
         /*
         prob *= ((best_descentstate[i] == 1) ? \
-                    map->get_major(locus) : \
-                    map->get_minor(locus));
+                    map.get_major(locus) : \
+                    map.get_minor(locus));
         */
 
         switch(best_descentstate[i]) {
             case 1:
-                prob *= map->get_major(locus);
+                prob *= map.get_major(locus);
                 break;
             case 2:
-                prob *= map->get_minor(locus);
+                prob *= map.get_minor(locus);
                 break;
             default:
                 break;

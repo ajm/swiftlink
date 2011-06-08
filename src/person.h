@@ -169,7 +169,8 @@ class Person {
 	bool isaffected() const { return affection == AFFECTED; }
 	bool istyped() const { return typed; }
 
-	bool isfounder() const { return mother_unknown() and father_unknown(); }
+	bool isfounder_str() const { return mother_unknown() and father_unknown(); }
+    bool isfounder() const { /*return isfounder_str(); }*/ return (maternal_id == UNKNOWN_PARENT) and (paternal_id == UNKNOWN_PARENT); }
 	bool isleaf() const { return children.size() == 0; }
 
 	bool mother_unknown() const { return _is_unknown(mother); }
@@ -182,7 +183,7 @@ class Person {
 	// so I can sort, I don't care for a specific (strong) ordering, 
 	// I just want all the founders first
 	bool operator<(const Person& p) const {
-		return isfounder() and not p.isfounder();
+		return isfounder_str() and not p.isfounder_str();
 	}
 
     bool peel_operation(PeelOperation& p, PeelingState& state);

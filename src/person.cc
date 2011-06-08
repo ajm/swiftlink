@@ -20,16 +20,16 @@ using namespace std;
 
 void Person::init_probs(DiseaseModel& dm) {
 
-    disease_prob[TRAIT_AA] = isfounder() ? \
+    disease_prob[TRAIT_AA] = isfounder_str() ? \
         dm.get_apriori_prob(get_affection(), TRAIT_HOMO_A) : \
         dm.get_penetrance_prob(get_affection(), TRAIT_HOMO_A);
 
     disease_prob[TRAIT_AU] = \
-    disease_prob[TRAIT_UA] = isfounder() ? \
+    disease_prob[TRAIT_UA] = isfounder_str() ? \
         dm.get_apriori_prob(get_affection(), TRAIT_HETERO) : \
         dm.get_penetrance_prob(get_affection(), TRAIT_HETERO);
 
-    disease_prob[TRAIT_UU] = isfounder() ? \
+    disease_prob[TRAIT_UU] = isfounder_str() ? \
         dm.get_apriori_prob(get_affection(), TRAIT_HOMO_U) : \
         dm.get_penetrance_prob(get_affection(), TRAIT_HOMO_U);
 }
@@ -39,7 +39,7 @@ double Person::get_disease_prob(enum phased_trait pt) {
 }
 
 bool Person::mendelian_errors() const {
-	if(isfounder()) {
+	if(isfounder_str()) {
 		return false;
     }
 		

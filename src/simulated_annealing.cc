@@ -21,17 +21,14 @@ bool SimulatedAnnealing::accept_annealing(double new_prob, double old_prob, doub
     if(old_prob < new_prob)
         return true;
     
-    double r = log(random() / double(RAND_MAX)) * temp;
-    double p = new_prob - old_prob;
-    
-    return r < p;
+    return (log(random() / double(RAND_MAX)) * temp) < (new_prob - old_prob);
 }
 
 DescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
 	DescentGraph current(ped, map);
 	DescentGraph* best;
 	DescentGraphDiff dgd;
-	SimwalkSampler ss(ped, &current);
+	SimwalkSampler ss(ped, current);
 	double prob;
 
 	current.random_descentgraph();
@@ -46,7 +43,7 @@ DescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
     
     Progress p("Simulated Annealing:", iterations);
     p.start();
-
+    
 	for(unsigned i = 0; i < iterations; ++i) {
 		
 		if((i % (iterations / TEMPERATURE_CHANGES)) == 0) {
@@ -63,11 +60,6 @@ DescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
 		
 		if(accept_annealing(prob, current.get_prob(), temperature)) {
 			current.apply_diff(dgd);
-			/*
-			double tmp_prob;
-		    current.likelihood(&tmp_prob);
-    		printf("%d: complete = %f, diff = %f\n", i, tmp_prob, prob);
-		    */
         }
         
 		if(best->get_prob() < current.get_prob()) {

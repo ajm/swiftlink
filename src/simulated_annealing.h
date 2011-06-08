@@ -18,16 +18,18 @@ const unsigned int TEMPERATURE_CHANGES = 800;
 
 class SimulatedAnnealing {
 
-	Pedigree* ped;
-	GeneticMap* map;
+	Pedigree& ped;
+	GeneticMap& map;
 	double temperature;
 
     bool accept_metropolis(double new_prob, double old_prob);
     bool accept_annealing(double new_prob, double old_prob, double temp);
 
  public:
-	SimulatedAnnealing(Pedigree* p, GeneticMap* m) 
-	    : ped(p), map(m), temperature(START_TEMPERATURE) {}
+	SimulatedAnnealing(Pedigree& p, GeneticMap& m) 
+	    : ped(p), 
+	      map(m), 
+	      temperature(START_TEMPERATURE) {}
     
 	~SimulatedAnnealing() {}
 

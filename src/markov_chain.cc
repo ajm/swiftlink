@@ -15,15 +15,13 @@ using namespace std;
 
 
 bool MarkovChain::accept_metropolis(double new_prob, double old_prob) {
-    double r = log(random() / double(RAND_MAX));
-
-    return r < (new_prob - old_prob);
+    return (log(random() / double(RAND_MAX))) < (new_prob - old_prob);
 }
 
 Peeler* MarkovChain::run(DescentGraph* seed, unsigned iterations) {
 	DescentGraph current(*seed);
 	DescentGraphDiff dgd;
-	SimwalkSampler ss(ped, &current);
+	SimwalkSampler ss(ped, current);
 	double prob;
     unsigned burnin_steps = unsigned(iterations * burnin_proportion); // XXX 
     
@@ -38,8 +36,7 @@ Peeler* MarkovChain::run(DescentGraph* seed, unsigned iterations) {
         p.increment();
         
         if((i >= burnin_steps) and ((i % SAMPLE_PERIOD) == 0)) {
-            peel.process(&current); // XXX use reference?
-            //printf("*\t%d\t%e\n", i, current.get_prob());
+            peel.process(current);
         }
         
         if(not current.evaluate_diff(dgd, &prob)) {
@@ -49,11 +46,6 @@ Peeler* MarkovChain::run(DescentGraph* seed, unsigned iterations) {
         // separate for now, just in case I want to add any stat gathering...
 		if(i < burnin_steps) {
 		    current.apply_diff(dgd);
-		    /*
-		    double tmp_prob;
-		    current.likelihood(&tmp_prob);
-            printf("%d: complete = %f, diff = %f\n", i, tmp_prob, prob);
-            */
 		    continue;
         }
         

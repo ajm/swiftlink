@@ -20,8 +20,8 @@ class Rfunction {
     PeelMatrix pmatrix;    
     PeelOperation peel;
     unsigned num_alleles; // could be 3 for L-sampler or 4 for peeling
-    GeneticMap* map;
-    Pedigree* ped;
+    GeneticMap& map;
+    Pedigree& ped;
     
     // these have different meanings for different peeling operations
     //
@@ -91,7 +91,7 @@ class Rfunction {
                     unsigned int locus_index);
 
  public :
-    Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned alleles, 
+    Rfunction(PeelOperation po, Pedigree& p, GeneticMap& m, unsigned alleles, 
                 vector<Rfunction*>& previous_functions, unsigned index);
     
     PeelMatrix* get_matrix() { return &pmatrix; }

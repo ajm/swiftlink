@@ -15,8 +15,8 @@ using namespace std;
 
 class SimwalkSampler {
 
-    Pedigree* ped;
-    DescentGraph* dg;
+    Pedigree& ped;
+    DescentGraph& dg;
     
     unsigned type0_count;
     unsigned type1_count;
@@ -39,7 +39,7 @@ class SimwalkSampler {
     void transition_t2(DescentGraphDiff& dgd, unsigned id, unsigned locus, bool same_gender);
 
  public:
-	SimwalkSampler(Pedigree* ped, DescentGraph* dg) 
+	SimwalkSampler(Pedigree& ped, DescentGraph& dg) 
 		: ped(ped), 
 		  dg(dg), 
 		  type0_count(0), 

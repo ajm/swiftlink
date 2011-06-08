@@ -11,7 +11,7 @@ using namespace std;
 
 class GenotypeElimination {
     
-    Pedigree* ped;
+    Pedigree& ped;
     int **possible_genotypes;
     bool init_processing;
     
@@ -32,16 +32,18 @@ class GenotypeElimination {
     void _write_descentgraph(DescentGraph& d, int** ds);
     
  public :
-    GenotypeElimination(Pedigree* p) : ped(p), init_processing(false) {
-        possible_genotypes = new int*[ped->num_markers()];
+    GenotypeElimination(Pedigree& p) 
+        : ped(p), init_processing(false) {
         
-        for(int i = 0; i < int(ped->num_markers()); ++i) {
-            possible_genotypes[i] = new int[ped->num_members()];
+        possible_genotypes = new int*[ped.num_markers()];
+        
+        for(int i = 0; i < int(ped.num_markers()); ++i) {
+            possible_genotypes[i] = new int[ped.num_members()];
         }
     }
     
     virtual ~GenotypeElimination() {
-        for(int i = 0; i < int(ped->num_markers()); ++i) {
+        for(int i = 0; i < int(ped.num_markers()); ++i) {
             delete[] possible_genotypes[i];
         }
         
@@ -50,7 +52,6 @@ class GenotypeElimination {
     
     bool elimination();
     bool random_descentgraph(DescentGraph& d);
-//    virtual void random_descentgraph(DescentGraph* d) = 0;
 };
 
 #endif

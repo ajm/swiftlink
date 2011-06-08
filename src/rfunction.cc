@@ -12,7 +12,7 @@ using namespace std;
 #include "genetic_map.h"
 
 
-Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned alleles, vector<Rfunction*>& previous_functions, unsigned index)
+Rfunction::Rfunction(PeelOperation po, Pedigree& p, GeneticMap& m, unsigned alleles, vector<Rfunction*>& previous_functions, unsigned index)
     : pmatrix(po.get_cutset_size(), alleles), 
       peel(po), 
       num_alleles(alleles), 
@@ -98,7 +98,7 @@ void Rfunction::find_function_containing(vector<Rfunction*>& functions, vector<u
 
 void Rfunction::find_child_functions(vector<Rfunction*>& functions) {
     
-    Person* p = ped->get_by_index(peel.get_peelnode(0));
+    Person* p = ped.get_by_index(peel.get_peelnode(0));
     vector<unsigned> tmp;
     tmp.push_back(p->get_maternalid());
     tmp.push_back(p->get_paternalid());
@@ -174,7 +174,7 @@ enum phased_trait Rfunction::get_phased_trait(
 double Rfunction::get_disease_probability(unsigned person_id, enum phased_trait pt) {
     Person* per;
     
-    per = ped->get_by_index(person_id);
+    per = ped.get_by_index(person_id);
     
     return per->get_disease_prob(pt);
 }
@@ -189,7 +189,7 @@ double Rfunction::get_recombination_probability(
     double tmp = 1.0;
     double half_recomb_prob;
     
-    half_recomb_prob = map->get_theta_halfway(locus_index);
+    half_recomb_prob = map.get_theta_halfway(locus_index);
     
     tmp *= dg->get(person_id, locus_index,   MATERNAL) == maternal_allele ? 1.0 - half_recomb_prob : half_recomb_prob;
     tmp *= dg->get(person_id, locus_index+1, MATERNAL) == maternal_allele ? 1.0 - half_recomb_prob : half_recomb_prob;
@@ -240,7 +240,7 @@ void Rfunction::evaluate_child_peel(
     enum phased_trait pat_trait;
     
     unsigned kid_id = peel.get_peelnode(0);
-    Person* kid = ped->get_by_index(kid_id);
+    Person* kid = ped.get_by_index(kid_id);
     
     mat_trait = pmatrix_index.get(kid->get_maternalid());
     pat_trait = pmatrix_index.get(kid->get_paternalid());
@@ -284,7 +284,7 @@ void Rfunction::evaluate_parent_peel(
     enum phased_trait pat_trait;
     unsigned piv_id = peel.get_cutnode(0); // <----- there is no pivot, the child of the node being peeled that are in the cutset should be done one-by-one
     unsigned parent_id = peel.get_peelnode(0);
-    Person* p = ped->get_by_index(piv_id);
+    Person* p = ped.get_by_index(piv_id);
     bool ismother = parent_id == p->get_maternalid();
     unsigned other_parent_id = ismother ? \
                                 p->get_paternalid() : \

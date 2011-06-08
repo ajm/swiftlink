@@ -42,9 +42,8 @@ bool HaplotypeProgram::run() {
 }
 
 bool HaplotypeProgram::run_pedigree_sa(Pedigree& p) {
-    //unsigned iterations = 800 * p.num_members() * p.num_markers() * 10 * 2;
-    unsigned iterations = 100000; // for testing
-    SimwalkDescentGraph* opt;
+    unsigned iterations = 800 * p.num_members() * p.num_markers() * 10 * 2;
+    DescentGraph* opt;
         
     if(verbose) {
         fprintf(stderr, "processing pedigree %s\n", p.get_id().c_str());
@@ -54,13 +53,13 @@ bool HaplotypeProgram::run_pedigree_sa(Pedigree& p) {
     // XXX TODO this is using the wrong objective function,
     // it is optimising the descent graph likelihood, not the 
     // descent state likelihood 
-    SimulatedAnnealing sa(&p, &map);
+    SimulatedAnnealing sa(p, map);
     opt = sa.optimise(iterations);
     
     stringstream ss;
     ss << "haplotype_" << p.get_id() << ".txt";
     
-    HaplotypeWriter hw(static_cast<DescentGraph*>(opt), &p, &map, ss.str().c_str(), verbose);
+    HaplotypeWriter hw(opt, p, map, ss.str().c_str(), verbose);
     hw.write();
     
     delete opt;

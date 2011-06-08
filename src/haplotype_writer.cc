@@ -16,27 +16,27 @@ using namespace std;
 bool HaplotypeWriter::write() {
 	fstream hap;
 	Person* p;
-	//int paternal_alleles[ped->num_members()][ped->num_markers()]; // :-(
-    //int maternal_alleles[ped->num_members()][ped->num_markers()];
+	//int paternal_alleles[ped.num_members()][ped.num_markers()]; // :-(
+    //int maternal_alleles[ped.num_members()][ped.num_markers()];
     int* paternal_alleles;
     int* maternal_alleles;
     FounderAlleleGraph fag(map, ped);
     double prob;
     
-    paternal_alleles = new int[ped->num_members() * ped->num_markers()];
-    maternal_alleles = new int[ped->num_members() * ped->num_markers()];
+    paternal_alleles = new int[ped.num_members() * ped.num_markers()];
+    maternal_alleles = new int[ped.num_members() * ped.num_markers()];
     
     // fill in alleles
-    for(unsigned j = 0; j < ped->num_markers(); ++j) {
+    for(unsigned j = 0; j < ped.num_markers(); ++j) {
         fag.reset();
         fag.populate(*dg, j);
         fag.likelihood(&prob, j);
         
-        for(unsigned i = 0; i < ped->num_members(); ++i) {
+        for(unsigned i = 0; i < ped.num_members(); ++i) {
             //paternal_alleles[i][j] = fag.get_founderallele_assignment(dg->get_founderallele(i, j, MATERNAL));
             //maternal_alleles[i][j] = fag.get_founderallele_assignment(dg->get_founderallele(i, j, PATERNAL));
-            paternal_alleles[(ped->num_members() * i) + j] = fag.get_founderallele_assignment(dg->get_founderallele(i, j, MATERNAL));
-            maternal_alleles[(ped->num_members() * i) + j] = fag.get_founderallele_assignment(dg->get_founderallele(i, j, PATERNAL));
+            paternal_alleles[(ped.num_members() * i) + j] = fag.get_founderallele_assignment(dg->get_founderallele(i, j, MATERNAL));
+            maternal_alleles[(ped.num_members() * i) + j] = fag.get_founderallele_assignment(dg->get_founderallele(i, j, PATERNAL));
         }
     }
 
@@ -53,8 +53,8 @@ bool HaplotypeWriter::write() {
 		return false;
 	}
     
-	for(unsigned i = 0; i < ped->num_members(); ++i) {
-		p = ped->get_by_index(i);
+	for(unsigned i = 0; i < ped.num_members(); ++i) {
+		p = ped.get_by_index(i);
 
 		hap << p->get_id() << '\t' \
 			<< p->get_father() << '\t' \
@@ -62,7 +62,7 @@ bool HaplotypeWriter::write() {
 			<< int(p->get_affection()) << '\t' ;
 
 		for(unsigned j = 0; j < p->num_markers(); ++j) {
-			hap << ' ' << paternal_alleles[(ped->num_members() * i) + j];
+			hap << ' ' << paternal_alleles[(ped.num_members() * i) + j];
 		}
 		hap << endl;
 
@@ -70,7 +70,7 @@ bool HaplotypeWriter::write() {
 		hap << "\t\t\t\t";
 
 		for(unsigned j = 0; j < p->num_markers(); ++j) {
-			hap << ' ' << maternal_alleles[(ped->num_members() * i) + j];
+			hap << ' ' << maternal_alleles[(ped.num_members() * i) + j];
 		}
 		hap << endl;
 	}

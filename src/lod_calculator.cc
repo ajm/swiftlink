@@ -8,10 +8,14 @@ using namespace std;
 #include "lod_calculator.h"
 
 
-LodCalculator::LodCalculator(Pedigree* p, GeneticMap* g) 
-    : ped(p), map(g), initialised(g->num_markers() - 1, false), count(0), trait_prob(0.0) {
+LodCalculator::LodCalculator(Pedigree& p, GeneticMap& g) 
+    : ped(p), 
+      map(g), 
+      initialised(g.num_markers() - 1, false), 
+      count(0), 
+      trait_prob(0.0) {
     
-    lod_scores = new double[map->num_markers() - 1];
+    lod_scores = new double[map.num_markers() - 1];
 }
 
 LodCalculator::~LodCalculator() {
@@ -40,16 +44,6 @@ void LodCalculator::add(unsigned locus, double prob) {
     if(locus == 0)
         count++;
 }
-
-/*
-void LodCalculator::finish() {
-    double total = log10(count);
-    
-    for(unsigned i = 0; i < (map->num_markers() - 1); ++i) {
-        lod_scores[i] = (lod_scores[i] - total - trait_prob) / log(10.0);
-    }
-}
-*/
 
 double LodCalculator::get(unsigned locus) {
     return (lod_scores[locus] - log10(count) - trait_prob) / log(10.0);

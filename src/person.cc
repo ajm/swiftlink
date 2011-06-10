@@ -395,3 +395,4 @@ void Person::get_cutset(PeelOperation& operation, PeelingState& state) {
     
     state.toggle_peel_operation(operation);
 }
+

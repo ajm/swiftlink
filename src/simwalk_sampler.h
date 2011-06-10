@@ -36,7 +36,7 @@ class SimwalkSampler {
     void transition_t1(DescentGraphDiff& dgd, unsigned person, unsigned locus);
     void transition_t2a(DescentGraphDiff& dgd, unsigned person, unsigned locus);
     void transition_t2b(DescentGraphDiff& dgd, unsigned person, unsigned locus);
-    void transition_t2(DescentGraphDiff& dgd, unsigned id, unsigned locus, bool same_gender);
+    void transition_t2(DescentGraphDiff& dgd, unsigned person, unsigned locus, bool same_gender);
 
  public:
 	SimwalkSampler(Pedigree& ped, DescentGraph& dg) 

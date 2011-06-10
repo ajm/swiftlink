@@ -51,6 +51,10 @@ DescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
         }
 
 		ss.step(dgd);
+		
+		//printf("\n\n");
+		//dgd.print();
+	    //exit(0);
         
         p.increment();
         

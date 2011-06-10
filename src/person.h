@@ -97,7 +97,6 @@ class Person {
     bool is_parent(unsigned int i);
     
     
-
  public :
 	Person(const string name, const string father_name, const string mother_name, 
 			enum sex s, enum affection a, Pedigree* pedigree, DiseaseModel& dm) :

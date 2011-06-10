@@ -40,6 +40,7 @@ Peeler* MarkovChain::run(DescentGraph* seed, unsigned iterations) {
         }
         
         if(not current.evaluate_diff(dgd, &prob)) {
+            illegal++;
             continue;
         }
         
@@ -50,11 +51,22 @@ Peeler* MarkovChain::run(DescentGraph* seed, unsigned iterations) {
         }
         
         if(accept_metropolis(prob, current.get_prob())) {
+            accepted++;
             current.apply_diff(dgd);
+        }
+        else {
+            rejected++;
         }
 	}
 
     p.finish();
+    
+    printf("\n");
+    printf("Proportion Illegal: %f\n",  illegal  / double(iterations));
+    printf("Proportion Accepted: %f\n", accepted / double(iterations));
+    printf("Proportion Rejected: %f\n", rejected / double(iterations));
+    printf("Total: %f\n", (illegal + accepted + rejected) / double(iterations));
+    printf("\n");
 	
 	return &peel;
 }

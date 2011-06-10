@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <sstream>
 
 #include "descent_graph_types.h"
 
@@ -26,6 +27,16 @@ class Transition {
 		       (locus == t.locus) and \
 		       (parent == t.parent);
 	}
+	
+	string debug_string() {
+	    stringstream ss;
+	    
+	    ss << "Person: " << person << ", ";
+	    ss << "Locus: " << locus << ", ";
+	    ss << "Allele: " << parent;
+	    
+	    return ss.str();
+	}
 };
 
 // XXX to start off I am going to assume that all 
@@ -38,7 +49,7 @@ class DescentGraphDiff {
     double prob;
     int recombinations;
 
-  public :        
+ public :        
     DescentGraphDiff() {}        
     ~DescentGraphDiff() {}
     
@@ -50,8 +61,7 @@ class DescentGraphDiff {
         Transition t(person, locus, parent);
         vector<Transition>::iterator it;
         
-        // if transition already exists, then transitioning again
-        // will undo it
+        // if transition already exists, then transitioning again will undo it
         it = find(transitions.begin(), transitions.end(), t);
         
         if(it == transitions.end()) {
@@ -73,6 +83,12 @@ class DescentGraphDiff {
     
     int get_recombinations() { return recombinations; }
     void set_recombinations(int r) { recombinations = r; }
+    
+    void print() {
+        for(unsigned i = 0; i < transitions.size(); ++i) {
+            printf("%s\n", transitions[i].debug_string().c_str());
+        }
+    }
 };
 
 #endif

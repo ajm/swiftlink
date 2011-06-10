@@ -21,12 +21,16 @@ class MarkovChain {
 	GeneticMap& map;
 	Peeler peel;
     double burnin_proportion;
+    unsigned illegal;
+    unsigned accepted;
+    unsigned rejected;
 
     bool accept_metropolis(double new_prob, double old_prob);
 
  public:
 	MarkovChain(Pedigree& p, GeneticMap& m) 
-	    : ped(p), map(m), peel(p, m), burnin_proportion(0.2) {}
+	    : ped(p), map(m), peel(p, m), burnin_proportion(0.2), 
+	      illegal(0), accepted(0), rejected(0) {}
     
 	~MarkovChain() {}
 

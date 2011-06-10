@@ -282,6 +282,21 @@ void Rfunction::evaluate_parent_peel(
                                 p->get_maternalid();
     
     
+    // XXX 
+    // 
+    // this feels really wrong, i am allowing all phased traits of the child
+    // but these would be specified *strictly* in PeelMatrixKey from 
+    // Rfunction::evaluate(), so
+    // foreach child being peeled on to
+    //   foreach possible pivot trait, 
+    //     forget the ones that are not what was set in the cutset in PeelMatrixKey
+    //     accumulate in a tmp variable, then set at the very end of the function as usual
+    // 
+    // just delete child_prob and replace with "double tmp"
+    //
+    // XXX
+    
+    
     for(unsigned i = 0; i < num_alleles; ++i)
         child_prob[i] = 0.0;
     

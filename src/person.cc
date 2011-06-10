@@ -218,7 +218,7 @@ bool Person::ripe_to_peel_final(PeelingState& ps) {
 }
 
 bool Person::ripe_above_singular_mate(PeelingState& ps) {
-    Person* p;
+    Person* p = NULL;
     int count = 0;
     
     for(unsigned i = 0; i < mates.size(); ++i) {

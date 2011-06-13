@@ -124,6 +124,10 @@ void PeelMatrix::set(PeelMatrixKey& pmk, double value) {
     data[generate_index(pmk)] = value;
 }
 
+void PeelMatrix::add(PeelMatrixKey& pmk, double value) {
+    data[generate_index(pmk)] += value;
+}
+
 double PeelMatrix::get_result() {
     if(size != 1) {
         fprintf(stderr, "Cannot get result from an intermediate r-function\n");

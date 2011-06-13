@@ -94,7 +94,7 @@ class Person {
     void neighbours(vector<unsigned int>& nodes, PeelingState& ps);
     void get_cutset(PeelOperation& operation, PeelingState& state);
     void add_mate(Person* p);
-    bool is_parent(unsigned int i);
+    
     
     
  public :
@@ -187,6 +187,7 @@ class Person {
 
     bool peel_operation(PeelOperation& p, PeelingState& state);
     double get_disease_prob(enum phased_trait pt);
+    bool is_parent(unsigned int i);
     
     string debug_string();
 };

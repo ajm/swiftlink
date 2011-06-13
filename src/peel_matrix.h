@@ -121,6 +121,7 @@ class PeelMatrix {
     bool is_legal(PeelMatrixKey& pmk);
     double get(PeelMatrixKey& pmk);
     void set(PeelMatrixKey& pmk, double value);
+    void add(PeelMatrixKey& pmk, double value);
     double get_result();
 
     double sum();

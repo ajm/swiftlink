@@ -264,80 +264,81 @@ void Rfunction::evaluate_parent_peel(
                     DescentGraph* dg,
                     unsigned int locus_index) {
     
-    double child_prob[4];
+    //double child_prob[4];
     double disease_prob;
     double recombination_prob;
     double old_prob1;
     double old_prob2;
     
-    enum phased_trait pivot_trait;
-    enum phased_trait mat_trait;
-    enum phased_trait pat_trait;
-    unsigned piv_id = peel.get_cutnode(0); // <----- there is no pivot, the child of the node being peeled that are in the cutset should be done one-by-one
+    
+    //enum phased_trait mat_trait;
+    //enum phased_trait pat_trait;
+    //unsigned piv_id = peel.get_cutnode(0); // <----- there is no pivot, the child of the node being peeled that are in the cutset should be done one-by-one
     unsigned parent_id = peel.get_peelnode(0);
-    Person* p = ped.get_by_index(piv_id);
+    unsigned child_node;
+    
+    // find a child of parent_id
+    for(unsigned i = 0; i < peel.get_cutset_size(); ++i) {
+        Person* ptmp = ped.get_by_index(peel.get_cutnode(i));
+        if(ptmp->is_parent(parent_id)) {
+            child_node = peel.get_cutnode(i);
+            break;
+        }
+    }
+    
+    Person* p = ped.get_by_index(child_node);
     bool ismother = parent_id == p->get_maternalid();
     unsigned other_parent_id = ismother ? \
                                 p->get_paternalid() : \
                                 p->get_maternalid();
+    enum phased_trait pivot_trait;
+    enum phased_trait parent_trait;
+    enum phased_trait other_trait;
+    double tmp = 1.0;
+    
+    other_trait = pmatrix_index.get(other_parent_id);
     
     
-    // XXX 
-    // 
-    // this feels really wrong, i am allowing all phased traits of the child
-    // but these would be specified *strictly* in PeelMatrixKey from 
-    // Rfunction::evaluate(), so
-    // foreach child being peeled on to
-    //   foreach possible pivot trait, 
-    //     forget the ones that are not what was set in the cutset in PeelMatrixKey
-    //     accumulate in a tmp variable, then set at the very end of the function as usual
-    // 
-    // just delete child_prob and replace with "double tmp"
-    //
-    // XXX
-    
-    
-    for(unsigned i = 0; i < num_alleles; ++i)
-        child_prob[i] = 0.0;
-    
-    for(unsigned mi = 0; mi < num_alleles; ++mi) {    
+    for(unsigned c = 0; c < peel.get_cutset_size(); ++c) {
+        Person* child = ped.get_by_index(peel.get_cutnode(c));
+        double child_tmp = 0.0;
         
-        if(ismother) {
-            mat_trait = static_cast<enum phased_trait>(mi);
-            pat_trait = pmatrix_index.get(other_parent_id);
-        }
-        else {
-            pat_trait = static_cast<enum phased_trait>(mi);
-            mat_trait = pmatrix_index.get(other_parent_id);
-        }
+        if(not child->is_parent(parent_id))
+            continue;
         
-        pmatrix_index.add(parent_id, static_cast<enum phased_trait>(mi));
+        //printf("parent_peel child : %d\n", int(peel.get_cutnode(c)));
         
-        disease_prob = get_disease_probability(parent_id, static_cast<enum phased_trait>(mi));
+        for(unsigned a = 0; a < num_alleles; ++a) {
+            parent_trait = static_cast<enum phased_trait>(a);
+            pmatrix_index.add(parent_id, parent_trait);
             
-        old_prob1 = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
-        old_prob2 = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
+            disease_prob = get_disease_probability(parent_id, parent_trait);
+            
+            old_prob1 = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
+            old_prob2 = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
         
-        for(int i = 0; i < 2; ++i) {        // maternal inheritance
-            for(int j = 0; j < 2; ++j) {    // paternal inheritance
-                pivot_trait = get_phased_trait(mat_trait, pat_trait, i, j);        
+            for(int i = 0; i < 2; ++i) {        // maternal allele
+                for(int j = 0; j < 2; ++j) {    // paternal allele
+                    pivot_trait = get_phased_trait(
+                                    ismother ? parent_trait : other_trait, 
+                                    ismother ? other_trait  : parent_trait, 
+                                    i, 
+                                    j);
                     
-                recombination_prob = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus_index, piv_id, i, j);
+                    if(pivot_trait != pmatrix_index.get(child->get_internalid()))
+                        continue;
+                    
+                    recombination_prob = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus_index, child->get_internalid(), i, j);
                                         
-                child_prob[pivot_trait] += \
-                    (disease_prob * \
-                     recombination_prob * \
-                     old_prob1 * \
-                     old_prob2);
+                    child_tmp += (disease_prob * recombination_prob * old_prob1 * old_prob2);
+                }
             }
         }
+        
+        tmp *= child_tmp;
     }
     
-    for(unsigned i = 0; i < num_alleles; ++i) {
-        pivot_trait = static_cast<enum phased_trait>(i);
-        pmatrix_index.add(piv_id, pivot_trait);
-        pmatrix.set(pmatrix_index, child_prob[i]);
-    }
+    pmatrix.set(pmatrix_index, tmp);
 }
 
 void Rfunction::evaluate_partner_peel(PeelMatrixKey& pmatrix_index) {

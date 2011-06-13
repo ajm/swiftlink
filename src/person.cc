@@ -260,7 +260,7 @@ unsigned Person::get_unpeeled_mate(PeelingState& ps) {
 
 bool Person::ripe_to_peel_down(PeelingState& ps) {
     return ripe_above(ps) and \
-           ripe_above_singular_mate(ps) and (count_unpeeled(children, ps) == 1);
+        ripe_above_singular_mate(ps);// and (count_unpeeled(children, ps) == 1);
 }
 
 bool Person::peel_operation(PeelOperation& p, PeelingState& state) {

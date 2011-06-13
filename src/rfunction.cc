@@ -262,7 +262,7 @@ void Rfunction::evaluate_child_peel(
 void Rfunction::evaluate_parent_peel(
                     PeelMatrixKey& pmatrix_index, 
                     DescentGraph* dg,
-                    unsigned int locus_index) {
+                                     unsigned int locus_index) {
     
     //double child_prob[4];
     double disease_prob;
@@ -289,53 +289,56 @@ void Rfunction::evaluate_parent_peel(
     Person* p = ped.get_by_index(child_node);
     bool ismother = parent_id == p->get_maternalid();
     unsigned other_parent_id = ismother ? \
-                                p->get_paternalid() : \
-                                p->get_maternalid();
+    p->get_paternalid() : \
+    p->get_maternalid();
     enum phased_trait pivot_trait;
     enum phased_trait parent_trait;
     enum phased_trait other_trait;
-    double tmp = 1.0;
+    double tmp = 0.0;
     
     other_trait = pmatrix_index.get(other_parent_id);
     
     
-    for(unsigned c = 0; c < peel.get_cutset_size(); ++c) {
-        Person* child = ped.get_by_index(peel.get_cutnode(c));
-        double child_tmp = 0.0;
+    
+    for(unsigned a = 0; a < num_alleles; ++a) {
+        parent_trait = static_cast<enum phased_trait>(a);
+        pmatrix_index.add(parent_id, parent_trait);
         
-        if(not child->is_parent(parent_id))
-            continue;
+        disease_prob = get_disease_probability(parent_id, parent_trait);
         
-        //printf("parent_peel child : %d\n", int(peel.get_cutnode(c)));
+        old_prob1 = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
+        old_prob2 = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
         
-        for(unsigned a = 0; a < num_alleles; ++a) {
-            parent_trait = static_cast<enum phased_trait>(a);
-            pmatrix_index.add(parent_id, parent_trait);
+        double child_prob = 1.0;
+        
+        for(unsigned c = 0; c < peel.get_cutset_size(); ++c) {
+            Person* child = ped.get_by_index(peel.get_cutnode(c));
+            double child_tmp = 0.0;
             
-            disease_prob = get_disease_probability(parent_id, parent_trait);
+            if(not child->is_parent(parent_id))
+                continue;
             
-            old_prob1 = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
-            old_prob2 = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
-        
             for(int i = 0; i < 2; ++i) {        // maternal allele
                 for(int j = 0; j < 2; ++j) {    // paternal allele
                     pivot_trait = get_phased_trait(
-                                    ismother ? parent_trait : other_trait, 
-                                    ismother ? other_trait  : parent_trait, 
-                                    i, 
-                                    j);
+                                                   ismother ? parent_trait : other_trait, 
+                                                   ismother ? other_trait  : parent_trait, 
+                                                   i, 
+                                                   j);
                     
                     if(pivot_trait != pmatrix_index.get(child->get_internalid()))
                         continue;
                     
                     recombination_prob = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus_index, child->get_internalid(), i, j);
-                                        
-                    child_tmp += (disease_prob * recombination_prob * old_prob1 * old_prob2);
+                    
+                    child_tmp += recombination_prob; //(disease_prob * recombination_prob * old_prob1 * old_prob2);
                 }
             }
+            
+            child_prob *= child_tmp;
         }
         
-        tmp *= child_tmp;
+        tmp += (child_prob * disease_prob * old_prob1 * old_prob2);
     }
     
     pmatrix.set(pmatrix_index, tmp);

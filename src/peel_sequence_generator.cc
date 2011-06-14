@@ -2,6 +2,7 @@ using namespace std;
 
 #include <cstdio>
 #include <cstdlib>
+#include <cmath>
 #include <vector>
 #include <algorithm>
 
@@ -135,5 +136,15 @@ void PeelSequenceGenerator::print() {
         }
         printf(")\n");
     }
+}
+
+unsigned PeelSequenceGenerator::score_peel_sequence() {
+    unsigned total = 0;
+    
+    for(unsigned i = 0; i < peelorder.size(); ++i) {
+        total += pow(4, peelorder[i].get_cutset_size());
+    }
+    
+    return total;
 }
 

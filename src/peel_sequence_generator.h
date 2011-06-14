@@ -41,6 +41,8 @@ class PeelSequenceGenerator {
     void build_peel_order();
     vector<PeelOperation>& get_peel_order();
     void print();
+    
+    unsigned score_peel_sequence();
 };
 
 #endif

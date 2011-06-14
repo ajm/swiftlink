@@ -8,6 +8,7 @@
 #include <cstring>
 #include <unistd.h>
 
+#include "debug.h"
 #include "linkage_program.h"
 #include "haplotype_program.h"
 
@@ -23,13 +24,14 @@ char*   datfile;
 bool    verbose;
 enum analysistype analysis;
 
+
 void _usage(char *prog) {
 	fprintf(stderr,
 			"Usage: %s [-hv] -p pedigreefile -m mapfile -d datfile\n"
 			"\t-p <pedigree file>\n"
 			"\t-m <map file>\n"
 			"\t-d <data file>\n"
-			"\t-a <linkage|haplotype> (default: linkage)"
+			"\t-a <linkage|haplotype> (default: linkage)\n"
 			"\t-v verbose\n"
 			"\t-h print usage information\n"
 			"\n", 
@@ -130,31 +132,24 @@ void _handle_args(int argc, char **argv) {
 		bad = 1;
 	}
 	
-	if(bad) {
-		//_usage(argv[0]);
+	if(bad)
 		exit(EXIT_FAILURE);
-	}
 }
 
 int linkage_analysis() {
     LinkageProgram lp(pedfile, mapfile, datfile, verbose);
     
-	if(lp.run()) {
-		return EXIT_SUCCESS;
-	}
-	
-	return EXIT_FAILURE;
+    return lp.run() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 int haplotype_analysis() {
 /*
     HaplotypeProgram hp(pedfile, mapfile, datfile, verbose);
-    
-	if(hp.run()) {
-		return EXIT_SUCCESS;
-	}
+
+    return hp.run() ? EXIT_SUCCESS : EXIT_FAILURE;
 */
-    fprintf(stderr, "\nsorry chaps, not currently supported...\n\n");
+
+    fprintf(stderr, "Sorry chaps, not currently supported...\n");
 
 	return EXIT_FAILURE;
 }

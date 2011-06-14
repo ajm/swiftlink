@@ -30,7 +30,8 @@ Peeler::Peeler(Pedigree& p, GeneticMap& g)
     trait_prob = calc_trait_prob();
     
     printf("P(T) = %e\n", trait_prob / log(10));
-        
+    printf("PEEL SEQUENCE SCORE (lower is better) : %d\n", int(psg.score_peel_sequence()));
+    
     lod.set_trait_prob(trait_prob);
 }
 

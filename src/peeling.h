@@ -25,7 +25,12 @@ class PeelOperation {
     bool used;
     
  public :
-    PeelOperation() : used(false) {}
+    PeelOperation() :  
+        type(NULL_PEEL), 
+        cutset(), 
+        peelset(), 
+        used(false) {}
+        
     ~PeelOperation() {}
     
     void set_used() {
@@ -155,8 +160,8 @@ class PeelingState {
     vector<bool> peeled;
 
   public :
-    PeelingState(Pedigree& p) 
-        : peeled(p.num_members(), false) {}
+    PeelingState(Pedigree* p) : 
+        peeled(p->num_members(), false) {}
 
     bool is_peeled(unsigned int i) {
         return peeled[i];

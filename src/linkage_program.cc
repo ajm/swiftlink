@@ -49,11 +49,11 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     }
     
     // run simulated annealing
-    SimulatedAnnealing sa(p, map);
+    SimulatedAnnealing sa(&p, &map);
     opt = sa.optimise(iterations);
     
     // run markov chain
-    MarkovChain mc(p, map);
+    MarkovChain mc(&p, &map);
     peel = mc.run(opt, iterations);
     
     // write out results

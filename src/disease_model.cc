@@ -83,15 +83,15 @@ void DiseaseModel::set(enum simple_disease_model d) {
     }
 }
 
-double DiseaseModel::get_prob(double prob[3][3], enum affection a, enum unphased_trait t) {
+double DiseaseModel::get_prob(const double prob[3][3], enum affection a, enum unphased_trait t) const {
     return prob[a][t];
 }
 
-double DiseaseModel::get_penetrance_prob(enum affection a, enum unphased_trait t) {
+double DiseaseModel::get_penetrance_prob(enum affection a, enum unphased_trait t) const {
     return get_prob(penetrance_prob, a, t);
 }
 
-double DiseaseModel::get_apriori_prob(enum affection a, enum unphased_trait t) {
+double DiseaseModel::get_apriori_prob(enum affection a, enum unphased_trait t) const {
     return get_prob(apriori_prob, a, t);
 }
 

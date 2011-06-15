@@ -11,10 +11,13 @@ using namespace std;
 
 class GenotypeElimination {
     
-    Pedigree& ped;
+    Pedigree* ped;
     int **possible_genotypes;
     bool init_processing;
     
+    void _init();
+    void _copy(const GenotypeElimination& rhs);
+    void _kill();
     void _initial_elimination();
     int _child_homoz(int** ds, unsigned locus, int mother, int father, 
                         int child, enum phased_genotype homoz);
@@ -32,22 +35,39 @@ class GenotypeElimination {
     void _write_descentgraph(DescentGraph& d, int** ds);
     
  public :
-    GenotypeElimination(Pedigree& p) 
-        : ped(p), init_processing(false) {
+    GenotypeElimination(Pedigree* p) : 
+        ped(p), 
+        possible_genotypes(NULL),
+        init_processing(false) {
         
-        possible_genotypes = new int*[ped.num_markers()];
+        _init();
+    }
+    
+    GenotypeElimination(const GenotypeElimination& rhs) :
+        ped(rhs.ped),
+        possible_genotypes(NULL),
+        init_processing(rhs.init_processing) {
         
-        for(int i = 0; i < int(ped.num_markers()); ++i) {
-            possible_genotypes[i] = new int[ped.num_members()];
-        }
+        _init();
+        _copy(rhs);
     }
     
     virtual ~GenotypeElimination() {
-        for(int i = 0; i < int(ped.num_markers()); ++i) {
-            delete[] possible_genotypes[i];
+        _kill();      
+    }
+    
+    GenotypeElimination& operator=(const GenotypeElimination& rhs) {
+        
+        if(&rhs != this) {
+            ped = rhs.ped;
+            init_processing = rhs.init_processing;
+        
+            _kill();
+            _init();
+            _copy(rhs);
         }
         
-        delete[] possible_genotypes;        
+        return *this;
     }
     
     bool elimination();

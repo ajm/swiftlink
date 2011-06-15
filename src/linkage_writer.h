@@ -15,9 +15,30 @@ class LinkageWriter {
 	bool verbose;
 
  public:
-	LinkageWriter(GeneticMap* g, Peeler* peel, const char* filename, bool verbose) 
-		: map(g), peeler(peel), filename(filename), verbose(verbose) {}
+	LinkageWriter(GeneticMap* g, Peeler* peel, const char* filename, bool verbose) : 
+	    map(g), 
+	    peeler(peel), 
+	    filename(filename), 
+	    verbose(verbose) {}
+	
 	~LinkageWriter() {}
+
+    LinkageWriter(const LinkageWriter& lw) :
+        map(lw.map),
+        peeler(lw.peeler),
+        filename(lw.filename),
+        verbose(lw.verbose) {}
+        
+    LinkageWriter& operator=(const LinkageWriter& rhs) {
+        if(&rhs != this) {
+            map = rhs.map;
+            peeler = rhs.peeler;
+            filename = rhs.filename;
+            verbose = rhs.verbose;
+        }
+        
+        return *this;
+    }
 
 	bool write();
 };

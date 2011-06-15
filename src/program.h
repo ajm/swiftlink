@@ -27,12 +27,42 @@ class Program {
 	bool verbose;
 	
  public :
-	Program(char* ped, char* map, char* dat, bool verbose)
-		: pedfile(ped), mapfile(map), datfile(dat), verbose(verbose) {
+	Program(char* ped, char* map, char* dat, bool verbose) : 
+	    pedfile(ped), 
+	    mapfile(map), 
+	    datfile(dat), 
+	    pedigrees(),
+	    map(),
+	    dm(),
+	    verbose(verbose) {
 
         if(! read_and_check_input()) {
             exit(1);
         }
+    }
+    
+    Program(const Program& rhs) :
+        pedfile(rhs.pedfile),
+        mapfile(rhs.mapfile), 
+	    datfile(rhs.datfile), 
+	    pedigrees(rhs.pedigrees),
+	    map(rhs.map),
+	    dm(rhs.dm),
+	    verbose(rhs.verbose) {}
+    
+    Program& operator=(const Program& rhs) {
+        
+        if(&rhs != this) {
+            pedfile = rhs.pedfile;
+            mapfile = rhs.mapfile; 
+	        datfile = rhs.datfile; 
+	        pedigrees = rhs.pedigrees;
+	        map = rhs.map;
+	        dm = rhs.dm;
+	        verbose = rhs.verbose;
+        }
+        
+        return *this;
     }
     
 	virtual ~Program() {}

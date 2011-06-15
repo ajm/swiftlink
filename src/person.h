@@ -9,6 +9,7 @@ using namespace std;
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <algorithm>
 
 #include "genotype.h"
 #include "trait.h"
@@ -50,12 +51,6 @@ class Person {
 	unsigned int paternal_id;
 	
 	bool typed;
-	vector<enum unphased_genotype> genotypes;
-	
-    // filled in by the pedigree class once
-    // the entire pedigree file has been read
-	vector<Person*> children;
-	vector<Person*> mates;
     
     // allows me to get family members as a 
     // call to a person object
@@ -64,15 +59,22 @@ class Person {
     // for peeling code, information comes from the
     // disease model objects
     double disease_prob[4];
+    
+    // filled in by the pedigree class once
+    // the entire pedigree file has been read
+	vector<enum unphased_genotype> genotypes;
+	vector<Person*> children;
+	vector<Person*> mates;
 
 
     // private stuff
+	void _init_probs(const DiseaseModel& dm);
 	bool _is_unknown(const string& s) const { 
         return s == "0"; 
     }
 	string gender_str() const;
 	string affection_str() const;
-    void init_probs(DiseaseModel& dm);
+    
 
     // private, peeling related
     unsigned count_unpeeled(vector<Person*>& v, PeelingState& ps);
@@ -99,32 +101,18 @@ class Person {
     
  public :
 	Person(const string name, const string father_name, const string mother_name, 
-			enum sex s, enum affection a, Pedigree* pedigree, DiseaseModel& dm) :
-			id(name),
-			mother(mother_name),
-			father(father_name),		
-			gender(s),
-			affection(a),			
-			internal_id(UNKNOWN_ID),
-			maternal_id(UNKNOWN_ID),
-			paternal_id(UNKNOWN_ID),
-			typed(true),
-			ped(pedigree) {
-        
-        init_probs(dm);
-    }
-	
+			enum sex s, enum affection a, Pedigree* pedigree, const DiseaseModel& dm);
 	~Person() {}
+	Person(const Person& rhs);
+	Person& operator=(const Person& p);
 
     /* getters */
-	string& get_id() { return id; }
-	string& get_mother() { return mother; }
-	string& get_father() { return father; }
-	
+	string get_id() const { return id; }
+	string get_mother() const { return mother; }
+	string get_father() const { return father; }
 	unsigned int get_internalid() const { return internal_id; }
 	unsigned int get_maternalid() const { return maternal_id; }
 	unsigned int get_paternalid() const { return paternal_id; }
-
 	enum sex get_sex() const { return gender; }
 	enum affection get_affection() const { return affection; }
 
@@ -135,6 +123,7 @@ class Person {
 		
 #ifndef _FEELING_LUCKY_
 		if(genotypes.size() < i) {
+		    fprintf(stderr, "requested genotype (person: %s, genotype %d) out of range\n", id.c_str(), i);
 			abort();
         }
 #endif
@@ -142,13 +131,14 @@ class Person {
 		return genotypes[i];
 	}
 	
+	// TODO XXX size() is O(n) complexity!
 	unsigned int num_markers() { return genotypes.size(); }
 	unsigned int num_children() { return children.size(); }
 	unsigned int num_mates() { return mates.size(); }
 	Person* get_child(unsigned int i) const { return children[i]; }
 	Person* get_spouse(unsigned int i) const { return mates[i]; }
 	Person* get_mate(unsigned int i) const { return mates[i]; }
-	enum unphased_genotype get_marker(unsigned i) const { return genotypes[i]; }
+	enum unphased_genotype get_marker(unsigned i) const { return genotypes[i]; } // <--- redundancy?
 
 	/* setters */
 	void set_internalid(unsigned int id) { internal_id = id; }

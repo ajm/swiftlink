@@ -22,14 +22,36 @@ class Pedigree;
 
 class PeelSequenceGenerator {
 
-    Pedigree& ped;
+    Pedigree* ped;
     vector<PeelOperation> peelorder;
     vector<PeelOperation> tmp;
     PeelingState state;
 
   public :
-    PeelSequenceGenerator(Pedigree& p) 
-        : ped(p), state(p) {}
+    PeelSequenceGenerator(Pedigree* p) : 
+        ped(p),
+        peelorder(),
+        tmp(),
+        state(p) {}
+        
+    ~PeelSequenceGenerator() {}
+    
+    PeelSequenceGenerator(const PeelSequenceGenerator& rhs) :
+        ped(rhs.ped),
+        peelorder(rhs.peelorder),
+        tmp(rhs.tmp),
+        state(rhs.state) {}
+        
+    PeelSequenceGenerator& operator=(const PeelSequenceGenerator& rhs) {
+        if(&rhs != this) {
+            ped = rhs.ped;
+            peelorder = rhs.peelorder;
+            tmp = rhs.tmp;
+            state = rhs.state;
+        }
+        
+        return *this;
+    }
 
     PeelOperation get_random_operation(vector<PeelOperation>& v);
     PeelOperation get_best_operation_heuristic(vector<PeelOperation>& v);

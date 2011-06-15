@@ -69,7 +69,7 @@ class GeneticMap {
     double haldane(double m);
     
  public :
-    GeneticMap() {}
+    GeneticMap() : map(), thetas(), inverse_thetas() {}
     ~GeneticMap() {}
     
 	Snp& operator[](int i) {

@@ -32,7 +32,7 @@ class Parser {
 
  public:
 	Parser(const string fn, bool die_on_err) 
-		: filename(fn), die_on_error(die_on_err), linenum(0) {}
+		: filename(fn), die_on_error(die_on_err), linenum(0), f(), tokens() {}
 	virtual ~Parser() {}
 	virtual bool parse_line(const int linenum, const string s) = 0;
 	virtual bool parse_end() { return true; }

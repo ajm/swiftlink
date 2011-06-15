@@ -6,11 +6,11 @@ using namespace std;
 #include "progress.h"
 
 
-Progress::Progress(string s, unsigned int increments) 
-    : label(s), increments_total(increments), increments_count(0) {
-
-    increments_per_percent = increments_total / 100;
-}
+Progress::Progress(string s, unsigned int increments) : 
+    label(s), 
+    increments_total(increments), 
+    increments_count(0),
+    increments_per_percent(increments / 100) {}
 
 void Progress::update_progress() {
     printf("\r%s%s %2d%% %s", 

@@ -13,8 +13,12 @@ using namespace std;
 #include "rfunction.h"
 
 
-Peeler::Peeler(Pedigree& p, GeneticMap& g) 
-    : ped(p), map(g), lod(p, g) {
+Peeler::Peeler(Pedigree* p, GeneticMap* g) : 
+    ped(p), 
+    map(g), 
+    rfunctions(),
+    lod(p, g),
+    trait_prob(0.0) {
     
     PeelSequenceGenerator psg(ped);
     psg.build_peel_order();
@@ -35,9 +39,40 @@ Peeler::Peeler(Pedigree& p, GeneticMap& g)
     lod.set_trait_prob(trait_prob);
 }
 
+Peeler::Peeler(const Peeler& rhs) :
+    ped(rhs.ped),
+    map(rhs.map),
+    rfunctions(),
+    lod(rhs.lod),
+    trait_prob(rhs.trait_prob) {
+
+    copy_rfunctions(rhs);
+}
+
+Peeler& Peeler::operator=(const Peeler& rhs) {
+    
+    if(&rhs != this) {
+        ped = rhs.ped;
+        map = rhs.map;
+        copy_rfunctions(rhs);
+        lod = rhs.lod;
+        trait_prob = rhs.trait_prob;
+    }
+    
+    return *this;
+}
+
 Peeler::~Peeler() {
     for(unsigned i = 0; i < rfunctions.size(); ++i)
         delete rfunctions[i];
+}
+
+void Peeler::copy_rfunctions(const Peeler& rhs) {
+    rfunctions.clear();
+    for(unsigned i = 0; i < rhs.rfunctions.size(); ++i) {
+        Rfunction* rf = new Rfunction(*(rhs.rfunctions[i]));
+        rfunctions.push_back(rf);
+    }
 }
 
 double Peeler::get_trait_prob() {
@@ -51,7 +86,7 @@ double Peeler::calc_trait_prob() {
 bool Peeler::process(DescentGraph& dg) {
     // minus 1 because we want to look between markers
     // m-t-m-t-m-t-m where m is a marker and t is a trait location
-    for(unsigned i = 0; i < map.num_markers() - 1; ++i) {
+    for(unsigned i = 0; i < map->num_markers() - 1; ++i) {
         lod.add(i, this->peel(&dg, i) - dg.trans_prob()); // this is all in base e
     }
     

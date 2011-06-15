@@ -16,8 +16,8 @@ class DescentGraph;
 
 class Peeler {
     
-    Pedigree& ped;
-    GeneticMap& map;
+    Pedigree* ped;
+    GeneticMap* map;
     vector<Rfunction*> rfunctions;
     LodCalculator lod;
     double trait_prob;
@@ -26,9 +26,13 @@ class Peeler {
     double calc_trait_prob();
     
  public :
-    Peeler(Pedigree& p, GeneticMap& g);
+    Peeler(Pedigree* p, GeneticMap* g);
+    Peeler(const Peeler& rhs);
     ~Peeler();
     
+    Peeler& operator=(const Peeler& rhs);
+    
+    void copy_rfunctions(const Peeler& rhs);
     double get_trait_prob();
     bool process(DescentGraph& dg);
     double get(unsigned locus);

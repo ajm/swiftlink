@@ -1,6 +1,7 @@
 using namespace std;
 
 #include <cstdlib>
+#include <algorithm>
 
 #include "elimination.h"
 #include "pedigree.h"
@@ -8,20 +9,48 @@ using namespace std;
 #include "descent_graph.h"
 #include "genotype.h"
 
+
+void GenotypeElimination::_init() {
+    
+    possible_genotypes = new int*[ped->num_markers()];
+        
+    for(int i = 0; i < int(ped->num_markers()); ++i) {
+        possible_genotypes[i] = new int[ped->num_members()];
+    }
+}
+
+void GenotypeElimination::_copy(const GenotypeElimination& rhs) {
+    
+    for(int i = 0; i < int(ped->num_markers()); ++i) {
+        copy(rhs.possible_genotypes[i],
+             rhs.possible_genotypes[i] + ped->num_members(),
+             possible_genotypes[i]);
+    }
+}
+
+void GenotypeElimination::_kill() {
+
+    for(int i = 0; i < int(ped->num_markers()); ++i) {
+        delete[] possible_genotypes[i];
+    }
+    
+    delete[] possible_genotypes;    
+}
+
 void GenotypeElimination::_initial_elimination() {
     Person* tmp;
     enum unphased_genotype g;
     
-	for(unsigned i = 0; i < ped.num_markers(); ++i) {		
+	for(unsigned i = 0; i < ped->num_markers(); ++i) {		
 		// all possible initially at this locus
-		for(unsigned j = 0; j < ped.num_members(); ++j) {
+		for(unsigned j = 0; j < ped->num_members(); ++j) {
 			genotype_set_all(possible_genotypes[i][j]);
         }
 		
 		// list compatible genotypes
 		// (ie: mark which phased genotypes are impossible based on unphased genotypes)
-		for(unsigned j = 0; j < ped.num_members(); ++j) {
-			tmp = ped.get_by_index(j);
+		for(unsigned j = 0; j < ped->num_members(); ++j) {
+			tmp = ped->get_by_index(j);
 			
 			g = tmp->get_genotype(i);
 			
@@ -56,8 +85,8 @@ bool GenotypeElimination::_elimination_pass(int** ds, unsigned locus) {
     while(true) {
         changes = 0;
 			
-        for(unsigned i = 0; i < ped.num_members(); ++i) {
-            tmp = ped.get_by_index(i);
+        for(unsigned i = 0; i < ped->num_members(); ++i) {
+            tmp = ped->get_by_index(i);
 				
             if(tmp->isfounder())
                 continue;
@@ -87,7 +116,7 @@ bool GenotypeElimination::_elimination_pass(int** ds, unsigned locus) {
 }
 
 bool GenotypeElimination::_legal(int** ds, unsigned locus) {
-    for(unsigned i = 0; i < ped.num_members(); ++i) {
+    for(unsigned i = 0; i < ped->num_members(); ++i) {
         if(genotype_bad(ds[locus][i])) {
 			return false;
         }
@@ -97,7 +126,7 @@ bool GenotypeElimination::_legal(int** ds, unsigned locus) {
 }
 
 bool GenotypeElimination::_complete(int** ds, unsigned locus) {
-	for(unsigned i = 0; i < ped.num_members(); ++i) {
+	for(unsigned i = 0; i < ped->num_members(); ++i) {
 		if(not genotype_single(ds[locus][i])) {
 			return false;
         }
@@ -186,13 +215,13 @@ int GenotypeElimination::_parent_homoz(int** ds,
 }
 
 void GenotypeElimination::_random_eliminate(int** ds, unsigned locus) {
-	//int queue[ped.num_members()];
-    vector<int> queue(ped.num_members());
+	//int queue[ped->num_members()];
+    vector<int> queue(ped->num_members());
     int qindex, tmp, tmp2;
     
 	// find everyone for whom their genotype is ambiguous
 	qindex = 0;
-	for(unsigned i = 0; i < ped.num_members(); ++i) {
+	for(unsigned i = 0; i < ped->num_members(); ++i) {
 		if(! genotype_single(ds[locus][i])) {
 			queue[qindex++] = i;
 		}
@@ -253,9 +282,9 @@ void GenotypeElimination::_write_descentgraph(DescentGraph& d, int** ds) {
     Person* tmp;
     enum phased_genotype m, p, c;
     
-    for(unsigned i = 0; i < ped.num_markers(); ++i) {
-        for(unsigned j = 0; j < ped.num_members(); ++j) {
-            tmp = ped.get_by_index(j);
+    for(unsigned i = 0; i < ped->num_markers(); ++i) {
+        for(unsigned j = 0; j < ped->num_members(); ++j) {
+            tmp = ped->get_by_index(j);
             
             if(tmp->isfounder()) {
                 d.set(j, i, MATERNAL, 0);
@@ -274,31 +303,31 @@ void GenotypeElimination::_write_descentgraph(DescentGraph& d, int** ds) {
 }
 
 void GenotypeElimination::_copy_descentstate(int** src, int** dst) {
-    for(unsigned i = 0; i < ped.num_markers(); ++i) {
+    for(unsigned i = 0; i < ped->num_markers(); ++i) {
         _copy_descentstate_locus(src, dst, i);
-//        for(unsigned j = 0; j < ped.num_members(); ++j) {
+//        for(unsigned j = 0; j < ped->num_members(); ++j) {
 //            dst[i][j] = src[i][j];
 //        }
     }
 }
 
 void GenotypeElimination::_copy_descentstate_locus(int** src, int** dst, unsigned locus) {
-    for(unsigned j = 0; j < ped.num_members(); ++j) {
+    for(unsigned j = 0; j < ped->num_members(); ++j) {
         dst[locus][j] = src[locus][j];
     }
 }
 
 bool GenotypeElimination::random_descentgraph(DescentGraph& d) {
-    //int** descentstate = new int**[ped.num_markers()][ped.num_members()];
-    int** descentstate = new int*[ped.num_markers()];
-    for(int i = 0; i < int(ped.num_markers()); ++i) {
-        descentstate[i] = new int[ped.num_members()];
+    //int** descentstate = new int**[ped->num_markers()][ped->num_members()];
+    int** descentstate = new int*[ped->num_markers()];
+    for(int i = 0; i < int(ped->num_markers()); ++i) {
+        descentstate[i] = new int[ped->num_members()];
     }
     
     // make sure this is only done once
     if(not init_processing) {
         _initial_elimination();
-        for(unsigned i = 0; i < ped.num_markers(); ++i) {
+        for(unsigned i = 0; i < ped->num_markers(); ++i) {
             if(not _elimination_pass(possible_genotypes, i)) {
                 return false;
             }
@@ -309,7 +338,7 @@ bool GenotypeElimination::random_descentgraph(DescentGraph& d) {
     _copy_descentstate(possible_genotypes, descentstate);
     
     // random elimination stuff
-    for(unsigned i = 0; i < ped.num_markers(); ++i) {
+    for(unsigned i = 0; i < ped->num_markers(); ++i) {
         while(true) {
             if(not _elimination_pass(descentstate, i)) {
                 _copy_descentstate_locus(possible_genotypes, descentstate, i);
@@ -326,7 +355,7 @@ bool GenotypeElimination::random_descentgraph(DescentGraph& d) {
     
     _write_descentgraph(d, descentstate);
     
-    for(int i = 0; i < int(ped.num_markers()); ++i) {
+    for(int i = 0; i < int(ped->num_markers()); ++i) {
         delete[] descentstate[i];
     }
     delete[] descentstate;

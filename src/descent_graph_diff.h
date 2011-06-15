@@ -50,7 +50,8 @@ class DescentGraphDiff {
     int recombinations;
 
  public :        
-    DescentGraphDiff() {}        
+    DescentGraphDiff() :
+        transitions(), sum_prior_prob(0.0), prob(0.0), recombinations(-1) {}        
     ~DescentGraphDiff() {}
     
     void clear() {

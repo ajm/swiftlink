@@ -22,8 +22,8 @@ class DescentGraph {
 
  protected:
 	char* data;
-	Pedigree& ped;
-	GeneticMap& map;
+	Pedigree* ped;
+	GeneticMap* map;
 
  private:
 	double prob;
@@ -48,7 +48,7 @@ class DescentGraph {
 	
 
  public :
-	DescentGraph(Pedigree& ped, GeneticMap& map);
+	DescentGraph(Pedigree* ped, GeneticMap* map);
 	DescentGraph(const DescentGraph& d);
 	virtual ~DescentGraph();
 

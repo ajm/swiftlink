@@ -28,7 +28,7 @@ DescentGraph* SimulatedAnnealing::optimise(unsigned iterations) {
 	DescentGraph current(ped, map);
 	DescentGraph* best;
 	DescentGraphDiff dgd;
-	SimwalkSampler ss(ped, current);
+	SimwalkSampler ss(ped, &current);
 	double prob;
 
 	current.random_descentgraph();

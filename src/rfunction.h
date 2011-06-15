@@ -20,27 +20,9 @@ class Rfunction {
     PeelMatrix pmatrix;    
     PeelOperation peel;
     unsigned num_alleles; // could be 3 for L-sampler or 4 for peeling
-    GeneticMap& map;
-    Pedigree& ped;
+    GeneticMap* map;
+    Pedigree* ped;
     
-    // these have different meanings for different peeling operations
-    //
-    // CHILD_PEEL
-    //      1. same as what is being peel to (or NULL, if it does not exist)
-    //      2. cutset containing the child (or NULL, if child is a leaf)
-    //
-    // PARTNER_PEEL
-    //      1. cutset containing marriage if last peel was CHILD_PEEL or self and child if last peel was PARENT_PEEL (CANNOT BE NULL)
-    //      2. cutset containing the person being peeled (or NULL, if person is a founder)
-    //
-    // PARENT_PEEL
-    //      1. cutset containing parent and child
-    //      2. cutset containing parent being peeled (or NULL, if parent is a founder)
-    //
-    // LAST_PEEL
-    //      1. cutset containing person being peeled
-    //      2. NULL
-    //      
     Rfunction* previous_rfunction1;
     Rfunction* previous_rfunction2;
     bool function_used;
@@ -91,15 +73,21 @@ class Rfunction {
                     unsigned int locus_index);
 
  public :
-    Rfunction(PeelOperation po, Pedigree& p, GeneticMap& m, unsigned alleles, 
-                vector<Rfunction*>& previous_functions, unsigned index);
+    Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned alleles, 
+        vector<Rfunction*>& previous_functions, unsigned index);
+                
+    ~Rfunction() {}
+    Rfunction(const Rfunction& r);
+    Rfunction& operator=(const Rfunction& rhs);
     
     PeelMatrix* get_matrix() { return &pmatrix; }
     double get(PeelMatrixKey& pmk) { return pmatrix.get(pmk); }
     double get_result() { return pmatrix.get_result(); }
+    
+    void evaluate(DescentGraph* dg, unsigned int locus_index);
+
     void print() { pmatrix.print(); }
     void print_keys() { pmatrix.print_keys(); }
-    void evaluate(DescentGraph* dg, unsigned int locus_index);
 };
 
 #endif

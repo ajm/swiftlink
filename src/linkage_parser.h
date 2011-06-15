@@ -55,9 +55,18 @@ class LinkageParser : public Parser {
 	void marker_end();
 
  public :
-    LinkageParser(const string fn, GeneticMap& m, DiseaseModel& d) 
-        : Parser(fn, true), map(m), dis(d), marker_linenum(0), recomb_linenum(0), 
-		  marker_code(-1), number_of_loci(-1), program_code(-1) {
+    LinkageParser(const string fn, GeneticMap& m, DiseaseModel& d) : 
+        Parser(fn, true), 
+        map(m), 
+        dis(d), 
+        marker_linenum(0), 
+        recomb_linenum(0), 
+		marker_code(-1), 
+		marker_freq(0.0), 
+		marker_alleles(-1), 
+		liability_classes(-1), 
+		number_of_loci(-1), 
+		program_code(-1) {
         
 		for(int i = 0; i < 4; ++i)
 			markers_read[i] = 0;

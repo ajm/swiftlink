@@ -11,8 +11,8 @@ class GeneticMap;
 
 class LodCalculator {
     
-    Pedigree& ped;
-    GeneticMap& map;
+    Pedigree* ped;
+    GeneticMap* map;
     double* lod_scores;
     vector<bool> initialised; // XXX <-- I don't like this, but log(0.0) is -inf :-S
     unsigned count;
@@ -22,8 +22,10 @@ class LodCalculator {
     double exp10(double x);
     
  public :
-    LodCalculator(Pedigree& p, GeneticMap& g);
+    LodCalculator(Pedigree* p, GeneticMap* g);
+    LodCalculator(const LodCalculator& l);
     ~LodCalculator();
+    LodCalculator& operator=(const LodCalculator& rhs);
     
     void add(unsigned locus, double prob);
     double get(unsigned locus);

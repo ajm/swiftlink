@@ -18,7 +18,67 @@ using namespace std;
 #include "debug.h"
 
 
-void Person::init_probs(DiseaseModel& dm) {
+Person::Person(const string name, const string father_name, const string mother_name, 
+			   enum sex s, enum affection a, Pedigree* pedigree, const DiseaseModel& dm) :
+        id(name),
+    	mother(mother_name),
+    	father(father_name),		
+    	gender(s),
+    	affection(a),			
+    	internal_id(UNKNOWN_ID),
+    	maternal_id(UNKNOWN_ID),
+    	paternal_id(UNKNOWN_ID),
+    	typed(true),
+    	ped(pedigree),
+    	genotypes(),
+    	children(),
+    	mates() {
+    
+    _init_probs(dm);
+}
+	
+Person::Person(const Person& p) :
+	    id(p.id),
+		mother(p.mother),
+		father(p.father),		
+		gender(p.gender),
+		affection(p.affection),			
+		internal_id(p.internal_id),
+		maternal_id(p.maternal_id),
+		paternal_id(p.paternal_id),
+		typed(p.typed),
+		ped(p.ped),
+		genotypes(p.genotypes),
+		children(p.children),
+		mates(p.mates) {
+	    
+	copy(p.disease_prob, p.disease_prob+4, disease_prob);
+}
+	
+Person& Person::operator=(const Person& rhs) {
+	
+	if(this != &rhs) {
+	    id = rhs.id;
+	    mother = rhs.mother;
+	    father = rhs.father;
+	    gender = rhs.gender;
+	    affection = rhs.affection;
+	    internal_id = rhs.internal_id;
+	    maternal_id = rhs.maternal_id;
+	    paternal_id = rhs.paternal_id;
+	    typed = rhs.typed;
+	    ped = rhs.ped;
+	    genotypes = rhs.genotypes;
+	    children = rhs.children;
+	    mates = rhs.mates;
+	    
+	    copy(rhs.disease_prob, rhs.disease_prob + 4, disease_prob);
+	}
+	
+	return *this;
+}
+
+void Person::_init_probs(const DiseaseModel& dm) {
 
     disease_prob[TRAIT_AA] = isfounder_str() ? \
         dm.get_apriori_prob(get_affection(), TRAIT_HOMO_A) : \

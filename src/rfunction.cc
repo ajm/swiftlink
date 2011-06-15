@@ -11,13 +11,15 @@ using namespace std;
 #include "trait.h"
 #include "genetic_map.h"
 
-
-Rfunction::Rfunction(PeelOperation po, Pedigree& p, GeneticMap& m, unsigned alleles, vector<Rfunction*>& previous_functions, unsigned index)
-    : pmatrix(po.get_cutset_size(), alleles), 
+    
+Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned alleles, vector<Rfunction*>& previous_functions, unsigned index) : 
+      pmatrix(po.get_cutset_size(), alleles), 
       peel(po), 
       num_alleles(alleles), 
       map(m),
       ped(p),
+      previous_rfunction1(NULL),
+      previous_rfunction2(NULL),
       function_used(false),
       function_index(index) {
         
@@ -26,9 +28,6 @@ Rfunction::Rfunction(PeelOperation po, Pedigree& p, GeneticMap& m, unsigned alle
 
     pmatrix.set_keys(peel.get_cutset());
     
-    previous_rfunction1 = NULL;
-    previous_rfunction2 = NULL;
-    
     find_previous_functions(previous_functions);
 
     printf("RFUNCTION: %d ", function_index);
@@ -36,6 +35,33 @@ Rfunction::Rfunction(PeelOperation po, Pedigree& p, GeneticMap& m, unsigned alle
     printf("(deps: %d %d)\n", 
         previous_rfunction1 == NULL ? -1 : previous_rfunction1->function_index, 
         previous_rfunction2 == NULL ? -1 : previous_rfunction2->function_index);
+}
+
+Rfunction::Rfunction(const Rfunction& r) :
+    pmatrix(r.pmatrix), 
+    peel(r.peel),
+    num_alleles(r.num_alleles),
+    map(r.map),
+    ped(r.ped),
+    previous_rfunction1(r.previous_rfunction1),
+    previous_rfunction2(r.previous_rfunction2),
+    function_used(r.function_used),
+    function_index(r.function_index) {}
+    
+Rfunction& Rfunction::operator=(const Rfunction& rhs) {
+    if(&rhs != this) {
+        pmatrix = rhs.pmatrix;
+        peel = rhs.peel;
+        num_alleles = rhs.num_alleles;
+        map = rhs.map;
+        ped = rhs.ped;
+        previous_rfunction1 = rhs.previous_rfunction1;
+        previous_rfunction2 = rhs.previous_rfunction2;
+        function_used = rhs.function_used;
+        function_index = rhs.function_index;
+    }
+    
+    return *this;
 }
 
 void Rfunction::find_previous_functions(vector<Rfunction*>& functions) {
@@ -98,7 +124,7 @@ void Rfunction::find_function_containing(vector<Rfunction*>& functions, vector<u
 
 void Rfunction::find_child_functions(vector<Rfunction*>& functions) {
     
-    Person* p = ped.get_by_index(peel.get_peelnode(0));
+    Person* p = ped->get_by_index(peel.get_peelnode(0));
     vector<unsigned> tmp;
     tmp.push_back(p->get_maternalid());
     tmp.push_back(p->get_paternalid());
@@ -165,7 +191,7 @@ enum phased_trait Rfunction::get_phased_trait(
 double Rfunction::get_disease_probability(unsigned person_id, enum phased_trait pt) {
     Person* per;
     
-    per = ped.get_by_index(person_id);
+    per = ped->get_by_index(person_id);
     
     return per->get_disease_prob(pt);
 }
@@ -180,7 +206,7 @@ double Rfunction::get_recombination_probability(
     double tmp = 1.0;
     double half_recomb_prob;
     
-    half_recomb_prob = map.get_theta_halfway(locus_index);
+    half_recomb_prob = map->get_theta_halfway(locus_index);
     
     tmp *= dg->get(person_id, locus_index,   MATERNAL) == maternal_allele ? 1.0 - half_recomb_prob : half_recomb_prob;
     tmp *= dg->get(person_id, locus_index+1, MATERNAL) == maternal_allele ? 1.0 - half_recomb_prob : half_recomb_prob;
@@ -231,7 +257,7 @@ void Rfunction::evaluate_child_peel(
     enum phased_trait pat_trait;
     
     unsigned kid_id = peel.get_peelnode(0);
-    Person* kid = ped.get_by_index(kid_id);
+    Person* kid = ped->get_by_index(kid_id);
     
     mat_trait = pmatrix_index.get(kid->get_maternalid());
     pat_trait = pmatrix_index.get(kid->get_paternalid());
@@ -275,18 +301,18 @@ void Rfunction::evaluate_parent_peel(
     //enum phased_trait pat_trait;
     //unsigned piv_id = peel.get_cutnode(0); // <----- there is no pivot, the child of the node being peeled that are in the cutset should be done one-by-one
     unsigned parent_id = peel.get_peelnode(0);
-    unsigned child_node;
+    unsigned child_node = peel.get_cutnode(0);
     
     // find a child of parent_id
     for(unsigned i = 0; i < peel.get_cutset_size(); ++i) {
-        Person* ptmp = ped.get_by_index(peel.get_cutnode(i));
+        Person* ptmp = ped->get_by_index(peel.get_cutnode(i));
         if(ptmp->is_parent(parent_id)) {
             child_node = peel.get_cutnode(i);
             break;
         }
     }
     
-    Person* p = ped.get_by_index(child_node);
+    Person* p = ped->get_by_index(child_node);
     bool ismother = parent_id == p->get_maternalid();
     unsigned other_parent_id = ismother ? \
     p->get_paternalid() : \
@@ -312,7 +338,7 @@ void Rfunction::evaluate_parent_peel(
         double child_prob = 1.0;
         
         for(unsigned c = 0; c < peel.get_cutset_size(); ++c) {
-            Person* child = ped.get_by_index(peel.get_cutnode(c));
+            Person* child = ped->get_by_index(peel.get_cutnode(c));
             double child_tmp = 0.0;
             
             if(not child->is_parent(parent_id))

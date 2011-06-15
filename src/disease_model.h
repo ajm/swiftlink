@@ -23,7 +23,7 @@ class DiseaseModel {
 	bool sexlinked;
 
 
-    double get_prob(double prob[3][3], enum affection a, enum unphased_trait t);    
+    double get_prob(const double prob[3][3], enum affection a, enum unphased_trait t) const;    
     void set_autosomal_recessive();
     void set_autosomal_dominant();
 	
@@ -46,8 +46,8 @@ class DiseaseModel {
 	double get_penetrance(const enum unphased_trait t) const { return penetrance[t]; }
 	bool is_sexlinked() { return sexlinked; }
     
-    double get_penetrance_prob(enum affection a, enum unphased_trait t);
-    double get_apriori_prob(enum affection a, enum unphased_trait t);
+    double get_penetrance_prob(enum affection a, enum unphased_trait t) const;
+    double get_apriori_prob(enum affection a, enum unphased_trait t) const;
     
     void set(enum simple_disease_model d);
     void finish_init();

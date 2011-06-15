@@ -17,8 +17,8 @@ struct adj_node {
 
 class FounderAlleleGraph {
 	
-    GeneticMap& map;
-    Pedigree& ped;
+    GeneticMap* map;
+    Pedigree* ped;
     int num_founder_alleles;
     
     int* num_neighbours;
@@ -26,6 +26,9 @@ class FounderAlleleGraph {
     
     int* best_descentstate;
     
+    void _init();
+    void _copy(const FounderAlleleGraph& rhs);
+    void _kill();
     int _get_num_neighbours(int node) const;
     bool _add(int mat_fa, int pat_fa, enum unphased_genotype g);
     bool _check_legality(int node, int node_assignment, vector<int>& assignments);
@@ -34,8 +37,10 @@ class FounderAlleleGraph {
     double _enumerate_component(int *component, int component_size, unsigned locus);
     
  public :
-	FounderAlleleGraph(GeneticMap& g, Pedigree& p);    
+	FounderAlleleGraph(GeneticMap* g, Pedigree* p);
+	FounderAlleleGraph(const FounderAlleleGraph& fag);    
 	~FounderAlleleGraph();
+	FounderAlleleGraph& operator=(const FounderAlleleGraph& fag);
     
     void reset();    
 	bool populate(DescentGraph& d, unsigned locus);

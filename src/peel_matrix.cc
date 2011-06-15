@@ -31,32 +31,38 @@ void PeelMatrix::init_offsets() {
 }
     
 
-PeelMatrix::PeelMatrix(unsigned int num_dim, unsigned int val_dim)
-    : number_of_dimensions(num_dim),
-      values_per_dimension(val_dim) {
+PeelMatrix::PeelMatrix(unsigned int num_dim, unsigned int val_dim) : 
+    keys(),
+    offsets(),
+    number_of_dimensions(num_dim),
+    values_per_dimension(val_dim),
+    size((unsigned int) pow(static_cast<double>(values_per_dimension), static_cast<double>(number_of_dimensions))),
+    data(NULL) {
         
-    size = (unsigned int) pow(static_cast<double>(values_per_dimension), 
-	       			static_cast<double>(number_of_dimensions));
+//    size = (unsigned int) pow(static_cast<double>(values_per_dimension), 
+//	       			static_cast<double>(number_of_dimensions));
+
     data = new double[size];
     
     for(unsigned i = 0; i < size; ++i) {
         data[i] = 0.0;
     }
-    
-    //printf("size = %d\n", size);
 }
 
-PeelMatrix::PeelMatrix(const PeelMatrix& rhs) {
-    keys = rhs.keys;
-    offsets = rhs.offsets;
-    number_of_dimensions = rhs.number_of_dimensions;
-    values_per_dimension = rhs.values_per_dimension;
-    size = rhs.size;
+PeelMatrix::PeelMatrix(const PeelMatrix& rhs) :
+    keys(rhs.keys),
+    offsets(rhs.offsets),
+    number_of_dimensions(rhs.number_of_dimensions),
+    values_per_dimension(rhs.values_per_dimension),
+    size(rhs.size),
+    data(NULL) {
+    
     data = new double[size];
     copy(rhs.data, rhs.data + size, data);
 }
 
-PeelMatrix& PeelMatrix::operator=(PeelMatrix& rhs) {
+PeelMatrix& PeelMatrix::operator=(const PeelMatrix& rhs) {
+
     if(this != &rhs) {
         keys = rhs.keys;
         offsets = rhs.offsets;

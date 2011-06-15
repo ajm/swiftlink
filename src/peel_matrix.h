@@ -13,28 +13,21 @@ using namespace std;
 #include "trait.h"
 
 
-//template<class A, class B>
 class PeelMatrixKey {
 
-    // the key to the peel matrix itself is a map that needs to be 
-    // transformed into an unsigned integer
-    // nodeid,unphased_genotype
-    // nodeid,phased_genotype
-//    map<A,B> key;
     map<unsigned int, enum phased_trait> key;
     
  public :
-    PeelMatrixKey() {}
+    PeelMatrixKey() : key() {}
     
-    PeelMatrixKey(vector<unsigned int>& cutset, vector<unsigned int>& assignments) {
+    PeelMatrixKey(vector<unsigned int>& cutset, vector<unsigned int>& assignments) : key() {
         reassign(cutset, assignments);
     }
 
     ~PeelMatrixKey() {}
 
-    PeelMatrixKey(const PeelMatrixKey& pmk) {
-        key = pmk.key;
-    }
+    PeelMatrixKey(const PeelMatrixKey& pmk) : 
+        key(pmk.key) {}
 
     PeelMatrixKey& operator=(const PeelMatrixKey& rhs) {
         if(this != &rhs) {
@@ -43,10 +36,7 @@ class PeelMatrixKey {
 
         return *this;
     }
-
-//    void add(A& key, B& val);
-//    bool remove(A& key);
-
+    
     void reassign(vector<unsigned int>& cutset, vector<unsigned int>& assignments) {
         for(unsigned int i = 0; i < cutset.size(); ++i) {
             add(
@@ -109,7 +99,7 @@ class PeelMatrix {
  public :
     PeelMatrix(unsigned int num_dim, unsigned int val_dim);
     PeelMatrix(const PeelMatrix& rhs);
-    PeelMatrix& operator=(PeelMatrix& rhs);
+    PeelMatrix& operator=(const PeelMatrix& rhs);
     ~PeelMatrix();
 
     bool key_intersection(

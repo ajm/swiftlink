@@ -31,19 +31,22 @@ class Pedigree {
     unsigned int _count_leaves();
 	
  public:
-	Pedigree(const string id) 
-        : id(id), number_of_founders(0), number_of_leaves(0) {}
-
-    Pedigree(const Pedigree& rhs) {
-        id = rhs.id;
-        members = rhs.members;
-        number_of_founders = rhs.number_of_founders;
-        number_of_leaves = rhs.number_of_leaves;
-    }
-
+	Pedigree(const string id) : 
+	    id(id), 
+        members(), 
+        number_of_founders(0), 
+        number_of_leaves(0) {}
+    
+    Pedigree(const Pedigree& rhs) :
+        id(rhs.id),
+        members(rhs.members),
+        number_of_founders(rhs.number_of_founders),
+        number_of_leaves(rhs.number_of_leaves) {}
+    
 	~Pedigree() {}
 
     Pedigree& operator=(const Pedigree& rhs) {
+        
         if(&rhs != this) {
             id = rhs.id;
             members.clear();
@@ -51,6 +54,7 @@ class Pedigree {
             number_of_founders = rhs.number_of_founders;
             number_of_leaves = rhs.number_of_leaves;
         }
+        
         return *this;
     }
 

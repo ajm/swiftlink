@@ -7,7 +7,7 @@ using namespace std;
 #include <numeric>
 #include <algorithm>
 
-#include "lkg.h"
+#include "misc.h"
 #include "person.h"
 #include "pedigree.h"
 #include "founder_allele_graph.h"

@@ -40,6 +40,7 @@ bool LinkageProgram::run() {
 }
 
 bool LinkageProgram::run_pedigree(Pedigree& p) {
+    // TODO XXX this should probably go somewhere else/be user-defined
     unsigned iterations = 1600 * p.num_members() * p.num_markers() * 20 * 2;
     DescentGraph* opt;
     Peeler* peel;    
@@ -59,6 +60,9 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     // write out results
     LinkageWriter lw(&map, peel, "linkage.txt", verbose);
     lw.write();
+
+    // TODO XXX I should not write out immediately, but store the results
+    // combine them and then write out everything in a table
     
     delete opt;
     

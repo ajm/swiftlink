@@ -8,7 +8,7 @@
 #include <cstring>
 #include <unistd.h>
 
-#include "debug.h"
+#include "misc.h"
 #include "linkage_program.h"
 #include "haplotype_program.h"
 

@@ -7,7 +7,7 @@ using namespace std;
 #include <algorithm>
 #include <queue>
 
-#include "lkg.h"
+#include "misc.h"
 #include "genotype.h"
 #include "pedigree.h"
 #include "person.h"
@@ -82,8 +82,8 @@ bool Pedigree::sanity_check() {
 	_fill_in_relationships();
 	
     if( (components = _count_components()) != 1 ) {
-        fprintf(stderr, "error: %s, family %s is actually composed of %d \
-distinct families\n", __func__, id.c_str(), components);
+        fprintf(stderr, "error: %s, family %s is actually composed of %d distinct families\n", 
+            __func__, id.c_str(), components);
         return false;
     }
 	

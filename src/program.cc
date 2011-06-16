@@ -3,7 +3,7 @@ using namespace std;
 #include <cstdio>
 #include <vector>
 
-#include "debug.h"
+#include "misc.h"
 #include "program.h"
 
 #include "linkage_parser.h"

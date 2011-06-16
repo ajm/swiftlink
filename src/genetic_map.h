@@ -11,7 +11,7 @@ using namespace std;
 #include <sstream>
 #include <string>
 
-#include "debug.h"
+#include "misc.h"
 
 
 // XXX create a super class 'marker'?

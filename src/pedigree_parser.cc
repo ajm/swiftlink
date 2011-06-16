@@ -8,7 +8,7 @@ using namespace std;
 #include "genotype.h"
 #include "pedigree.h"
 #include "person.h"
-#include "lkg.h"
+#include "misc.h"
 
 
 bool PedigreeParser::_parse_sex(const string& str, enum sex& s) {
@@ -127,8 +127,8 @@ bool PedigreeParser::parse_line(const int linenum, const string line) {
 				break;
 			case 5:
 				if(not _parse_affection(tokens[i], a)) {
-					fprintf(stderr, "error: %s, line %d: bad affection status \
-\"%s\" (column 6)\n", filename.c_str(), linenum+1, tokens[i].c_str());
+					fprintf(stderr, "error: %s, line %d: bad affection status \"%s\" (column 6)\n", 
+					            filename.c_str(), linenum+1, tokens[i].c_str());
 					return false;
 				}
 				break;
@@ -163,6 +163,7 @@ bool PedigreeParser::parse_end() {
     if(pedigrees.size() == 0) {
         fprintf(stderr, "error: %s contains no families\n", 
             filename.c_str());
+            
         return false;
     }
     

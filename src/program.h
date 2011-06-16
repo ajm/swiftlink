@@ -14,9 +14,9 @@ using namespace std;
 class Program {
 
  private :
-    char* pedfile;
-    char* mapfile;
-	char* datfile;
+    string pedfile;
+    string mapfile;
+	string datfile;
 
 	bool read_and_check_input();
 
@@ -27,7 +27,7 @@ class Program {
 	bool verbose;
 	
  public :
-	Program(char* ped, char* map, char* dat, bool verbose) : 
+	Program(const char* ped, const char* map, const char* dat, bool verbose) : 
 	    pedfile(ped), 
 	    mapfile(map), 
 	    datfile(dat), 

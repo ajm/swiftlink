@@ -8,14 +8,13 @@ using namespace std;
 #include <iostream>
 #include <sstream>
 
-#include "lkg.h"
+#include "misc.h"
 #include "person.h"
 #include "pedigree.h"
 #include "genotype.h"
 #include "peeling.h"
 #include "disease_model.h"
 #include "trait.h"
-#include "debug.h"
 
 
 Person::Person(const string name, const string father_name, const string mother_name, 

@@ -7,7 +7,7 @@ using namespace std;
 #include <string>
 #include <vector>
 
-#include "lkg.h"
+#include "misc.h"
 #include "person.h"
 
 

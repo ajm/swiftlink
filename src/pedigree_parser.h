@@ -25,8 +25,10 @@ class PedigreeParser : public Parser {
 	Pedigree& _current_ped(const string& famid);
 	
  public :
-	PedigreeParser(const string fn, vector<Pedigree>& peds, DiseaseModel& dm) 
-		: Parser(fn, false), pedigrees(peds), disease_model(dm) {}
+	PedigreeParser(const string fn, vector<Pedigree>& peds, DiseaseModel& dm) : 
+	    Parser(fn, false), 
+	    pedigrees(peds), 
+	    disease_model(dm) {}
     
 	bool parse_line(const int linenum, const string line);
     bool parse_end();

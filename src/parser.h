@@ -21,21 +21,28 @@ class Parser {
 	ifstream f;
 	vector<string> tokens;
 
-	void tokenise(string s) {
+	void tokenise(const string s) {
 		stringstream ss(s);
         
         istream_iterator<string> i(ss);
         istream_iterator<string> end;
         
-        this->tokens = vector<string>(i,end);
+        tokens = vector<string>(i,end);
 	}
 
  public:
-	Parser(const string fn, bool die_on_err) 
-		: filename(fn), die_on_error(die_on_err), linenum(0), f(), tokens() {}
+	Parser(const string fn, bool die_on_err) : 
+	    filename(fn), 
+	    die_on_error(die_on_err), 
+	    linenum(0), 
+	    f(), 
+	    tokens() {}
+		
 	virtual ~Parser() {}
+	
 	virtual bool parse_line(const int linenum, const string s) = 0;
 	virtual bool parse_end() { return true; }
+	
 	bool parse() {
 		string line;
 		bool noerror = true;

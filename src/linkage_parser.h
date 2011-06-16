@@ -68,8 +68,9 @@ class LinkageParser : public Parser {
 		number_of_loci(-1), 
 		program_code(-1) {
         
-		for(int i = 0; i < 4; ++i)
+		for(int i = 0; i < 4; ++i) {
 			markers_read[i] = 0;
+	    }
 	}
 	
     bool parse_line(const int linenum, const string line);

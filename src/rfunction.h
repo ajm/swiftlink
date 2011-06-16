@@ -15,6 +15,12 @@ class Person;
 class DescentGraph;
 class GeneticMap;
 
+
+enum trait_type { 
+    MEIOSIS_INDICATORS, 
+    DISEASE_TRAIT 
+};
+
 class Rfunction {
 
     PeelMatrix pmatrix;    
@@ -27,6 +33,7 @@ class Rfunction {
     Rfunction* previous_rfunction2;
     bool function_used;
     unsigned function_index;
+    enum trait_type type;
     
     
     bool is_used();
@@ -49,6 +56,8 @@ class Rfunction {
                     int paternal_allele
                 );
     double get_disease_probability(unsigned person_id, enum phased_trait pt);
+    double get_meiosis_probability(unsigned person_id, enum phased_trait pt);
+    double get_trait_probability(unsigned person_id, enum phased_trait pt);
     double get_recombination_probability(
                     DescentGraph* dg, 
                     unsigned int locus_index,
@@ -84,7 +93,7 @@ class Rfunction {
     double get(PeelMatrixKey& pmk) { return pmatrix.get(pmk); }
     double get_result() { return pmatrix.get_result(); }
     
-    void evaluate(DescentGraph* dg, unsigned int locus_index);
+    void evaluate(DescentGraph* dg, unsigned locus, double offset);
 
     void print() { pmatrix.print(); }
     void print_keys() { pmatrix.print_keys(); }

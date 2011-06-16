@@ -66,6 +66,7 @@ class Program {
     }
     
 	virtual ~Program() {}
+	
 	virtual bool run()=0;
 };
 

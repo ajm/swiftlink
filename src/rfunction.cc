@@ -21,7 +21,8 @@ Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned alle
       previous_rfunction1(NULL),
       previous_rfunction2(NULL),
       function_used(false),
-      function_index(index) {
+      function_index(index),
+      type(DISEASE_TRAIT) {
         
     if(alleles != 4)
         abort(); // XXX assumption for now...
@@ -46,9 +47,11 @@ Rfunction::Rfunction(const Rfunction& r) :
     previous_rfunction1(r.previous_rfunction1),
     previous_rfunction2(r.previous_rfunction2),
     function_used(r.function_used),
-    function_index(r.function_index) {}
+    function_index(r.function_index),
+    type(r.type) {}
     
 Rfunction& Rfunction::operator=(const Rfunction& rhs) {
+
     if(&rhs != this) {
         pmatrix = rhs.pmatrix;
         peel = rhs.peel;
@@ -59,6 +62,7 @@ Rfunction& Rfunction::operator=(const Rfunction& rhs) {
         previous_rfunction2 = rhs.previous_rfunction2;
         function_used = rhs.function_used;
         function_index = rhs.function_index;
+        type = rhs.type;
     }
     
     return *this;
@@ -196,6 +200,23 @@ double Rfunction::get_disease_probability(unsigned person_id, enum phased_trait 
     return per->get_disease_prob(pt);
 }
 
+double Rfunction::get_meiosis_probability(unsigned person_id, enum phased_trait pt) {
+    abort(); // XXX ???
+}
+
+double Rfunction::get_trait_probability(unsigned person_id, enum phased_trait pt) {
+    switch(type) {
+        case DISEASE_TRAIT :
+            return get_disease_probability(person_id, pt);
+            
+        case MEIOSIS_INDICATORS :
+            return get_meiosis_probability(person_id, pt);
+            
+        default :
+            abort();
+    }
+}
+
 // XXX this needs to be somewhere that is not at the same position as 
 // a genetic marker
 // TODO XXX make this generic so it can do arbitrary points between markers
@@ -283,23 +304,19 @@ void Rfunction::evaluate_child_peel(
     pmatrix.set(pmatrix_index, tmp);
 }
 
-// XXX to do any peeling sequence there needs to be 
-// a foreach unpeeled child in here somewhere...
+// TODO XXX this is a mess
+//
 void Rfunction::evaluate_parent_peel(
                     PeelMatrixKey& pmatrix_index, 
                     DescentGraph* dg,
-                                     unsigned int locus_index) {
+                    unsigned locus) {
     
-    //double child_prob[4];
     double disease_prob;
     double recombination_prob;
     double old_prob1;
     double old_prob2;
     
     
-    //enum phased_trait mat_trait;
-    //enum phased_trait pat_trait;
-    //unsigned piv_id = peel.get_cutnode(0); // <----- there is no pivot, the child of the node being peeled that are in the cutset should be done one-by-one
     unsigned parent_id = peel.get_peelnode(0);
     unsigned child_node = peel.get_cutnode(0);
     
@@ -323,7 +340,6 @@ void Rfunction::evaluate_parent_peel(
     double tmp = 0.0;
     
     other_trait = pmatrix_index.get(other_parent_id);
-    
     
     
     for(unsigned a = 0; a < num_alleles; ++a) {
@@ -396,13 +412,14 @@ void Rfunction::evaluate_partner_peel(PeelMatrixKey& pmatrix_index) {
 void Rfunction::evaluate_element(
                     PeelMatrixKey& pmatrix_index, 
                     DescentGraph* dg, 
-                    unsigned locus_index) {
+                    unsigned locus) {
     
     // XXX could remove this with some inheritance?
+    // RfunctionChild RfunctionParent?
     switch(peel.get_type()) {
         
         case CHILD_PEEL :
-            evaluate_child_peel(pmatrix_index, dg, locus_index);
+            evaluate_child_peel(pmatrix_index, dg, locus);
             break;
             
         case PARTNER_PEEL :
@@ -410,7 +427,7 @@ void Rfunction::evaluate_element(
             break;
         
         case PARENT_PEEL :
-            evaluate_parent_peel(pmatrix_index, dg, locus_index);
+            evaluate_parent_peel(pmatrix_index, dg, locus);
             break;
         
         default :
@@ -419,11 +436,14 @@ void Rfunction::evaluate_element(
     }
 }
 
-void Rfunction::evaluate(DescentGraph* dg, unsigned int locus_index) {
+void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
     PeelMatrixKey k;
     vector<unsigned> q;
     unsigned ndim = peel.get_cutset_size();
     unsigned tmp;
+    
+    
+    type = offset == 0.0 ? MEIOSIS_INDICATORS : DISEASE_TRAIT;
     
     
     // nothing in the cutset to be enumerated

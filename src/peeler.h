@@ -22,8 +22,9 @@ class Peeler {
     LodCalculator lod;
     double trait_prob;
     
-    double peel(DescentGraph* dg, unsigned locus);
+    
     double calc_trait_prob();
+    void copy_rfunctions(const Peeler& rhs);
     
  public :
     Peeler(Pedigree* p, GeneticMap* g);
@@ -32,7 +33,7 @@ class Peeler {
     
     Peeler& operator=(const Peeler& rhs);
     
-    void copy_rfunctions(const Peeler& rhs);
+    double peel(DescentGraph* dg, unsigned locus);
     double get_trait_prob();
     bool process(DescentGraph& dg);
     double get(unsigned locus);

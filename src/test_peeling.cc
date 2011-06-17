@@ -11,6 +11,7 @@ using namespace std;
 #include "disease_model.h"
 #include "linkage_parser.h"
 #include "peeler.h"
+#include "descent_graph.h"
 
 
 int main(int argc, char **argv) {
@@ -50,10 +51,15 @@ int main(int argc, char **argv) {
 	}
     
 
-    Peeler test(v[0], map);
-    double trait_prob = test.get_trait_prob();
+    DescentGraph dg(&v[0], &map);
+    dg.random_descentgraph();
+    dg.print();
+
+    Peeler test(&v[0], &map);
+    printf("prob = %e\n", test.peel(&dg, 0));
+//    double trait_prob = test.get_trait_prob();
     
-    printf("P(T) = %e\n", trait_prob / log(10));
+//    printf("P(T) = %e\n", trait_prob / log(10));
     
     return EXIT_SUCCESS;
 }

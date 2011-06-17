@@ -200,17 +200,39 @@ double Rfunction::get_disease_probability(unsigned person_id, enum phased_trait 
     return per->get_disease_prob(pt);
 }
 
-double Rfunction::get_meiosis_probability(unsigned person_id, enum phased_trait pt) {
-    abort(); // XXX ???
+// TODO XXX add a get_ordered_genotype_prob method to person class
+// analogous to get_disease_prob
+double Rfunction::get_marker_probability(unsigned person_id, enum phased_trait pt, unsigned locus) {
+    Person* p;
+    
+    p = ped->get_by_index(person_id);
+    
+    if(p->istyped()) {
+        switch(p->get_marker(locus)) {
+            case HETERO :
+                return ((pt == TRAIT_AU) or (pt == TRAIT_UA)) ? 0.5 : 0.0;
+            case HOMOZ_A :
+                return (pt == TRAIT_UU) ? 1.0 : 0.0;
+            case HOMOZ_B :
+                return (pt == TRAIT_AA) ? 1.0 : 0.0;
+            default :
+                fprintf(stderr, "ERROR!\n\n");
+                return 0.25;
+        }
+    }
+    
+    fprintf(stderr, "ERROR!\n\n");
+    return 0.25;
 }
 
-double Rfunction::get_trait_probability(unsigned person_id, enum phased_trait pt) {
+double Rfunction::get_trait_probability(unsigned person_id, enum phased_trait pt, unsigned locus) {
+
     switch(type) {
         case DISEASE_TRAIT :
             return get_disease_probability(person_id, pt);
             
-        case MEIOSIS_INDICATORS :
-            return get_meiosis_probability(person_id, pt);
+        case ORDERED_GENOTYPES :
+            return get_marker_probability(person_id, pt, locus);
             
         default :
             abort();
@@ -238,7 +260,7 @@ double Rfunction::get_recombination_probability(
     return tmp;
 }
 
-void Rfunction::evaluate_last_peel(PeelMatrixKey& pmatrix_index) {  
+void Rfunction::evaluate_last_peel(PeelMatrixKey& pmatrix_index, unsigned locus) {  
     
     double tmp = 0.0;
     enum phased_trait last_trait;
@@ -252,7 +274,7 @@ void Rfunction::evaluate_last_peel(PeelMatrixKey& pmatrix_index) {
         pmatrix_index.add(last_id, last_trait);
         
         tmp += (\
-                get_disease_probability(last_id, last_trait) * \
+                get_trait_probability(last_id, last_trait, locus) * \
                 previous_rfunction1->get(pmatrix_index) * \
                 (previous_rfunction2 == NULL ? 1.0 : previous_rfunction2->get(pmatrix_index)) \
             );
@@ -265,7 +287,7 @@ void Rfunction::evaluate_last_peel(PeelMatrixKey& pmatrix_index) {
 void Rfunction::evaluate_child_peel(
                     PeelMatrixKey& pmatrix_index, 
                     DescentGraph* dg,
-                    unsigned locus_index) {
+                    unsigned locus) {
     
     double recombination_prob;
     double disease_prob;
@@ -292,8 +314,8 @@ void Rfunction::evaluate_child_peel(
             
             pmatrix_index.add(kid_id, kid_trait);
             
-            disease_prob        = get_disease_probability(kid_id, kid_trait);
-            recombination_prob  = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus_index, kid_id, i, j);
+            disease_prob        = get_trait_probability(kid_id, kid_trait, locus);
+            recombination_prob  = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus, kid_id, i, j);
             old_prob1           = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
             old_prob2           = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
             
@@ -346,7 +368,7 @@ void Rfunction::evaluate_parent_peel(
         parent_trait = static_cast<enum phased_trait>(a);
         pmatrix_index.add(parent_id, parent_trait);
         
-        disease_prob = get_disease_probability(parent_id, parent_trait);
+        disease_prob = get_trait_probability(parent_id, parent_trait, locus);
         
         old_prob1 = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
         old_prob2 = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
@@ -371,7 +393,7 @@ void Rfunction::evaluate_parent_peel(
                     if(pivot_trait != pmatrix_index.get(child->get_internalid()))
                         continue;
                     
-                    recombination_prob = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus_index, child->get_internalid(), i, j);
+                    recombination_prob = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus, child->get_internalid(), i, j);
                     
                     child_tmp += recombination_prob; //(disease_prob * recombination_prob * old_prob1 * old_prob2);
                 }
@@ -386,7 +408,7 @@ void Rfunction::evaluate_parent_peel(
     pmatrix.set(pmatrix_index, tmp);
 }
 
-void Rfunction::evaluate_partner_peel(PeelMatrixKey& pmatrix_index) {
+void Rfunction::evaluate_partner_peel(PeelMatrixKey& pmatrix_index, unsigned locus) {
     
     double tmp = 0.0;
     unsigned partner_id;
@@ -394,13 +416,17 @@ void Rfunction::evaluate_partner_peel(PeelMatrixKey& pmatrix_index) {
     
     partner_id = peel.get_peelnode(0);
     
+    //fprintf(stderr, "evaluate_partner_peel\n");
+    
     for(unsigned i = 0; i < num_alleles; ++i) {
         partner_trait = static_cast<enum phased_trait>(i);
         
         pmatrix_index.add(partner_id, partner_trait);
         
+        //fprintf(stderr, "p(g) = %e\n", get_trait_probability(partner_id, partner_trait, locus));
+        
         tmp += (\
-                get_disease_probability(partner_id, partner_trait) * \
+                get_trait_probability(partner_id, partner_trait, locus) * \
                 (previous_rfunction1 == NULL ? 1.0 : previous_rfunction1->get(pmatrix_index)) * \
                 (previous_rfunction2 == NULL ? 1.0 : previous_rfunction2->get(pmatrix_index)) \
             );
@@ -423,7 +449,7 @@ void Rfunction::evaluate_element(
             break;
             
         case PARTNER_PEEL :
-            evaluate_partner_peel(pmatrix_index);
+            evaluate_partner_peel(pmatrix_index, locus);
             break;
         
         case PARENT_PEEL :
@@ -443,12 +469,14 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
     unsigned tmp;
     
     
-    type = offset == 0.0 ? MEIOSIS_INDICATORS : DISEASE_TRAIT;
+    type = offset == 0.0 ? ORDERED_GENOTYPES : DISEASE_TRAIT;
     
     
     // nothing in the cutset to be enumerated
     if(peel.get_type() == LAST_PEEL) {
-        evaluate_last_peel(k);
+        evaluate_last_peel(k, locus);
+        printf("\nRFUNCTION: (ordered genotypes)\n");
+        print();
         return;
     }
     
@@ -464,7 +492,7 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
         
         if(q.size() == ndim) {
             generate_key(k, q);
-            evaluate_element(k, dg, locus_index);
+            evaluate_element(k, dg, locus);
         }
         
         tmp = q.back() + 1;
@@ -479,5 +507,12 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
             }
         }
     }
+    
+    if(type == ORDERED_GENOTYPES) {
+        pmatrix.normalise();
+    }
+    
+    printf("\nRFUNCTION: (ordered genotypes)\n");
+    print();
 }
 

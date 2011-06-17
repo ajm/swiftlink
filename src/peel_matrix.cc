@@ -196,7 +196,8 @@ void PeelMatrix::print() {
             
             k.print();
             printf(" (offset = %d)\t", generate_index(k));
-            printf(" := %e\n", get(k));
+            //printf(" := %e\n", get(k));
+            printf(" := %.4f\n", get(k));
         }
             
         tmp = q.back() + 1;

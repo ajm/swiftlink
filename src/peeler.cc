@@ -97,12 +97,13 @@ double Peeler::peel(DescentGraph* dg, unsigned locus) {
 
     for(unsigned i = 0; i < rfunctions.size(); ++i) {
         Rfunction* rf = rfunctions[i];
-        rf->evaluate(dg, locus, 0.5); // TODO XXX <---- 0.5 is not actually used yet...
-        
+        rf->evaluate(dg, locus, 0.0); // TODO XXX <---- 0.5 is not actually used yet...
+        /*
         if(dg == NULL) {
             printf("\nRFUNC %d\n", int(i));
             rf->print();
         }
+        */
     }
     
     Rfunction* rf = rfunctions.back();

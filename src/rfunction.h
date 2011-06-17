@@ -17,7 +17,7 @@ class GeneticMap;
 
 
 enum trait_type { 
-    MEIOSIS_INDICATORS, 
+    ORDERED_GENOTYPES, 
     DISEASE_TRAIT 
 };
 
@@ -56,12 +56,12 @@ class Rfunction {
                     int paternal_allele
                 );
     double get_disease_probability(unsigned person_id, enum phased_trait pt);
-    double get_meiosis_probability(unsigned person_id, enum phased_trait pt);
-    double get_trait_probability(unsigned person_id, enum phased_trait pt);
+    double get_marker_probability(unsigned person_id, enum phased_trait pt, unsigned locus);
+    double get_trait_probability(unsigned person_id, enum phased_trait pt, unsigned locus);
     double get_recombination_probability(
                     DescentGraph* dg, 
-                    unsigned int locus_index,
-                    unsigned int person_id,
+                    unsigned locus_index,
+                    unsigned person_id,
                     int maternal_allele, 
                     int paternal_allele
                 );
@@ -69,13 +69,17 @@ class Rfunction {
     void evaluate_child_peel(
                     PeelMatrixKey& pmatrix_index, 
                     DescentGraph* dg, 
-                    unsigned int locus_index);
+                    unsigned locus);
     void evaluate_parent_peel(
                     PeelMatrixKey& pmatrix_index, 
                     DescentGraph* dg,
-                    unsigned int locus_index);
-    void evaluate_partner_peel(PeelMatrixKey& pmatrix_index);
-    void evaluate_last_peel(PeelMatrixKey& pmatrix_index);
+                    unsigned locus);
+    void evaluate_partner_peel(
+                    PeelMatrixKey& pmatrix_index, 
+                    unsigned locus);
+    void evaluate_last_peel(
+                    PeelMatrixKey& pmatrix_index, 
+                    unsigned locus);
     void evaluate_element(
                     PeelMatrixKey& pmatrix_index, 
                     DescentGraph* dg, 

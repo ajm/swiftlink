@@ -23,9 +23,11 @@ enum trait_type {
 
 class Rfunction {
 
-    PeelMatrix pmatrix;    
+    PeelMatrix pmatrix;
+    PeelMatrix pmatrix_presum;
+    
     PeelOperation peel;
-    unsigned num_alleles; // could be 3 for L-sampler or 4 for peeling
+    unsigned num_alleles;
     GeneticMap* map;
     Pedigree* ped;
     

@@ -142,7 +142,7 @@ unsigned PeelSequenceGenerator::score_peel_sequence() {
     unsigned total = 0;
     
     for(unsigned i = 0; i < peelorder.size(); ++i) {
-        total += pow(4, peelorder[i].get_cutset_size());
+        total += pow(4.0, static_cast<double>(peelorder[i].get_cutset_size()));
     }
     
     return total;

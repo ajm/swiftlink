@@ -251,10 +251,10 @@ double Rfunction::get_trait_probability(unsigned person_id, enum phased_trait pt
 // XXX this needs to be somewhere that is not at the same position as 
 // a genetic marker
 // TODO XXX make this generic so it can do arbitrary points between markers
-double Rfunction::get_recombination_probability(
+double Rfunction::get_recombination_probability_between_markers(
                     DescentGraph* dg, unsigned int locus_index, unsigned person_id,
                     int maternal_allele, int paternal_allele) {
-
+    
     double tmp = 1.0;
     double half_recomb_prob;
     
@@ -268,6 +268,32 @@ double Rfunction::get_recombination_probability(
     
     return tmp;
 }
+
+double Rfunction::get_recombination_probability(
+                                        DescentGraph* dg, 
+                                        unsigned locus, 
+                                        unsigned person_id,
+                                        int maternal_allele, 
+                                        int paternal_allele) {
+    
+    double tmp = 1.0;
+    double recomb_prob = 0.0;
+    
+    if(locus != 0) {
+        recomb_prob = exp(map->get_theta(locus-1));
+        tmp *= dg->get(person_id, locus-1, MATERNAL) == maternal_allele ? 1.0 - recomb_prob : recomb_prob;
+        tmp *= dg->get(person_id, locus-1, PATERNAL) == paternal_allele ? 1.0 - recomb_prob : recomb_prob;
+    }
+    
+    if(locus != (map->num_markers() - 1)) {
+        recomb_prob = exp(map->get_theta(locus));
+        tmp *= dg->get(person_id, locus+1, MATERNAL) == maternal_allele ? 1.0 - recomb_prob : recomb_prob;
+        tmp *= dg->get(person_id, locus+1, PATERNAL) == paternal_allele ? 1.0 - recomb_prob : recomb_prob;
+    }
+    
+    return tmp;
+}
+
 
 void Rfunction::evaluate_last_peel(PeelMatrixKey& pmatrix_index, unsigned locus) {  
     
@@ -542,7 +568,7 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
         evaluate_last_peel(k, locus);
         
         if(type == ORDERED_GENOTYPES) {
-            pmatrix_presum.normalise();
+            //pmatrix_presum.normalise();
             printf("\nRFUNCTION: (ordered genotypes)\n");
             pmatrix_presum.print();
         }
@@ -579,7 +605,7 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
     }
     
     if(type == ORDERED_GENOTYPES) {
-        pmatrix_presum.normalise();
+        //pmatrix_presum.normalise();
         printf("\nRFUNCTION: (ordered genotypes)\n");
         pmatrix_presum.print();
     }

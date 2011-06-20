@@ -67,6 +67,13 @@ class Rfunction {
                     int maternal_allele, 
                     int paternal_allele
                 );
+    double get_recombination_probability_between_markers(
+                    DescentGraph* dg, 
+                    unsigned locus_index,
+                    unsigned person_id,
+                    int maternal_allele, 
+                    int paternal_allele
+                );
     
     void evaluate_child_peel(
                     PeelMatrixKey& pmatrix_index, 

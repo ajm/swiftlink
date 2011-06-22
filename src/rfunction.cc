@@ -11,28 +11,26 @@ using namespace std;
 #include "trait.h"
 #include "genetic_map.h"
 
+#define NUM_ALLELES 4
+
     
-Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned alleles, vector<Rfunction*>& previous_functions, unsigned index) : 
-      pmatrix(po.get_cutset_size(), alleles),
-      pmatrix_presum(po.get_cutset_size() + 1, alleles),
-      peel(po), 
-      num_alleles(alleles), 
+Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, vector<Rfunction*>& previous_functions, unsigned index) : 
       map(m),
       ped(p),
+      offset(0.0),
+      pmatrix(po.get_cutset_size(), NUM_ALLELES),
+      pmatrix_presum(po.get_cutset_size() + 1, NUM_ALLELES),
+      peel(po), 
       previous_rfunction1(NULL),
       previous_rfunction2(NULL),
       function_used(false),
-      function_index(index),
-      type(DISEASE_TRAIT) {
-        
-    if(alleles != 4)
-        abort(); // XXX assumption for now...
+      function_index(index) {
 
     pmatrix.set_keys(peel.get_cutset());
           
           // very temporary, just messing around... XXX
           vector<unsigned> tmp(peel.get_cutset());
-          tmp.push_back(peel.get_peelnode(0));
+          tmp.push_back(peel.get_peelnode());
           pmatrix_presum.set_keys(tmp);
     
     find_previous_functions(previous_functions);
@@ -46,17 +44,16 @@ Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned alle
 }
 
 Rfunction::Rfunction(const Rfunction& r) :
+    map(r.map),
+    ped(r.ped),
+    offset(r.offset),
     pmatrix(r.pmatrix),
     pmatrix_presum(r.pmatrix_presum),
     peel(r.peel),
-    num_alleles(r.num_alleles),
-    map(r.map),
-    ped(r.ped),
     previous_rfunction1(r.previous_rfunction1),
     previous_rfunction2(r.previous_rfunction2),
     function_used(r.function_used),
-    function_index(r.function_index),
-    type(r.type) {}
+    function_index(r.function_index) {}
     
 Rfunction& Rfunction::operator=(const Rfunction& rhs) {
 
@@ -64,14 +61,13 @@ Rfunction& Rfunction::operator=(const Rfunction& rhs) {
         pmatrix = rhs.pmatrix;
         pmatrix_presum = rhs.pmatrix_presum;
         peel = rhs.peel;
-        num_alleles = rhs.num_alleles;
         map = rhs.map;
         ped = rhs.ped;
+        offset = rhs.offset;
         previous_rfunction1 = rhs.previous_rfunction1;
         previous_rfunction2 = rhs.previous_rfunction2;
         function_used = rhs.function_used;
         function_index = rhs.function_index;
-        type = rhs.type;
     }
     
     return *this;
@@ -137,7 +133,7 @@ void Rfunction::find_function_containing(vector<Rfunction*>& functions, vector<u
 
 void Rfunction::find_child_functions(vector<Rfunction*>& functions) {
     
-    Person* p = ped->get_by_index(peel.get_peelnode(0));
+    Person* p = ped->get_by_index(peel.get_peelnode());
     vector<unsigned> tmp;
     tmp.push_back(p->get_maternalid());
     tmp.push_back(p->get_paternalid());
@@ -149,15 +145,16 @@ void Rfunction::find_child_functions(vector<Rfunction*>& functions) {
         return;
     }
     
-    find_function_containing(functions, peel.get_peelset(), &previous_rfunction2);
+    tmp.clear();
+    tmp.push_back(peel.get_peelnode());
+    
+    find_function_containing(functions, tmp, &previous_rfunction2);
 }
 
 void Rfunction::find_generic_functions(vector<Rfunction*>& functions) {
     
-    unsigned peelnode = peel.get_peelnode(0);
-    
     vector<unsigned> tmp;
-    tmp.push_back(peelnode);
+    tmp.push_back(peel.get_peelnode());
     
     find_function_containing(functions, tmp, &previous_rfunction1);
     find_function_containing(functions, tmp, &previous_rfunction2);    
@@ -201,140 +198,17 @@ enum phased_trait Rfunction::get_phased_trait(
     return pt;
 }
 
-double Rfunction::get_disease_probability(unsigned person_id, enum phased_trait pt) {
-    Person* per;
-    
-    per = ped->get_by_index(person_id);
-    
-    return per->get_disease_prob(pt);
-}
-
-// TODO XXX add a get_ordered_genotype_prob method to person class
-// analogous to get_disease_prob
-double Rfunction::get_marker_probability(unsigned person_id, enum phased_trait pt, unsigned locus) {
-    Person* p;
-    
-    p = ped->get_by_index(person_id);
-    
-    if(p->istyped()) {
-        switch(p->get_marker(locus)) {
-            case HETERO :
-                return ((pt == TRAIT_AU) or (pt == TRAIT_UA)) ? 0.5 : 0.0;
-            case HOMOZ_A :
-                return (pt == TRAIT_UU) ? 1.0 : 0.0;
-            case HOMOZ_B :
-                return (pt == TRAIT_AA) ? 1.0 : 0.0;
-            default :
-                fprintf(stderr, "ERROR!\n\n");
-                return 0.25;
-        }
-    }
-    
-    fprintf(stderr, "ERROR!\n\n");
-    return 0.25;
-}
-
-double Rfunction::get_trait_probability(unsigned person_id, enum phased_trait pt, unsigned locus) {
-
-    switch(type) {
-        case DISEASE_TRAIT :
-            return get_disease_probability(person_id, pt);
-            
-        case ORDERED_GENOTYPES :
-            return get_marker_probability(person_id, pt, locus);
-            
-        default :
-            abort();
-    }
-}
-
-// XXX this needs to be somewhere that is not at the same position as 
-// a genetic marker
-// TODO XXX make this generic so it can do arbitrary points between markers
-double Rfunction::get_recombination_probability_between_markers(
-                    DescentGraph* dg, unsigned int locus_index, unsigned person_id,
-                    int maternal_allele, int paternal_allele) {
-    
-    double tmp = 1.0;
-    double half_recomb_prob;
-    
-    half_recomb_prob = map->get_theta_halfway(locus_index);
-    
-    tmp *= dg->get(person_id, locus_index,   MATERNAL) == maternal_allele ? 1.0 - half_recomb_prob : half_recomb_prob;
-    tmp *= dg->get(person_id, locus_index+1, MATERNAL) == maternal_allele ? 1.0 - half_recomb_prob : half_recomb_prob;
-            
-    tmp *= dg->get(person_id, locus_index,   PATERNAL) == paternal_allele ? 1.0 - half_recomb_prob : half_recomb_prob;
-    tmp *= dg->get(person_id, locus_index+1, PATERNAL) == paternal_allele ? 1.0 - half_recomb_prob : half_recomb_prob;
-    
-    return tmp;
-}
-
-double Rfunction::get_recombination_probability(
-                                        DescentGraph* dg, 
-                                        unsigned locus, 
-                                        unsigned person_id,
-                                        int maternal_allele, 
-                                        int paternal_allele) {
-    
-    double tmp = 1.0;
-    double recomb_prob = 0.0;
-    
-    if(locus != 0) {
-        recomb_prob = exp(map->get_theta(locus-1));
-        tmp *= dg->get(person_id, locus-1, MATERNAL) == maternal_allele ? 1.0 - recomb_prob : recomb_prob;
-        tmp *= dg->get(person_id, locus-1, PATERNAL) == paternal_allele ? 1.0 - recomb_prob : recomb_prob;
-    }
-    
-    if(locus != (map->num_markers() - 1)) {
-        recomb_prob = exp(map->get_theta(locus));
-        tmp *= dg->get(person_id, locus+1, MATERNAL) == maternal_allele ? 1.0 - recomb_prob : recomb_prob;
-        tmp *= dg->get(person_id, locus+1, PATERNAL) == paternal_allele ? 1.0 - recomb_prob : recomb_prob;
-    }
-    
-    return tmp;
-}
-
-
-void Rfunction::evaluate_last_peel(PeelMatrixKey& pmatrix_index, unsigned locus) {  
-    
+void Rfunction::summation(PeelMatrixKey& pmatrix_index, unsigned person_id) {
     double tmp = 0.0;
-    enum phased_trait last_trait;
-    unsigned last_id;
+    enum phased_trait pt;
     
-    last_id = peel.get_peelnode(0);
-            
-    for(unsigned i = 0; i < num_alleles; ++i) {
-        last_trait = static_cast<enum phased_trait>(i);
-        pmatrix_index.add(last_id, last_trait);
-        
-        /*
-        tmp += (\
-                get_trait_probability(last_id, last_trait, locus) * \
-                previous_rfunction1->get(pmatrix_index) * \
-                (previous_rfunction2 == NULL ? 1.0 : previous_rfunction2->get(pmatrix_index)) \
-            );
-        */
-        
-        tmp = (\
-                get_trait_probability(last_id, last_trait, locus) * \
-                previous_rfunction1->get(pmatrix_index) * \
-                (previous_rfunction2 == NULL ? 1.0 : previous_rfunction2->get(pmatrix_index)) \
-            );
-        
-        pmatrix_presum.set(pmatrix_index, tmp);
-    }
-    
-    
-    tmp = 0.0;
-    
-    for(unsigned i = 0; i < num_alleles; ++i) {
-        last_trait = static_cast<enum phased_trait>(i);
-        pmatrix_index.add(last_id, last_trait);
+    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+        pt = static_cast<enum phased_trait>(i);
+        pmatrix_index.add(person_id, pt);
         
         tmp += pmatrix_presum.get(pmatrix_index);
     }
     
-    pmatrix_index.add(last_id, (enum phased_trait) 0);
     pmatrix.set(pmatrix_index, tmp);
 }
 
@@ -353,11 +227,19 @@ void Rfunction::evaluate_child_peel(
     enum phased_trait mat_trait;
     enum phased_trait pat_trait;
     
-    unsigned kid_id = peel.get_peelnode(0);
+    unsigned kid_id = peel.get_peelnode();
     Person* kid = ped->get_by_index(kid_id);
     
     mat_trait = pmatrix_index.get(kid->get_maternalid());
     pat_trait = pmatrix_index.get(kid->get_paternalid());
+    
+    
+    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+        kid_trait = static_cast<enum phased_trait>(i);
+        pmatrix_index.add(kid_id, kid_trait);
+        pmatrix_presum.set(pmatrix_index, 0.0);
+    }
+    
     
     // iterate over all descent graphs to determine child trait 
     // based on parents' traits
@@ -373,23 +255,13 @@ void Rfunction::evaluate_child_peel(
             old_prob1           = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
             old_prob2           = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
             
-            //tmp += (disease_prob * recombination_prob * old_prob1 * old_prob2);
             tmp = (disease_prob * recombination_prob * old_prob1 * old_prob2);
             
             pmatrix_presum.add(pmatrix_index, tmp);
         }
     }
     
-    tmp = 0.0;
-    
-    for(unsigned i = 0; i < num_alleles; ++i) {
-        kid_trait = static_cast<enum phased_trait>(i);
-        pmatrix_index.add(kid_id, kid_trait);
-        
-        tmp += pmatrix_presum.get(pmatrix_index);
-    }    
-    
-    pmatrix.set(pmatrix_index, tmp);
+    summation(pmatrix_index, kid_id);
 }
 
 // TODO XXX this is a mess
@@ -405,7 +277,7 @@ void Rfunction::evaluate_parent_peel(
     double old_prob2;
     
     
-    unsigned parent_id = peel.get_peelnode(0);
+    unsigned parent_id = peel.get_peelnode();
     unsigned child_node = peel.get_cutnode(0);
     
     // find a child of parent_id
@@ -430,7 +302,7 @@ void Rfunction::evaluate_parent_peel(
     other_trait = pmatrix_index.get(other_parent_id);
     
     
-    for(unsigned a = 0; a < num_alleles; ++a) {
+    for(unsigned a = 0; a < NUM_ALLELES; ++a) {
         parent_trait = static_cast<enum phased_trait>(a);
         pmatrix_index.add(parent_id, parent_trait);
         
@@ -474,17 +346,7 @@ void Rfunction::evaluate_parent_peel(
         pmatrix_presum.set(pmatrix_index, tmp);
     }
     
-    
-    tmp = 0.0;
-    
-    for(unsigned i = 0; i < num_alleles; ++i) {
-        parent_trait = static_cast<enum phased_trait>(i);
-        pmatrix_index.add(parent_id, parent_trait);
-        
-        tmp += pmatrix_presum.get(pmatrix_index);
-    }    
-    
-    pmatrix.set(pmatrix_index, tmp);
+    summation(pmatrix_index, parent_id);
 }
 
 void Rfunction::evaluate_partner_peel(PeelMatrixKey& pmatrix_index, unsigned locus) {
@@ -493,19 +355,11 @@ void Rfunction::evaluate_partner_peel(PeelMatrixKey& pmatrix_index, unsigned loc
     unsigned partner_id;
     enum phased_trait partner_trait;    
     
-    partner_id = peel.get_peelnode(0);
+    partner_id = peel.get_peelnode();
         
-    for(unsigned i = 0; i < num_alleles; ++i) {
+    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         partner_trait = static_cast<enum phased_trait>(i);
         pmatrix_index.add(partner_id, partner_trait);
-        
-        /*        
-        tmp += (\
-                get_trait_probability(partner_id, partner_trait, locus) * \
-                (previous_rfunction1 == NULL ? 1.0 : previous_rfunction1->get(pmatrix_index)) * \
-                (previous_rfunction2 == NULL ? 1.0 : previous_rfunction2->get(pmatrix_index)) \
-            );
-        */
         
         tmp = get_trait_probability(partner_id, partner_trait, locus) * \
             (previous_rfunction1 == NULL ? 1.0 : previous_rfunction1->get(pmatrix_index)) * \
@@ -514,16 +368,7 @@ void Rfunction::evaluate_partner_peel(PeelMatrixKey& pmatrix_index, unsigned loc
         pmatrix_presum.set(pmatrix_index, tmp);
     }
     
-    tmp = 0.0;
-    
-    for(unsigned i = 0; i < num_alleles; ++i) {
-        partner_trait = static_cast<enum phased_trait>(i);
-        pmatrix_index.add(partner_id, partner_trait);
-        
-        tmp += pmatrix_presum.get(pmatrix_index);
-    }
-    
-    pmatrix.set(pmatrix_index, tmp);
+    summation(pmatrix_index, partner_id);
 }
 
 void Rfunction::evaluate_element(
@@ -559,20 +404,12 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
     unsigned ndim = peel.get_cutset_size();
     unsigned tmp;
     
-    
-    type = (offset == 0.0) ? ORDERED_GENOTYPES : DISEASE_TRAIT;
+    this->offset = offset;
     
     
     // nothing in the cutset to be enumerated
     if(peel.get_type() == LAST_PEEL) {
-        evaluate_last_peel(k, locus);
-        
-        if(type == ORDERED_GENOTYPES) {
-            //pmatrix_presum.normalise();
-            printf("\nRFUNCTION: (ordered genotypes)\n");
-            pmatrix_presum.print();
-        }
-        
+        evaluate_partner_peel(k, locus);
         return;
     }
     
@@ -594,7 +431,7 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
         tmp = q.back() + 1;
         q.pop_back();
         
-        if(tmp < num_alleles) {
+        if(tmp < NUM_ALLELES) {
             q.push_back(tmp);
             tmp = ndim - q.size();
             // fill out rest with zeroes
@@ -602,12 +439,6 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
                 q.push_back(0);
             }
         }
-    }
-    
-    if(type == ORDERED_GENOTYPES) {
-        //pmatrix_presum.normalise();
-        printf("\nRFUNCTION: (ordered genotypes)\n");
-        pmatrix_presum.print();
     }
 }
 

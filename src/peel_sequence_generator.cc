@@ -119,7 +119,7 @@ vector<PeelOperation>& PeelSequenceGenerator::get_peel_order() {
 }
 
 void PeelSequenceGenerator::print() {
-    
+    /*
     for(unsigned i = 0; i < peelorder.size(); ++i) {
         printf("rfunction %d: ", i);
         peelorder[i].print(); // XXX this is not ideal
@@ -136,6 +136,7 @@ void PeelSequenceGenerator::print() {
         }
         printf(")\n");
     }
+    */
 }
 
 unsigned PeelSequenceGenerator::score_peel_sequence() {

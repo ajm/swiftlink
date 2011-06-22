@@ -6,7 +6,7 @@ using namespace std;
 #include <vector>
 
 #include "peeling.h"
-#include "rfunction.h"
+#include "trait_rfunction.h"
 #include "lod_calculator.h"
 
 

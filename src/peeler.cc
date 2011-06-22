@@ -10,7 +10,7 @@ using namespace std;
 #include "genetic_map.h"
 #include "pedigree.h"
 #include "descent_graph.h"
-#include "rfunction.h"
+#include "trait_rfunction.h"
 
 
 Peeler::Peeler(Pedigree* p, GeneticMap* g) : 
@@ -27,7 +27,7 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g) :
     vector<PeelOperation>& ops = psg.get_peel_order();
     
     for(vector<PeelOperation>::size_type i = 0; i < ops.size(); ++i) {
-        Rfunction* rf = new Rfunction(ops[i], ped, map, 4, rfunctions, i);
+        Rfunction* rf = new TraitRfunction(ops[i], ped, map, rfunctions, i);
         rfunctions.push_back(rf);
     }
     
@@ -70,7 +70,7 @@ Peeler::~Peeler() {
 void Peeler::copy_rfunctions(const Peeler& rhs) {
     rfunctions.clear();
     for(unsigned i = 0; i < rhs.rfunctions.size(); ++i) {
-        Rfunction* rf = new Rfunction(*(rhs.rfunctions[i]));
+        Rfunction* rf = new TraitRfunction(*(rhs.rfunctions[i]));
         rfunctions.push_back(rf);
     }
 }
@@ -97,13 +97,7 @@ double Peeler::peel(DescentGraph* dg, unsigned locus) {
 
     for(unsigned i = 0; i < rfunctions.size(); ++i) {
         Rfunction* rf = rfunctions[i];
-        rf->evaluate(dg, locus, 0.0); // TODO XXX <---- 0.5 is not actually used yet...
-        /*
-        if(dg == NULL) {
-            printf("\nRFUNC %d\n", int(i));
-            rf->print();
-        }
-        */
+        rf->evaluate(dg, locus, 0.5); // TODO XXX <---- 0.5 is not actually used yet...
     }
     
     Rfunction* rf = rfunctions.back();

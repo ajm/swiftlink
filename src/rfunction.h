@@ -16,26 +16,24 @@ class DescentGraph;
 class GeneticMap;
 
 
-enum trait_type { 
-    ORDERED_GENOTYPES, 
-    DISEASE_TRAIT 
-};
-
 class Rfunction {
 
+ protected :
+    GeneticMap* map;
+    Pedigree* ped;
+    double offset;
+    
+ private :
     PeelMatrix pmatrix;
     PeelMatrix pmatrix_presum;
     
     PeelOperation peel;
-    unsigned num_alleles;
-    GeneticMap* map;
-    Pedigree* ped;
+    
     
     Rfunction* previous_rfunction1;
     Rfunction* previous_rfunction2;
     bool function_used;
     unsigned function_index;
-    enum trait_type type;
     
     
     bool is_used();
@@ -57,16 +55,14 @@ class Rfunction {
                     int maternal_allele, 
                     int paternal_allele
                 );
-    double get_disease_probability(unsigned person_id, enum phased_trait pt);
-    double get_marker_probability(unsigned person_id, enum phased_trait pt, unsigned locus);
-    double get_trait_probability(unsigned person_id, enum phased_trait pt, unsigned locus);
-    double get_recombination_probability(
+    virtual double get_trait_probability(unsigned person_id, enum phased_trait pt, unsigned locus)=0;
+    virtual double get_recombination_probability(
                     DescentGraph* dg, 
                     unsigned locus_index,
                     unsigned person_id,
                     int maternal_allele, 
                     int paternal_allele
-                );
+                )=0;
     double get_recombination_probability_between_markers(
                     DescentGraph* dg, 
                     unsigned locus_index,
@@ -74,7 +70,7 @@ class Rfunction {
                     int maternal_allele, 
                     int paternal_allele
                 );
-    
+    void summation(PeelMatrixKey& pmatrix_index, unsigned personid);
     void evaluate_child_peel(
                     PeelMatrixKey& pmatrix_index, 
                     DescentGraph* dg, 
@@ -86,19 +82,16 @@ class Rfunction {
     void evaluate_partner_peel(
                     PeelMatrixKey& pmatrix_index, 
                     unsigned locus);
-    void evaluate_last_peel(
-                    PeelMatrixKey& pmatrix_index, 
-                    unsigned locus);
     void evaluate_element(
                     PeelMatrixKey& pmatrix_index, 
                     DescentGraph* dg, 
                     unsigned int locus_index);
 
  public :
-    Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, unsigned alleles, 
+    Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m,
         vector<Rfunction*>& previous_functions, unsigned index);
                 
-    ~Rfunction() {}
+    virtual ~Rfunction() {}
     Rfunction(const Rfunction& r);
     Rfunction& operator=(const Rfunction& rhs);
     

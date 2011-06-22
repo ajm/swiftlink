@@ -354,7 +354,7 @@ bool Person::peel_operation(PeelOperation& p, PeelingState& state) {
     }
     
     if(p.get_type() != NULL_PEEL) {
-        p.add_peelnode(internal_id);
+        p.set_peelnode(internal_id);
         get_cutset(p, state);
         return true;
     }

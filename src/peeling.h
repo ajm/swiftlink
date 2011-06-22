@@ -21,14 +21,14 @@ enum peeloperation {
 class PeelOperation {
     enum peeloperation type;
     vector<unsigned int> cutset; // what is being peeled on to by this operation
-    vector<unsigned int> peelset; // what is being peeled by this operation
+    unsigned int peelnode;       // what is being peeled by this operation
     bool used;
     
  public :
     PeelOperation() :  
         type(NULL_PEEL), 
         cutset(), 
-        peelset(), 
+        peelnode(0), 
         used(false) {}
         
     ~PeelOperation() {}
@@ -37,11 +37,11 @@ class PeelOperation {
         used = true;
     }
     
-    bool is_used() {
+    bool is_used() const {
         return used;
     }
     
-    bool in_cutset(unsigned node) {
+    bool in_cutset(unsigned node) const {
         for(unsigned i = 0; i < cutset.size(); ++i) {
             if(cutset[i] == node) {
                 return true;
@@ -54,7 +54,7 @@ class PeelOperation {
         type = po;
     }
     
-    enum peeloperation get_type() {
+    enum peeloperation get_type() const {
         return type;
     }
     
@@ -80,28 +80,16 @@ class PeelOperation {
             cutset.erase(it);
     }
     
-    unsigned int get_peelset_size() const { 
-        return peelset.size();
-    }
-    
-    vector<unsigned int>& get_peelset() {
-        return peelset;
-    }
-    
-    unsigned get_peelnode(unsigned i) {
-        return peelset[i];
-    }
-    
-    unsigned get_cutnode(unsigned i) {
+    unsigned get_cutnode(unsigned i) const {
         return cutset[i];
     }
     
-    void add_peelnode(unsigned int c) {
-        for(unsigned int i = 0; i < peelset.size(); ++i) {
-            if(peelset[i] == c)
-                return;
-        }
-        peelset.push_back(c);
+    unsigned get_peelnode() const {
+        return peelnode;
+    }
+    
+    void set_peelnode(unsigned i) {
+        peelnode = i;
     }
     
     void print() const {
@@ -128,16 +116,8 @@ class PeelOperation {
                 break;
         }
         
-        printf("peelset = (");
-        tmp = peelset.size();
-        for(unsigned i = 0; i < tmp; ++i) {
-            printf("%d", peelset[i]);
-            if(i != (tmp-1)) {
-                putchar(',');
-            }
-        }
-        printf(") ");
-        
+        printf("peelnode = (%d) ", peelnode);
+                
         printf("cutset = (");
         tmp = cutset.size();
         for(unsigned i = 0; i < tmp; ++i) {
@@ -147,8 +127,6 @@ class PeelOperation {
             }
         }
         printf(") ");
-        
-        //printf("\n");
     }
     
     bool operator<(const PeelOperation& p) const {
@@ -176,11 +154,7 @@ class PeelingState {
     }
     
     void toggle_peel_operation(PeelOperation& operation) {
-        vector<unsigned>& tmp = operation.get_peelset();
-        
-        for(unsigned i = 0; i < tmp.size(); ++i) {
-            toggle_peeled(tmp[i]);
-        }
+        toggle_peeled(operation.get_peelnode());
     }
     
     void print() {

@@ -6,6 +6,7 @@
 #include "trait.h"
 #include "rfunction.h"
 
+
 class DescentGraph;
 class Pedigree;
 class GeneticMap;
@@ -23,14 +24,10 @@ class SamplerRfunction : public Rfunction {
                                  unsigned locus);
 
  public :
-    SamplerRfunction(PeelOperation po, 
-                     Pedigree* p, 
-                     GeneticMap* m, 
-                     vector<Rfunction*>& previous_functions, 
-                     unsigned index);
+    SamplerRfunction(PeelOperation po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2);
     virtual ~SamplerRfunction() {}
-    SamplerRfunction(const Rfunction& rhs);
-    SamplerRfunction& operator=(const Rfunction& rhs);
+    SamplerRfunction(const SamplerRfunction& rhs);
+    SamplerRfunction& operator=(const SamplerRfunction& rhs);
 };
 
 #endif

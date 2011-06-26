@@ -26,27 +26,12 @@ class Rfunction {
  private :
     PeelMatrix pmatrix;
     PeelMatrix pmatrix_presum;
-    
     PeelOperation peel;
-    
-    
     Rfunction* previous_rfunction1;
     Rfunction* previous_rfunction2;
     bool function_used;
-    unsigned function_index;
     
     
-    bool is_used();
-    void set_used();
-    void find_previous_functions(vector<Rfunction*>& functions);
-    bool contains_node(unsigned node);
-    bool contains_cutnodes(vector<unsigned>& nodes);
-    void find_function_containing(vector<Rfunction*>& functions, 
-                                  vector<unsigned>& nodes, 
-                                  Rfunction** func);
-    void find_child_functions(vector<Rfunction*>& functions);
-    void find_generic_functions(vector<Rfunction*>& functions);
-
     void generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments);
     bool affected_trait(enum phased_trait pt, int allele);
     enum phased_trait get_phased_trait(
@@ -88,12 +73,10 @@ class Rfunction {
                     unsigned int locus_index);
 
  public :
-    Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m,
-        vector<Rfunction*>& previous_functions, unsigned index);
-                
-    virtual ~Rfunction() {}
+    Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2);
     Rfunction(const Rfunction& r);
     Rfunction& operator=(const Rfunction& rhs);
+    virtual ~Rfunction() {}
     
     PeelMatrix* get_matrix() { return &pmatrix; }
     double get(PeelMatrixKey& pmk) { return pmatrix.get(pmk); }
@@ -103,6 +86,11 @@ class Rfunction {
 
     void print() { pmatrix.print(); }
     void print_keys() { pmatrix.print_keys(); }
+    
+    bool is_used();
+    void set_used();
+    bool contains_node(unsigned node);
+    bool contains_cutnodes(vector<unsigned>& nodes);    
 };
 
 #endif

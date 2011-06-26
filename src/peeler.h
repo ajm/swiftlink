@@ -18,7 +18,7 @@ class Peeler {
     
     Pedigree* ped;
     GeneticMap* map;
-    vector<Rfunction*> rfunctions;
+    vector<TraitRfunction*> rfunctions;
     LodCalculator lod;
     double trait_prob;
     

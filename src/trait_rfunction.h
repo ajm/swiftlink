@@ -23,14 +23,10 @@ class TraitRfunction : public Rfunction {
                                  unsigned locus);
 
  public :
-    TraitRfunction(PeelOperation po, 
-                   Pedigree* p, 
-                   GeneticMap* m, 
-                   vector<Rfunction*>& previous_functions, 
-                   unsigned index);
+    TraitRfunction(PeelOperation po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2);
     virtual ~TraitRfunction() {}
-    TraitRfunction(const Rfunction& rhs);
-    TraitRfunction& operator=(const Rfunction& rhs);
+    TraitRfunction(const TraitRfunction& rhs);
+    TraitRfunction& operator=(const TraitRfunction& rhs);
 };
 
 #endif

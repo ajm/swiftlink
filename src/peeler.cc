@@ -11,6 +11,7 @@ using namespace std;
 #include "pedigree.h"
 #include "descent_graph.h"
 #include "trait_rfunction.h"
+#include "rfunction_builder.h"
 
 
 Peeler::Peeler(Pedigree* p, GeneticMap* g) : 
@@ -25,10 +26,11 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g) :
     psg.print();
 
     vector<PeelOperation>& ops = psg.get_peel_order();
+        
+    RfunctionBuilder<TraitRfunction> build(ped, map, rfunctions);
     
-    for(vector<PeelOperation>::size_type i = 0; i < ops.size(); ++i) {
-        Rfunction* rf = new TraitRfunction(ops[i], ped, map, rfunctions, i);
-        rfunctions.push_back(rf);
+    for(unsigned i = 0; i < ops.size(); ++i) {
+        rfunctions.push_back(build.createRfunction(ops[i]));
     }
     
     trait_prob = calc_trait_prob();
@@ -70,7 +72,7 @@ Peeler::~Peeler() {
 void Peeler::copy_rfunctions(const Peeler& rhs) {
     rfunctions.clear();
     for(unsigned i = 0; i < rhs.rfunctions.size(); ++i) {
-        Rfunction* rf = new TraitRfunction(*(rhs.rfunctions[i]));
+        TraitRfunction* rf = new TraitRfunction(*(rhs.rfunctions[i]));
         rfunctions.push_back(rf);
     }
 }
@@ -80,14 +82,14 @@ double Peeler::get_trait_prob() {
 }
 
 double Peeler::calc_trait_prob() {
-    return this->peel(NULL, 0);
+    return peel(NULL, 0);
 }
 
 bool Peeler::process(DescentGraph& dg) {
     // minus 1 because we want to look between markers
     // m-t-m-t-m-t-m where m is a marker and t is a trait location
     for(unsigned i = 0; i < map->num_markers() - 1; ++i) {
-        lod.add(i, this->peel(&dg, i) - dg.trans_prob()); // this is all in base e
+        lod.add(i, peel(&dg, i) - dg.trans_prob()); // this is all in base e
     }
     
     return true;
@@ -96,15 +98,17 @@ bool Peeler::process(DescentGraph& dg) {
 double Peeler::peel(DescentGraph* dg, unsigned locus) {
 
     for(unsigned i = 0; i < rfunctions.size(); ++i) {
-        Rfunction* rf = rfunctions[i];
+        TraitRfunction* rf = rfunctions[i];
         rf->evaluate(dg, locus, 0.5); // TODO XXX <---- 0.5 is not actually used yet...
     }
     
-    Rfunction* rf = rfunctions.back();
+    TraitRfunction* rf = rfunctions.back();
     
     return log(rf->get_result()); // TODO : convert all peel code to log likelihood?
 }
 
+// XXX change this so the peeler has the responsibility to
+// print everything to a file
 double Peeler::get(unsigned locus) {
     return lod.get(locus);
 }

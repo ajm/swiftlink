@@ -5,11 +5,19 @@ using namespace std;
 
 #include <cstdlib>
 
+
 class Pedigree;
+class GeneticMap;
 class DescentGraph;
 class DescentGraphDiff;
 
 class Sampler {
+
+ protected :
+    
+    Pedigree* ped;
+    GeneticMap* map;
+    DescentGraph* dg;    
     
     unsigned get_random(unsigned i) {
     	return random() % i;
@@ -19,26 +27,26 @@ class Sampler {
 	    return get_random(ped->num_markers());
     }
     
- protected :
-    Pedigree* ped;
-    DescentGraph* dg;
-
  public :
-    Sampler(Pedigree* ped, DescentGraph* dg) : 
+    Sampler(Pedigree* ped, GeneticMap* map, DescentGraph* dg) : 
         ped(ped), 
+        map(map),
         dg(dg) {}
         
     Sampler(const Sampler& rhs) :
         ped(rhs.ped),
+        map(rhs.map),
         dg(rhs.dg) {}
     
 	virtual ~Sampler() {}
+    
     virtual void step(DescentGraphDiff& dgd)=0;
     
     Sampler& operator=(const Sampler& rhs) {
         
         if(&rhs != this) {
             ped = rhs.ped;
+            map = rhs.map;
             dg = rhs.dg;
         }
         
@@ -47,4 +55,3 @@ class Sampler {
 };
 
 #endif
-

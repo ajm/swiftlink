@@ -1,6 +1,7 @@
 using namespace std;
 
 #include <cmath>
+#include <vector>
 
 #include "rfunction.h"
 #include "peeling.h"
@@ -14,33 +15,30 @@ using namespace std;
 #define NUM_ALLELES 4
 
     
-Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, vector<Rfunction*>& previous_functions, unsigned index) : 
+Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2) : 
       map(m),
       ped(p),
       offset(0.0),
       pmatrix(po.get_cutset_size(), NUM_ALLELES),
       pmatrix_presum(po.get_cutset_size() + 1, NUM_ALLELES),
       peel(po), 
-      previous_rfunction1(NULL),
-      previous_rfunction2(NULL),
-      function_used(false),
-      function_index(index) {
+      previous_rfunction1(prev1),
+      previous_rfunction2(prev2),
+      function_used(false) {
 
     pmatrix.set_keys(peel.get_cutset());
           
-          // very temporary, just messing around... XXX
-          vector<unsigned> tmp(peel.get_cutset());
-          tmp.push_back(peel.get_peelnode());
-          pmatrix_presum.set_keys(tmp);
+    // very temporary, just messing around... XXX
+    vector<unsigned> tmp(peel.get_cutset());
+    tmp.push_back(peel.get_peelnode());
     
-    find_previous_functions(previous_functions);
-/*
-    printf("RFUNCTION: %d ", function_index);
-    peel.print();
-    printf("(deps: %d %d)\n", 
-        previous_rfunction1 == NULL ? -1 : previous_rfunction1->function_index, 
-        previous_rfunction2 == NULL ? -1 : previous_rfunction2->function_index);
-*/
+    pmatrix_presum.set_keys(tmp);
+    
+          /*
+    printf("prev1 = %s\nprev2 = %s\n\n", \
+            previous_rfunction1 == NULL ? "NULL" : "NOT NULL", \
+            previous_rfunction2 == NULL ? "NULL" : "NOT NULL");
+          */
 }
 
 Rfunction::Rfunction(const Rfunction& r) :
@@ -52,8 +50,7 @@ Rfunction::Rfunction(const Rfunction& r) :
     peel(r.peel),
     previous_rfunction1(r.previous_rfunction1),
     previous_rfunction2(r.previous_rfunction2),
-    function_used(r.function_used),
-    function_index(r.function_index) {}
+    function_used(r.function_used) {}
     
 Rfunction& Rfunction::operator=(const Rfunction& rhs) {
 
@@ -67,28 +64,9 @@ Rfunction& Rfunction::operator=(const Rfunction& rhs) {
         previous_rfunction1 = rhs.previous_rfunction1;
         previous_rfunction2 = rhs.previous_rfunction2;
         function_used = rhs.function_used;
-        function_index = rhs.function_index;
     }
     
     return *this;
-}
-
-void Rfunction::find_previous_functions(vector<Rfunction*>& functions) {
-    switch(peel.get_type()) {
-        case CHILD_PEEL:
-            find_child_functions(functions);
-            break;
-            
-        case PARTNER_PEEL:
-        case PARENT_PEEL:
-        case LAST_PEEL:
-            find_generic_functions(functions);
-            break;
-            
-        default:
-            fprintf(stderr, "error: default should never be reached! (%s:%d)\n", __FILE__, __LINE__);
-            abort();
-    }
 }
 
 bool Rfunction::contains_node(unsigned node) {
@@ -114,50 +92,6 @@ bool Rfunction::is_used() {
 
 void Rfunction::set_used() {
     function_used = true;
-}
-
-void Rfunction::find_function_containing(vector<Rfunction*>& functions, vector<unsigned>& nodes, Rfunction** func) {
-    
-    for(unsigned i = 0; i < functions.size(); ++i) {
-        if(functions[i]->is_used()) {
-            continue;
-        }
-        
-        if(functions[i]->contains_cutnodes(nodes)) {
-            *func = functions[i];
-            functions[i]->set_used();
-            break;
-        }
-    }
-}
-
-void Rfunction::find_child_functions(vector<Rfunction*>& functions) {
-    
-    Person* p = ped->get_by_index(peel.get_peelnode());
-    vector<unsigned> tmp;
-    tmp.push_back(p->get_maternalid());
-    tmp.push_back(p->get_paternalid());
-    
-    find_function_containing(functions, tmp, &previous_rfunction1);
-    
-    // don't even bother looking if the child is a leaf
-    if(p->isleaf()) {
-        return;
-    }
-    
-    tmp.clear();
-    tmp.push_back(peel.get_peelnode());
-    
-    find_function_containing(functions, tmp, &previous_rfunction2);
-}
-
-void Rfunction::find_generic_functions(vector<Rfunction*>& functions) {
-    
-    vector<unsigned> tmp;
-    tmp.push_back(peel.get_peelnode());
-    
-    find_function_containing(functions, tmp, &previous_rfunction1);
-    find_function_containing(functions, tmp, &previous_rfunction2);    
 }
 
 void Rfunction::generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments) {

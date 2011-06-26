@@ -3,16 +3,16 @@ using namespace std;
 #include "sampler_rfunction.h"
 #include "descent_graph.h"
 #include "genetic_map.h"
+#include "peeling.h"
 
 
-SamplerRfunction::SamplerRfunction(PeelOperation po, Pedigree* p, GeneticMap* m, 
-                                   vector<Rfunction*>& previous_functions, unsigned index) : 
-    Rfunction(po, p, m, previous_functions, index) {}
+SamplerRfunction::SamplerRfunction(PeelOperation po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2) : 
+    Rfunction(po, p, m, prev1, prev2) {}
 
-SamplerRfunction::SamplerRfunction(const Rfunction& rhs) :
+SamplerRfunction::SamplerRfunction(const SamplerRfunction& rhs) :
     Rfunction(rhs) {}
 
-SamplerRfunction& SamplerRfunction::operator=(const Rfunction& rhs) {
+SamplerRfunction& SamplerRfunction::operator=(const SamplerRfunction& rhs) {
     
     if(&rhs != this) {
         Rfunction::operator=(rhs);
@@ -64,4 +64,3 @@ double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_t
     
     return 0.25;
 }
-

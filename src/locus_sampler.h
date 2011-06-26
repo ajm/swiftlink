@@ -14,15 +14,16 @@ class Rfunction;
 
 class LocusSampler : public Sampler {
 
-    vector<Rfunction*> rfunctions;
+    vector<SamplerRfunction*> rfunctions;
     
-    LocusSampler(Pedigree* ped, DescentGraph* dg) :
-        Sampler(ped, dg) {}
-        
+ public :
+    LocusSampler(Pedigree* ped, GeneticMap* map, DescentGraph* dg);        
+    
     ~LocusSampler() {}
     
     LocusSampler(const LocusSampler& rhs) :
-        Sampler(rhs) {}
+        Sampler(rhs), 
+        rfunctions(rhs.rfunctions) {}
         
     LocusSampler& operator=(const LocusSampler& rhs) {
         if(this != &rhs) {

@@ -18,7 +18,8 @@ class PeelMatrixKey {
     map<unsigned int, enum phased_trait> key;
     
  public :
-    PeelMatrixKey() : key() {}
+    PeelMatrixKey() : 
+        key() {}
     
     PeelMatrixKey(vector<unsigned int>& cutset, vector<unsigned int>& assignments) : key() {
         reassign(cutset, assignments);

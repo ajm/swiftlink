@@ -16,10 +16,15 @@ class LocusSampler : public Sampler {
 
     vector<SamplerRfunction*> rfunctions;
     
+    unsigned sample_mi(unsigned allele, enum phased_trait trait, 
+                       unsigned personid, unsigned locus, enum parentage parent);
+    unsigned sample_homo_mi(unsigned personid, unsigned locus, enum parentage parent);
+    unsigned sample_hetero_mi(unsigned allele, enum phased_trait trait);
+    
  public :
     LocusSampler(Pedigree* ped, GeneticMap* map, DescentGraph* dg);        
     
-    ~LocusSampler() {}
+    ~LocusSampler();
     
     LocusSampler(const LocusSampler& rhs) :
         Sampler(rhs), 
@@ -28,6 +33,7 @@ class LocusSampler : public Sampler {
     LocusSampler& operator=(const LocusSampler& rhs) {
         if(this != &rhs) {
 			Sampler::operator=(rhs);
+			//rfunctions = rhs.rfunctions;
 		}        
 		return *this;
     }

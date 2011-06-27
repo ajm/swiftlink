@@ -1,12 +1,11 @@
 using namespace std;
 
-#include <vector>
-
 #include "trait_rfunction.h"
 #include "rfunction.h"
 #include "descent_graph.h"
 #include "genetic_map.h"
 #include "pedigree.h"
+#include "peeling.h"
 
 
 TraitRfunction::TraitRfunction(PeelOperation po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2) : 
@@ -24,11 +23,10 @@ TraitRfunction& TraitRfunction::operator=(const TraitRfunction& rhs) {
     return *this;
 }
 
-// XXX this needs to happen at arbitrary, user-defined (?) increments
-// along the space between two markers
-// i need to keep this interface the same to benefit from inheritance
-// so the offset will need to be set elsewhere
-// --> evaluate method has it as a parameter, so it should be easy enough... :-P
+// XXX the evaluate method was called with an offset
+// and this set as an attribute of the Rfunction super
+// class, this needs to be used and passed to the 
+// genetic map object
 double TraitRfunction::get_recombination_probability(DescentGraph* dg, unsigned locus, unsigned person_id, 
                                                      int maternal_allele, int paternal_allele) {
 

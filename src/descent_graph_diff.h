@@ -4,6 +4,7 @@
 #include <vector>
 #include <algorithm>
 #include <sstream>
+#include <cstdio>
 
 #include "descent_graph_types.h"
 

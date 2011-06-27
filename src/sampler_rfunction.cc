@@ -1,9 +1,12 @@
 using namespace std;
 
+#include <cstdlib>
+
 #include "sampler_rfunction.h"
 #include "descent_graph.h"
 #include "genetic_map.h"
 #include "peeling.h"
+#include "peel_matrix.h"
 
 
 SamplerRfunction::SamplerRfunction(PeelOperation po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2) : 
@@ -64,3 +67,39 @@ double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_t
     
     return 0.25;
 }
+
+void SamplerRfunction::sample(PeelMatrixKey& pmk) {
+    double prob_dist[NUM_ALLELES];
+    double total = 0.0;
+    unsigned node = peel.get_peelnode();
+    enum phased_trait trait;
+    
+    // extract probabilities
+    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+        trait = static_cast<enum phased_trait>(i);
+        pmk.add(node, trait);
+        
+        prob_dist[i] = pmatrix_presum.get(pmk);
+        total += prob_dist[i];
+    }
+    
+    // normalise
+    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+        prob_dist[i] /= total;
+    }
+    
+    // sample
+    double r = random() / static_cast<double>(RAND_MAX);
+    total = 0.0;
+    
+    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+        total += prob_dist[i];
+        if(r < total) {
+            pmk.add(node, static_cast<enum phased_trait>(i));
+            return;
+        }
+    }
+    
+    abort();
+}
+

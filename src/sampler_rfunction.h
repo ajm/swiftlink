@@ -5,6 +5,7 @@
 
 #include "trait.h"
 #include "rfunction.h"
+#include "peel_matrix.h"
 
 
 class DescentGraph;
@@ -28,6 +29,8 @@ class SamplerRfunction : public Rfunction {
     virtual ~SamplerRfunction() {}
     SamplerRfunction(const SamplerRfunction& rhs);
     SamplerRfunction& operator=(const SamplerRfunction& rhs);
+
+    void sample(PeelMatrixKey& pmk);
 };
 
 #endif

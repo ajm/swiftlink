@@ -12,9 +12,7 @@ using namespace std;
 #include "trait.h"
 #include "genetic_map.h"
 
-#define NUM_ALLELES 4
 
-    
 Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2) : 
       map(m),
       ped(p),
@@ -338,8 +336,8 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
     unsigned ndim = peel.get_cutset_size();
     unsigned tmp;
     
+    // crucial for TraitRfunction
     this->offset = offset;
-    
     
     // nothing in the cutset to be enumerated
     if(peel.get_type() == LAST_PEEL) {

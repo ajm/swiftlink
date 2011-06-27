@@ -10,6 +10,8 @@ using namespace std;
 #include "trait.h"
 
 
+#define NUM_ALLELES 4
+
 class Pedigree;
 class Person;
 class DescentGraph;
@@ -22,11 +24,11 @@ class Rfunction {
     GeneticMap* map;
     Pedigree* ped;
     double offset;
-    
- private :
     PeelMatrix pmatrix;
     PeelMatrix pmatrix_presum;
     PeelOperation peel;
+    
+ private :
     Rfunction* previous_rfunction1;
     Rfunction* previous_rfunction2;
     bool function_used;

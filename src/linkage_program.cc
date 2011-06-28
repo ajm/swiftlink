@@ -60,7 +60,7 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
 */
 
     LocusSampler lsampler(&p, &map);
-    peel = lsampler.run(1000);
+    peel = lsampler.run(10000);
     
     // write out results
     LinkageWriter lw(&map, peel, "linkage.txt", verbose);

@@ -207,6 +207,11 @@ Peeler* LocusSampler::run(unsigned iterations) {
     
     for(unsigned i = 0; i < iterations; ++i) {
         step();
+
+//        if(not dg.likelihood()) {
+//            fprintf(stderr, "Illegal DescentGraph state!\n");
+//            abort();
+//        }
         
         p.increment();
         

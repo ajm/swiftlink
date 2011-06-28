@@ -5,40 +5,46 @@ using namespace std;
 
 #include <vector>
 
-#include "sampler.h"
 #include "descent_graph_diff.h"
+#include "descent_graph.h"
+#include "peeler.h"
+
 
 class Pedigree;
-class DescentGraph;
 class Rfunction;
+class SamplerRfunction;
+class GeneticMap;
 
-class LocusSampler : public Sampler {
 
+const unsigned int _SAMPLE_PERIOD = 100;
+
+class LocusSampler {
+
+    Pedigree* ped;
+    GeneticMap* map;
+    DescentGraph dg;
     vector<SamplerRfunction*> rfunctions;
+    Peeler peel;
     
     unsigned sample_mi(unsigned allele, enum phased_trait trait, 
                        unsigned personid, unsigned locus, enum parentage parent);
     unsigned sample_homo_mi(unsigned personid, unsigned locus, enum parentage parent);
     unsigned sample_hetero_mi(unsigned allele, enum phased_trait trait);
+    unsigned get_random(unsigned i);
+    unsigned get_random_locus();
+    void init_rfunctions();
+    void copy_rfunctions(const LocusSampler& rhs);
+    void kill_rfunctions();
+    void step();
+
     
  public :
-    LocusSampler(Pedigree* ped, GeneticMap* map, DescentGraph* dg);        
-    
+    LocusSampler(Pedigree* ped, GeneticMap* map);        
     ~LocusSampler();
+    LocusSampler(const LocusSampler& rhs);
+    LocusSampler& operator=(const LocusSampler& rhs);
     
-    LocusSampler(const LocusSampler& rhs) :
-        Sampler(rhs), 
-        rfunctions(rhs.rfunctions) {}
-        
-    LocusSampler& operator=(const LocusSampler& rhs) {
-        if(this != &rhs) {
-			Sampler::operator=(rhs);
-			//rfunctions = rhs.rfunctions;
-		}        
-		return *this;
-    }
-    
-    void step(DescentGraphDiff& dgd);
+    Peeler* run(unsigned iterations);
 };
 
 #endif

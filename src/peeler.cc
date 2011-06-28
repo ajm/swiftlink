@@ -56,17 +56,18 @@ Peeler& Peeler::operator=(const Peeler& rhs) {
     if(&rhs != this) {
         ped = rhs.ped;
         map = rhs.map;
-        copy_rfunctions(rhs);
         lod = rhs.lod;
         trait_prob = rhs.trait_prob;
+
+        kill_rfunctions();
+        copy_rfunctions(rhs);
     }
     
     return *this;
 }
 
 Peeler::~Peeler() {
-    for(unsigned i = 0; i < rfunctions.size(); ++i)
-        delete rfunctions[i];
+    kill_rfunctions();
 }
 
 void Peeler::copy_rfunctions(const Peeler& rhs) {
@@ -74,6 +75,12 @@ void Peeler::copy_rfunctions(const Peeler& rhs) {
     for(unsigned i = 0; i < rhs.rfunctions.size(); ++i) {
         TraitRfunction* rf = new TraitRfunction(*(rhs.rfunctions[i]));
         rfunctions.push_back(rf);
+    }
+}
+
+void Peeler::kill_rfunctions() {
+    for(unsigned i = 0; i < rfunctions.size(); ++i) {
+        delete rfunctions[i];
     }
 }
 

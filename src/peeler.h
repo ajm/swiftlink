@@ -25,6 +25,7 @@ class Peeler {
     
     double calc_trait_prob();
     void copy_rfunctions(const Peeler& rhs);
+    void kill_rfunctions();
     
  public :
     Peeler(Pedigree* p, GeneticMap* g);

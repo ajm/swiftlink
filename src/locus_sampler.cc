@@ -14,6 +14,8 @@ using namespace std;
 #include "rfunction_builder.h"
 #include "sampler_rfunction.h"
 #include "locus_sampler.h"
+#include "progress.h"
+#include "peeler.h"
 
 
 /*
@@ -27,23 +29,80 @@ using namespace std;
         
  */
 
-LocusSampler::LocusSampler(Pedigree* ped, GeneticMap* map, DescentGraph* dg) :
-    Sampler(ped, map, dg), 
-    rfunctions() {
+LocusSampler::LocusSampler(Pedigree* ped, GeneticMap* map) :
+    ped(ped), 
+    map(map), 
+    dg(ped, map),
+    rfunctions(),
+    peel(ped, map) {
     
+    dg.random_descentgraph();
+    
+    init_rfunctions();
+}
+
+LocusSampler::LocusSampler(const LocusSampler& rhs) :
+    ped(ped),
+    map(map),
+    dg(dg),
+    rfunctions(),
+    peel(rhs.peel) {
+    
+    copy_rfunctions(rhs);
+}
+
+LocusSampler& LocusSampler::operator=(const LocusSampler& rhs) {
+    if(this != &rhs) {
+		ped = rhs.ped;
+		map = rhs.map;
+		dg = rhs.dg;
+		peel = rhs.peel;
+		
+		kill_rfunctions();
+		copy_rfunctions(rhs);
+	}
+	        
+	return *this;
+}
+
+LocusSampler::~LocusSampler() {
+    kill_rfunctions();
+}
+
+void LocusSampler::init_rfunctions() {
     PeelSequenceGenerator psg(ped);
     psg.build_peel_order();
-
+    
     vector<PeelOperation>& ops = psg.get_peel_order();
     
     RfunctionBuilder<SamplerRfunction> build(ped, map, rfunctions);
-        
+    
     for(unsigned i = 0; i < ops.size(); ++i) {
         rfunctions.push_back(build.createRfunction(ops[i]));
     }
 }
 
-LocusSampler::~LocusSampler() {}
+void LocusSampler::copy_rfunctions(const LocusSampler& rhs) {
+    rfunctions.clear();
+    for(unsigned i = 0; i < rhs.rfunctions.size(); ++i) {
+        SamplerRfunction* rf = new SamplerRfunction(*(rhs.rfunctions[i]));
+        rfunctions.push_back(rf);
+    }
+}
+
+void LocusSampler::kill_rfunctions() {
+    for(unsigned i = 0; i < rfunctions.size(); ++i) {
+        delete rfunctions[i];
+    }
+}
+
+unsigned LocusSampler::get_random(unsigned i) {
+    return random() % i;
+}
+
+unsigned LocusSampler::get_random_locus() {
+    return get_random(ped->num_markers());
+}
 
 unsigned LocusSampler::sample_hetero_mi(unsigned allele, enum phased_trait trait) {
     if(allele == 0) {
@@ -63,11 +122,11 @@ unsigned LocusSampler::sample_homo_mi(unsigned personid, unsigned locus, enum pa
     double prev_theta = exp(map->get_theta(locus-1));
     double next_theta = exp(map->get_theta(locus+1));
     
-    prob_dist[0] = ((dg->get(personid, locus-1, parent) == 0) ? 1.0 - prev_theta : prev_theta) \
-                 * ((dg->get(personid, locus+1, parent) == 0) ? 1.0 - next_theta : next_theta);
+    prob_dist[0] = ((dg.get(personid, locus-1, parent) == 0) ? 1.0 - prev_theta : prev_theta) \
+                 * ((dg.get(personid, locus+1, parent) == 0) ? 1.0 - next_theta : next_theta);
                  
-    prob_dist[1] = ((dg->get(personid, locus-1, parent) == 1) ? 1.0 - prev_theta : prev_theta) \
-                 * ((dg->get(personid, locus+1, parent) == 1) ? 1.0 - next_theta : next_theta);
+    prob_dist[1] = ((dg.get(personid, locus-1, parent) == 1) ? 1.0 - prev_theta : prev_theta) \
+                 * ((dg.get(personid, locus+1, parent) == 1) ? 1.0 - next_theta : next_theta);
 
     double total = prob_dist[0] + prob_dist[1];
     
@@ -96,13 +155,13 @@ unsigned LocusSampler::sample_mi(unsigned allele, enum phased_trait trait, \
     }
 }
 
-void LocusSampler::step(DescentGraphDiff& dgd) {
+void LocusSampler::step() {
     unsigned locus = get_random_locus();
     
     // forward peel
     for(unsigned i = 0; i < rfunctions.size(); ++i) {
         SamplerRfunction* rf = rfunctions[i];
-        rf->evaluate(dg, locus, 0.0);
+        rf->evaluate(&dg, locus, 0.0);
     }
     
     PeelMatrixKey pmk;
@@ -134,10 +193,34 @@ void LocusSampler::step(DescentGraphDiff& dgd) {
         unsigned pat_mi = sample_mi(pat_allele, pat_trait, i, locus, PATERNAL);
         
         // just do a set on the DescentGraph?
-        // XXX
+        dg.set(i, locus, MATERNAL, mat_mi);
+        dg.set(i, locus, PATERNAL, pat_mi);
     }
+}
 
-    // return a DescentGraphDiff object? this makes less sense now that we are sampling everything at a given locus
+Peeler* LocusSampler::run(unsigned iterations) {
     
+    unsigned burnin_steps = iterations * 0.1;
+    
+    Progress p("Markov Chain:", iterations);
+    p.start();
+    
+    for(unsigned i = 0; i < iterations; ++i) {
+        step();
+        
+        p.increment();
+        
+        if(iterations < burnin_steps) {
+            continue;
+        }
+            
+        if((iterations % _SAMPLE_PERIOD) == 0) {
+            peel.process(dg);
+        }
+    }
+    
+    p.finish();
+    
+    return &peel;
 }
 

@@ -30,12 +30,14 @@ class LocusSampler {
                        unsigned personid, unsigned locus, enum parentage parent);
     unsigned sample_homo_mi(unsigned personid, unsigned locus, enum parentage parent);
     unsigned sample_hetero_mi(unsigned allele, enum phased_trait trait);
+    unsigned update_temperature(unsigned temps, unsigned current_temp);
     unsigned get_random(unsigned i);
     unsigned get_random_locus();
+    double get_random();
     void init_rfunctions();
     void copy_rfunctions(const LocusSampler& rhs);
     void kill_rfunctions();
-    void step();
+    void step(double temperature=0.0);
 
     
  public :
@@ -45,6 +47,7 @@ class LocusSampler {
     LocusSampler& operator=(const LocusSampler& rhs);
     
     Peeler* run(unsigned iterations);
+    Peeler* temper(unsigned iterations, unsigned num_temperatures);
 };
 
 #endif

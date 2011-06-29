@@ -24,6 +24,7 @@ class Rfunction {
     GeneticMap* map;
     Pedigree* ped;
     double offset;
+    double temperature;
     PeelMatrix pmatrix;
     PeelMatrix pmatrix_presum;
     PeelOperation peel;
@@ -84,7 +85,7 @@ class Rfunction {
     double get(PeelMatrixKey& pmk) { return pmatrix.get(pmk); }
     double get_result() { return pmatrix.get_result(); }
     
-    void evaluate(DescentGraph* dg, unsigned locus, double offset);
+    void evaluate(DescentGraph* dg, unsigned locus, double offset, double temperature = 0.0);
 
     void print() { pmatrix.print(); }
     void print_keys() { pmatrix.print_keys(); }

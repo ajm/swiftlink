@@ -99,13 +99,8 @@ class GeneticMap {
         return map[i].major();
     }
 
-    double get_theta(unsigned int i) {
-        return thetas[i];
-    }
-
-    double get_inverse_theta(unsigned int i) {
-        return inverse_thetas[i];
-    }
+    double get_theta(unsigned int i, double temperature = 0.0);
+    double get_inverse_theta(unsigned int i, double temperature = 0.0);
     
     unsigned int num_markers() { 
         return map.size();

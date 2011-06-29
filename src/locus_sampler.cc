@@ -96,6 +96,10 @@ void LocusSampler::kill_rfunctions() {
     }
 }
 
+double LocusSampler::get_random() {
+    return random() / static_cast<double>(RAND_MAX);
+}
+
 unsigned LocusSampler::get_random(unsigned i) {
     return random() % i;
 }
@@ -118,17 +122,25 @@ unsigned LocusSampler::sample_homo_mi(unsigned personid, unsigned locus, enum pa
     // find prob of setting mi to 1
     // normalise + sample
     double prob_dist[2];
+    double theta;
+    double total;
     
-    double prev_theta = exp(map->get_theta(locus-1));
-    double next_theta = exp(map->get_theta(locus+1));
+    prob_dist[0] = 1.0;
+    prob_dist[1] = 1.0;
     
-    prob_dist[0] = ((dg.get(personid, locus-1, parent) == 0) ? 1.0 - prev_theta : prev_theta) \
-                 * ((dg.get(personid, locus+1, parent) == 0) ? 1.0 - next_theta : next_theta);
-                 
-    prob_dist[1] = ((dg.get(personid, locus-1, parent) == 1) ? 1.0 - prev_theta : prev_theta) \
-                 * ((dg.get(personid, locus+1, parent) == 1) ? 1.0 - next_theta : next_theta);
-
-    double total = prob_dist[0] + prob_dist[1];
+    if(locus != 0) {
+        theta = exp(map->get_theta(locus - 1));
+        prob_dist[0] *= ((dg.get(personid, locus - 1, parent) == 0) ? 1.0 - theta : theta);
+        prob_dist[1] *= ((dg.get(personid, locus - 1, parent) == 1) ? 1.0 - theta : theta);
+    }
+    
+    if(locus != (map->num_markers() - 1)) {
+        theta = exp(map->get_theta(locus + 1));
+        prob_dist[0] *= ((dg.get(personid, locus + 1, parent) == 0) ? 1.0 - theta : theta);
+        prob_dist[1] *= ((dg.get(personid, locus + 1, parent) == 1) ? 1.0 - theta : theta);
+    }
+    
+    total = prob_dist[0] + prob_dist[1];
     
     prob_dist[0] /= total;
     prob_dist[1] /= total;
@@ -155,13 +167,13 @@ unsigned LocusSampler::sample_mi(unsigned allele, enum phased_trait trait, \
     }
 }
 
-void LocusSampler::step() {
+void LocusSampler::step(double temperature) {
     unsigned locus = get_random_locus();
     
     // forward peel
     for(unsigned i = 0; i < rfunctions.size(); ++i) {
         SamplerRfunction* rf = rfunctions[i];
-        rf->evaluate(&dg, locus, 0.0);
+        rf->evaluate(&dg, locus, 0.0, temperature);
     }
     
     PeelMatrixKey pmk;
@@ -225,6 +237,69 @@ Peeler* LocusSampler::run(unsigned iterations) {
     }
     
     p.finish();
+    
+    return &peel;
+}
+
+unsigned LocusSampler::update_temperature(unsigned temps, unsigned current_temp) {
+    
+    int diff = get_random() < 0.5 ? 1 : -1 ;
+    int new_temp = current_temp + diff;
+    
+    //fprintf(stderr, "Z %d\n", diff);
+    
+    if(new_temp < 0) {
+        new_temp = 0;
+    }
+    
+    if(new_temp > static_cast<int>(temps)) {
+        new_temp = temps;
+    }
+    
+    double old_prob;
+    double new_prob;
+    
+    dg.likelihood(&old_prob, current_temp / static_cast<double>(temps));
+    dg.likelihood(&new_prob, new_temp     / static_cast<double>(temps));
+    
+    return (log(get_random()) < (new_prob - old_prob)) ? static_cast<unsigned>(new_temp) : current_temp;
+}
+
+Peeler* LocusSampler::temper(unsigned iterations, unsigned temperatures) {
+    unsigned burnin_steps = iterations * 0.2;
+    unsigned temperature_max = temperatures - 1;
+    unsigned temperature_level = 0;
+    double theta = 0.0;
+    unsigned num_samples = 0;
+    
+    Progress p("Simulated Tempering:", iterations);
+    p.start();
+    
+    for(unsigned i = 0; i < iterations; ++i) {
+    
+//        fprintf(stderr, "X %d %d\n", 
+//                static_cast<int>(i), 
+//                static_cast<int>(temperature_level));
+    
+        step(theta);
+        p.increment();
+        
+        temperature_level = update_temperature(temperature_max, temperature_level);
+        theta = temperature_level / static_cast<double>(temperatures);
+        
+        if(iterations < burnin_steps) {
+            continue;
+        }
+            
+        if(temperature_level == 0) {
+            peel.process(dg);
+            num_samples++;
+        }
+    }
+    
+    p.finish();
+    
+    fprintf(stdout, "total samples = %d\n", num_samples);
     
     return &peel;
 }

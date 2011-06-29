@@ -171,10 +171,10 @@ int DescentGraph::get_founderallele(unsigned person_id, unsigned locus, enum par
 
 // transmission prob can be low, but never zero
 // sum of prior prob can be zero
-bool DescentGraph::likelihood(double *p) {
+bool DescentGraph::likelihood(double *p, double temperature) {
     double trans, prior;
 	
-    trans = _transmission_prob();
+    trans = _transmission_prob(temperature);
 	
     if(not _sum_prior_prob(&prior)) {
         // good idea?
@@ -199,7 +199,7 @@ bool DescentGraph::likelihood() {
 bool DescentGraph::haplotype_likelihood(double *p) {
     double trans, prior;
 	
-    trans = _transmission_prob();
+    trans = _transmission_prob(0.0);
 	
     if(not _best_prior_prob(&prior)) {
         *p = prob = LOG_ILLEGAL;
@@ -217,14 +217,17 @@ bool DescentGraph::haplotype_likelihood() {
 	return haplotype_likelihood(&p);
 }
 
-double DescentGraph::_transmission_prob() {
-    return marker_transmission + _recombination_prob();
+double DescentGraph::_transmission_prob(double temperature) {
+    return marker_transmission + _recombination_prob(temperature);
 }
 
 // NOTE: descent graph storage not very cache friendly?
-double DescentGraph::_recombination_prob() {
+double DescentGraph::_recombination_prob(double temperature) {
     double tmp = 0.0;
-    int last, current;
+    double theta;
+    double antitheta;
+	enum parentage parent;
+	bool crossover;
 	Person* p;
 	
     // i = member of family
@@ -233,27 +236,25 @@ double DescentGraph::_recombination_prob() {
     
     recombinations = 0;
 	
-    for(unsigned i = 0; i < ped->num_members(); ++i) { // every person
-		p = ped->get_by_index(i);
+	for(unsigned k = 0; k < (ped->num_markers() - 1); ++k) { // every loci
+	
+	    theta = map->get_theta(k, temperature);
+	    antitheta = map->get_inverse_theta(k, temperature);
+	
+        for(unsigned i = 0; i < ped->num_members(); ++i) { // every person
+	    	p = ped->get_by_index(i);
 
-        if( p->isfounder() )
-            continue;
+            if(p->isfounder())
+                continue;
         
-        for(unsigned j = 0; j < 2; ++j) { // mother and father
-            last = get(i, 0, static_cast<enum parentage>(j));
+            for(unsigned j = 0; j < 2; ++j) { // mother and father
+                parent = static_cast<enum parentage>(j);
+                crossover = get(i, k, parent) != get(i, k+1, parent);
             
-            for(unsigned k = 1; k < ped->num_markers(); ++k) { // every loci
-                current = get(i, k, static_cast<enum parentage>(j));
-                
-                if(last != current) {
+                if(crossover)
                     recombinations++;
-                }
 				
-                tmp += (last != current) ? \
-						map->get_theta(k-1) : 
-						map->get_inverse_theta(k-1) ;
-                
-                last = current;
+                tmp += crossover ? theta : antitheta ;
             }
         }
     }

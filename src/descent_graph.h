@@ -33,8 +33,8 @@ class DescentGraph {
 								// for indexing data
 	int recombinations;
 	
-	double _transmission_prob();
-	double _recombination_prob();
+	double _transmission_prob(double temperature);
+	double _recombination_prob(double temperature);
 	bool _sum_prior_prob(double* prob);
     bool _best_prior_prob(double* prob);
 	bool _genotype_elimination();
@@ -57,7 +57,7 @@ class DescentGraph {
 	char get(unsigned person_id, unsigned locus, enum parentage p);
 	void set(unsigned person_id, unsigned locus, enum parentage p, char value);
 	int get_founderallele(unsigned person_id, unsigned loci, enum parentage p);
-	bool likelihood(double *prob);
+	bool likelihood(double *prob, double temperature = 0);
 	bool likelihood();
     bool haplotype_likelihood(double *prob);
 	bool haplotype_likelihood();

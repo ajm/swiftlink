@@ -50,3 +50,11 @@ double GeneticMap::get_theta_halfway(unsigned int i) {
     return haldane((get_marker(i+1).get_g_distance() - get_marker(i).get_g_distance()) / 2.0);
 }
 
+double GeneticMap::get_theta(unsigned int i, double temperature) {
+    return log(((1 - temperature) * exp(thetas[i])) + (temperature * 0.5));
+}
+
+double GeneticMap::get_inverse_theta(unsigned int i, double temperature) {
+    return log(((1 - temperature) * exp(inverse_thetas[i])) + (temperature * 0.5));
+}
+

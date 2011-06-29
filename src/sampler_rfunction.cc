@@ -31,13 +31,13 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg, unsigne
     double recomb_prob = 0.0;
     
     if(locus != 0) {
-        recomb_prob = exp(map->get_theta(locus-1));
+        recomb_prob = exp(map->get_theta(locus-1, temperature));
         tmp *= dg->get(person_id, locus-1, MATERNAL) == maternal_allele ? 1.0 - recomb_prob : recomb_prob;
         tmp *= dg->get(person_id, locus-1, PATERNAL) == paternal_allele ? 1.0 - recomb_prob : recomb_prob;
     }
     
     if(locus != (map->num_markers() - 1)) {
-        recomb_prob = exp(map->get_theta(locus));
+        recomb_prob = exp(map->get_theta(locus, temperature));
         tmp *= dg->get(person_id, locus+1, MATERNAL) == maternal_allele ? 1.0 - recomb_prob : recomb_prob;
         tmp *= dg->get(person_id, locus+1, PATERNAL) == paternal_allele ? 1.0 - recomb_prob : recomb_prob;
     }

@@ -10,13 +10,13 @@ Progress::Progress(string s, unsigned int increments) :
     label(s), 
     increments_total(increments), 
     increments_count(0),
-    increments_per_percent(increments / 100) {}
+    increments_per_percent(increments / 1000) {}
 
 void Progress::update_progress() {
-    printf("\r%s%s %2d%% %s", 
+    printf("\r%s%s %.1f%% %s", 
         PROGRESS_COLOUR, 
         label.c_str(), 
-        int((increments_count / double(increments_total)) * 100), 
+        (increments_count / double(increments_total)) * 100, 
         END_COLOUR);
     fflush(stdout);
 }

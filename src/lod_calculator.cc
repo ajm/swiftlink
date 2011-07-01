@@ -62,14 +62,15 @@ LodCalculator& LodCalculator::operator=(const LodCalculator& rhs) {
 void LodCalculator::set_trait_prob(double p) {
     trait_prob = p;
 }
-
+/*
 inline double LodCalculator::exp10(double x) {
     return pow(10.0, x);
 }
-
+*/
 double LodCalculator::log_add(double a, double b) {
     // log(exp(a - b) + exp(b - b)) + b
-    return log10(exp10(a - b) + 1) + b;
+    //return log10(exp10(a - b) + 1) + b;
+    return log(exp(a - b) + 1) + b;
 }
 
 void LodCalculator::add(unsigned locus, double prob) {
@@ -83,6 +84,6 @@ void LodCalculator::add(unsigned locus, double prob) {
 }
 
 double LodCalculator::get(unsigned locus) {
-    return (lod_scores[locus] - log10(count) - trait_prob) / log(10.0);
+    return (lod_scores[locus] - log(count) - trait_prob) / log(10.0);
 }
 

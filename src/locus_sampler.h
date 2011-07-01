@@ -31,6 +31,7 @@ class LocusSampler {
     unsigned sample_homo_mi(unsigned personid, unsigned locus, enum parentage parent);
     unsigned sample_hetero_mi(unsigned allele, enum phased_trait trait);
     unsigned update_temperature(unsigned temps, unsigned current_temp);
+    unsigned update_temperature_hastings(unsigned temps, unsigned current_temp);
     unsigned get_random(unsigned i);
     unsigned get_random_locus();
     double get_random();

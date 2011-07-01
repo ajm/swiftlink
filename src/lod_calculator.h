@@ -19,7 +19,7 @@ class LodCalculator {
     double trait_prob;
     
     double log_add(double a, double b);
-    double exp10(double x);
+    //double exp10(double x);
     
  public :
     LodCalculator(Pedigree* p, GeneticMap* g);

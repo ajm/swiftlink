@@ -48,9 +48,10 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg, unsigne
 double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_trait pt, unsigned locus) {
     Person* p = ped->get_by_index(person_id);
     
-    if(p->istyped()) {
+    //if(p->istyped()) {
     
         switch(p->get_marker(locus)) {
+            
             case HETERO :
                 return ((pt == TRAIT_AU) or (pt == TRAIT_UA)) ? 0.5 : 0.0;
                 
@@ -61,9 +62,10 @@ double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_t
                 return (pt == TRAIT_AA) ? 1.0 : 0.0;
                 
             default :
-                return 0.25;
+                break;
+                //return 0.25;
         }
-    }
+    //}
     
     return 0.25;
 }

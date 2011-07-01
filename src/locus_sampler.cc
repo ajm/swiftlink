@@ -17,6 +17,7 @@ using namespace std;
 #include "progress.h"
 #include "peeler.h"
 
+#include "linkage_writer.h"
 
 /*
     this is pretty confusing, perhaps in need of a refactor(?)
@@ -227,18 +228,48 @@ Peeler* LocusSampler::run(unsigned iterations) {
         
         p.increment();
         
-        if(iterations < burnin_steps) {
+        if(i < burnin_steps) {
             continue;
         }
             
-        if((iterations % _SAMPLE_PERIOD) == 0) {
+        if((i % _SAMPLE_PERIOD) == 0) {
             peel.process(dg);
+            
+            printf("\n\n\n");
+            LinkageWriter lw(map, &peel, "x", true);
+            lw.write();
         }
     }
     
     p.finish();
     
     return &peel;
+}
+
+unsigned LocusSampler::update_temperature_hastings(unsigned temps, unsigned current_temp) {
+    unsigned new_temp;
+    double old_prob;
+    double new_prob;
+    double prob = 1.0;
+    
+    if(current_temp == 0) {
+        new_temp = 1;
+    }
+    else if(current_temp == temps) {
+        new_temp = temps - 1;
+    }
+    else {
+        new_temp = current_temp + ((get_random() < 0.5) ? 1 : -1); 
+        prob = 0.5;
+    }
+    
+    dg.likelihood(&old_prob, current_temp / static_cast<double>(temps+1));
+    dg.likelihood(&new_prob, new_temp     / static_cast<double>(temps+1));
+    
+    double hastings_ratio = log(0.5 / prob);
+    
+    return (log(get_random()) < ((new_prob - old_prob) + hastings_ratio)) ? \
+        new_temp : current_temp;
 }
 
 unsigned LocusSampler::update_temperature(unsigned temps, unsigned current_temp) {
@@ -259,47 +290,63 @@ unsigned LocusSampler::update_temperature(unsigned temps, unsigned current_temp)
     double old_prob;
     double new_prob;
     
-    dg.likelihood(&old_prob, current_temp / static_cast<double>(temps));
-    dg.likelihood(&new_prob, new_temp     / static_cast<double>(temps));
+    dg.likelihood(&old_prob, current_temp / static_cast<double>(temps+1));
+    dg.likelihood(&new_prob, new_temp     / static_cast<double>(temps+1));
     
     return (log(get_random()) < (new_prob - old_prob)) ? static_cast<unsigned>(new_temp) : current_temp;
 }
 
 Peeler* LocusSampler::temper(unsigned iterations, unsigned temperatures) {
-    unsigned burnin_steps = iterations * 0.2;
+    unsigned burnin_steps = iterations * 0.5;
     unsigned temperature_max = temperatures - 1;
-    unsigned temperature_level = 0;
+    unsigned temperature_level = temperature_max;
     double theta = 0.0;
     unsigned num_samples = 0;
+    unsigned num_temp0 = 0;
     
-    Progress p("Simulated Tempering:", iterations);
-    p.start();
+    //Progress p("Simulated Tempering:", 100); //iterations);
+    //p.start();
     
-    for(unsigned i = 0; i < iterations; ++i) {
     
-//        fprintf(stderr, "X %d %d\n", 
-//                static_cast<int>(i), 
-//                static_cast<int>(temperature_level));
-    
+    //for(unsigned i = 0; i < iterations; ++i) {
+    unsigned i = 0;
+    while(1) {
+        i++;
+        
         step(theta);
-        p.increment();
+        //p.increment();
         
-        temperature_level = update_temperature(temperature_max, temperature_level);
-        theta = temperature_level / static_cast<double>(temperatures);
+        if((i % 20) == 0) {
+            temperature_level = update_temperature_hastings(temperature_max, temperature_level);
+            theta = temperature_level / static_cast<double>(temperatures);
+        }
         
-        if(iterations < burnin_steps) {
+        if(i < burnin_steps) {    
             continue;
         }
-            
+        
         if(temperature_level == 0) {
-            peel.process(dg);
-            num_samples++;
+            //peel.process(dg);
+            num_temp0++;
+            if((num_temp0 % 20) == 0) {
+                num_samples++;
+                //p.increment();
+                peel.process(dg);
+                
+                printf("\n\n\n%d samples\n", num_samples);
+                LinkageWriter lw(map, &peel, "x", true);
+                lw.write();
+            }
+        }
+        
+        if(num_samples == 100) {
+            break;
         }
     }
     
-    p.finish();
+    //p.finish();
     
-    fprintf(stdout, "total samples = %d\n", num_samples);
+    fprintf(stdout, "total samples = %d, count at temperature 0 = %d\n", num_samples, num_temp0);
     
     return &peel;
 }

@@ -341,7 +341,10 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset, double
     
     // crucial for TraitRfunction
     this->offset = offset;
+    
+    // necessary for SamplerRfunction
     this->temperature = temperature;
+    
     
     // nothing in the cutset to be enumerated
     if(peel.get_type() == LAST_PEEL) {

@@ -136,7 +136,7 @@ unsigned LocusSampler::sample_homo_mi(unsigned personid, unsigned locus, enum pa
     }
     
     if(locus != (map->num_markers() - 1)) {
-        theta = exp(map->get_theta(locus + 1));
+        theta = exp(map->get_theta(locus));
         prob_dist[0] *= ((dg.get(personid, locus + 1, parent) == 0) ? 1.0 - theta : theta);
         prob_dist[1] *= ((dg.get(personid, locus + 1, parent) == 1) ? 1.0 - theta : theta);
     }
@@ -147,7 +147,7 @@ unsigned LocusSampler::sample_homo_mi(unsigned personid, unsigned locus, enum pa
     prob_dist[1] /= total;
     
     
-    return ((random() / static_cast<double>(RAND_MAX)) < prob_dist[0]) ? 0 : 1;
+    return (get_random() < prob_dist[0]) ? 0 : 1;
 }
 
 // if a parent is heterozygous, then there is one choice of meiosis indicator
@@ -297,26 +297,27 @@ unsigned LocusSampler::update_temperature(unsigned temps, unsigned current_temp)
 }
 
 Peeler* LocusSampler::temper(unsigned iterations, unsigned temperatures) {
-    unsigned burnin_steps = iterations * 0.5;
+    unsigned burnin_steps = iterations * 0.2;
     unsigned temperature_max = temperatures - 1;
     unsigned temperature_level = temperature_max;
     double theta = 0.0;
     unsigned num_samples = 0;
     unsigned num_temp0 = 0;
     
-    //Progress p("Simulated Tempering:", 100); //iterations);
-    //p.start();
+    Progress p("Simulated Tempering:", iterations);
+    p.start();
     
     
-    //for(unsigned i = 0; i < iterations; ++i) {
-    unsigned i = 0;
-    while(1) {
-        i++;
-        
+    for(unsigned i = 0; i < iterations; ++i) {
         step(theta);
-        //p.increment();
+        p.increment();
         
-        if((i % 20) == 0) {
+        if((i % 5) == 0) {
+            if(temperature_level == 0) {
+                peel.process(dg);
+                num_samples++;
+            }
+            
             temperature_level = update_temperature_hastings(temperature_max, temperature_level);
             theta = temperature_level / static_cast<double>(temperatures);
         }
@@ -325,8 +326,10 @@ Peeler* LocusSampler::temper(unsigned iterations, unsigned temperatures) {
             continue;
         }
         
-        if(temperature_level == 0) {
-            //peel.process(dg);
+        //if(temperature_level == 0) {
+        //    peel.process(dg);
+        //    num_samples++;
+            /*
             num_temp0++;
             if((num_temp0 % 20) == 0) {
                 num_samples++;
@@ -337,16 +340,14 @@ Peeler* LocusSampler::temper(unsigned iterations, unsigned temperatures) {
                 LinkageWriter lw(map, &peel, "x", true);
                 lw.write();
             }
-        }
-        
-        if(num_samples == 100) {
-            break;
-        }
+            */
+        //}
     }
     
-    //p.finish();
+    p.finish();
     
-    fprintf(stdout, "total samples = %d, count at temperature 0 = %d\n", num_samples, num_temp0);
+    //fprintf(stdout, "total samples = %d, count at temperature 0 = %d\n", num_samples, num_temp0);
+    fprintf(stderr, "#samples = %d\n", num_samples);
     
     return &peel;
 }

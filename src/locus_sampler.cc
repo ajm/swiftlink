@@ -297,12 +297,41 @@ unsigned LocusSampler::update_temperature(unsigned temps, unsigned current_temp)
 }
 
 Peeler* LocusSampler::temper(unsigned iterations, unsigned temperatures) {
-    unsigned burnin_steps = iterations * 0.2;
+    unsigned burnin_steps = iterations * 0.1;
     unsigned temperature_max = temperatures - 1;
     unsigned temperature_level = temperature_max;
     double theta = 0.0;
     unsigned num_samples = 0;
-    unsigned num_temp0 = 0;
+    
+    unsigned* temp_counts = new unsigned[temperatures];
+    for(unsigned i = 0; i < temperatures; ++i)
+        temp_counts[i] = 0;
+    
+    
+    unsigned steps_per_temp = iterations / 800;
+    Progress q("Simulated Annealing:", iterations);
+    q.start();
+    theta = 1.0;
+    temperature_level = temperature_max;
+    for(unsigned i = 0; i < iterations; ++i) {
+        step(theta);
+        
+        q.increment();
+        
+        if((i % steps_per_temp) == 0) {
+            theta *= 0.99;
+        }
+    }
+    
+    q.finish();
+    
+    
+    theta = 0.0;
+    temperature_level = 0;
+    //theta = 1.0;
+    
+    //iterations *= 10;
+    //burnin_steps = iterations * 0.1;
     
     Progress p("Simulated Tempering:", iterations);
     p.start();
@@ -313,41 +342,38 @@ Peeler* LocusSampler::temper(unsigned iterations, unsigned temperatures) {
         p.increment();
         
         if((i % 5) == 0) {
-            if(temperature_level == 0) {
-                peel.process(dg);
-                num_samples++;
-            }
-            
             temperature_level = update_temperature_hastings(temperature_max, temperature_level);
             theta = temperature_level / static_cast<double>(temperatures);
+            
+            temp_counts[temperature_level] += 1;
         }
         
         if(i < burnin_steps) {    
             continue;
         }
         
-        //if(temperature_level == 0) {
-        //    peel.process(dg);
-        //    num_samples++;
-            /*
-            num_temp0++;
-            if((num_temp0 % 20) == 0) {
-                num_samples++;
-                //p.increment();
+        if((i % 5) == 0) {
+            if(temperature_level == 0) {
                 peel.process(dg);
+                num_samples++;
                 
                 printf("\n\n\n%d samples\n", num_samples);
                 LinkageWriter lw(map, &peel, "x", true);
                 lw.write();
             }
-            */
-        //}
+        }
     }
     
     p.finish();
     
     //fprintf(stdout, "total samples = %d, count at temperature 0 = %d\n", num_samples, num_temp0);
     fprintf(stderr, "#samples = %d\n", num_samples);
+    
+    
+    for(unsigned i = 0; i < temperatures; ++i)
+        fprintf(stderr, "%d %d\n", i, temp_counts[i]);
+    
+    delete[] temp_counts;
     
     return &peel;
 }

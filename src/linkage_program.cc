@@ -65,7 +65,7 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     //Peeler peeler(&p, &map);
     //lsampler.run(0, 10000, 0.0, peeler);
     
-    ParallelTempering pt(&p, &map, 20);
+    ParallelTempering pt(&p, &map, 4);
     peel = pt.run(10000);
     
     

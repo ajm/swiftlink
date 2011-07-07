@@ -20,7 +20,7 @@ void ParallelTempering::init_chains(unsigned num_chains) {
 }
 
 void ParallelTempering::copy_chains(const ParallelTempering& rhs) {
-    
+    chains.clear();
     for(unsigned i = 0; i < rhs.chains.size(); ++i) {
         LocusSampler* s = new LocusSampler(*(rhs.chains[i]));
         chains.push_back(s);
@@ -56,8 +56,8 @@ bool ParallelTempering::exchange_replicas(LocusSampler* ls1, LocusSampler* ls2, 
 
 Peeler* ParallelTempering::run(unsigned iterations) {
     
-    unsigned burnin = iterations * 0.2;
-    unsigned burst_len = 10;
+    unsigned burnin = iterations * 0.1;
+    unsigned burst_len = 5;
     
     unsigned total = 0;
     unsigned accepted = 0;

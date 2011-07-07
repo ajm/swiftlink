@@ -30,6 +30,7 @@ OBJECTS	:= \
 	simulated_annealing.o \
     markov_chain.o \
 	locus_sampler.o \
+	parallel_tempering.o \
     linkage_program.o \
 	program.o \
 	main.o

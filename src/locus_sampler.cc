@@ -35,7 +35,8 @@ LocusSampler::LocusSampler(Pedigree* ped, GeneticMap* map) :
     map(map), 
     dg(ped, map),
     rfunctions(),
-    peel(ped, map) {
+    peel(ped, map),
+    burnin_steps(0) {
     
     dg.random_descentgraph();
     
@@ -47,7 +48,8 @@ LocusSampler::LocusSampler(const LocusSampler& rhs) :
     map(map),
     dg(dg),
     rfunctions(),
-    peel(rhs.peel) {
+    peel(rhs.peel),
+    burnin_steps(rhs.burnin_steps) {
     
     copy_rfunctions(rhs);
 }
@@ -58,6 +60,7 @@ LocusSampler& LocusSampler::operator=(const LocusSampler& rhs) {
 		map = rhs.map;
 		dg = rhs.dg;
 		peel = rhs.peel;
+		burnin_steps = rhs.burnin_steps;
 		
 		kill_rfunctions();
 		copy_rfunctions(rhs);
@@ -97,6 +100,26 @@ void LocusSampler::kill_rfunctions() {
     }
 }
 
+void LocusSampler::anneal(unsigned iterations) {
+    unsigned steps_per_temp = iterations / 1000;
+    double annealing_temp = 1.0;
+    
+    Progress q("Simulated Annealing:", iterations);
+    q.start();
+    
+    for(unsigned i = 0; i < iterations; ++i) {
+        step(annealing_temp);
+        
+        q.increment();
+        
+        if((i % steps_per_temp) == 0) {
+            annealing_temp *= 0.99;
+        }
+    }
+    
+    q.finish();
+}
+
 double LocusSampler::get_random() {
     return random() / static_cast<double>(RAND_MAX);
 }
@@ -118,7 +141,7 @@ unsigned LocusSampler::sample_hetero_mi(unsigned allele, enum phased_trait trait
     }
 }
 
-unsigned LocusSampler::sample_homo_mi(unsigned personid, unsigned locus, enum parentage parent) {
+unsigned LocusSampler::sample_homo_mi(unsigned personid, unsigned locus, enum parentage parent, double temperature) {
     // find prob of setting mi to 0
     // find prob of setting mi to 1
     // normalise + sample
@@ -130,13 +153,13 @@ unsigned LocusSampler::sample_homo_mi(unsigned personid, unsigned locus, enum pa
     prob_dist[1] = 1.0;
     
     if(locus != 0) {
-        theta = exp(map->get_theta(locus - 1));
+        theta = exp(map->get_theta(locus - 1, temperature));
         prob_dist[0] *= ((dg.get(personid, locus - 1, parent) == 0) ? 1.0 - theta : theta);
         prob_dist[1] *= ((dg.get(personid, locus - 1, parent) == 1) ? 1.0 - theta : theta);
     }
     
     if(locus != (map->num_markers() - 1)) {
-        theta = exp(map->get_theta(locus));
+        theta = exp(map->get_theta(locus, temperature));
         prob_dist[0] *= ((dg.get(personid, locus + 1, parent) == 0) ? 1.0 - theta : theta);
         prob_dist[1] *= ((dg.get(personid, locus + 1, parent) == 1) ? 1.0 - theta : theta);
     }
@@ -153,7 +176,7 @@ unsigned LocusSampler::sample_homo_mi(unsigned personid, unsigned locus, enum pa
 // if a parent is heterozygous, then there is one choice of meiosis indicator
 // if a parent is homozygous, then sample based on meiosis indicators to immediate left and right    
 unsigned LocusSampler::sample_mi(unsigned allele, enum phased_trait trait, \
-                                 unsigned personid, unsigned locus, enum parentage parent) {
+                                 unsigned personid, unsigned locus, enum parentage parent, double temperature) {
     switch(trait) {
         case TRAIT_UA:
         case TRAIT_AU:
@@ -161,7 +184,7 @@ unsigned LocusSampler::sample_mi(unsigned allele, enum phased_trait trait, \
         
         case TRAIT_UU:
         case TRAIT_AA:
-            return sample_homo_mi(personid, locus, parent);
+            return sample_homo_mi(personid, locus, parent, temperature);
         
         default:
             abort();
@@ -202,8 +225,8 @@ void LocusSampler::step(double temperature) {
         unsigned mat_allele = ((trait == TRAIT_UU) or (trait == TRAIT_UA)) ? 0 : 1;
         unsigned pat_allele = ((trait == TRAIT_UU) or (trait == TRAIT_AU)) ? 0 : 1;
         
-        unsigned mat_mi = sample_mi(mat_allele, mat_trait, i, locus, MATERNAL);
-        unsigned pat_mi = sample_mi(pat_allele, pat_trait, i, locus, PATERNAL);
+        unsigned mat_mi = sample_mi(mat_allele, mat_trait, i, locus, MATERNAL, temperature);
+        unsigned pat_mi = sample_mi(pat_allele, pat_trait, i, locus, PATERNAL, temperature);
         
         // just do a set on the DescentGraph?
         dg.set(i, locus, MATERNAL, mat_mi);
@@ -211,39 +234,20 @@ void LocusSampler::step(double temperature) {
     }
 }
 
-Peeler* LocusSampler::run(unsigned iterations) {
+void LocusSampler::run(unsigned start_step, unsigned iterations, double temperature, Peeler& p) {
+    unsigned end_step = start_step + iterations;
     
-    unsigned burnin_steps = iterations * 0.1;
-    
-    Progress p("Markov Chain:", iterations);
-    p.start();
-    
-    for(unsigned i = 0; i < iterations; ++i) {
-        step();
-
-//        if(not dg.likelihood()) {
-//            fprintf(stderr, "Illegal DescentGraph state!\n");
-//            abort();
-//        }
+    for(unsigned i = start_step; i < end_step; ++i) {
+        step(temperature);
         
-        p.increment();
-        
-        if(i < burnin_steps) {
+        if((temperature != 0.0) or (i < burnin_steps)) {
             continue;
         }
-            
-        if((i % _SAMPLE_PERIOD) == 0) {
-            peel.process(dg);
-            
-            printf("\n\n\n");
-            LinkageWriter lw(map, &peel, "x", true);
-            lw.write();
+        
+        if((i % SAMPLING_PERIOD) == 0) {
+            p.process(dg);
         }
     }
-    
-    p.finish();
-    
-    return &peel;
 }
 
 unsigned LocusSampler::update_temperature_hastings(unsigned temps, unsigned current_temp) {
@@ -376,5 +380,13 @@ Peeler* LocusSampler::temper(unsigned iterations, unsigned temperatures) {
     delete[] temp_counts;
     
     return &peel;
+}
+
+double LocusSampler::likelihood(double temperature) {
+    double tmp;
+    
+    dg.likelihood(&tmp, temperature);
+    
+    return tmp;
 }
 

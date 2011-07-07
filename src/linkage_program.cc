@@ -15,6 +15,7 @@ using namespace std;
 #include "pedigree.h"
 #include "peeler.h"
 #include "locus_sampler.h"
+#include "parallel_tempering.h"
 
 
 bool LinkageProgram::run() {
@@ -59,9 +60,15 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     peel = mc.run(opt, iterations);
 */
 
-    LocusSampler lsampler(&p, &map);
-    //peel = lsampler.run(10000);
-    peel = lsampler.temper(100000, 10);
+//    LocusSampler lsampler(&p, &map);
+//    peel = lsampler.temper(10000, 10);
+    //Peeler peeler(&p, &map);
+    //lsampler.run(0, 10000, 0.0, peeler);
+    
+    ParallelTempering pt(&p, &map, 20);
+    peel = pt.run(10000);
+    
+    
     
     // write out results
     LinkageWriter lw(&map, peel, "linkage.txt", verbose);

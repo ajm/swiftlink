@@ -94,6 +94,13 @@ void SamplerRfunction::sample(PeelMatrixKey& pmk) {
     double r = random() / static_cast<double>(RAND_MAX);
     total = 0.0;
     
+    /*
+    printf("random = %f\n", r);
+    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+        printf("  sample[%d] = %f\n", i, prob_dist[i]);
+    }
+    */
+    
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         total += prob_dist[i];
         if(r < total) {

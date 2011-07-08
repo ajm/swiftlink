@@ -65,10 +65,40 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     //Peeler peeler(&p, &map);
     //lsampler.run(0, 10000, 0.0, peeler);
     
-    ParallelTempering pt(&p, &map, 4);
+    ParallelTempering pt(&p, &map, 7);
     peel = pt.run(10000);
     
+    //LocusSampler ls(&p, &map);
+    //ls.test(0.0, 1);
     
+    /*
+    double t;
+    
+    for(int i = 0; i < 10; ++i) {
+        t = i / 10.0;
+        printf("%f %f\n", t, ls.likelihood(t)); // exp(map.get_theta(1, t)));
+    }
+    
+    
+    t = 0.0;
+    printf("%f %f\n", t, ls.likelihood(t));
+    t = 0.000001;
+    printf("%f %f\n", t, ls.likelihood(t));
+    t = 0.00001;
+    printf("%f %f\n", t, ls.likelihood(t));
+    t = 0.0001;
+    printf("%f %f\n", t, ls.likelihood(t));
+    t = 0.001;
+    printf("%f %f\n", t, ls.likelihood(t));
+    t = 0.01;
+    printf("%f %f\n", t, ls.likelihood(t));
+    t = 0.1;
+    printf("%f %f\n", t, ls.likelihood(t));
+    t = 1.0;
+    printf("%f %f\n", t, ls.likelihood(t));
+    
+    return true;
+    */
     
     // write out results
     LinkageWriter lw(&map, peel, "linkage.txt", verbose);

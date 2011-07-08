@@ -109,8 +109,8 @@ void PeelSequenceGenerator::build_peel_order() {
         
         p.print();
         printf("\n");
-        state.print();
-        printf("\n");
+        //state.print();
+        //printf("\n");
     }
 }
 

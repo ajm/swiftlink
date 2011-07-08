@@ -191,23 +191,7 @@ unsigned LocusSampler::sample_mi(unsigned allele, enum phased_trait trait, \
     }
 }
 
-void LocusSampler::step(double temperature) {
-    unsigned locus = get_random_locus();
-    
-    // forward peel
-    for(unsigned i = 0; i < rfunctions.size(); ++i) {
-        SamplerRfunction* rf = rfunctions[i];
-        rf->evaluate(&dg, locus, 0.0, temperature);
-    }
-    
-    PeelMatrixKey pmk;
-    
-    // reverse peel
-    for(int i = static_cast<int>(rfunctions.size()) - 1; i > -1; --i) {
-        SamplerRfunction* rf = rfunctions[i];
-        rf->sample(pmk);
-    }
-    
+void LocusSampler::sample_meiosis_indicators(PeelMatrixKey& pmk, double temperature, unsigned locus) {
     // sample meiosis indicators
     // if a parent is heterozygous, then there is one choice of meiosis indicator
     // if a parent is homozygous, then sample based on meiosis indicators to immediate left and right
@@ -232,6 +216,26 @@ void LocusSampler::step(double temperature) {
         dg.set(i, locus, MATERNAL, mat_mi);
         dg.set(i, locus, PATERNAL, pat_mi);
     }
+}
+
+void LocusSampler::step(double temperature) {
+    unsigned locus = get_random_locus();
+    
+    // forward peel
+    for(unsigned i = 0; i < rfunctions.size(); ++i) {
+        SamplerRfunction* rf = rfunctions[i];
+        rf->evaluate(&dg, locus, 0.0, temperature);
+    }
+    
+    PeelMatrixKey pmk;
+    
+    // reverse peel
+    for(int i = static_cast<int>(rfunctions.size()) - 1; i > -1; --i) {
+        SamplerRfunction* rf = rfunctions[i];
+        rf->sample(pmk);
+    }
+    
+    sample_meiosis_indicators(pmk, temperature, locus);
 }
 
 void LocusSampler::run(unsigned start_step, unsigned iterations, double temperature, Peeler& p) {
@@ -388,5 +392,50 @@ double LocusSampler::likelihood(double temperature) {
     dg.likelihood(&tmp, temperature);
     
     return tmp;
+}
+
+void LocusSampler::test(double temperature, unsigned locus) {
+
+    DescentGraph master(ped, map);
+    master.random_descentgraph();
+    
+    double temps[3];
+    temps[0] = 0.0;
+    temps[1] = 0.5;
+    temps[2] = 1.0;
+    
+    for(unsigned i = 0; i < 3; ++i) {
+    
+        temperature = temps[i];
+        
+        dg = master;
+    
+    printf("\nBEFORE\n");
+    dg.print();
+    
+    // forward peel
+    for(unsigned i = 0; i < rfunctions.size(); ++i) {
+        SamplerRfunction* rf = rfunctions[i];
+        rf->evaluate(&dg, locus, 0.0, temperature);
+        
+        printf("\nrfunction %d\n", i);
+        rf->print();
+        printf("\n\n");
+    }
+    
+    PeelMatrixKey pmk;
+    
+    // reverse peel
+    for(int i = static_cast<int>(rfunctions.size()) - 1; i > -1; --i) {
+        SamplerRfunction* rf = rfunctions[i];
+        rf->sample(pmk);
+    }
+    
+    sample_meiosis_indicators(pmk, temperature, locus);
+    
+    printf("\nAFTER\n");
+    dg.print();
+    
+    }
 }
 

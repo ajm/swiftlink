@@ -15,7 +15,18 @@ void ParallelTempering::init_chains(unsigned num_chains) {
     for(unsigned i = 0; i < num_chains; ++i) {
         LocusSampler* s = new LocusSampler(ped, map);
         chains.push_back(s);
-        temperatures.push_back(i / static_cast<double>(num_chains));
+        temperatures.push_back(i / static_cast<double>(num_chains-1));
+    }
+    /*
+    temperatures.resize(num_chains);
+    temperatures[num_chains - 1] = 1.0;
+    for(unsigned i = (num_chains - 2); i > 0; --i) {
+        temperatures[i] = temperatures[i+1] * 0.1;
+    }
+    temperatures[0] = 0.0;
+    */
+    for(unsigned i = 0; i < num_chains; ++i) {
+        printf("temperature %d = %f\n", i, temperatures[i]);
     }
 }
 
@@ -44,12 +55,17 @@ bool ParallelTempering::exchange_replicas(LocusSampler* ls1, LocusSampler* ls2, 
             (ls1->likelihood(temp1) + ls2->likelihood(temp2)) \
         );
 /*
-    fprintf(stderr, "(%.4f)(%.4f)/(%.4f)(%.4f) = %f  log(%f)\n", 
+    double x = log(get_random());
+
+    fprintf(stderr, "(%.4f)(%.4f)/(%.4f)(%.4f) = %f log(%f), random = %f log(%f)\n", 
         ls1->likelihood(temp2), 
         ls2->likelihood(temp1), 
         ls1->likelihood(temp1), 
         ls2->likelihood(temp2), 
-        r, exp(r));
+        r, 
+        exp(r), 
+        x, 
+        exp(x));
 */
     return log(get_random()) < r;
 }
@@ -66,7 +82,7 @@ Peeler* ParallelTempering::run(unsigned iterations) {
     
     for(unsigned i = 0; i < chains.size(); ++i) {
         chains[i]->set_burnin(burnin);
-        chains[i]->anneal(10000);
+        //chains[i]->anneal(10000);
         
         totals[i] = 0;
         accepteds[i] = 0;
@@ -78,7 +94,11 @@ Peeler* ParallelTempering::run(unsigned iterations) {
             printf("running chain %d...\n", j);
         
             chains[j]->run(i, burst_len, temperatures[j], peel);
+        
+            printf("CHAIN %d %f\n", j, chains[j]->likelihood(0.0/*temperatures[j]*/));
         }
+        
+        
         
         //for(unsigned j = 1; j < chains.size(); ++j) {
         for(unsigned j = chains.size() - 1; j > 0; --j) {
@@ -97,12 +117,12 @@ Peeler* ParallelTempering::run(unsigned iterations) {
         }
     }
     
-    printf("\n\nfrequency of replica exchanges: %.4f\n\n", accepted / double(total));
+    fprintf(stderr, "\n\nfrequency of replica exchanges: %.4f\n\n", accepted / double(total));
     
     for(unsigned i = 1; i < chains.size(); ++i) {
-        printf("chain %d --> %d acceptance freq = %.4f\n", i-1, i, accepteds[i] / double(totals[i]));
+        fprintf(stderr, "chain %d --> %d acceptance freq = %.4f\n", i-1, i, accepteds[i] / double(totals[i]));
     }
-    
+
     return &peel;
 }
 

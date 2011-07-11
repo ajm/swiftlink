@@ -15,16 +15,19 @@ void ParallelTempering::init_chains(unsigned num_chains) {
     for(unsigned i = 0; i < num_chains; ++i) {
         LocusSampler* s = new LocusSampler(ped, map);
         chains.push_back(s);
-        temperatures.push_back(i / static_cast<double>(num_chains-1));
+        //temperatures.push_back(i / static_cast<double>(num_chains-1));
     }
-    /*
+    
     temperatures.resize(num_chains);
     temperatures[num_chains - 1] = 1.0;
-    for(unsigned i = (num_chains - 2); i > 0; --i) {
+    temperatures[num_chains - 2] = 0.75;
+    temperatures[num_chains - 3] = 0.5;
+    temperatures[num_chains - 4] = 0.25;
+    for(unsigned i = (num_chains - 5); i > 0; --i) {
         temperatures[i] = temperatures[i+1] * 0.1;
     }
     temperatures[0] = 0.0;
-    */
+    
     for(unsigned i = 0; i < num_chains; ++i) {
         printf("temperature %d = %f\n", i, temperatures[i]);
     }
@@ -72,8 +75,8 @@ bool ParallelTempering::exchange_replicas(LocusSampler* ls1, LocusSampler* ls2, 
 
 Peeler* ParallelTempering::run(unsigned iterations) {
     
-    unsigned burnin = iterations * 0.1;
-    unsigned burst_len = 5;
+    unsigned burnin = iterations * 0.5;
+    unsigned burst_len = 20;
     
     unsigned total = 0;
     unsigned accepted = 0;
@@ -95,7 +98,7 @@ Peeler* ParallelTempering::run(unsigned iterations) {
         
             chains[j]->run(i, burst_len, temperatures[j], peel);
         
-            printf("CHAIN %d %f\n", j, chains[j]->likelihood(0.0/*temperatures[j]*/));
+            //printf("CHAIN %d %f\n", j, chains[j]->likelihood(0.0));
         }
         
         

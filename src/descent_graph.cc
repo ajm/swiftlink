@@ -319,21 +319,22 @@ void DescentGraph::print() {
 	int pat, mat;
 	Person* p;
 	
-    fprintf(stdout, "DescentGraph: ");
+    fprintf(stdout, "DescentGraph: \n");
     for(int locus = 0; locus < int(ped->num_markers()); ++locus) {
         for(unsigned i = 0; i  < ped->num_members(); ++i) {
             p = ped->get_by_index(i);
-                        
+            
             if(not p->isfounder()) {
                 mat = get(i, locus, MATERNAL);
                 pat = get(i, locus, PATERNAL);
                 
-                fprintf(stdout, "%d%d", mat, pat);
+                fprintf(stdout, "%d %d %d%d\n", i, locus, mat, pat);
             }
         }
+        printf("\n");
     }
     
-    fprintf(stdout, "\n");
+    //fprintf(stdout, "\n");
 }
 
 // this seems to be what simwalk2 gets for 'transmission-of-the-markers'

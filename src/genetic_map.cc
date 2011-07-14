@@ -36,7 +36,7 @@ string GeneticMap::debug_string() {
     
     ss << "  thetas:" << endl;
     for(unsigned i = 0; i < thetas.size(); ++i) {
-        ss << "\t" << scientific << thetas[i] << endl;
+        ss << "\t" << scientific << exp(thetas[i]) << endl;
     }
     
     return ss.str();

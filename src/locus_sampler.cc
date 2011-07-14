@@ -250,6 +250,11 @@ void LocusSampler::run(unsigned start_step, unsigned iterations, double temperat
         
         if((i % SAMPLING_PERIOD) == 0) {
             p.process(dg);
+            /*
+            double lik = 0.0;
+            dg.likelihood(&lik, 0.0);
+            printf("XXX %f\n", lik);
+            */
         }
     }
 }
@@ -407,34 +412,34 @@ void LocusSampler::test(double temperature, unsigned locus) {
     for(unsigned i = 0; i < 3; ++i) {
     
         temperature = temps[i];
-        
         dg = master;
+        //dg.random_descentgraph();
     
-    printf("\nBEFORE\n");
-    dg.print();
+        printf("\nBEFORE ");
+        dg.print();
     
-    // forward peel
-    for(unsigned i = 0; i < rfunctions.size(); ++i) {
-        SamplerRfunction* rf = rfunctions[i];
-        rf->evaluate(&dg, locus, 0.0, temperature);
+        // forward peel
+        for(unsigned i = 0; i < rfunctions.size(); ++i) {
+            SamplerRfunction* rf = rfunctions[i];
+            rf->evaluate(&dg, locus, 0.0, temperature);
         
-        printf("\nrfunction %d\n", i);
-        rf->print();
-        printf("\n\n");
-    }
+            printf("\nrfunction %d\n", i);
+            rf->print();
+            printf("\n\n");
+        }
     
-    PeelMatrixKey pmk;
+        PeelMatrixKey pmk;
     
-    // reverse peel
-    for(int i = static_cast<int>(rfunctions.size()) - 1; i > -1; --i) {
-        SamplerRfunction* rf = rfunctions[i];
-        rf->sample(pmk);
-    }
+        // reverse peel
+        for(int i = static_cast<int>(rfunctions.size()) - 1; i > -1; --i) {
+            SamplerRfunction* rf = rfunctions[i];
+            rf->sample(pmk);
+        }
     
-    sample_meiosis_indicators(pmk, temperature, locus);
+        sample_meiosis_indicators(pmk, temperature, locus);
     
-    printf("\nAFTER\n");
-    dg.print();
+        printf("\nAFTER  ");
+        dg.print();
     
     }
 }

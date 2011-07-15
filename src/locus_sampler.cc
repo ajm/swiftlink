@@ -238,11 +238,36 @@ void LocusSampler::step(double temperature) {
     sample_meiosis_indicators(pmk, temperature, locus);
 }
 
+void LocusSampler::step2(double temperature, unsigned locus) {
+    //unsigned locus = get_random_locus();
+    
+    // forward peel
+    for(unsigned i = 0; i < rfunctions.size(); ++i) {
+        SamplerRfunction* rf = rfunctions[i];
+        rf->evaluate(&dg, locus, 0.0, temperature);
+    }
+    
+    PeelMatrixKey pmk;
+    
+    // reverse peel
+    for(int i = static_cast<int>(rfunctions.size()) - 1; i > -1; --i) {
+        SamplerRfunction* rf = rfunctions[i];
+        rf->sample(pmk);
+    }
+    
+    sample_meiosis_indicators(pmk, temperature, locus);
+}
+
+
 void LocusSampler::run(unsigned start_step, unsigned iterations, double temperature, Peeler& p) {
     unsigned end_step = start_step + iterations;
+    //unsigned locus = 0;
+    
+    //locus = ((locus + 1) % map->num_markers());
     
     for(unsigned i = start_step; i < end_step; ++i) {
         step(temperature);
+        //step2(temperature, locus);
         
         if((temperature != 0.0) or (i < burnin_steps)) {
             continue;
@@ -250,11 +275,12 @@ void LocusSampler::run(unsigned start_step, unsigned iterations, double temperat
         
         if((i % SAMPLING_PERIOD) == 0) {
             p.process(dg);
-            /*
+            dg.print();
+            
             double lik = 0.0;
             dg.likelihood(&lik, 0.0);
-            printf("XXX %f\n", lik);
-            */
+            printf(" %f\n", lik);
+            
         }
     }
 }

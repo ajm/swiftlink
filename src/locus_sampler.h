@@ -41,6 +41,7 @@ class LocusSampler {
     void copy_rfunctions(const LocusSampler& rhs);
     void kill_rfunctions();
     void step(double temperature=0.0);
+    void step2(double temperature, unsigned locus);
     void sample_meiosis_indicators(PeelMatrixKey& pmk, double temperature, unsigned locus);
 
     

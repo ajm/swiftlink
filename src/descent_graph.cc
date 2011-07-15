@@ -319,7 +319,9 @@ void DescentGraph::print() {
 	int pat, mat;
 	Person* p;
 	
-    fprintf(stdout, "DescentGraph: \n");
+    //fprintf(stdout, "DescentGraph: \n");
+    fprintf(stdout, "DescentGraph: ");
+    
     for(int locus = 0; locus < int(ped->num_markers()); ++locus) {
         for(unsigned i = 0; i  < ped->num_members(); ++i) {
             p = ped->get_by_index(i);
@@ -328,10 +330,12 @@ void DescentGraph::print() {
                 mat = get(i, locus, MATERNAL);
                 pat = get(i, locus, PATERNAL);
                 
-                fprintf(stdout, "%d %d %d%d\n", i, locus, mat, pat);
+                //fprintf(stdout, "%d %d %d%d\n", i, locus, mat, pat);
+                fprintf(stdout, "%d%d", mat, pat);
             }
         }
-        printf("\n");
+        printf(" ");
+        //printf("\n");
     }
     
     //fprintf(stdout, "\n");

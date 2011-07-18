@@ -35,16 +35,22 @@ double TraitRfunction::get_recombination_probability(DescentGraph* dg, unsigned 
     
     half_recomb_prob = map->get_theta_halfway(locus);
     
-    tmp *= dg->get(person_id, locus,   MATERNAL) == maternal_allele ? 1.0 - half_recomb_prob : half_recomb_prob;
-    tmp *= dg->get(person_id, locus+1, MATERNAL) == maternal_allele ? 1.0 - half_recomb_prob : half_recomb_prob;
+    //printf("HALF-RECOMB: %f\n", half_recomb_prob);
+    
+    tmp *= ((dg->get(person_id, locus,   MATERNAL) == maternal_allele) ? 1.0 - half_recomb_prob : half_recomb_prob);
+    tmp *= ((dg->get(person_id, locus+1, MATERNAL) == maternal_allele) ? 1.0 - half_recomb_prob : half_recomb_prob);
             
-    tmp *= dg->get(person_id, locus,   PATERNAL) == paternal_allele ? 1.0 - half_recomb_prob : half_recomb_prob;
-    tmp *= dg->get(person_id, locus+1, PATERNAL) == paternal_allele ? 1.0 - half_recomb_prob : half_recomb_prob;
+    tmp *= ((dg->get(person_id, locus,   PATERNAL) == paternal_allele) ? 1.0 - half_recomb_prob : half_recomb_prob);
+    tmp *= ((dg->get(person_id, locus+1, PATERNAL) == paternal_allele) ? 1.0 - half_recomb_prob : half_recomb_prob);
     
     return tmp;
 }
     
 double TraitRfunction::get_trait_probability(unsigned person_id, enum phased_trait pt, unsigned locus) {
     return (ped->get_by_index(person_id))->get_disease_prob(pt);
+}
+
+double TraitRfunction::get_transmission_probability(enum phased_trait parent) {
+    return 0.5;
 }
 

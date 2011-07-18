@@ -70,6 +70,10 @@ double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_t
     return 0.25;
 }
 
+double SamplerRfunction::get_transmission_probability(enum phased_trait parent) {
+    return ((parent == TRAIT_UU) or (parent == TRAIT_AA)) ? 0.5 : 1.0;
+}
+
 void SamplerRfunction::sample(PeelMatrixKey& pmk) {
     double prob_dist[NUM_ALLELES];
     double total = 0.0;

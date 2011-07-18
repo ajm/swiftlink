@@ -5,6 +5,7 @@
 
 #include "trait.h"
 #include "rfunction.h"
+#include "descent_graph_types.h"
 
 class DescentGraph;
 class Pedigree;
@@ -21,6 +22,7 @@ class TraitRfunction : public Rfunction {
     double get_trait_probability(unsigned person_id, 
                                  enum phased_trait pt, 
                                  unsigned locus);
+    double get_transmission_probability(enum phased_trait parent);
 
  public :
     TraitRfunction(PeelOperation po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2);

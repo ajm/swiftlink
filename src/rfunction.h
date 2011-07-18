@@ -43,6 +43,7 @@ class Rfunction {
                     int maternal_allele, 
                     int paternal_allele
                 );
+    virtual double get_transmission_probability(enum phased_trait parent)=0;
     virtual double get_trait_probability(unsigned person_id, enum phased_trait pt, unsigned locus)=0;
     virtual double get_recombination_probability(
                     DescentGraph* dg, 

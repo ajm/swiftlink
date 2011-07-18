@@ -70,7 +70,8 @@ inline double LodCalculator::exp10(double x) {
 double LodCalculator::log_add(double a, double b) {
     // log(exp(a - b) + exp(b - b)) + b
     //return log10(exp10(a - b) + 1) + b;
-    return log(exp(a - b) + 1) + b;
+    //return log(exp(a - b) + 1) + b;
+    return log(exp(b - a) + 1) + a; // b is smaller and was just converted to log
 }
 
 void LodCalculator::add(unsigned locus, double prob) {

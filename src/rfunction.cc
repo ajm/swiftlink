@@ -153,6 +153,7 @@ void Rfunction::evaluate_child_peel(
                     unsigned locus) {
     
     double recombination_prob;
+    double transmission_prob;
     double disease_prob;
     double old_prob1;
     double old_prob2;
@@ -186,11 +187,13 @@ void Rfunction::evaluate_child_peel(
             pmatrix_index.add(kid_id, kid_trait);
             
             disease_prob        = get_trait_probability(kid_id, kid_trait, locus);
-            recombination_prob  = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus, kid_id, i, j);
+            transmission_prob   = get_transmission_probability(mat_trait) *  \
+                                  get_transmission_probability(pat_trait);
+            recombination_prob  = !dg ? 1.0 : get_recombination_probability(dg, locus, kid_id, i, j);
             old_prob1           = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
             old_prob2           = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
             
-            tmp = (disease_prob * recombination_prob * old_prob1 * old_prob2);
+            tmp = (disease_prob * transmission_prob * recombination_prob * old_prob1 * old_prob2);
             
             pmatrix_presum.add(pmatrix_index, tmp);
         }
@@ -266,7 +269,7 @@ void Rfunction::evaluate_parent_peel(
                     if(pivot_trait != pmatrix_index.get(child->get_internalid()))
                         continue;
                     
-                    recombination_prob = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus, child->get_internalid(), i, j);
+                    recombination_prob = !dg ? 0.25 : get_recombination_probability(dg, locus, child->get_internalid(), i, j);
                     
                     child_tmp += recombination_prob; //(disease_prob * recombination_prob * old_prob1 * old_prob2);
                 }

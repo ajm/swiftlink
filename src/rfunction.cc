@@ -147,6 +147,22 @@ void Rfunction::summation(PeelMatrixKey& pmatrix_index, unsigned person_id) {
     pmatrix.set(pmatrix_index, tmp);
 }
 
+enum trait Rfunction::get_trait(enum phased_trait p, enum parentage parent) {
+    
+    switch(parent) {
+        case MATERNAL:
+            return (p == TRAIT_UU) or (p == TRAIT_UA) ? TRAIT_U : TRAIT_A;
+        
+        case PATERNAL:
+            return (p == TRAIT_UU) or (p == TRAIT_AU) ? TRAIT_U : TRAIT_A;
+        
+        default:
+            break;
+    }
+    
+    abort();
+}
+
 void Rfunction::evaluate_child_peel(
                     PeelMatrixKey& pmatrix_index, 
                     DescentGraph* dg,
@@ -169,13 +185,38 @@ void Rfunction::evaluate_child_peel(
     mat_trait = pmatrix_index.get(kid->get_maternalid());
     pat_trait = pmatrix_index.get(kid->get_paternalid());
     
+    /*
+    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+        kid_trait = static_cast<enum phased_trait>(i);
+        pmatrix_index.add(kid_id, kid_trait);
+        
+        disease_prob      = get_trait_probability(kid_id, kid_trait, locus);
+        transmission_prob = !dg ? \
+                            0.25 : \
+                            get_transmission_probability2(dg, locus, kid_id, mat_trait, kid_trait, MATERNAL) *  \
+                            get_transmission_probability2(dg, locus, kid_id, pat_trait, kid_trait, PATERNAL);
+        
+        old_prob1 = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
+        old_prob2 = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
+        
+        pmatrix_presum.set(pmatrix_index, 
+                           disease_prob * \
+                           transmission_prob * \
+                           old_prob1 * \
+                           old_prob2);
+    }
+    
+    summation(pmatrix_index, kid_id);
+    
+    return;
+    */
+    
     
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         kid_trait = static_cast<enum phased_trait>(i);
         pmatrix_index.add(kid_id, kid_trait);
         pmatrix_presum.set(pmatrix_index, 0.0);
     }
-    
     
     // iterate over all descent graphs to determine child trait 
     // based on parents' traits
@@ -200,6 +241,7 @@ void Rfunction::evaluate_child_peel(
     }
     
     summation(pmatrix_index, kid_id);
+    
 }
 
 // TODO XXX this is a mess

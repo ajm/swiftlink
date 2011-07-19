@@ -74,6 +74,49 @@ double SamplerRfunction::get_transmission_probability(enum phased_trait parent) 
     return ((parent == TRAIT_UU) or (parent == TRAIT_AA)) ? 0.5 : 1.0;
 }
 
+double SamplerRfunction::get_transmission_probability2(DescentGraph* dg, 
+                                     unsigned locus, 
+                                     unsigned person_id, 
+                                     enum phased_trait parent_trait, 
+                                     enum phased_trait kid_trait, 
+                                     enum parentage parent) {
+    
+    enum trait t = get_trait(kid_trait, parent);
+    double tmp = 1.0;
+    double recomb_prob;
+    
+    // deal with homozygotes first
+    if(parent_trait == TRAIT_AA) {
+        return t == TRAIT_A ? 0.5 : 0.0;
+    }
+    
+    if(parent_trait == TRAIT_UU) {
+        return t == TRAIT_U ? 0.5 : 0.0;
+    }
+    
+    // heterozygotes are informative, so i can look up
+    // the recombination fractions
+    char p = 0;
+    if(parent_trait == TRAIT_UA) {
+        p = (t == TRAIT_U) ? 0 : 1;
+    }
+    else if(parent_trait == TRAIT_AU) {
+        p = (t == TRAIT_A) ? 0 : 1;
+    }
+    
+    if(locus != 0) {
+        recomb_prob = exp(map->get_theta(locus-1, temperature));
+        tmp *= ((dg->get(person_id, locus-1, parent) == p) ? 1.0 - recomb_prob : recomb_prob);
+    }
+    
+    if(locus != (map->num_markers() - 1)) {
+        recomb_prob = exp(map->get_theta(locus, temperature));
+        tmp *= ((dg->get(person_id, locus+1, parent) == p) ? 1.0 - recomb_prob : recomb_prob);
+    }
+    
+    return tmp;
+}
+
 void SamplerRfunction::sample(PeelMatrixKey& pmk) {
     double prob_dist[NUM_ALLELES];
     double total = 0.0;

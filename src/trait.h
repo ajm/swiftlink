@@ -15,6 +15,11 @@ enum phased_trait {
     TRAIT_AA
 };
 
+enum trait {
+    TRAIT_U,
+    TRAIT_A
+};
+
 typedef enum unphased_trait     unphased_trait_t;
 typedef enum phased_trait       phased_trait_t;
 

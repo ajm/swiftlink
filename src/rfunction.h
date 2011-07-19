@@ -8,6 +8,7 @@ using namespace std;
 #include "peel_matrix.h"
 #include "peeling.h"
 #include "trait.h"
+#include "descent_graph_types.h"
 
 
 #define NUM_ALLELES 4
@@ -29,6 +30,8 @@ class Rfunction {
     PeelMatrix pmatrix_presum;
     PeelOperation peel;
     
+    enum trait get_trait(enum phased_trait p, enum parentage parent);
+    
  private :
     Rfunction* previous_rfunction1;
     Rfunction* previous_rfunction2;
@@ -43,6 +46,15 @@ class Rfunction {
                     int maternal_allele, 
                     int paternal_allele
                 );
+    //enum trait get_trait(enum phased_trait p, enum parentage parent);
+    
+    virtual double get_transmission_probability2(DescentGraph* dg, 
+                                                 unsigned locus, 
+                                                 unsigned kid_id, 
+                                                 enum phased_trait parent_trait, 
+                                                 enum phased_trait kid_trait, 
+                                                 enum parentage parent)=0;
+                                                 
     virtual double get_transmission_probability(enum phased_trait parent)=0;
     virtual double get_trait_probability(unsigned person_id, enum phased_trait pt, unsigned locus)=0;
     virtual double get_recombination_probability(

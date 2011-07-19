@@ -275,12 +275,13 @@ void LocusSampler::run(unsigned start_step, unsigned iterations, double temperat
         
         if((i % SAMPLING_PERIOD) == 0) {
             p.process(dg);
+            /*
             dg.print();
             
             double lik = 0.0;
             dg.likelihood(&lik, 0.0);
             printf(" %f\n", lik);
-            
+            */
         }
     }
 }

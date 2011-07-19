@@ -24,6 +24,13 @@ class SamplerRfunction : public Rfunction {
                                  enum phased_trait pt, 
                                  unsigned locus);
     double get_transmission_probability(enum phased_trait parent);
+    
+    double get_transmission_probability2(DescentGraph* dg, 
+                                         unsigned locus, 
+                                         unsigned kid_id, 
+                                         enum phased_trait parent_trait, 
+                                         enum phased_trait kid_trait, 
+                                         enum parentage parent);
 
  public :
     SamplerRfunction(PeelOperation po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2);

@@ -96,7 +96,17 @@ bool Peeler::process(DescentGraph& dg) {
     // minus 1 because we want to look between markers
     // m-t-m-t-m-t-m where m is a marker and t is a trait location
     for(unsigned i = 0; i < map->num_markers() - 1; ++i) {
-        lod.add(i, peel(&dg, i) - dg.trans_prob()); // this is all in base e
+        double tmp = peel(&dg, i) + (dg._recombination_prob(0.0) - dg._recombination_prob2(i));
+        double tmp2 = dg.trans_prob();
+        /*
+        if(i == 0)
+            tmp += dg._recombination_prob2(1);
+        else 
+            tmp += dg._recombination_prob2(0);
+        */
+        //printf("%f\n", dg._recombination_prob2(i));
+        printf("%f\n%f\n%f\n\n", tmp /*/ log(10)*/, tmp2 /*/ log(10)*/, (tmp - tmp2) /*/ log(10)*/);
+        lod.add(i, tmp - tmp2); // this is all in base e
     }
     
     return true;

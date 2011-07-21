@@ -34,7 +34,7 @@ class DescentGraph {
 	int recombinations;
 	
 	double _transmission_prob(double temperature);
-	double _recombination_prob(double temperature);
+	//double _recombination_prob(double temperature);
 	bool _sum_prior_prob(double* prob);
     bool _best_prior_prob(double* prob);
 	bool _genotype_elimination();
@@ -83,6 +83,8 @@ class DescentGraph {
 	
 	bool evaluate_diff(DescentGraphDiff& diff, double* prob);
 	void apply_diff(DescentGraphDiff& diff);
+	double _recombination_prob2(unsigned locus);
+	double _recombination_prob(double temperature);
 };
 
 #endif

@@ -31,12 +31,13 @@ class Rfunction {
     PeelOperation peel;
     
     enum trait get_trait(enum phased_trait p, enum parentage parent);
+    void summation(PeelMatrixKey& pmatrix_index, unsigned personid);
     
- private :
+ //private :
     Rfunction* previous_rfunction1;
     Rfunction* previous_rfunction2;
     bool function_used;
-    
+ private :   
     
     void generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments);
     bool affected_trait(enum phased_trait pt, int allele);
@@ -71,8 +72,8 @@ class Rfunction {
                     int maternal_allele, 
                     int paternal_allele
                 );
-    void summation(PeelMatrixKey& pmatrix_index, unsigned personid);
-    void evaluate_child_peel(
+    //void summation(PeelMatrixKey& pmatrix_index, unsigned personid);
+    virtual void evaluate_child_peel(
                     PeelMatrixKey& pmatrix_index, 
                     DescentGraph* dg, 
                     unsigned locus);

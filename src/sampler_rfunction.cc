@@ -159,3 +159,49 @@ void SamplerRfunction::sample(PeelMatrixKey& pmk) {
     abort();
 }
 
+void SamplerRfunction::evaluate_child_peel(
+                    PeelMatrixKey& pmatrix_index, 
+                    DescentGraph* dg,
+                    unsigned locus) {
+    
+    //double recombination_prob;
+    double transmission_prob;
+    double disease_prob;
+    double old_prob1;
+    double old_prob2;
+    //double tmp = 0.0;
+    
+    enum phased_trait kid_trait;
+    enum phased_trait mat_trait;
+    enum phased_trait pat_trait;
+    
+    unsigned kid_id = peel.get_peelnode();
+    Person* kid = ped->get_by_index(kid_id);
+    
+    mat_trait = pmatrix_index.get(kid->get_maternalid());
+    pat_trait = pmatrix_index.get(kid->get_paternalid());
+    
+    
+    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+        kid_trait = static_cast<enum phased_trait>(i);
+        pmatrix_index.add(kid_id, kid_trait);
+        
+        disease_prob      = get_trait_probability(kid_id, kid_trait, locus);
+        //transmission_prob = !dg ?
+        //                    0.25 :
+        transmission_prob = get_transmission_probability2(dg, locus, kid_id, mat_trait, kid_trait, MATERNAL) *  \
+                            get_transmission_probability2(dg, locus, kid_id, pat_trait, kid_trait, PATERNAL);
+        
+        old_prob1 = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
+        old_prob2 = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
+        
+        pmatrix_presum.set(pmatrix_index, 
+                           disease_prob * \
+                           transmission_prob * \
+                           old_prob1 * \
+                           old_prob2);
+    }
+    
+    summation(pmatrix_index, kid_id);
+}
+

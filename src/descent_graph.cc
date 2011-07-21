@@ -27,8 +27,8 @@ DescentGraph::DescentGraph(Pedigree* ped, GeneticMap* map) :
     
 //	graph_size = 2 * ped->num_members();
 
-//    marker_transmission = log(0.5) * 
-//		(ped->num_markers() * 2 * (ped->num_members() - ped->num_founders()));
+    //marker_transmission = log(0.5) * 
+	//	(ped->num_markers() * 2 * (ped->num_members() - ped->num_founders()));
 
 	// ajm: don't bother calculating the whole likelihood as this is just a 
 	// constant for a given pedigree
@@ -262,6 +262,47 @@ double DescentGraph::_recombination_prob(double temperature) {
     return tmp;
 }
 
+double DescentGraph::_recombination_prob2(unsigned locus) {
+    double tmp = 0.0;
+    double theta;
+    double antitheta;
+	enum parentage parent;
+	bool crossover;
+	Person* p;
+	
+    // i = member of family
+    // j = mother and father of i
+    // k = current loci being considered
+    
+    recombinations = 0;
+	
+	//for(unsigned k = 0; k < (ped->num_markers() - 1); ++k) { // every loci
+	    unsigned k = locus;
+	
+	    theta = map->get_theta(k, 0.0); //temperature);
+	    antitheta = map->get_inverse_theta(k, 0.0); //temperature);
+	    
+        for(unsigned i = 0; i < ped->num_members(); ++i) { // every person
+	    	p = ped->get_by_index(i);
+
+            if(p->isfounder())
+                continue;
+        
+            for(unsigned j = 0; j < 2; ++j) { // mother and father
+                parent = static_cast<enum parentage>(j);
+                crossover = get(i, k, parent) != get(i, k+1, parent);
+            
+                if(crossover)
+                    recombinations++;
+				
+                tmp += crossover ? theta : antitheta ;
+            }
+        }
+    //}
+    
+    return tmp;
+}
+
 // TODO: refactor linkage/haplotype differences
 bool DescentGraph::_sum_prior_prob(double *prob) {
     double tmp_prob;
@@ -344,7 +385,8 @@ void DescentGraph::print() {
 // this seems to be what simwalk2 gets for 'transmission-of-the-markers'
 // line ~37200
 double DescentGraph::trans_prob() {
-    return marker_transmission;
+    //return marker_transmission;
+    return marker_transmission + _recombination_prob(0.0);
 }
 
 char DescentGraph::get_opposite(unsigned person_id, unsigned locus, enum parentage p) {

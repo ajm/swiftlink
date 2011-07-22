@@ -87,11 +87,11 @@ double SamplerRfunction::get_transmission_probability2(DescentGraph* dg,
     
     // deal with homozygotes first
     if(parent_trait == TRAIT_AA) {
-        return t == TRAIT_A ? 0.5 : 0.0;
+        return (t == TRAIT_A) ? 0.5 : 0.0;
     }
     
     if(parent_trait == TRAIT_UU) {
-        return t == TRAIT_U ? 0.5 : 0.0;
+        return (t == TRAIT_U) ? 0.5 : 0.0;
     }
     
     // heterozygotes are informative, so i can look up

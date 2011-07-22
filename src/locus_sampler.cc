@@ -235,6 +235,8 @@ void LocusSampler::step(double temperature) {
         rf->sample(pmk);
     }
     
+    //printf("\n\n\n\n");
+    
     sample_meiosis_indicators(pmk, temperature, locus);
 }
 
@@ -280,7 +282,7 @@ void LocusSampler::run(unsigned start_step, unsigned iterations, double temperat
             
             double lik = 0.0;
             dg.likelihood(&lik, 0.0);
-            printf(" %f\n", lik);
+            printf(" %f %d\n", lik, dg.num_recombinations());
             
         }
     }

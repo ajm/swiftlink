@@ -63,11 +63,11 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     LocusSampler lsampler(&p, &map);
 //    peel = lsampler.temper(10000, 10);
     Peeler peeler(&p, &map);
-    //lsampler.anneal(100000);
+    ////lsampler.anneal(100000);
     lsampler.set_burnin(10000);
     lsampler.run(0, 100000, 0.0, peeler);
     
-    //ParallelTempering pt(&p, &map, 100);
+    //ParallelTempering pt(&p, &map, 20);
     //peel = pt.run(10000);
     
     /*

@@ -275,16 +275,20 @@ void LocusSampler::run(unsigned start_step, unsigned iterations, double temperat
             continue;
         }
         
-        if((i % SAMPLING_PERIOD) == 0) {
+//        if((i % SAMPLING_PERIOD) == 0) {
             p.process(dg);
             
-            dg.print();
+            //dg.print();
             
-            double lik = 0.0;
-            dg.likelihood(&lik, 0.0);
-            printf(" %f %d\n", lik, dg.num_recombinations());
+            //double lik = 0.0;
+            //dg.likelihood(&lik, 0.0);
+            //printf(" %f %d\n", lik, dg.num_recombinations());
             
-        }
+            //double spp = 0.0;
+            //dg._sum_prior_prob(&spp);
+            //printf(" %f %d (rec=%f trans=%f spp=%f)\n", lik, dg.num_recombinations(), dg._recombination_prob(0.0), dg.trans_prob(), spp);
+            
+//        }
     }
 }
 
@@ -435,41 +439,40 @@ void LocusSampler::test(double temperature, unsigned locus) {
     
     double temps[3];
     temps[0] = 0.0;
-    temps[1] = 0.5;
-    temps[2] = 1.0;
+    temps[1] = 0.0;
+    temps[2] = 0.0;
     
     for(unsigned i = 0; i < 3; ++i) {
-    
+        
         temperature = temps[i];
         dg = master;
         //dg.random_descentgraph();
-    
+        
         printf("\nBEFORE ");
         dg.print();
-    
+        
         // forward peel
         for(unsigned i = 0; i < rfunctions.size(); ++i) {
             SamplerRfunction* rf = rfunctions[i];
             rf->evaluate(&dg, locus, 0.0, temperature);
         
-            printf("\nrfunction %d\n", i);
-            rf->print();
-            printf("\n\n");
+            //printf("\nrfunction %d\n", i);
+            //rf->print();
+            //printf("\n\n");
         }
-    
+        
         PeelMatrixKey pmk;
-    
+        
         // reverse peel
         for(int i = static_cast<int>(rfunctions.size()) - 1; i > -1; --i) {
             SamplerRfunction* rf = rfunctions[i];
             rf->sample(pmk);
         }
-    
+        
         sample_meiosis_indicators(pmk, temperature, locus);
-    
+        
         printf("\nAFTER  ");
         dg.print();
-    
+        printf("\n");
     }
 }
-

@@ -64,18 +64,18 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
 //    peel = lsampler.temper(10000, 10);
     Peeler peeler(&p, &map);
     ////lsampler.anneal(100000);
-    lsampler.set_burnin(10000);
-    lsampler.run(0, 100000, 0.0, peeler);
-    
+    lsampler.set_burnin(1000);
+    lsampler.run(0, 10000, 0.0, peeler);
+
     //ParallelTempering pt(&p, &map, 20);
     //peel = pt.run(10000);
     
-    /*
+/*
     LocusSampler ls(&p, &map);
     ls.test(0.0, 1);
     return true;
-    */
-    
+*/
+
     // write out results
     //LinkageWriter lw(&map, peel, "linkage.txt", verbose);
     LinkageWriter lw(&map, &peeler, "linkage.txt", verbose);

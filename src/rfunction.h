@@ -101,7 +101,7 @@ class Rfunction {
     
     void evaluate(DescentGraph* dg, unsigned locus, double offset, double temperature = 0.0);
 
-    void print() { pmatrix.print(); }
+    void print() { pmatrix_presum.print(); }
     void print_keys() { pmatrix.print_keys(); }
     
     bool is_used();

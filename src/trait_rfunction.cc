@@ -60,7 +60,9 @@ double TraitRfunction::get_transmission_probability2(DescentGraph* dg,
                                      enum phased_trait parent_trait, 
                                      enum phased_trait kid_trait, 
                                      enum parentage parent) {
-    
+    abort();
+}
+/*
     enum trait t = get_trait(kid_trait, parent);
     double tmp = 1.0;
     double half_recomb_prob;
@@ -91,4 +93,5 @@ double TraitRfunction::get_transmission_probability2(DescentGraph* dg,
     
     return tmp;
 }
+*/
 

@@ -132,8 +132,8 @@ unsigned LocusSampler::get_random_locus() {
     return get_random(ped->num_markers());
 }
 
-unsigned LocusSampler::sample_hetero_mi(unsigned allele, enum phased_trait trait) {
-    if(allele == 0) {
+unsigned LocusSampler::sample_hetero_mi(enum trait allele, enum phased_trait trait) {
+    if(allele == TRAIT_U) {
         return (trait == TRAIT_UA) ? 0 : 1;
     }
     else {
@@ -175,7 +175,7 @@ unsigned LocusSampler::sample_homo_mi(unsigned personid, unsigned locus, enum pa
 
 // if a parent is heterozygous, then there is one choice of meiosis indicator
 // if a parent is homozygous, then sample based on meiosis indicators to immediate left and right    
-unsigned LocusSampler::sample_mi(unsigned allele, enum phased_trait trait, \
+unsigned LocusSampler::sample_mi(enum trait allele, enum phased_trait trait, \
                                  unsigned personid, unsigned locus, enum parentage parent, double temperature) {
     switch(trait) {
         case TRAIT_UA:
@@ -206,8 +206,8 @@ void LocusSampler::sample_meiosis_indicators(PeelMatrixKey& pmk, double temperat
         enum phased_trait pat_trait = pmk.get(p->get_paternalid());
         
         enum phased_trait trait = pmk.get(i);
-        unsigned mat_allele = ((trait == TRAIT_UU) or (trait == TRAIT_UA)) ? 0 : 1;
-        unsigned pat_allele = ((trait == TRAIT_UU) or (trait == TRAIT_AU)) ? 0 : 1;
+        enum trait mat_allele = ((trait == TRAIT_UU) or (trait == TRAIT_UA)) ? TRAIT_U : TRAIT_A;
+        enum trait pat_allele = ((trait == TRAIT_UU) or (trait == TRAIT_AU)) ? TRAIT_U : TRAIT_A;
         
         unsigned mat_mi = sample_mi(mat_allele, mat_trait, i, locus, MATERNAL, temperature);
         unsigned pat_mi = sample_mi(pat_allele, pat_trait, i, locus, PATERNAL, temperature);
@@ -215,6 +215,8 @@ void LocusSampler::sample_meiosis_indicators(PeelMatrixKey& pmk, double temperat
         // just do a set on the DescentGraph?
         dg.set(i, locus, MATERNAL, mat_mi);
         dg.set(i, locus, PATERNAL, pat_mi);
+        
+        printf("id = %d, mat = %d, pat = %d\n", i, mat_mi, pat_mi);
     }
 }
 
@@ -240,6 +242,7 @@ void LocusSampler::step(double temperature) {
     sample_meiosis_indicators(pmk, temperature, locus);
 }
 
+/*
 void LocusSampler::step2(double temperature, unsigned locus) {
     //unsigned locus = get_random_locus();
     
@@ -259,7 +262,7 @@ void LocusSampler::step2(double temperature, unsigned locus) {
     
     sample_meiosis_indicators(pmk, temperature, locus);
 }
-
+*/
 
 void LocusSampler::run(unsigned start_step, unsigned iterations, double temperature, Peeler& p) {
     unsigned end_step = start_step + iterations;
@@ -268,6 +271,8 @@ void LocusSampler::run(unsigned start_step, unsigned iterations, double temperat
     //locus = ((locus + 1) % map->num_markers());
     
     for(unsigned i = start_step; i < end_step; ++i) {
+        //printf("%d\n", i);
+    
         step(temperature);
         //step2(temperature, locus);
         
@@ -275,20 +280,21 @@ void LocusSampler::run(unsigned start_step, unsigned iterations, double temperat
             continue;
         }
         
-//        if((i % SAMPLING_PERIOD) == 0) {
+        //if((i % SAMPLING_PERIOD) == 0) {
+        if((i % 10) == 0) {
             p.process(dg);
             
             //dg.print();
             
             //double lik = 0.0;
             //dg.likelihood(&lik, 0.0);
-            //printf(" %f %d\n", lik, dg.num_recombinations());
+            printf("X %f %d\n", dg._recombination_prob(0.0) /*lik*/, dg.num_recombinations());
             
             //double spp = 0.0;
             //dg._sum_prior_prob(&spp);
             //printf(" %f %d (rec=%f trans=%f spp=%f)\n", lik, dg.num_recombinations(), dg._recombination_prob(0.0), dg.trans_prob(), spp);
             
-//        }
+        }
     }
 }
 
@@ -435,14 +441,27 @@ double LocusSampler::likelihood(double temperature) {
 void LocusSampler::test(double temperature, unsigned locus) {
 
     DescentGraph master(ped, map);
-    master.random_descentgraph();
+    //master.random_descentgraph();
+    
+    // just for east
+    //master.set(14, 0, PATERNAL, 1);
+    //master.set(14, 1, PATERNAL, 1);
+    //master.set(14, 2, PATERNAL, 1);
+    
+    double lik = 0.0;
+    if(not master.likelihood(&lik, 0.0)) {
+        fprintf(stderr, "illegal!\n");
+        abort();
+    }
     
     double temps[3];
     temps[0] = 0.0;
     temps[1] = 0.0;
     temps[2] = 0.0;
     
-    for(unsigned i = 0; i < 3; ++i) {
+    //dg = master;
+    
+    for(unsigned i = 0; i < 1; ++i) {
         
         temperature = temps[i];
         dg = master;
@@ -450,15 +469,17 @@ void LocusSampler::test(double temperature, unsigned locus) {
         
         printf("\nBEFORE ");
         dg.print();
+        dg._recombination_prob(0.0);
+        printf("%d\n", dg.num_recombinations());
         
         // forward peel
         for(unsigned i = 0; i < rfunctions.size(); ++i) {
             SamplerRfunction* rf = rfunctions[i];
             rf->evaluate(&dg, locus, 0.0, temperature);
         
-            //printf("\nrfunction %d\n", i);
-            //rf->print();
-            //printf("\n\n");
+            printf("\nrfunction %d\n", i);
+            rf->print();
+            printf("\n\n");
         }
         
         PeelMatrixKey pmk;
@@ -473,6 +494,9 @@ void LocusSampler::test(double temperature, unsigned locus) {
         
         printf("\nAFTER  ");
         dg.print();
+        dg._recombination_prob(0.0);
+        printf("%d\n", dg.num_recombinations());
         printf("\n");
     }
 }
+

@@ -124,6 +124,10 @@ bool FounderAlleleGraph::_add(int mat_fa, int pat_fa, enum unphased_genotype g) 
     
     if(g == UNTYPED)
         return true;
+        
+    // XXX if mat_fa and pat_fa are the same founder allele
+    // then only add once?
+    // XXX
     
     // check to see if it exists
     // if it does, then the edge needs to have the same label
@@ -139,9 +143,11 @@ bool FounderAlleleGraph::_add(int mat_fa, int pat_fa, enum unphased_genotype g) 
     tmp->id = pat_fa;
     tmp->label = g;
     
-    tmp = &(adj_matrix[pat_fa][num_neighbours[pat_fa]++]);
-    tmp->id = mat_fa;
-    tmp->label = g;
+    if(mat_fa != pat_fa) {
+        tmp = &(adj_matrix[pat_fa][num_neighbours[pat_fa]++]);
+        tmp->id = mat_fa;
+        tmp->label = g;
+    }
         
     return true;
 }
@@ -154,6 +160,18 @@ bool FounderAlleleGraph::_check_legality(int node, int node_assignment, vector<i
     for(int i = 0; i < num_neighbours[node]; ++i ) {
         adj = &(adj_matrix[node][i]);
         adj_assignment = assignments[adj->id];
+        
+        // test for loops in the founder allele graph
+        // this will not have been assigned yet
+        if(adj->id == node) {
+            if(!( \
+                ((adj->label == HOMOZ_A) && (node_assignment == 1)) || \
+                ((adj->label == HOMOZ_B) && (node_assignment == 2))) \
+              ) {
+             
+                return false;
+            }           
+        }
         
         if(adj_assignment == -1) { // not yet assigned
             continue;
@@ -218,7 +236,7 @@ bool FounderAlleleGraph::populate(DescentGraph& d, unsigned locus) {
 		pat_fa = d.get_founderallele(i, locus, PATERNAL);
 		
 		geno = tmp->get_genotype(locus);
-
+		
 		//printf("m=%d p=%d l=%u\n", mat_fa, pat_fa, locus);
 		
 		if(not _add(mat_fa, pat_fa, geno)) {
@@ -288,6 +306,16 @@ double FounderAlleleGraph::_enumerate_component(int *component, int component_si
 	
     _assign_and_recurse(component, component_size, locus, 
                         0, assignment, &prob, &best);
+    
+    /*
+    for(unsigned i = 0; i < num_founder_alleles; ++i) {
+        printf("%d %d\n", i, assignment[i]);
+    }
+    printf("\n");
+    for(unsigned i = 0; i < component_size; ++i) {
+        printf("%d %d\n", i, component[i]);
+    }
+    */
     
     return prob;
 }

@@ -8,6 +8,7 @@ using namespace std;
 #include "descent_graph_diff.h"
 #include "descent_graph.h"
 #include "peeler.h"
+#include "trait.h"
 
 
 class Pedigree;
@@ -27,11 +28,11 @@ class LocusSampler {
     Peeler peel;
     unsigned burnin_steps;
     
-    unsigned sample_mi(unsigned allele, enum phased_trait trait, 
+    unsigned sample_mi(enum trait allele, enum phased_trait trait, 
                        unsigned personid, unsigned locus, enum parentage parent,
                        double temperature);
     unsigned sample_homo_mi(unsigned personid, unsigned locus, enum parentage parent, double temperature);
-    unsigned sample_hetero_mi(unsigned allele, enum phased_trait trait);
+    unsigned sample_hetero_mi(enum trait allele, enum phased_trait trait);
     unsigned update_temperature(unsigned temps, unsigned current_temp);
     unsigned update_temperature_hastings(unsigned temps, unsigned current_temp);
     unsigned get_random(unsigned i);
@@ -41,7 +42,7 @@ class LocusSampler {
     void copy_rfunctions(const LocusSampler& rhs);
     void kill_rfunctions();
     void step(double temperature=0.0);
-    void step2(double temperature, unsigned locus);
+    //void step2(double temperature, unsigned locus);
     void sample_meiosis_indicators(PeelMatrixKey& pmk, double temperature, unsigned locus);
 
     

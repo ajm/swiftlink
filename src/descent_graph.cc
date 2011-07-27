@@ -186,6 +186,8 @@ bool DescentGraph::likelihood(double *p, double temperature) {
 	}
 	
     *p = prob = trans + prior;
+    
+    //printf("trans = %e, sum prior = %e\n", trans, prior);
 	
     return true;
 }
@@ -321,6 +323,10 @@ bool DescentGraph::_sum_prior_prob(double *prob) {
             //printf("bad fag likelihood\n");
 			return false;
         }
+        
+//        printf("%e\n", tmp_prob);
+        //fag.print();
+        //abort();
         
         sum_prior_probs[i] = tmp_prob;
 		

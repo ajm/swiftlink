@@ -56,7 +56,7 @@ bool ParallelTempering::exchange_replicas(LocusSampler* ls1, LocusSampler* ls2, 
             (ls1->likelihood(temp2) + ls2->likelihood(temp1)) - \
             (ls1->likelihood(temp1) + ls2->likelihood(temp2)) \
         );
-        
+    
     return log(get_random()) < r;
     
     /*
@@ -76,8 +76,9 @@ bool ParallelTempering::exchange_replicas(LocusSampler* ls1, LocusSampler* ls2, 
 
 Peeler* ParallelTempering::run(unsigned iterations) {
     
-    unsigned burnin = 0;//iterations * 0.1;
-    unsigned burst_len = 20;
+    unsigned burnin = iterations * 0.1;
+    unsigned burst_len = 10;
+    //unsigned burst_len = 1;
     
     unsigned total = 0;
     unsigned accepted = 0;
@@ -95,7 +96,7 @@ Peeler* ParallelTempering::run(unsigned iterations) {
     for(unsigned i = 0; i < iterations; i += burst_len) {
     
         for(unsigned j = 0; j < chains.size(); ++j) {
-            printf("running chain %d...\n", j);
+            //printf("running chain %d...\n", j);
             
             chains[j]->run(i, burst_len, temperatures[j], peel);
             
@@ -103,8 +104,8 @@ Peeler* ParallelTempering::run(unsigned iterations) {
         }
         
         
-        //for(unsigned j = 1; j < chains.size(); ++j) {
         for(unsigned j = chains.size() - 1; j > 0; --j) {
+        //unsigned j = (random() % (chains.size() - 1)) + 1;
             total++;
             totals[j] += 1;
             

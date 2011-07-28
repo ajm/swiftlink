@@ -39,6 +39,12 @@ LocusSampler::LocusSampler(Pedigree* ped, GeneticMap* map) :
     burnin_steps(0) {
     
     dg.random_descentgraph();
+    // start in known good state for east
+    /*
+    dg.set(14, 0, PATERNAL, 1);
+    dg.set(14, 1, PATERNAL, 1);
+    dg.set(14, 2, PATERNAL, 1);
+    */
     
     init_rfunctions();
 }
@@ -216,7 +222,7 @@ void LocusSampler::sample_meiosis_indicators(PeelMatrixKey& pmk, double temperat
         dg.set(i, locus, MATERNAL, mat_mi);
         dg.set(i, locus, PATERNAL, pat_mi);
         
-        printf("id = %d, mat = %d, pat = %d\n", i, mat_mi, pat_mi);
+        //printf("id = %d, mat = %d, pat = %d\n", i, mat_mi, pat_mi);
     }
 }
 
@@ -240,9 +246,14 @@ void LocusSampler::step(double temperature) {
     //printf("\n\n\n\n");
     
     sample_meiosis_indicators(pmk, temperature, locus);
+    
+    double x;
+    if(not dg.likelihood(&x, temperature)) {
+        printf("Descent Graph produced by L-sampler is illegal!\n");
+        abort();
+    }
 }
 
-/*
 void LocusSampler::step2(double temperature, unsigned locus) {
     //unsigned locus = get_random_locus();
     
@@ -262,19 +273,19 @@ void LocusSampler::step2(double temperature, unsigned locus) {
     
     sample_meiosis_indicators(pmk, temperature, locus);
 }
-*/
 
 void LocusSampler::run(unsigned start_step, unsigned iterations, double temperature, Peeler& p) {
     unsigned end_step = start_step + iterations;
-    //unsigned locus = 0;
+    unsigned locus = 0;
     
     //locus = ((locus + 1) % map->num_markers());
     
     for(unsigned i = start_step; i < end_step; ++i) {
         //printf("%d\n", i);
     
-        step(temperature);
-        //step2(temperature, locus);
+        //step(temperature);
+        step2(temperature, locus);
+        locus = ((locus + 1) % map->num_markers());
         
         if((temperature != 0.0) or (i < burnin_steps)) {
             continue;
@@ -431,11 +442,15 @@ Peeler* LocusSampler::temper(unsigned iterations, unsigned temperatures) {
 }
 
 double LocusSampler::likelihood(double temperature) {
+    /*
     double tmp;
     
     dg.likelihood(&tmp, temperature);
     
     return tmp;
+    */
+    
+    return dg._recombination_prob(temperature);
 }
 
 void LocusSampler::test(double temperature, unsigned locus) {

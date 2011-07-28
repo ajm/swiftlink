@@ -28,7 +28,7 @@ bool LinkageProgram::run() {
 
     // TODO XXX need to know how to do this properly, 
     // look up better random numbers for simulations etc
-    srandom(time(NULL));
+    //srandom(time(NULL));
 
     for(unsigned int i = 0; i < pedigrees.size(); ++i) {
         if(verbose) {
@@ -60,25 +60,26 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     peel = mc.run(opt, iterations);
 */
 
-    //LocusSampler lsampler(&p, &map);
+    LocusSampler lsampler(&p, &map);
 //    peel = lsampler.temper(10000, 10);
-    //Peeler peeler(&p, &map);
+    Peeler peeler(&p, &map);
     //lsampler.anneal(10000);
-    //lsampler.set_burnin(1000);
-    //lsampler.run(0, 10000, 0.0, peeler);
+    lsampler.set_burnin(1000);
+    lsampler.run(0, 10000, 0.0, peeler);
 
-    //ParallelTempering pt(&p, &map, 6);
+    //ParallelTempering pt(&p, &map, 7);
     //peel = pt.run(2000);
 
+/*
     LocusSampler ls(&p, &map);
     ls.test(0.0, 1);
     return true;
-
+*/
 
     // write out results
     //LinkageWriter lw(&map, peel, "linkage.txt", verbose);
-//    LinkageWriter lw(&map, &peeler, "linkage.txt", verbose);
-//    lw.write();
+    LinkageWriter lw(&map, &peeler, "linkage.txt", verbose);
+    lw.write();
 
     // TODO XXX I should not write out immediately, but store the results
     // combine them and then write out everything in a table

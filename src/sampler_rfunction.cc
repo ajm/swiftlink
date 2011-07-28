@@ -67,7 +67,7 @@ double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_t
         }
     //}
     
-    abort();
+    //abort();
     return 0.25;
 }
 
@@ -88,14 +88,14 @@ double SamplerRfunction::get_transmission_probability2(DescentGraph* dg,
     
     // deal with homozygotes first
     if(parent_trait == TRAIT_AA) {
-        if(person_id == 14)
-            printf("%s ptrait = %d, t = %s\n", parent == MATERNAL ? "mat" : "pat", int(parent_trait), t == TRAIT_U ? "U" : "A");
+        //if(person_id == 14)
+        //    printf("%s ptrait = %d, t = %s\n", parent == MATERNAL ? "mat" : "pat", int(parent_trait), t == TRAIT_U ? "U" : "A");
         return (t == TRAIT_A) ? 0.5 : 0.0;
     }
     
     if(parent_trait == TRAIT_UU) {
-        if(person_id == 14)
-            printf("%s ptrait = %d, t = %s\n", parent == MATERNAL ? "mat" : "pat", int(parent_trait), t == TRAIT_U ? "U" : "A");
+        //if(person_id == 14)
+        //    printf("%s ptrait = %d, t = %s\n", parent == MATERNAL ? "mat" : "pat", int(parent_trait), t == TRAIT_U ? "U" : "A");
         return (t == TRAIT_U) ? 0.5 : 0.0;
     }
     
@@ -110,23 +110,25 @@ double SamplerRfunction::get_transmission_probability2(DescentGraph* dg,
     }
     
     if(locus != 0) {
+        /*
         if(person_id == 14) {
             printf("dg->get(%d, %d, %s) = %d\n", 
                 person_id, locus-1, parent == MATERNAL ? "mat" : "pat", 
                 dg->get(person_id, locus-1, parent));
         }
-        
+        */
         recomb_prob = exp(map->get_theta(locus-1, temperature));
         tmp *= ((dg->get(person_id, locus-1, parent) == p) ? 1.0 - recomb_prob : recomb_prob);
     }
     
     if(locus != (map->num_markers() - 1)) {
+        /*
         if(person_id == 14) {
             printf("dg->get(%d, %d, %s) = %d\n",
                 person_id, locus+1, parent == MATERNAL ? "mat" : "pat", 
                 dg->get(person_id, locus+1, parent));
         }
-
+        */
         recomb_prob = exp(map->get_theta(locus, temperature));
         tmp *= ((dg->get(person_id, locus+1, parent) == p) ? 1.0 - recomb_prob : recomb_prob);
     }
@@ -160,17 +162,17 @@ void SamplerRfunction::sample(PeelMatrixKey& pmk) {
     double r = random() / static_cast<double>(RAND_MAX);
     total = 0.0;
     
-    
+    /*
     printf("random = %f\n", r);
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         printf("  sample[%d] = %f\n", i, prob_dist[i]);
     }
-    
+    */
     
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         total += prob_dist[i];
         if(r < total) {
-            printf("id = %d, picked %d\n\n", peel.get_peelnode(), i);
+            //printf("id = %d, picked %d\n\n", peel.get_peelnode(), i);
             pmk.add(node, static_cast<enum phased_trait>(i));
             return;
         }
@@ -206,9 +208,9 @@ void SamplerRfunction::evaluate_child_peel(
         kid_trait = static_cast<enum phased_trait>(i);
         pmatrix_index.add(kid_id, kid_trait);
         
-        if(kid_id == 14) {
-            printf(">>> genotype = %d, mat = %d, pat = %d\n", i, int(mat_trait), int(pat_trait));
-        }
+        //if(kid_id == 14) {
+        //    printf(">>> genotype = %d, mat = %d, pat = %d\n", i, int(mat_trait), int(pat_trait));
+        //}
         
         disease_prob      = get_trait_probability(kid_id, kid_trait, locus);
         transmission_prob = get_transmission_probability2(dg, locus, kid_id, mat_trait, kid_trait, MATERNAL) *  \
@@ -217,9 +219,9 @@ void SamplerRfunction::evaluate_child_peel(
         old_prob1 = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
         old_prob2 = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
         
-        if(kid_id == 14) {
-            printf("d=%e t=%e p1=%e p2=%e\n", disease_prob, transmission_prob, old_prob1, old_prob2);
-        }
+        //if(kid_id == 14) {
+        //    printf("d=%e t=%e p1=%e p2=%e\n", disease_prob, transmission_prob, old_prob1, old_prob2);
+        //}
         
         pmatrix_presum.set(pmatrix_index, \
                            disease_prob * \

@@ -28,7 +28,7 @@ bool LinkageProgram::run() {
 
     // TODO XXX need to know how to do this properly, 
     // look up better random numbers for simulations etc
-    //srandom(time(NULL));
+    srandom(time(NULL));
 
     for(unsigned int i = 0; i < pedigrees.size(); ++i) {
         if(verbose) {
@@ -65,7 +65,7 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     Peeler peeler(&p, &map);
     //lsampler.anneal(10000);
     lsampler.set_burnin(1000);
-    lsampler.run(0, 10000, 0.0, peeler);
+    lsampler.run(0, 500000, 0.0, peeler);
 
     //ParallelTempering pt(&p, &map, 7);
     //peel = pt.run(2000);

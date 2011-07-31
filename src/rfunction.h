@@ -28,58 +28,24 @@ class Rfunction {
     PeelMatrix pmatrix;
     PeelMatrix pmatrix_presum;
     PeelOperation peel;
-    
-    enum trait get_trait(enum phased_trait p, enum parentage parent);
-    void summation(PeelMatrixKey& pmatrix_index, unsigned personid);
-    
- //private :
     Rfunction* previous_rfunction1;
     Rfunction* previous_rfunction2;
     bool function_used;
+        
+    enum trait get_trait(enum phased_trait p, enum parentage parent);
+    void summation(PeelMatrixKey& pmatrix_index, unsigned personid);
+        
  private :   
-    
     void generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments);
-    bool affected_trait(enum phased_trait pt, int allele);
-    enum phased_trait get_phased_trait(
-                    enum phased_trait m, 
-                    enum phased_trait p, 
-                    int maternal_allele, 
-                    int paternal_allele
-                );
-    //enum trait get_trait(enum phased_trait p, enum parentage parent);
-    
-    virtual double get_transmission_probability2(DescentGraph* dg, 
-                                                 unsigned locus, 
-                                                 unsigned kid_id, 
-                                                 enum phased_trait parent_trait, 
-                                                 enum phased_trait kid_trait, 
-                                                 enum parentage parent)=0;
-                                                 
-    virtual double get_transmission_probability(enum phased_trait parent)=0;
     virtual double get_trait_probability(unsigned person_id, enum phased_trait pt, unsigned locus)=0;
-    virtual double get_recombination_probability(
-                    DescentGraph* dg, 
-                    unsigned locus_index,
-                    unsigned person_id,
-                    int maternal_allele, 
-                    int paternal_allele
-                )=0;
-    double get_recombination_probability_between_markers(
-                    DescentGraph* dg, 
-                    unsigned locus_index,
-                    unsigned person_id,
-                    int maternal_allele, 
-                    int paternal_allele
-                );
-    //void summation(PeelMatrixKey& pmatrix_index, unsigned personid);
     virtual void evaluate_child_peel(
                     PeelMatrixKey& pmatrix_index, 
                     DescentGraph* dg, 
-                    unsigned locus);
-    void evaluate_parent_peel(
+                    unsigned locus)=0;
+    virtual void evaluate_parent_peel(
                     PeelMatrixKey& pmatrix_index, 
                     DescentGraph* dg,
-                    unsigned locus);
+                    unsigned locus)=0;
     void evaluate_partner_peel(
                     PeelMatrixKey& pmatrix_index, 
                     unsigned locus);
@@ -94,9 +60,8 @@ class Rfunction {
     Rfunction& operator=(const Rfunction& rhs);
     virtual ~Rfunction() {}
     
-    PeelMatrix* get_matrix() { return &pmatrix; }
+    //PeelMatrix* get_matrix() { return &pmatrix; }
     double get(PeelMatrixKey& pmk) { return pmatrix.get(pmk); }
-    double get_result() { return pmatrix.get_result(); }
     
     void evaluate(DescentGraph* dg, unsigned locus, double offset);
 

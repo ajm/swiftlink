@@ -70,9 +70,7 @@ void PeelSequenceGenerator::all_possible_peels(int& unpeeled) {
             per = ped->get_by_index(i);
 
             if(per->peel_operation(p, state)) {
-                //if(creates_simple_peel_sequence(p)) {
-                    tmp.push_back(p);
-                //}
+                tmp.push_back(p);
             }
         }
     }

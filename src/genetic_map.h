@@ -65,11 +65,12 @@ class GeneticMap {
     vector<Snp> map;
     vector<double> thetas; // both stored in log e
     vector<double> inverse_thetas;
+    double temperature;
 
     double haldane(double m);
     
  public :
-    GeneticMap() : map(), thetas(), inverse_thetas() {}
+    GeneticMap() : map(), thetas(), inverse_thetas(), temperature(0.0) {}
     ~GeneticMap() {}
     
 	Snp& operator[](int i) {
@@ -99,8 +100,8 @@ class GeneticMap {
         return map[i].major();
     }
 
-    double get_theta(unsigned int i, double temperature = 0.0);
-    double get_inverse_theta(unsigned int i, double temperature = 0.0);
+    double get_theta(unsigned int i);
+    double get_inverse_theta(unsigned int i);
     
     unsigned int num_markers() { 
         return map.size();
@@ -110,6 +111,8 @@ class GeneticMap {
 	string debug_string();
 	
     double get_theta_halfway(unsigned int i);
+    
+    void set_temperature(double t) { temperature = t; }
 };
 
 #endif

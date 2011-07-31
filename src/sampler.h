@@ -5,53 +5,60 @@ using namespace std;
 
 #include <cstdlib>
 
+#include "descent_graph.h"
+#include "descent_graph_types.h"
+#include "pedigree.h"
+#include "genetic_map.h"
 
-class Pedigree;
-class GeneticMap;
-class DescentGraph;
-class DescentGraphDiff;
 
 class Sampler {
 
  protected :
-    
     Pedigree* ped;
     GeneticMap* map;
-    DescentGraph* dg;    
+    
+    double get_random() {
+        return random() / static_cast<double>(RAND_MAX);
+    }
     
     unsigned get_random(unsigned i) {
     	return random() % i;
     }
 
     unsigned get_random_locus() {
-	    return get_random(ped->num_markers());
+	    return get_random(map->num_markers());
     }
     
+    unsigned get_random_nonfounder() {
+        return get_random(ped->num_members()) + ped->num_founders();
+    }
+    
+    enum parentage get_random_meiosis() {
+        return static_cast<enum parentage>(get_random(2));
+    }
+
  public :
-    Sampler(Pedigree* ped, GeneticMap* map, DescentGraph* dg) : 
+    Sampler(Pedigree* ped, GeneticMap* map) : 
         ped(ped), 
-        map(map),
-        dg(dg) {}
+        map(map) {}
         
     Sampler(const Sampler& rhs) :
         ped(rhs.ped),
-        map(rhs.map),
-        dg(rhs.dg) {}
+        map(rhs.map) {}
     
 	virtual ~Sampler() {}
-    
-    virtual void step(DescentGraphDiff& dgd)=0;
     
     Sampler& operator=(const Sampler& rhs) {
         
         if(&rhs != this) {
             ped = rhs.ped;
             map = rhs.map;
-            dg = rhs.dg;
         }
         
         return *this;
     }
+    
+    virtual void step(DescentGraph& dg, unsigned parameter)=0;
 };
 
 #endif

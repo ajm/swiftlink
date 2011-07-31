@@ -171,10 +171,10 @@ int DescentGraph::get_founderallele(unsigned person_id, unsigned locus, enum par
 
 // transmission prob can be low, but never zero
 // sum of prior prob can be zero
-bool DescentGraph::likelihood(double *p, double temperature) {
+bool DescentGraph::likelihood(double *p) {
     double trans, prior;
 	
-    trans = _transmission_prob(temperature);
+    trans = _transmission_prob();
 	
     if(not _sum_prior_prob(&prior)) {
         // good idea?
@@ -201,7 +201,7 @@ bool DescentGraph::likelihood() {
 bool DescentGraph::haplotype_likelihood(double *p) {
     double trans, prior;
 	
-    trans = _transmission_prob(0.0);
+    trans = _transmission_prob();
 	
     if(not _best_prior_prob(&prior)) {
         *p = prob = LOG_ILLEGAL;
@@ -219,12 +219,12 @@ bool DescentGraph::haplotype_likelihood() {
 	return haplotype_likelihood(&p);
 }
 
-double DescentGraph::_transmission_prob(double temperature) {
-    return marker_transmission + _recombination_prob(temperature);
+double DescentGraph::_transmission_prob() {
+    return marker_transmission + _recombination_prob();
 }
 
 // NOTE: descent graph storage not very cache friendly?
-double DescentGraph::_recombination_prob(double temperature) {
+double DescentGraph::_recombination_prob() {
     double tmp = 0.0;
     double theta;
     double antitheta;
@@ -240,8 +240,8 @@ double DescentGraph::_recombination_prob(double temperature) {
 	
 	for(unsigned k = 0; k < (ped->num_markers() - 1); ++k) { // every loci
 	
-	    theta = map->get_theta(k, temperature);
-	    antitheta = map->get_inverse_theta(k, temperature);
+	    theta = map->get_theta(k);
+	    antitheta = map->get_inverse_theta(k);
 	
         for(unsigned i = 0; i < ped->num_members(); ++i) { // every person
 	    	p = ped->get_by_index(i);
@@ -281,8 +281,8 @@ double DescentGraph::_recombination_prob2(unsigned locus) {
 	//for(unsigned k = 0; k < (ped->num_markers() - 1); ++k) { // every loci
 	    unsigned k = locus;
 	
-	    theta = map->get_theta(k, 0.0); //temperature);
-	    antitheta = map->get_inverse_theta(k, 0.0); //temperature);
+	    theta = map->get_theta(k);
+	    antitheta = map->get_inverse_theta(k);
 	    
         for(unsigned i = 0; i < ped->num_members(); ++i) { // every person
 	    	p = ped->get_by_index(i);
@@ -392,7 +392,7 @@ void DescentGraph::print() {
 // line ~37200
 double DescentGraph::trans_prob() {
     //return marker_transmission;
-    return marker_transmission + _recombination_prob(0.0);
+    return marker_transmission + _recombination_prob();
 }
 
 char DescentGraph::get_opposite(unsigned person_id, unsigned locus, enum parentage p) {

@@ -299,7 +299,10 @@ double FounderAlleleGraph::_enumerate_component(int *component, int component_si
 //        assignment[i] = -1;
 //    }
 
-	//printf("component_size = %d\n", component_size);
+//	printf("component_size = %d\n", component_size);
+//    for(unsigned i = 0; i < component_size; ++i) {
+//        printf("%d %d\n", i, component[i]);
+//    }
 	
 	if (component_size == 1)
 	    return 1.0;

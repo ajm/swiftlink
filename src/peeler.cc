@@ -14,16 +14,16 @@ using namespace std;
 #include "rfunction_builder.h"
 
 
-Peeler::Peeler(Pedigree* p, GeneticMap* g) : 
+Peeler::Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator& psg) : 
     ped(p), 
     map(g), 
     rfunctions(),
     lod(p, g),
     trait_prob(0.0) {
     
-    PeelSequenceGenerator psg(ped);
-    psg.build_peel_order();
-    psg.print();
+    //PeelSequenceGenerator psg(ped);
+    //psg.build_peel_order();
+    //psg.print();
 
     vector<PeelOperation>& ops = psg.get_peel_order();
         
@@ -96,7 +96,7 @@ bool Peeler::process(DescentGraph& dg) {
     // minus 1 because we want to look between markers
     // m-t-m-t-m-t-m where m is a marker and t is a trait location
     for(unsigned i = 0; i < map->num_markers() - 1; ++i) {
-        double tmp = peel(&dg, i) + (dg._recombination_prob(0.0) - dg._recombination_prob2(i));
+        double tmp = peel(&dg, i) + (dg._recombination_prob() - dg._recombination_prob2(i));
         double tmp2 = dg.trans_prob();
 
         //printf("%f\n", dg._recombination_prob2(i));

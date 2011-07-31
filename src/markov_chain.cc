@@ -1,73 +1,78 @@
 using namespace std;
 
-#include <cstdio>
-#include <cstdlib>
 #include <cmath>
 
+#include "markov_chain.h"
+#include "peel_sequence_generator.h"
+#include "peeler.h"
+#include "locus_sampler2.h"
+#include "meiosis_sampler.h"
 #include "pedigree.h"
 #include "genetic_map.h"
 #include "descent_graph.h"
-#include "descent_graph_diff.h"
-#include "markov_chain.h"
-#include "progress.h"
-#include "peeler.h"
-#include "simwalk_sampler.h"
+#include "linkage_writer.h"
 
 
-bool MarkovChain::accept_metropolis(double new_prob, double old_prob) {
-    return (log(random() / double(RAND_MAX))) < (new_prob - old_prob);
-}
-
-Peeler* MarkovChain::run(DescentGraph* seed, unsigned iterations) {
-	DescentGraph current(*seed);
-	DescentGraphDiff dgd;
-	SimwalkSampler ss(ped, &current);
-	double prob;
-    unsigned burnin_steps = unsigned(iterations * burnin_proportion); // XXX 
+Peeler* MarkovChain::run(unsigned iterations, double temperature) {
+    unsigned burnin = iterations * 0.1;
     
+    map->set_temperature(temperature);
 
-    Progress p("Markov Chain:", iterations);
-    p.start();
-
-	for(unsigned i = 0; i < iterations; ++i) {
-
-        ss.step(dgd);
+    // create a descent graph
+    DescentGraph dg(ped, map);
+    dg.random_descentgraph();
+    
+    // build peeling sequence for L-sampler and Peeler
+    PeelSequenceGenerator psg(ped);
+    psg.build_peel_order();
+    
+    // create an object to perform LOD scoring
+    // allocate on the heap so we can return it
+    Peeler* peel = new Peeler(ped, map, psg);
+    
+    // create samplers
+    LocusSampler lsampler(ped, map, psg);
+    MeiosisSampler msampler(ped, map);
+    
+    // some vars to keep track of what is being sampled
+    // just cycle through markers and people
+    unsigned locus = 0;
+    unsigned person = ped->num_founders(); // this will be the index of the first non-founder
+    
+    for(unsigned i = 0; i < iterations; ++i) {
+        //if((i % 100) == 0)
+        //    printf("%d\n", i);
         
-        p.increment();
-        
-        if((i >= burnin_steps) and ((i % SAMPLE_PERIOD) == 0)) {
-            peel.process(current);
+        if((random() / static_cast<double> (RAND_MAX)) < 0.7) {
+            //printf("L");
+            lsampler.step(dg, locus);
+            locus = (locus + 1) % map->num_markers();
+        }
+        else {
+            //printf("M");
+            msampler.step(dg, person);
+            person = (person + 1) % ped->num_members();
+            if(person == 0) {
+                person = ped->num_founders();
+            }
         }
         
-        if(not current.evaluate_diff(dgd, &prob)) {
-            illegal++;
+        //printf(" %f %d\n", dg._recombination_prob(), dg.num_recombinations());
+        
+        if(i < burnin) {
             continue;
         }
         
-        // separate for now, just in case I want to add any stat gathering...
-		if(i < burnin_steps) {
-		    current.apply_diff(dgd);
-		    continue;
-        }
+        if((i % 10) == 0)
+            peel->process(dg);
         
-        if(accept_metropolis(prob, current.get_prob())) {
-            accepted++;
-            current.apply_diff(dgd);
+        /*
+        if((i % 10) == 0) {
+            LinkageWriter lw(map, peel, "linkage.txt", true);
+            lw.write();
         }
-        else {
-            rejected++;
-        }
-	}
-
-    p.finish();
+        */
+    }
     
-    printf("\n");
-    printf("Proportion Illegal: %f\n",  illegal  / double(iterations));
-    printf("Proportion Accepted: %f\n", accepted / double(iterations));
-    printf("Proportion Rejected: %f\n", rejected / double(iterations));
-    printf("Total: %f\n", (illegal + accepted + rejected) / double(iterations));
-    printf("\n");
-	
-	return &peel;
+    return peel;
 }
-

@@ -24,13 +24,11 @@ OBJECTS	:= \
 	peeler.o \
 	peel_matrix.o \
 	lod_calculator.o \
-	simwalk_sampler.o \
 	elimination.o \
-	progress.o \
-	simulated_annealing.o \
     markov_chain.o \
-	locus_sampler.o \
-	parallel_tempering.o \
+	locus_sampler2.o \
+	meiosis_sampler.o \
+	logarithms.o \
     linkage_program.o \
 	program.o \
 	main.o

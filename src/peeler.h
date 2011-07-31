@@ -8,6 +8,7 @@ using namespace std;
 #include "peeling.h"
 #include "trait_rfunction.h"
 #include "lod_calculator.h"
+#include "peel_sequence_generator.h"
 
 
 class Pedigree;
@@ -28,7 +29,7 @@ class Peeler {
     void kill_rfunctions();
     
  public :
-    Peeler(Pedigree* p, GeneticMap* g);
+    Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator& psg);
     Peeler(const Peeler& rhs);
     ~Peeler();
     

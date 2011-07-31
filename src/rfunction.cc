@@ -17,7 +17,6 @@ Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, Rfunction* pr
       map(m),
       ped(p),
       offset(0.0),
-      temperature(0.0),
       pmatrix(po.get_cutset_size(), NUM_ALLELES),
       pmatrix_presum(po.get_cutset_size() + 1, NUM_ALLELES),
       peel(po), 
@@ -32,19 +31,12 @@ Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, Rfunction* pr
     tmp.push_back(peel.get_peelnode());
     
     pmatrix_presum.set_keys(tmp);
-    
-          /*
-    printf("prev1 = %s\nprev2 = %s\n\n", \
-            previous_rfunction1 == NULL ? "NULL" : "NOT NULL", \
-            previous_rfunction2 == NULL ? "NULL" : "NOT NULL");
-          */
 }
 
 Rfunction::Rfunction(const Rfunction& r) :
     map(r.map),
     ped(r.ped),
     offset(r.offset),
-    temperature(r.temperature),
     pmatrix(r.pmatrix),
     pmatrix_presum(r.pmatrix_presum),
     peel(r.peel),
@@ -61,7 +53,6 @@ Rfunction& Rfunction::operator=(const Rfunction& rhs) {
         map = rhs.map;
         ped = rhs.ped;
         offset = rhs.offset;
-        temperature = rhs.temperature;
         previous_rfunction1 = rhs.previous_rfunction1;
         previous_rfunction2 = rhs.previous_rfunction2;
         function_used = rhs.function_used;
@@ -378,7 +369,7 @@ void Rfunction::evaluate_element(
     }
 }
 
-void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset, double temperature) {
+void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
     PeelMatrixKey k;
     vector<unsigned> q;
     unsigned ndim = peel.get_cutset_size();
@@ -386,10 +377,6 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset, double
     
     // crucial for TraitRfunction
     this->offset = offset;
-    
-    // necessary for SamplerRfunction
-    this->temperature = temperature;
-    
     
     // nothing in the cutset to be enumerated
     if(peel.get_type() == LAST_PEEL) {

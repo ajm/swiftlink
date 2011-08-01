@@ -23,9 +23,9 @@ bool LinkageWriter::write() {
 	for(unsigned i = 0; i < (map->num_markers() - 1); ++i) {
 	    hap << i << "\t" << peeler->get(i) << endl;
 	    
-	    if(verbose) {
+	    //if(verbose) {
 	        fprintf(stderr, "%d\t%.4f\n", i, peeler->get(i));
-	    }
+	    //}
 	}
 	
 	hap.close();

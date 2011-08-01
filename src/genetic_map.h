@@ -12,6 +12,8 @@ using namespace std;
 #include <string>
 
 #include "misc.h"
+#include "trait.h"
+#include "genotype.h"
 
 
 // XXX create a super class 'marker'?
@@ -23,6 +25,7 @@ class Snp {
     unsigned int physical_distance;
     double major_freq;
     double minor_freq;
+    double prob[4];
 
  public :
     Snp(string name, double genetic, unsigned int physical) 
@@ -57,6 +60,21 @@ class Snp {
 	       << ", major=" << fixed << major_freq << ")";
 	    
 	    return ss.str();
+	}
+	
+	void init_probs() {
+	    prob[TRAIT_UU] = major_freq * major_freq;
+	    prob[TRAIT_AU] = prob[TRAIT_UA] = minor_freq * major_freq;
+	    prob[TRAIT_AA] = minor_freq * minor_freq;
+	    
+	    double total = prob[TRAIT_UU] + prob[TRAIT_AU] + prob[TRAIT_UA] + prob[TRAIT_AA];
+	    
+	    for(int i = 0; i < 4; ++i)
+	        prob[i] /= total;
+	}
+	
+	double get_prob(enum phased_trait pt) {
+	    return prob[pt];
 	}
 };
 
@@ -98,6 +116,10 @@ class GeneticMap {
 
     double get_major(unsigned int i) {
         return map[i].major();
+    }
+    
+    double get_prob(unsigned int i, enum phased_trait pt) {
+        return map[i].get_prob(pt);
     }
 
     double get_theta(unsigned int i);

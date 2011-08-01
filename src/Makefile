@@ -31,6 +31,7 @@ OBJECTS	:= \
 	logarithms.o \
     linkage_program.o \
 	program.o \
+	progress.o \
 	main.o
 
 app: $(OBJECTS)

@@ -28,6 +28,10 @@ class MeiosisMatrix {
         return prob[i];
     }
     
+    void print() {
+        printf("0 %e\n1 %e\n\n", prob[0], prob[1]);
+    }
+    
     void normalise() {
         if(prob[0] == LOG_ZERO) {
             prob[1] = 0.0;

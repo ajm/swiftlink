@@ -11,6 +11,7 @@ using namespace std;
 #include "genetic_map.h"
 #include "descent_graph.h"
 #include "linkage_writer.h"
+#include "progress.h"
 
 
 Peeler* MarkovChain::run(unsigned iterations, double temperature) {
@@ -20,7 +21,12 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
 
     // create a descent graph
     DescentGraph dg(ped, map);
-    dg.random_descentgraph();
+    //dg.random_descentgraph();
+    
+    // start at an optimal configuration for east
+    dg.set(14, 0, PATERNAL, 1);
+    dg.set(14, 1, PATERNAL, 1);
+    dg.set(14, 2, PATERNAL, 1);
     
     // build peeling sequence for L-sampler and Peeler
     PeelSequenceGenerator psg(ped);
@@ -38,12 +44,17 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     // just cycle through markers and people
     unsigned locus = 0;
     unsigned person = ped->num_founders(); // this will be the index of the first non-founder
+
+    //Progress p("MCMC: ", iterations);
     
     for(unsigned i = 0; i < iterations; ++i) {
         //if((i % 100) == 0)
         //    printf("%d\n", i);
         
-        if((random() / static_cast<double> (RAND_MAX)) < 0.7) {
+        //lsampler.step(dg, locus);
+        //locus = (locus + 1) % map->num_markers();
+        
+        if((random() / static_cast<double>(RAND_MAX)) < 0.5) {
             //printf("L");
             lsampler.step(dg, locus);
             locus = (locus + 1) % map->num_markers();
@@ -57,7 +68,9 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
             }
         }
         
-        //printf(" %f %d\n", dg._recombination_prob(), dg.num_recombinations());
+        //printf("X %f %d\n", dg._recombination_prob(), dg.num_recombinations());
+        
+        //p.increment();
         
         if(i < burnin) {
             continue;
@@ -66,13 +79,15 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
         if((i % 10) == 0)
             peel->process(dg);
         
-        /*
+        
         if((i % 10) == 0) {
             LinkageWriter lw(map, peel, "linkage.txt", true);
             lw.write();
         }
-        */
+        
     }
+    
+    //p.finish();
     
     return peel;
 }

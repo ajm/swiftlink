@@ -20,6 +20,9 @@ bool GeneticMap::sanity_check() {
             int(map.size()), int(thetas.size()));
     }
     
+    for(unsigned i = 0; i < map.size(); ++i)
+        map[i].init_probs();
+    
     return sane;
 }
 

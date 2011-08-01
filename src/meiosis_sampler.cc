@@ -69,6 +69,7 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
     // change descent graph in place
     int i = map->num_markers() - 1;
     matrix[i].normalise();
+    //matrix[i].print();
     dg.set(parameter, i, p, matrix[i].sample());
     
     while(--i >= 0) {
@@ -77,6 +78,7 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
         }
         
         matrix[i].normalise();
+        //matrix[i].print();
         dg.set(parameter, i, p, matrix[i].sample());
     }
     
@@ -88,3 +90,4 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
     }
     */
 }
+

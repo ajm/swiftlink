@@ -201,7 +201,7 @@ void TraitRfunction::evaluate_parent_peel(
                     if(pivot_trait != pmatrix_index.get(child->get_internalid()))
                         continue;
                     
-                    recombination_prob = !dg ? 0.25 : get_recombination_probability(dg, locus, child->get_internalid(), i, j);
+                    recombination_prob = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus, child->get_internalid(), i, j);
                     
                     child_tmp += recombination_prob; //(disease_prob * recombination_prob * old_prob1 * old_prob2);
                 }

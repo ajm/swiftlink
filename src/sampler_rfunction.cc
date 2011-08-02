@@ -199,7 +199,6 @@ void SamplerRfunction::evaluate_child_peel(
 
 // TODO XXX this is a mess
 //
-// THIS DOES NOT WORK...
 void SamplerRfunction::evaluate_parent_peel(
                                           PeelMatrixKey& pmatrix_index, 
                                           DescentGraph* dg,
@@ -251,7 +250,7 @@ void SamplerRfunction::evaluate_parent_peel(
             child_trait = pmatrix_index.get(child->get_internalid());
             
             child_prob *=  (get_transmission_probability(parent_trait, child_trait, ismother ? MATERNAL : PATERNAL) * \
-                            get_transmission_probability(parent_trait, child_trait, ismother ? PATERNAL : MATERNAL) * \
+                            get_transmission_probability(other_trait,  child_trait, ismother ? PATERNAL : MATERNAL) * \
                             get_recombination_probability(dg, locus, child->get_internalid(), parent_trait, child_trait, ismother ? MATERNAL : PATERNAL) *  \
                             get_recombination_probability(dg, locus, child->get_internalid(), other_trait,  child_trait, ismother ? PATERNAL : MATERNAL));            
         }

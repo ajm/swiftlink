@@ -15,14 +15,6 @@ using namespace std;
 #include "genetic_map.h"
 #include "genotype.h"
 
-    GeneticMap* map;
-    Pedigree* ped;
-    int num_founder_alleles;
-    
-    int* num_neighbours;
-    adj_node** adj_matrix;
-    
-    int* best_descentstate;
 
 FounderAlleleGraph::FounderAlleleGraph(GeneticMap* g, Pedigree* p) : 
     map(g), 

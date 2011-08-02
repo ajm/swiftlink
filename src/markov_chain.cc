@@ -15,18 +15,27 @@ using namespace std;
 
 
 Peeler* MarkovChain::run(unsigned iterations, double temperature) {
-    unsigned burnin = iterations * 0.1;
+    unsigned burnin = iterations * 0.01;
     
     map->set_temperature(temperature);
 
     // create a descent graph
     DescentGraph dg(ped, map);
-    //dg.random_descentgraph();
+    dg.random_descentgraph();
     
+    /*
     // start at an optimal configuration for east
     dg.set(14, 0, PATERNAL, 1);
     dg.set(14, 1, PATERNAL, 1);
     dg.set(14, 2, PATERNAL, 1);
+    dg.set(14, 3, PATERNAL, 1);
+    dg.set(14, 4, PATERNAL, 1);
+    dg.set(14, 5, PATERNAL, 1);
+    dg.set(14, 6, PATERNAL, 1);
+    dg.set(14, 7, PATERNAL, 1);
+    dg.set(14, 8, PATERNAL, 1);
+    dg.set(14, 9, PATERNAL, 1);
+    */
     
     // build peeling sequence for L-sampler and Peeler
     PeelSequenceGenerator psg(ped);

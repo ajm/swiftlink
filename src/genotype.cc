@@ -36,7 +36,7 @@ bool genotype_hetero(unphased_genotype_t g) {
 	return g == HETERO;
 }
 
-string genotype_str(phased_genotype_t g) {
+string genotype_string(enum phased_genotype g) {
 	switch(g) {
 		case UN :
 			return "UN";
@@ -52,4 +52,18 @@ string genotype_str(phased_genotype_t g) {
 			
 	abort();
 }
+
+string genotype_string(enum unphased_genotype g) {
+    switch(g) {
+        case HOMOZ_AA :
+            return "AA";
+        case HOMOZ_BB :
+            return "BB";
+        case HETERO :
+            return "AB";
+    }
+    
+    abort();
+}
+
 

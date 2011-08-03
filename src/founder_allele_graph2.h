@@ -61,6 +61,16 @@ class AdjacencyRecord {
         return edges.size();
     }
     
+    bool contains(int i, enum unphased_genotype* g) {
+        for(unsigned j = 0; j < edges.size(); ++j) {
+            if(edges[j].id == i) {
+                *g = edges[j].label;
+                return true;
+            }
+        }
+        return false;
+    }
+    
     string debug_string() {
         stringstream ss;
         for(unsigned i = 0; i < edges.size(); ++i) {
@@ -132,6 +142,10 @@ class GraphComponent {
     
     ~GraphComponent() {}
     
+    const int& operator[](unsigned i) {
+        return founderalleles[i];
+    } 
+    
     void add(int i) {
         if(not contains(i)) {
             founderalleles.push_back(i);
@@ -148,14 +162,23 @@ class GraphComponent {
     
     bool contains(int i) {
         return find(founderalleles.begin(), founderalleles.end(), i) != founderalleles.end();
-    } 
+    }
+    
+    void clear() {
+        founderalleles.clear();
+    }
+    
+    unsigned size() {
+        return founderalleles.size();
+    }
 };
 
 class FounderAlleleGraph {
 	
     Pedigree* ped;
     GeneticMap* map;
-    int num_alleles;
+    unsigned num_alleles;
+    unsigned locus;
     
     AdjacencyMatrix matrix;
     vector<GraphComponent> components;
@@ -166,10 +189,11 @@ class FounderAlleleGraph {
     double _enumerate_component(int *component, int component_size, unsigned locus);
     
  public :
-	FounderAlleleGraph(Pedigree* ped, GeneticMap* map) :
+	FounderAlleleGraph(Pedigree* ped, GeneticMap* map, unsigned locus) :
 	    ped(ped), 
 	    map(map),
 	    num_alleles(2 * p->num_founders()),
+	    locus(locus),
 	    matrix(num_founder_alleles),
 	    components() {}
 	    
@@ -177,6 +201,7 @@ class FounderAlleleGraph {
 	    ped(rhs.ped),
 	    map(rhs.map),
 	    num_alleles(rhs.num_alleles),
+	    locus(rhs.locus),
 	    matrix(rhs.matrix),
 	    components(rhs.components) {}
 	
@@ -187,6 +212,7 @@ class FounderAlleleGraph {
 	        ped = rhs.ped;
 	        map = rhs.map;
 	        num_alleles = rhs.num_alleles;
+	        locus = rhs.locus;
 	        matrix = rhs.matrix;
 	        components = rhs.components;
 	    }

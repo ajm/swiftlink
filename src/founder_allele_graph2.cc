@@ -95,6 +95,36 @@ double FounderAlleleGraph::component_likelihood(vector<unsigned> q) {
     return tmp;
 }
 
+// for loops in the allele graph, hetero is always a contradiction
+bool FounderAlleleGraph::correct_alleles(enum unphased_genotype g, int allele1) {
+    
+    switch(g) {
+        case HOMOZ_A:
+            return allele1 == 1;
+            
+        case HOMOZ_B:
+            return allele1 == 2;
+        
+        case HETERO:
+            return false;
+    }
+}
+
+bool FounderAlleleGraph::correct_alleles(enum unphased_genotype g, int allele1, int allele2) {
+    
+    switch(g) {
+        case HOMOZ_A:
+            return (allele1 == 1) and (allele2 == 1);
+            
+        case HOMOZ_B:
+            return (allele1 == 2) and (allele2 == 2);
+        
+        case HETERO:
+            return ((allele1 == 1) and (allele2 == 2)) or \
+                   ((allele1 == 2) and (allele2 == 1));
+    }
+}
+
 // assignment can be of any length
 // this code is pretty crufty, maybe warrenting a change of 
 // data structures or something...
@@ -110,9 +140,10 @@ bool FounderAlleleGraph::legal(GraphComponent& gc, vector<unsigned>& assignment)
         
         // if there is a loop
         if(adj.id == node) {
-            if(((adj.label == HOMOZ_A) and (allele != 1)) or ((adj.label == HOMOZ_B) and (allele != 2))) {
+            if(not correct_alleles(adj.label, allele)) {
                 return false;
             }
+            
             continue;
         }
         
@@ -134,30 +165,8 @@ bool FounderAlleleGraph::legal(GraphComponent& gc, vector<unsigned>& assignment)
             continue;
         
         // if assigned, then test legality
-        int allele2 = assignment[j];
-        
-        switch(adj.label) {
-            case HOMOZ_A:
-                if((allele != 1) or (allele2 != 1)) { 
-                    return false;
-                }
-                break;
-                
-            case HOMOZ_B:
-                if((allele != 2) or (allele2 != 2)) { 
-                    return false;
-                }
-                break;
-                
-            case HETERO:
-                if(((allele == 1) and (allele2 == 1)) or \
-                   ((allele == 2) and (allele2 == 2))) {
-                    return false;
-                }
-                break;
-                
-            default:
-                break;
+        if(not correct_alleles(adj.label, allele, assignment[j])) {
+            return false;
         }
     }
     

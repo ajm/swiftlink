@@ -30,7 +30,8 @@ bool genotype_untyped(unphased_genotype_t g);
 bool genotype_homoz(unphased_genotype_t g);
 bool genotype_hetero(unphased_genotype_t g);
 
-string genotype_str(phased_genotype_t g);
+string genotype_string(enum phased_genotype g);
+string genotype_string(enum unphased_genotype g);
 
 // add to bitmap        |=
 // toggle from bitmap   ^=

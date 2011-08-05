@@ -8,7 +8,7 @@ using namespace std;
 #include "sampler.h"
 #include "logarithms.h"
 #include "descent_graph_types.h"
-#include "founder_allele_graph.h"
+#include "founder_allele_graph2.h"
 
 class Pedigree;
 class GeneticMap;
@@ -57,7 +57,7 @@ class MeiosisMatrix {
 
 class MeiosisSampler : Sampler {
     
-    FounderAlleleGraph f;
+    FounderAlleleGraph2 f;
     MeiosisMatrix* matrix;
     
     void init_matrices();
@@ -68,7 +68,7 @@ class MeiosisSampler : Sampler {
  public :
     MeiosisSampler(Pedigree* ped, GeneticMap* map) :
         Sampler(ped, map), 
-        f(map, ped),
+        f(ped, map, 0),
         matrix(NULL) {
     
         init_matrices();
@@ -76,7 +76,7 @@ class MeiosisSampler : Sampler {
     
     MeiosisSampler(const MeiosisSampler& rhs) :
         Sampler(rhs.ped, rhs.map),
-        f(map, ped),
+        f(ped, map, 0),
         matrix(NULL) {
         
         init_matrices();

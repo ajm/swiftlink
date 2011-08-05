@@ -55,12 +55,14 @@ string genotype_string(enum phased_genotype g) {
 
 string genotype_string(enum unphased_genotype g) {
     switch(g) {
-        case HOMOZ_AA :
+        case HOMOZ_A :
             return "AA";
-        case HOMOZ_BB :
+        case HOMOZ_B :
             return "BB";
         case HETERO :
             return "AB";
+        case UNTYPED :
+            return "UN";
     }
     
     abort();

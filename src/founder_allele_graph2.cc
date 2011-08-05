@@ -16,21 +16,34 @@ using namespace std;
 #include "genotype.h"
 
 
-bool FounderAlleleGraph::populate_graph(DescentGraph& d) {
+bool FounderAlleleGraph2::populate(DescentGraph& d) {
+    if(not populate_graph(d))
+        return false;
+        
+    populate_components();
+    
+    return true;
+}
+
+bool FounderAlleleGraph2::populate_graph(DescentGraph& d) {
     for(unsigned i = 0; i < ped->num_members(); ++i) {
 		Person* tmp = ped->get_by_index(i);
+        
+        //printf("Adding %d...\n", tmp->get_internalid());
         
         if(not tmp->istyped())
 			continue;
 		
 		if(not matrix.add(d.get_founderallele(i, locus, MATERNAL), d.get_founderallele(i, locus, PATERNAL), tmp->get_genotype(locus)))
 		    return false;
+		
+		//printf("%s\n\n\n", matrix.debug_string().c_str());
 	}
 	
 	return true;
 }
 
-void FounderAlleleGraph::populate_components() {
+void FounderAlleleGraph2::populate_components() {
     queue<unsigned> q;
     GraphComponent gc;
     vector<int> visited(num_alleles, WHITE);
@@ -38,7 +51,7 @@ void FounderAlleleGraph::populate_components() {
     
     do {
         // get a starting point
-        for(int i = 0; i < num_alleles; ++i) {
+        for(unsigned i = 0; i < num_alleles; ++i) {
             if(visited[i] == WHITE) {
                 visited[i] = GREY;
                 q.push(i);
@@ -48,7 +61,8 @@ void FounderAlleleGraph::populate_components() {
         
         // breadth first
         while(not q.empty()) {
-            int tmp = q.front(); q.pop();
+            int tmp = q.front(); 
+            q.pop();
             
             // find adjacent nodes
             for(unsigned i = 0; i < matrix[tmp].size(); ++i) {
@@ -66,28 +80,30 @@ void FounderAlleleGraph::populate_components() {
             gc.add(tmp);
         }
         
-        components.add(gc);
+        components.push_back(gc);
         gc.clear();
         
     } while(remaining != 0);
 }
 
-bool FounderAlleleGraph::likelihood(double* prob) {
+bool FounderAlleleGraph2::likelihood(double* prob) {
     double log_prob = 0.0;
     double tmp_prob;
     
     for(unsigned i = 0; i < components.size(); ++i) {
-        if((tmp_prob = enumerate_component(component[i])) == 0.0) {
+        if((tmp_prob = enumerate_component(components[i])) == 0.0) {
             return false;
         }
         
         log_prob += log(tmp_prob);
     }
     
+    *prob = log_prob;
+    
     return true;
 }
 
-double FounderAlleleGraph::component_likelihood(vector<unsigned> q) {
+double FounderAlleleGraph2::component_likelihood(vector<unsigned>& q) {
     double tmp = 1.0;
     for(unsigned i = 0; i < q.size(); ++i) {
         tmp *= ((q[i] == 1) ? map->get_major(locus) : map->get_minor(locus));
@@ -96,7 +112,7 @@ double FounderAlleleGraph::component_likelihood(vector<unsigned> q) {
 }
 
 // for loops in the allele graph, hetero is always a contradiction
-bool FounderAlleleGraph::correct_alleles(enum unphased_genotype g, int allele1) {
+bool FounderAlleleGraph2::correct_alleles(enum unphased_genotype g, int allele1) {
     
     switch(g) {
         case HOMOZ_A:
@@ -107,10 +123,13 @@ bool FounderAlleleGraph::correct_alleles(enum unphased_genotype g, int allele1) 
         
         case HETERO:
             return false;
+            
+        case UNTYPED:
+            abort();
     }
 }
 
-bool FounderAlleleGraph::correct_alleles(enum unphased_genotype g, int allele1, int allele2) {
+bool FounderAlleleGraph2::correct_alleles(enum unphased_genotype g, int allele1, int allele2) {
     
     switch(g) {
         case HOMOZ_A:
@@ -122,13 +141,16 @@ bool FounderAlleleGraph::correct_alleles(enum unphased_genotype g, int allele1, 
         case HETERO:
             return ((allele1 == 1) and (allele2 == 2)) or \
                    ((allele1 == 2) and (allele2 == 1));
+        
+        case UNTYPED:
+            abort();
     }
 }
 
 // assignment can be of any length
 // this code is pretty crufty, maybe warrenting a change of 
 // data structures or something...
-bool FounderAlleleGraph::legal(GraphComponent& gc, vector<unsigned>& assignment) {
+bool FounderAlleleGraph2::legal(GraphComponent& gc, vector<unsigned>& assignment) {
     
     int node = gc[assignment.size() - 1];
     int allele = assignment.back();
@@ -173,7 +195,7 @@ bool FounderAlleleGraph::legal(GraphComponent& gc, vector<unsigned>& assignment)
     return true;
 }
 
-double FounderAlleleGraph::enumerate_component(GraphComponent& c) {
+double FounderAlleleGraph2::enumerate_component(GraphComponent& c) {
     vector<unsigned> q;
     double prob = 0.0;
 	
@@ -223,7 +245,7 @@ double FounderAlleleGraph::enumerate_component(GraphComponent& c) {
         while(true) {
             // remove all the trailing 2's
             while((q.size() != 0) and (q.back() == 2)) {
-                q.pop();
+                q.pop_back();
             }
             
             // check to see if we are done

@@ -63,6 +63,11 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
         //lsampler.step(dg, locus);
         //locus = (locus + 1) % map->num_markers();
         
+        //msampler.step(dg, person);
+        //person = (person + 1) % ped->num_members();
+        //if(person == 0)
+        //    person = ped->num_founders();
+        
         if((random() / static_cast<double>(RAND_MAX)) < 0.5) {
             //printf("L");
             lsampler.step(dg, locus);

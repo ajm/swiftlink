@@ -1,6 +1,6 @@
 CXX	:= g++
 #CXXFLAGS := -g -O3 -Wall -Wextra -pedantic -std=c++98 -pipe -Wno-variadic-macros -Weffc++ -Werror
-CXXFLAGS := -g -O3 -Wall -Wextra -pedantic -std=c++98 -pipe -Wno-variadic-macros -Weffc++
+CXXFLAGS := -g -O0 -Wall -Wextra -pedantic -std=c++98 -pipe -Wno-variadic-macros -Weffc++
 INCLUDES := -I.
 LIBS := 
 
@@ -16,7 +16,8 @@ OBJECTS	:= \
 	genetic_map.o \
 	disease_model.o \
 	descent_graph.o \
-    founder_allele_graph.o \
+	founder_allele_graph.o \
+	founder_allele_graph2.o \
     peel_sequence_generator.o \
     rfunction.o \
 	trait_rfunction.o \

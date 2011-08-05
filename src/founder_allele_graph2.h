@@ -1,5 +1,5 @@
-#ifndef LKG_FOUNDERALLELEGRAPH_H_
-#define LKG_FOUNDERALLELEGRAPH_H_
+#ifndef LKG_FounderAlleleGraph2_H_
+#define LKG_FounderAlleleGraph2_H_
 
 using namespace std;
 
@@ -15,9 +15,20 @@ using namespace std;
 class DescentGraph;
 class GeneticMap;
 
+class FounderAlleleNode;
+class AdjacencyRecord;
+class AdjacencyMatrix;
+class GraphComponent;
+
 class FounderAlleleNode {
+
+ public:
     int id;
     enum unphased_genotype label;
+    
+    FounderAlleleNode(int id, enum unphased_genotype label) :
+        id(id),
+        label(label) {}
     
     string debug_string() {
         stringstream ss;
@@ -43,7 +54,13 @@ class AdjacencyRecord {
         return *this;
     }
     
+    const FounderAlleleNode& operator[](unsigned i) const {
+        return edges[i];
+    }
+    
     bool add(FounderAlleleNode& f) {
+        //fprintf(stderr, "edges.size() = %d\n", int(edges.size()));
+        
         for(unsigned i = 0; i < edges.size(); ++i) {
             if(edges[i].id == f.id) {
                 return edges[i].label == f.label;
@@ -57,8 +74,12 @@ class AdjacencyRecord {
     
     void remove() {}
     
-    unsigned size() {
+    unsigned size() const {
         return edges.size();
+    }
+    
+    void clear() {
+        edges.clear();
     }
     
     bool contains(int i, enum unphased_genotype* g) {
@@ -105,11 +126,15 @@ class AdjacencyMatrix {
         if(g == UNTYPED)
             return true;
     
-        if(not nodes[founderallele1].add(FounderAlleleNode(founderallele2, g)))
+        FounderAlleleNode f1(founderallele2, g);
+    
+        if(not nodes[founderallele1].add(f1))
             return false;
         
         if(founderallele1 != founderallele2) {
-            if(not nodes[founderallele2].add(FounderAlleleNode(founderallele1, g)))
+            FounderAlleleNode f2(founderallele1, g);
+            
+            if(not nodes[founderallele2].add(f2))
                 return false;
         }
         
@@ -118,8 +143,18 @@ class AdjacencyMatrix {
     
     void remove() {}
     
-    unsigned size() {
+    unsigned size() const {
         return nodes.size();
+    }
+    
+    void clear() {
+        // we only want to clear the internal structure,
+        // all the rest of the code relies on each founder
+        // allele having at least an empty reference in
+        // the nodes vector
+        for(unsigned i = 0; i < nodes.size(); ++i) {
+            nodes[i].clear();
+        }
     }
     
     string debug_string() {
@@ -173,7 +208,7 @@ class GraphComponent {
     }
 };
 
-class FounderAlleleGraph {
+class FounderAlleleGraph2 {
 	
     Pedigree* ped;
     GeneticMap* map;
@@ -184,20 +219,24 @@ class FounderAlleleGraph {
     vector<GraphComponent> components;
     
     
-    bool _check_legality(int node, int node_assignment, vector<int>& assignments);
-    void _assign_and_recurse(int *component, int component_size, unsigned locus, int current_index, vector<int>& assignment, double *prob, double *best);
-    double _enumerate_component(int *component, int component_size, unsigned locus);
+    bool populate_graph(DescentGraph& d);
+    void populate_components();
+    bool correct_alleles(enum unphased_genotype g, int allele1);
+    bool correct_alleles(enum unphased_genotype g, int allele1, int allele2);
+    bool legal(GraphComponent& gc, vector<unsigned>& assignment);
+    double component_likelihood(vector<unsigned>& q);
+    double enumerate_component(GraphComponent& c);
     
  public :
-	FounderAlleleGraph(Pedigree* ped, GeneticMap* map, unsigned locus) :
+	FounderAlleleGraph2(Pedigree* ped, GeneticMap* map, unsigned locus) :
 	    ped(ped), 
 	    map(map),
-	    num_alleles(2 * p->num_founders()),
+	    num_alleles(2 * ped->num_founders()),
 	    locus(locus),
-	    matrix(num_founder_alleles),
+	    matrix(num_alleles),
 	    components() {}
 	    
-	FounderAlleleGraph(const FounderAlleleGraph& rhs) :
+	FounderAlleleGraph2(const FounderAlleleGraph2& rhs) :
 	    ped(rhs.ped),
 	    map(rhs.map),
 	    num_alleles(rhs.num_alleles),
@@ -205,9 +244,9 @@ class FounderAlleleGraph {
 	    matrix(rhs.matrix),
 	    components(rhs.components) {}
 	
-	~FounderAlleleGraph() {}
+	~FounderAlleleGraph2() {}
 	
-	FounderAlleleGraph& operator=(const FounderAlleleGraph& rhs) {
+	FounderAlleleGraph2& operator=(const FounderAlleleGraph2& rhs) {
 	    if(this != &rhs) {
 	        ped = rhs.ped;
 	        map = rhs.map;
@@ -223,8 +262,18 @@ class FounderAlleleGraph {
         return matrix.debug_string();
     }
     
-    bool populate(DescentGraph& d, unsigned locus);
-	bool likelihood(double* probs, unsigned locus);
+    // XXX this is temporary, I want to have a graph per locus in the future
+    void set_locus(unsigned l) {
+        locus = l;
+    }
+    
+    void reset() {
+        matrix.clear();
+        components.clear();
+    }
+    
+    bool populate(DescentGraph& d);
+	bool likelihood(double* probs);
 };
 
 #endif

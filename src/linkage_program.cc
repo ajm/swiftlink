@@ -45,7 +45,8 @@ bool LinkageProgram::run_pedigree(Pedigree& p) {
     }
 
     MarkovChain chain(&p, &map);
-    Peeler* peel = chain.run(10000000, 0.0);
+    //Peeler* peel = chain.run(1000000, 0.0);
+    Peeler* peel = chain.run(100, 0.0);
     
     // write out results
     LinkageWriter lw(&map, peel, "linkage.txt", verbose);

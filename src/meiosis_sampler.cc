@@ -8,6 +8,7 @@ using namespace std;
 #include "descent_graph.h"
 #include "descent_graph_types.h"
 #include "meiosis_sampler.h"
+#include "founder_allele_graph2.h"
 #include "founder_allele_graph.h"
 
 
@@ -29,16 +30,39 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
     
     dg.set(person_id, locus, parent, value);
     
+    f.set_locus(locus);
     f.reset();
     
-    if(f.populate(dg, locus)) {
-        if(not f.likelihood(&tmp_likelihood, locus)) {        
+    if(f.populate(dg)) {
+        if(not f.likelihood(&tmp_likelihood)) {        
             tmp_likelihood = LOG_ILLEGAL;
         }
     }
     else {
         tmp_likelihood = LOG_ILLEGAL;
     }
+    
+    // OLD CODE TO COMPARE
+    // <delete>
+    
+    double tmp_likelihood2;
+    FounderAlleleGraph fag(map, ped);
+    fag.reset();
+    if(fag.populate(dg, locus)) {
+        if(not fag.likelihood(&tmp_likelihood2, locus)) {        
+            tmp_likelihood2 = LOG_ILLEGAL;
+        }
+    }
+    else {
+        tmp_likelihood2 = LOG_ILLEGAL;
+    }
+    
+    fprintf(stderr, "old = %e, new = %e, illegal = %e\n", tmp_likelihood, tmp_likelihood2, LOG_ILLEGAL);
+    
+    dg.print();
+    
+    abort();
+    // </delete>
     
     dg.set(person_id, locus, parent, tmp);
     

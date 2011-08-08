@@ -206,6 +206,14 @@ class GraphComponent {
     unsigned size() {
         return founderalleles.size();
     }
+    
+    double get_prob() { 
+        return prob;
+    }
+    
+    void set_prob(double p) { 
+        prob = p;
+    }
 };
 
 class FounderAlleleGraph2 {

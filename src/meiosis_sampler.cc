@@ -43,7 +43,7 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
         tmp_likelihood = LOG_ILLEGAL;
     }
     
-    /*
+    
     // OLD CODE TO COMPARE
     // <delete>
     double tmp_likelihood2;
@@ -64,16 +64,16 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
     //dg.print();
     //abort();
     // </delete>
-    */
+    
     
     dg.set(person_id, locus, parent, tmp);
     
-    /*
+    
     if(tmp_likelihood != tmp_likelihood2) {
         fprintf(stderr, "old = %e, new = %e, illegal = %e\n", tmp_likelihood2, tmp_likelihood, LOG_ILLEGAL);
         abort();
     }
-    */
+    
     
     return tmp_likelihood;
     //return tmp_likelihood2;
@@ -92,7 +92,7 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
             matrix[i][j] = log_product( \
                                        graph_likelihood(dg, parameter, i, p, j), \
                                        log_sum( \
-                                               log_product(matrix[i-1][j], map->get_theta(i-1)), \
+                                               log_product(matrix[i-1][j],   map->get_theta(i-1)), \
                                                log_product(matrix[i-1][1-j], map->get_inverse_theta(i-1)) \
                                                ) \
                                        );

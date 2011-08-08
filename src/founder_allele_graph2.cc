@@ -34,7 +34,9 @@ bool FounderAlleleGraph2::populate_graph(DescentGraph& d) {
         if(not tmp->istyped())
 			continue;
 		
-		if(not matrix.add(d.get_founderallele(i, locus, MATERNAL), d.get_founderallele(i, locus, PATERNAL), tmp->get_genotype(locus)))
+		if(not matrix.add(d.get_founderallele(i, locus, MATERNAL), 
+		                  d.get_founderallele(i, locus, PATERNAL), 
+		                  tmp->get_genotype(locus)))
 		    return false;
 		
 		//printf("%s\n\n\n", matrix.debug_string().c_str());
@@ -91,12 +93,6 @@ bool FounderAlleleGraph2::likelihood(double* prob) {
     double tmp_prob;
     
     for(unsigned i = 0; i < components.size(); ++i) {
-        /*
-        for (unsigned j = 0; j < components[i].size(); ++j) {
-            fprintf(stderr, "%d ", components[i][j]);
-        }
-        fprintf(stderr, "\n");
-        */
         
         if((tmp_prob = enumerate_component(components[i])) == 0.0) {
             return false;
@@ -275,5 +271,48 @@ double FounderAlleleGraph2::enumerate_component(GraphComponent& c) {
 no_more_assignments:
     
     return prob;
+}
+
+GraphComponent& FounderAlleleGraph2::find_existing_component(int allele) {
+    for(unsigned i = 0; i < components.size(); ++i) {
+        if(components[i].contains(allele))
+            return components[i];
+    }
+    
+    abort();
+}
+
+double FounderAlleleGraph2::reevaluate(DescentGraph& d, unsigned person_id, unsigned locus, enum parentage parent) {
+    Person* tmp = ped->get_by_index(i);
+    
+    if(not tmp->istyped()) {
+        return prob;
+    }
+    
+    int fa1 = d.get_founderallele(person_id, locus, parent); 
+    int fa2 = d.get_founderallele(person_id, locus, parent == MATERNAL ? PATERNAL : MATERNAL);
+    
+    GraphComponent& gc1 = find_existing_component(fa1);
+    GraphComponent& gc2 = find_existing_component(fa2);
+    
+    d.flip_bit(person_id, locus, parent);
+    
+    int fa3 = d.get_founderallele(person_id, locus, parent);
+    
+    matrix.remove(fa1, fa2);
+    matrix.add(fa2, fa3, tmp->get_genotype(locus));
+    
+    GraphComponent new_gc1;
+    GraphComponent new_gc2;
+    
+    get_component(fa1, &new_gc1);
+    get_component(fa2, &new_gc2);
+    
+    double gc1b_prob = enumerate_component(new_gc1);
+    double gc2b_prob = enumerate_component(new_gc2);
+    
+    double ratio = (new_gc1.get_prob() * new_gc2.get_prob()) / (gc1.get_prob() * gc2.get_prob());
+    
+    return prob * ratio;
 }
 

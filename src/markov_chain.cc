@@ -15,7 +15,7 @@ using namespace std;
 
 
 Peeler* MarkovChain::run(unsigned iterations, double temperature) {
-    unsigned burnin = iterations * 0.01;
+    unsigned burnin = iterations * 0.1;
     
     map->set_temperature(temperature);
 
@@ -67,7 +67,7 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
         //person = (person + 1) % ped->num_members();
         //if(person == 0)
         //    person = ped->num_founders();
-        
+
         if((random() / static_cast<double>(RAND_MAX)) < 0.5) {
             //printf("L");
             lsampler.step(dg, locus);
@@ -81,7 +81,7 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
                 person = ped->num_founders();
             }
         }
-        
+
         //printf("X %f %d\n", dg._recombination_prob(), dg.num_recombinations());
         
         //p.increment();

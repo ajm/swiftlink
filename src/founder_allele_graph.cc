@@ -245,11 +245,20 @@ void FounderAlleleGraph::_assign_and_recurse(int *component, int component_size,
     double tmp = 1.0;
 	
     if( current_index == component_size ) {
+        /*
+        fprintf(stderr, "C={ ");
+        for(int i = 0; i < component_size; ++i) {
+            fprintf(stderr, "%d=%d ", component[i], assignment[component[i]]);
+        }
+        fprintf(stderr, "} ");
+        */
         // calculate prior probability, include in 'prob'
         for(int i = 0; i < component_size; ++i ) {
             allele = assignment[component[i]];
             tmp *= ((allele == 1) ? map->get_major(locus) : map->get_minor(locus));
         }
+        
+        //fprintf(stderr, "p = %e\n", tmp);
         
         // keep track of the best assignment for this component
         if(tmp > *best) {

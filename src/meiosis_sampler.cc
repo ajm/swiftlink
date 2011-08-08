@@ -34,6 +34,7 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
     f.reset();
     
     if(f.populate(dg)) {
+        //fprintf(stderr, "%s", f.debug_string().c_str());
         if(not f.likelihood(&tmp_likelihood)) {        
             tmp_likelihood = LOG_ILLEGAL;
         }
@@ -42,13 +43,14 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
         tmp_likelihood = LOG_ILLEGAL;
     }
     
+    /*
     // OLD CODE TO COMPARE
     // <delete>
-    
     double tmp_likelihood2;
     FounderAlleleGraph fag(map, ped);
     fag.reset();
     if(fag.populate(dg, locus)) {
+        //fag.print();
         if(not fag.likelihood(&tmp_likelihood2, locus)) {        
             tmp_likelihood2 = LOG_ILLEGAL;
         }
@@ -57,16 +59,24 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
         tmp_likelihood2 = LOG_ILLEGAL;
     }
     
-    fprintf(stderr, "old = %e, new = %e, illegal = %e\n", tmp_likelihood, tmp_likelihood2, LOG_ILLEGAL);
-    
-    dg.print();
-    
-    abort();
+    //fprintf(stderr, "\n\n");
+    //fprintf(stderr, "old = %e, new = %e, illegal = %e\n", tmp_likelihood2, tmp_likelihood, LOG_ILLEGAL);
+    //dg.print();
+    //abort();
     // </delete>
+    */
     
     dg.set(person_id, locus, parent, tmp);
     
+    /*
+    if(tmp_likelihood != tmp_likelihood2) {
+        fprintf(stderr, "old = %e, new = %e, illegal = %e\n", tmp_likelihood2, tmp_likelihood, LOG_ILLEGAL);
+        abort();
+    }
+    */
+    
     return tmp_likelihood;
+    //return tmp_likelihood2;
 }
 
 void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {

@@ -91,6 +91,13 @@ bool FounderAlleleGraph2::likelihood(double* prob) {
     double tmp_prob;
     
     for(unsigned i = 0; i < components.size(); ++i) {
+        /*
+        for (unsigned j = 0; j < components[i].size(); ++j) {
+            fprintf(stderr, "%d ", components[i][j]);
+        }
+        fprintf(stderr, "\n");
+        */
+        
         if((tmp_prob = enumerate_component(components[i])) == 0.0) {
             return false;
         }
@@ -112,7 +119,7 @@ double FounderAlleleGraph2::component_likelihood(vector<unsigned>& q) {
 }
 
 // for loops in the allele graph, hetero is always a contradiction
-bool FounderAlleleGraph2::correct_alleles(enum unphased_genotype g, int allele1) {
+bool FounderAlleleGraph2::correct_alleles_loop(enum unphased_genotype g, int allele1) {
     
     switch(g) {
         case HOMOZ_A:
@@ -127,7 +134,29 @@ bool FounderAlleleGraph2::correct_alleles(enum unphased_genotype g, int allele1)
         case UNTYPED:
             abort();
     }
+    
+    return false; // to kill warnings
 }
+
+bool FounderAlleleGraph2::correct_alleles(enum unphased_genotype g, int allele1) {
+    
+    switch(g) {
+        case HOMOZ_A:
+            return allele1 == 1;
+            
+        case HOMOZ_B:
+            return allele1 == 2;
+            
+        case HETERO:
+            return true;
+            
+        case UNTYPED:
+            abort();
+    }
+    
+    return false; // to kill warnings
+}
+
 
 bool FounderAlleleGraph2::correct_alleles(enum unphased_genotype g, int allele1, int allele2) {
     
@@ -145,6 +174,8 @@ bool FounderAlleleGraph2::correct_alleles(enum unphased_genotype g, int allele1,
         case UNTYPED:
             abort();
     }
+    
+    return false; // to kill warnings
 }
 
 // assignment can be of any length
@@ -154,19 +185,24 @@ bool FounderAlleleGraph2::legal(GraphComponent& gc, vector<unsigned>& assignment
     
     int node = gc[assignment.size() - 1];
     int allele = assignment.back();
-    
+        
     AdjacencyRecord tmp = matrix[node];
     
     for(unsigned i = 0; i < tmp.size(); ++i) {
         FounderAlleleNode adj = tmp[i];
-        
+                
         // if there is a loop
         if(adj.id == node) {
-            if(not correct_alleles(adj.label, allele)) {
+            if(not correct_alleles_loop(adj.label, allele)) {
                 return false;
             }
             
             continue;
+        }
+        
+        // test if compatible with label
+        if(not correct_alleles(adj.label, allele)) {
+            return false;
         }
         
         // find offset of adjacent node in assignment vector
@@ -203,65 +239,39 @@ double FounderAlleleGraph2::enumerate_component(GraphComponent& c) {
 	    return 1.0;
 	}
 
-// this generates all permutations, we don't want that...	
-/*	
+    bool skip = false;
+    
     while(true) {
 	    while(q.size() != c.size()) {
 	        q.push_back(1);
+            if(not legal(c, q)) {
+                skip = true;
+                break;
+            }
 	    }
 	    
-	    if(legal(q))
+	    if(not skip) {
     	    prob += component_likelihood(q);
-        
-        while((q.size() != 0) and (q.back() == 2)) {
-            q.pop();
         }
         
-        if(q.size() == 0)
-            break;
-            
-        q.back() = 2;
-	}
-*/
-	
-	while(true) {
-	    // this while loop does two things, fills the vector with 1's up to the correct length
-	    // in the event that a 1 produces an illegal vector, it tries 2 at the same position
-	    // if both 1 and 2 are illegal for this allele then there are no valid assignments for 
-	    // this component and hence the descent graph is illegal
-	    while(q.size() != c.size()) {
-	        q.push_back(1);
-	        
-	        if(not legal(c, q)) {
-	            q.back() = 2;
-	            if(not legal(c, q)) {
-	                goto no_more_assignments;
-	            }
-	        }
-	    }
-	    
-	    prob += component_likelihood(q);
-        
         while(true) {
-            // remove all the trailing 2's
             while((q.size() != 0) and (q.back() == 2)) {
                 q.pop_back();
             }
-            
-            // check to see if we are done
-            if(q.size() == 0)
+        
+            if(q.size() == 0) {
                 goto no_more_assignments;
-            
-            // increment the last allele
+            }
+        
             q.back() = 2;
             
-            // if this is legal, the we will loop back to the beginning (and fill with 1's)
-            // otherwise the current while loop will remove the trailing 2 etc, etc...
-            if(legal(c, q))
+            if(legal(c, q)) {
+                skip = false;
                 break;
+            }
         }
 	}
-    
+       
 no_more_assignments:
     
     return prob;

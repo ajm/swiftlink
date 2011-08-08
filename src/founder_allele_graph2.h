@@ -222,6 +222,7 @@ class FounderAlleleGraph2 {
     bool populate_graph(DescentGraph& d);
     void populate_components();
     bool correct_alleles(enum unphased_genotype g, int allele1);
+    bool correct_alleles_loop(enum unphased_genotype g, int allele1);
     bool correct_alleles(enum unphased_genotype g, int allele1, int allele2);
     bool legal(GraphComponent& gc, vector<unsigned>& assignment);
     double component_likelihood(vector<unsigned>& q);

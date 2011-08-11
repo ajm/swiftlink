@@ -64,6 +64,8 @@ class MeiosisSampler : Sampler {
     void copy_matrices(const MeiosisSampler& rhs);
     void kill_matrices();
     double graph_likelihood(DescentGraph& dg, unsigned person_id, unsigned locus, enum parentage parent, unsigned value);
+    double initial_likelihood(DescentGraph& dg, unsigned locus);
+    void incremental_likelihood(DescentGraph& dg, unsigned person_id, unsigned locus, enum parentage parent, double* meiosis0, double* meiosis1);
     
  public :
     MeiosisSampler(Pedigree* ped, GeneticMap* map) :

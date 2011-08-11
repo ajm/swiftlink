@@ -10,9 +10,10 @@ using namespace std;
 
 #include "genotype.h"
 #include "pedigree.h"
+#include "descent_graph.h"
 
 
-class DescentGraph;
+//class DescentGraph;
 class GeneticMap;
 
 class FounderAlleleNode;
@@ -63,6 +64,7 @@ class AdjacencyRecord {
         
         for(unsigned i = 0; i < edges.size(); ++i) {
             if(edges[i].id == f.id) {
+                //fprintf(stderr, " * found edge with same id (%d->%d, %s)\n", f.id, fa, genotype_string(f.label).c_str());
                 return edges[i].label == f.label;
             }
         }
@@ -72,7 +74,17 @@ class AdjacencyRecord {
         return true;
     }
     
-    void remove() {}
+    void remove(int founderallele) {
+        vector<FounderAlleleNode>::iterator it;
+        
+        for(it = edges.begin(); it < edges.end(); ++it) {
+            if((*it).id == founderallele) {
+                edges.erase(it);
+                //fprintf(stderr, " * removed %d\n", founderallele);
+                break;
+            }
+        }
+    }
     
     unsigned size() const {
         return edges.size();
@@ -141,7 +153,10 @@ class AdjacencyMatrix {
         return true;
     }
     
-    void remove() {}
+    void remove(int founderallele1, int founderallele2) {
+        nodes[founderallele1].remove(founderallele2);
+        nodes[founderallele2].remove(founderallele1);
+    }
     
     unsigned size() const {
         return nodes.size();
@@ -222,19 +237,22 @@ class FounderAlleleGraph2 {
     GeneticMap* map;
     unsigned num_alleles;
     unsigned locus;
+    double log_prob;
     
     AdjacencyMatrix matrix;
     vector<GraphComponent> components;
     
     
-    bool populate_graph(DescentGraph& d);
     void populate_components();
+    bool populate_graph(DescentGraph& d);
     bool correct_alleles(enum unphased_genotype g, int allele1);
     bool correct_alleles_loop(enum unphased_genotype g, int allele1);
     bool correct_alleles(enum unphased_genotype g, int allele1, int allele2);
     bool legal(GraphComponent& gc, vector<unsigned>& assignment);
     double component_likelihood(vector<unsigned>& q);
     double enumerate_component(GraphComponent& c);
+    //void breadth_first_search_component(int starting_node, GraphComponent& gc, vector<int>& visited);
+    //GraphComponent& find_existing_component(int allele);
     
  public :
 	FounderAlleleGraph2(Pedigree* ped, GeneticMap* map, unsigned locus) :
@@ -242,6 +260,7 @@ class FounderAlleleGraph2 {
 	    map(map),
 	    num_alleles(2 * ped->num_founders()),
 	    locus(locus),
+        log_prob(LOG_ILLEGAL),
 	    matrix(num_alleles),
 	    components() {}
 	    
@@ -250,6 +269,7 @@ class FounderAlleleGraph2 {
 	    map(rhs.map),
 	    num_alleles(rhs.num_alleles),
 	    locus(rhs.locus),
+        log_prob(rhs.log_prob),
 	    matrix(rhs.matrix),
 	    components(rhs.components) {}
 	
@@ -261,6 +281,7 @@ class FounderAlleleGraph2 {
 	        map = rhs.map;
 	        num_alleles = rhs.num_alleles;
 	        locus = rhs.locus;
+            log_prob = rhs.log_prob;
 	        matrix = rhs.matrix;
 	        components = rhs.components;
 	    }
@@ -282,7 +303,8 @@ class FounderAlleleGraph2 {
     }
     
     bool populate(DescentGraph& d);
-	bool likelihood(double* probs);
+	double likelihood();
+    //double reevaluate(DescentGraph& d, unsigned person_id, unsigned locus, enum parentage parent);
 };
 
 #endif

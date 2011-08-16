@@ -142,8 +142,8 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
             matrix[i][j] = log_product( \
                                        graph_likelihood(dg, parameter, i, p, j), \
                                        log_sum( \
-                                               log_product(matrix[i-1][j],   map->get_theta(i-1)), \
-                                               log_product(matrix[i-1][1-j], map->get_inverse_theta(i-1)) \
+                                               log_product(matrix[i-1][j],   map->get_theta_log(i-1)), \
+                                               log_product(matrix[i-1][1-j], map->get_inversetheta_log(i-1)) \
                                                ) \
                                        );
         }
@@ -166,7 +166,7 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
     
     while(--i >= 0) {
         for(int j = 0; j < 2; ++j) {
-            matrix[i][j] = log_product(matrix[i][j], ((dg.get(parameter, i+1, p) != j) ? map->get_theta(i) : map->get_inverse_theta(i)));
+            matrix[i][j] = log_product(matrix[i][j], ((dg.get(parameter, i+1, p) != j) ? map->get_theta_log(i) : map->get_inversetheta_log(i)));
         }
         
         matrix[i].normalise();

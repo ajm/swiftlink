@@ -12,7 +12,7 @@ using namespace std;
 
 bool GeneticMap::sanity_check() {
     bool sane = ((map.size() - 1) == thetas.size()) and \
-           ((map.size() - 1) == inverse_thetas.size());
+           ((map.size() - 1) == inversethetas.size());
 
     if(not sane) {
         fprintf(stderr, 
@@ -22,6 +22,12 @@ bool GeneticMap::sanity_check() {
     
     for(unsigned i = 0; i < map.size(); ++i)
         map[i].init_probs();
+    
+    for(unsigned i = 0; i < thetas.size(); ++i)
+        half_thetas.push_back(haldane((get_marker(i+1).get_g_distance() - get_marker(i).get_g_distance()) / 2.0));
+    
+    for(unsigned i = 0; i < half_thetas.size(); ++i)
+        half_inversethetas.push_back(1.0 - half_thetas[i]);
     
     return sane;
 }
@@ -49,15 +55,41 @@ double GeneticMap::haldane(double m) {
     return 0.5 * (1.0 - exp(-2.0 * m));
 }
 
+void GeneticMap::set_temperature(double t) {
+    if(temperature != 0.0) {
+        fprintf(stderr, "error: temperature cannot be set twice in GeneticMap objects\n");
+        abort();
+    }
+    
+    temperature = t;
+    
+    for(unsigned i = 0; i < thetas.size(); ++i) {
+        thetas[i] =         ((1 - temperature) * thetas[i])         + (temperature * 0.5);
+        inversethetas[i] =  ((1 - temperature) * inversethetas[i])  + (temperature * 0.5);
+    }
+}
+
 double GeneticMap::get_theta_halfway(unsigned int i) {
-    return haldane((get_marker(i+1).get_g_distance() - get_marker(i).get_g_distance()) / 2.0);
+    return half_thetas[i];
+}
+
+double GeneticMap::get_inversetheta_halfway(unsigned int i) {
+    return half_inversethetas[i];
 }
 
 double GeneticMap::get_theta(unsigned int i) {
-    return log(((1 - temperature) * exp(thetas[i])) + (temperature * 0.5));
+    return thetas[i];
 }
 
-double GeneticMap::get_inverse_theta(unsigned int i) {
-    return log(((1 - temperature) * exp(inverse_thetas[i])) + (temperature * 0.5));
+double GeneticMap::get_inversetheta(unsigned int i) {
+    return inversethetas[i];
+}
+
+double GeneticMap::get_theta_log(unsigned int i) {
+    return log(thetas[i]);
+}
+
+double GeneticMap::get_inversetheta_log(unsigned int i) {
+    return log1p(-thetas[i]);
 }
 

@@ -81,7 +81,6 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
     
     enum trait t = get_trait(kid_trait, parent);
     double tmp = 1.0;
-    double recomb_prob;
     
     // deal with homozygotes first
     if(parent_trait == TRAIT_AA) {
@@ -103,13 +102,11 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
     }
     
     if((locus != 0) and (not ignore_left)) {
-        recomb_prob = exp(map->get_theta(locus-1));
-        tmp *= ((dg->get(person_id, locus-1, parent) == p) ? 1.0 - recomb_prob : recomb_prob);
+        tmp *= ((dg->get(person_id, locus-1, parent) == p) ? map->get_inversetheta(locus-1) : map->get_theta(locus-1));
     }
     
     if((locus != (map->num_markers() - 1)) and (not ignore_right)) {
-        recomb_prob = exp(map->get_theta(locus));
-        tmp *= ((dg->get(person_id, locus+1, parent) == p) ? 1.0 - recomb_prob : recomb_prob);
+        tmp *= ((dg->get(person_id, locus+1, parent) == p) ? map->get_inversetheta(locus) : map->get_theta(locus));
     }
     
     return tmp;

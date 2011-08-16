@@ -26,16 +26,15 @@ TraitRfunction& TraitRfunction::operator=(const TraitRfunction& rhs) {
 double TraitRfunction::get_recombination_probability(DescentGraph* dg, 
                                                      unsigned locus, unsigned person_id, 
                                                      int maternal_allele, int paternal_allele) {
-    double tmp = 1.0;
-    double half_recomb_prob;
-    
-    half_recomb_prob = map->get_theta_halfway(locus);
+    double tmp = 1.0;    
+    double half_theta = map->get_theta_halfway(locus);
+    double half_inversetheta = map->get_inversetheta_halfway(locus);
         
-    tmp *= ((dg->get(person_id, locus,   MATERNAL) == maternal_allele) ? 1.0 - half_recomb_prob : half_recomb_prob);
-    tmp *= ((dg->get(person_id, locus+1, MATERNAL) == maternal_allele) ? 1.0 - half_recomb_prob : half_recomb_prob);
+    tmp *= ((dg->get(person_id, locus,   MATERNAL) == maternal_allele) ? half_inversetheta : half_theta);
+    tmp *= ((dg->get(person_id, locus+1, MATERNAL) == maternal_allele) ? half_inversetheta : half_theta);
             
-    tmp *= ((dg->get(person_id, locus,   PATERNAL) == paternal_allele) ? 1.0 - half_recomb_prob : half_recomb_prob);
-    tmp *= ((dg->get(person_id, locus+1, PATERNAL) == paternal_allele) ? 1.0 - half_recomb_prob : half_recomb_prob);
+    tmp *= ((dg->get(person_id, locus,   PATERNAL) == paternal_allele) ? half_inversetheta : half_theta);
+    tmp *= ((dg->get(person_id, locus+1, PATERNAL) == paternal_allele) ? half_inversetheta : half_theta);
     
     return tmp;
 }

@@ -55,22 +55,19 @@ unsigned LocusSampler::sample_hetero_mi(enum trait allele, enum phased_trait tra
 // normalise + sample
 unsigned LocusSampler::sample_homo_mi(DescentGraph& dg, unsigned personid, unsigned locus, enum parentage parent) {
     double prob_dist[2];
-    double theta;
     double total;
     
     prob_dist[0] = 1.0;
     prob_dist[1] = 1.0;
     
     if(locus != 0) {
-        theta = exp(map->get_theta(locus - 1));
-        prob_dist[0] *= ((dg.get(personid, locus - 1, parent) == 0) ? 1.0 - theta : theta);
-        prob_dist[1] *= ((dg.get(personid, locus - 1, parent) == 1) ? 1.0 - theta : theta);
+        prob_dist[0] *= ((dg.get(personid, locus - 1, parent) == 0) ? map->get_inversetheta(locus - 1) : map->get_theta(locus - 1));
+        prob_dist[1] *= ((dg.get(personid, locus - 1, parent) == 1) ? map->get_inversetheta(locus - 1) : map->get_theta(locus - 1));
     }
     
     if(locus != (map->num_markers() - 1)) {
-        theta = exp(map->get_theta(locus));
-        prob_dist[0] *= ((dg.get(personid, locus + 1, parent) == 0) ? 1.0 - theta : theta);
-        prob_dist[1] *= ((dg.get(personid, locus + 1, parent) == 1) ? 1.0 - theta : theta);
+        prob_dist[0] *= ((dg.get(personid, locus + 1, parent) == 0) ? map->get_inversetheta(locus) : map->get_theta(locus));
+        prob_dist[1] *= ((dg.get(personid, locus + 1, parent) == 1) ? map->get_inversetheta(locus) : map->get_theta(locus));
     }
     
     total = prob_dist[0] + prob_dist[1];

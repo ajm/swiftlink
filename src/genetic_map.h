@@ -82,13 +82,22 @@ class GeneticMap {
 
     vector<Snp> map;
     vector<double> thetas; // both stored in log e
-    vector<double> inverse_thetas;
+    vector<double> inversethetas;
+    vector<double> half_thetas;
+    vector<double> half_inversethetas;
     double temperature;
 
     double haldane(double m);
     
  public :
-    GeneticMap() : map(), thetas(), inverse_thetas(), temperature(0.0) {}
+    GeneticMap() : 
+        map(), 
+        thetas(), 
+        inversethetas(),
+        half_thetas(),
+        half_inversethetas(),
+        temperature(0.0) {}
+    
     ~GeneticMap() {}
     
 	Snp& operator[](int i) {
@@ -100,10 +109,10 @@ class GeneticMap {
     }
     
     void add_theta(double d) {
-        thetas.push_back(log(d));
-        inverse_thetas.push_back(log1p(-d));
-        //thetas.push_back(d);
-        //inverse_thetas.push_back(1.0 - d);
+        //thetas.push_back(log(d));
+        //inverse_thetas.push_back(log1p(-d));
+        thetas.push_back(d);
+        inversethetas.push_back(1.0 - d);
     }
     
     Snp& get_marker(unsigned int i) { 
@@ -127,7 +136,13 @@ class GeneticMap {
     }
 
     double get_theta(unsigned int i);
-    double get_inverse_theta(unsigned int i);
+    double get_inversetheta(unsigned int i);
+    
+    double get_theta_log(unsigned int i);
+    double get_inversetheta_log(unsigned int i);
+    
+    double get_theta_halfway(unsigned int i);
+    double get_inversetheta_halfway(unsigned int i);
     
     unsigned int num_markers() { 
         return map.size();
@@ -135,10 +150,8 @@ class GeneticMap {
 
     bool sanity_check();
 	string debug_string();
-	
-    double get_theta_halfway(unsigned int i);
     
-    void set_temperature(double t) { temperature = t; }
+    void set_temperature(double t);
 };
 
 #endif

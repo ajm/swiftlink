@@ -240,8 +240,8 @@ double DescentGraph::_recombination_prob() {
 	
 	for(unsigned k = 0; k < (ped->num_markers() - 1); ++k) { // every loci
 	
-	    theta = map->get_theta(k);
-	    antitheta = map->get_inverse_theta(k);
+	    theta = map->get_theta_log(k);
+	    antitheta = map->get_inversetheta_log(k);
 	
         for(unsigned i = 0; i < ped->num_members(); ++i) { // every person
 	    	p = ped->get_by_index(i);
@@ -281,8 +281,8 @@ double DescentGraph::_recombination_prob2(unsigned locus) {
 	//for(unsigned k = 0; k < (ped->num_markers() - 1); ++k) { // every loci
 	    unsigned k = locus;
 	
-	    theta = map->get_theta(k);
-	    antitheta = map->get_inverse_theta(k);
+	    theta = map->get_theta_log(k);
+	    antitheta = map->get_inversetheta_log(k);
 	    
         for(unsigned i = 0; i < ped->num_members(); ++i) { // every person
 	    	p = ped->get_by_index(i);
@@ -463,13 +463,13 @@ void DescentGraph::evaluate_diff_transmission(DescentGraphDiff& diff, double* ne
         // on the left
         if(locus != 0) {
             if(get(person, locus-1, parent) == value) {
-                diff_prob += map->get_inverse_theta(locus-1);
-                orig_prob += map->get_theta(locus-1);
+                diff_prob += map->get_inversetheta_log(locus-1);
+                orig_prob += map->get_theta_log(locus-1);
                 recombinations_diff--;
             }
             else {
-                diff_prob += map->get_theta(locus-1);
-                orig_prob += map->get_inverse_theta(locus-1);
+                diff_prob += map->get_theta_log(locus-1);
+                orig_prob += map->get_inversetheta_log(locus-1);
                 recombinations_diff++;
             }
         }
@@ -477,13 +477,13 @@ void DescentGraph::evaluate_diff_transmission(DescentGraphDiff& diff, double* ne
         // on the right
         if(locus != (map->num_markers() - 1)) {
             if(get(person, locus+1, parent) == value) {
-                diff_prob += map->get_inverse_theta(locus);
-                orig_prob += map->get_theta(locus);
+                diff_prob += map->get_inversetheta_log(locus);
+                orig_prob += map->get_theta_log(locus);
                 recombinations_diff--;
             }
             else {
-                diff_prob += map->get_theta(locus);
-                orig_prob += map->get_inverse_theta(locus);
+                diff_prob += map->get_theta_log(locus);
+                orig_prob += map->get_inversetheta_log(locus);
                 recombinations_diff++;
             }
         }

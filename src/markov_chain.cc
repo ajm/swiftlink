@@ -56,6 +56,8 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
 
     Progress p("MCMC: ", iterations);
     
+    lsampler.reset(); // just in case it was used for sequential imputation
+    
     for(unsigned i = 0; i < iterations; ++i) {
         //if((i % 100) == 0)
         //    printf("%d\n", i);

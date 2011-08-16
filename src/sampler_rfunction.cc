@@ -10,15 +10,21 @@ using namespace std;
 
 
 SamplerRfunction::SamplerRfunction(PeelOperation po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2) : 
-    Rfunction(po, p, m, prev1, prev2) {}
+    Rfunction(po, p, m, prev1, prev2), 
+    ignore_left(false), 
+    ignore_right(false) {}
 
 SamplerRfunction::SamplerRfunction(const SamplerRfunction& rhs) :
-    Rfunction(rhs) {}
+    Rfunction(rhs), 
+    ignore_left(rhs.ignore_left), 
+    ignore_right(rhs.ignore_right) {}
 
 SamplerRfunction& SamplerRfunction::operator=(const SamplerRfunction& rhs) {
     
     if(&rhs != this) {
         Rfunction::operator=(rhs);
+        ignore_left = rhs.ignore_left;
+        ignore_right = rhs.ignore_right;
     }
     
     return *this;
@@ -96,12 +102,12 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
         p = (t == TRAIT_A) ? 0 : 1;
     }
     
-    if(locus != 0) {
+    if((locus != 0) and (not ignore_left)) {
         recomb_prob = exp(map->get_theta(locus-1));
         tmp *= ((dg->get(person_id, locus-1, parent) == p) ? 1.0 - recomb_prob : recomb_prob);
     }
     
-    if(locus != (map->num_markers() - 1)) {
+    if((locus != (map->num_markers() - 1)) and (not ignore_right)) {
         recomb_prob = exp(map->get_theta(locus));
         tmp *= ((dg->get(person_id, locus+1, parent) == p) ? 1.0 - recomb_prob : recomb_prob);
     }

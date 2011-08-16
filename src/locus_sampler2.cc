@@ -156,3 +156,30 @@ void LocusSampler::step(DescentGraph& dg, unsigned parameter) {
     */
 }
 
+void LocusSampler::reset() {
+    set_all(false, false);
+}
+
+void LocusSampler::set_all(bool left, bool right) {
+    for(unsigned i = 0; i < rfunctions.size(); ++i)
+        rfunctions[i]->set_ignore(left, right);
+}
+
+void LocusSampler::sequential_imputation(DescentGraph& dg) {
+    unsigned starting_locus = get_random_locus();
+    
+    set_all(true, true);
+    step(dg, starting_locus);
+    
+    // iterate left through the markers
+    set_all(true, false);
+    for(int i = (starting_locus - 1); i >= 0; --i) {
+        step(dg, i);
+    }
+    
+    // iterate right through the markers
+    set_all(false, true);
+    for(int i = (starting_locus + 1); i < int(map->num_markers()); ++i) {
+        step(dg, i);
+    }
+}

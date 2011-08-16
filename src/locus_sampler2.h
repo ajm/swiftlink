@@ -31,6 +31,9 @@ class LocusSampler : Sampler {
     
     void sample_meiosis_indicators(PeelMatrixKey& pmk, DescentGraph& dg, unsigned locus);
     
+    void set_all(bool left, bool right);
+
+    
  public :
     LocusSampler(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator& psg) :
         Sampler(ped, map), 
@@ -63,6 +66,8 @@ class LocusSampler : Sampler {
     }
     
     virtual void step(DescentGraph& dg, unsigned parameter);
+    void sequential_imputation(DescentGraph& dg);
+    void reset();
 };
 
 #endif

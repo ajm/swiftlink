@@ -11,6 +11,7 @@ class TraitRfunction : public Rfunction {
     double get_trait_probability(unsigned person_id, enum phased_trait pt, unsigned locus);
     bool affected_trait(enum phased_trait pt, int allele);
     enum phased_trait get_phased_trait(enum phased_trait m, enum phased_trait p, int maternal_allele, int paternal_allele);
+    
     void evaluate_child_peel(PeelMatrixKey& pmatrix_index, DescentGraph* dg, unsigned locus);
     void evaluate_parent_peel(PeelMatrixKey& pmatrix_index, DescentGraph* dg, unsigned locus);
     

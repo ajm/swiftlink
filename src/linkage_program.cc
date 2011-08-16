@@ -16,7 +16,8 @@ using namespace std;
 
 
 bool LinkageProgram::run() {
-    bool ret = true;
+    vector<Peeler*> peelers;
+    Peeler* tmp;
     
     if(verbose) {
         fprintf(stderr, "%s\n", dm.debug_string().c_str());
@@ -28,34 +29,42 @@ bool LinkageProgram::run() {
     srandom(time(NULL));
 
     for(unsigned int i = 0; i < pedigrees.size(); ++i) {
-        if(verbose) {
+        if(verbose)
             fprintf(stderr, "%s\n", pedigrees[i].debug_string().c_str());
+        
+        // it cannot actually be NULL, the program will call
+        // abort() at the slightest hint of a problem
+        if((tmp = run_pedigree(pedigrees[i])) == NULL) {
+            fprintf(stderr, "error: pedigree '%s' failed\n", pedigrees[i].get_id().c_str());
+            free_peelers(peelers);
+            return false;
         }
         
-        ret &= run_pedigree(pedigrees[i]);
+        peelers.push_back(tmp);
     }
+    
+    LinkageWriter lw(&map, output_filename, verbose);
+    if(not lw.write(peelers)) {
+        fprintf(stderr, "error: could not write output file '%s'\n", output_filename.c_str());
+        return false;
+    }
+    
+    free_peelers(peelers);
 
-    return ret;
+    return true;
 }
 
-bool LinkageProgram::run_pedigree(Pedigree& p) {
+Peeler* LinkageProgram::run_pedigree(Pedigree& p) {
     
-    if(verbose) {
+    if(verbose)
         fprintf(stderr, "processing pedigree %s\n", p.get_id().c_str());
-    }
 
     MarkovChain chain(&p, &map);
-    //Peeler* peel = chain.run(10000000, 0.0);
-    Peeler* peel = chain.run(100000, 0.0);
     
-    // write out results
-    LinkageWriter lw(&map, peel, "linkage.txt", verbose);
-    lw.write();
+    return chain.run(100000, 0.0);
+}
 
-    // TODO XXX I should not write out immediately, but store the results
-    // combine them and then write out everything in a table
-
-    delete peel;
-    
-    return true;
+void LinkageProgram::free_peelers(vector<Peeler*>& p) {
+    for(unsigned i = 0; i < p.size(); ++i)
+        delete p[i];
 }

@@ -6,12 +6,16 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cerrno>
+#include <climits>
 #include <unistd.h>
 
 #include "misc.h"
 #include "linkage_program.h"
-#include "haplotype_program.h"
+//#include "haplotype_program.h"
 
+
+#define DEFAULT_OUTPUT_FILENAME "output.dat"
 
 enum analysistype {
     LINKAGE,
@@ -21,6 +25,9 @@ enum analysistype {
 char*   mapfile;
 char*   pedfile;
 char*   datfile;
+char*   outfile;
+int     iterations;
+int     burnin;
 bool    verbose;
 enum analysistype analysis;
 
@@ -31,7 +38,10 @@ void _usage(char *prog) {
 			"\t-p <pedigree file>\n"
 			"\t-m <map file>\n"
 			"\t-d <data file>\n"
+            "\t-o <output file>\n"
 			"\t-a <linkage|haplotype> (default: linkage)\n"
+            "\t-i <iterations>\n"
+            "\t-b <burnin iterations>\n"
 			"\t-v verbose\n"
 			"\t-h print usage information\n"
 			"\n", 
@@ -54,17 +64,45 @@ void _meow(void) {
 	exit(EXIT_SUCCESS);
 }
 
+void _set_defaults() {
+    mapfile = pedfile = datfile = NULL;
+	outfile = DEFAULT_OUTPUT_FILENAME;
+    verbose = false;
+	analysis = LINKAGE;
+    iterations = -1;
+    burnin = -1;
+}
+
+bool str2int(int &i, char *s) {
+    char* end;
+    long l;
+    errno = 0;
+    l = strtol(s, &end, 10);
+    
+    if (((errno == ERANGE) and (l == LONG_MAX)) or (l > INT_MAX)) {
+        return false;
+    }
+    if (((errno == ERANGE) and (l == LONG_MIN)) or (l < INT_MIN)) {
+        return false;
+    }
+    if ((*s == '\0') or (*end != '\0')) {
+        return false;
+    }
+    
+    i = l;
+    return true;
+}
+
+
 void _handle_args(int argc, char **argv) {
 	extern char *optarg;
     extern int optopt;
 	int ch;
 	int bad = 0;
 	
-	mapfile = pedfile = datfile = NULL;
-	verbose = false;
-	analysis = LINKAGE;
+	_set_defaults();
 	
-	while ((ch = getopt(argc, argv, ":p:d:m:a:vhc")) != -1) {
+	while ((ch = getopt(argc, argv, ":p:d:m:o:i:b:a:vhc")) != -1) {
 		switch (ch) {
 			case 'p':
 				pedfile = optarg;
@@ -82,6 +120,24 @@ void _handle_args(int argc, char **argv) {
 				verbose = true;
 				break;
 				
+            case 'o':
+                outfile = optarg;
+                break;
+                
+            case 'i':
+                if(not str2int(iterations, optarg)) {
+                    fprintf(stderr, "%s: option '-%c' requires an int as an argument (%s given)\n", argv[0], optopt, optarg);
+                    exit(EXIT_FAILURE);
+                }
+                break;
+                
+            case 'b':
+                if(not str2int(burnin, optarg)) {
+                    fprintf(stderr, "%s: option '-%c' requires an int as an argument (%s given)\n", argv[0], optopt, optarg);
+                    exit(EXIT_FAILURE);
+                }
+                break;
+                
 		    case 'a':
 		        if(strcmp(optarg, "linkage") == 0) {
 		            analysis = LINKAGE;
@@ -91,9 +147,9 @@ void _handle_args(int argc, char **argv) {
 		        }
 		        else {
 		            fprintf(stderr, "%s: option '-a' can only accept 'linkage' or "
-		                "'haplotype' as arguments ('%s' given)\n",
-		                argv[0], optarg);
-		            exit(-1);
+                                    "'haplotype' as arguments ('%s' given)\n",
+                                    argv[0], optarg);
+		            exit(EXIT_FAILURE);
 		        }
 		        break;
 		        
@@ -137,7 +193,7 @@ void _handle_args(int argc, char **argv) {
 }
 
 int linkage_analysis() {
-    LinkageProgram lp(pedfile, mapfile, datfile, verbose);
+    LinkageProgram lp(pedfile, mapfile, datfile, outfile, verbose);
     
     return lp.run() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
@@ -170,4 +226,3 @@ int main(int argc, char **argv) {
 
 	return EXIT_FAILURE;
 }
-

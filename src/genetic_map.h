@@ -110,6 +110,10 @@ class GeneticMap {
         return map[i];
     }
     
+    string get_name(unsigned int i) {
+        return map[i].get_name();
+    }
+    
     double get_minor(unsigned int i) {
         return map[i].minor();
     }

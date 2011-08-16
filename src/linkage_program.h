@@ -5,17 +5,22 @@
 
 
 class Pedigree;
+class Peeler;
 
 class LinkageProgram : public Program {
     
-    bool run_pedigree(Pedigree& p);
+    string output_filename;
+    
+    Peeler* run_pedigree(Pedigree& p);
+    void free_peelers(vector<Peeler*>& p);
 
  public :
-    LinkageProgram(char* ped, char* map, char* dat, bool verbose) : 
-        Program(ped, map, dat, verbose) {}
+    LinkageProgram(char* ped, char* map, char* dat, char* outputfile, bool verbose) : 
+        Program(ped, map, dat, verbose), 
+        output_filename(outputfile) {}
     
 	~LinkageProgram() {}
-
+    
     bool run();
 };
 

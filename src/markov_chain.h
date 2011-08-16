@@ -6,12 +6,16 @@ using namespace std;
 class Pedigree;
 class GeneticMap;
 class Peeler;
+class PeelSequenceGenerator;
+class DescentGraph;
 
 
 class MarkovChain {
     
     Pedigree* ped;
     GeneticMap* map;
+    
+    void initialise(DescentGraph& dg, PeelSequenceGenerator& psg);
     
  public :
     MarkovChain(Pedigree* ped, GeneticMap* map) :

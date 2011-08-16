@@ -12,9 +12,8 @@ using namespace std;
 
 bool LinkageWriter::write(vector<Peeler*>& peelers) {
     fstream f;
-    stringstream ss;
-	
-	f.open(filename.c_str(), ios::out);
+    	
+	f.open(filename.c_str(), fstream::out | fstream::trunc);
     
 	if(not f.is_open()) {
 		fprintf(stderr, "error: could not open linkage output file \"%s\"\n", filename.c_str());
@@ -26,6 +25,8 @@ bool LinkageWriter::write(vector<Peeler*>& peelers) {
         for(unsigned j = 1; j < peelers.size(); ++j) {
             tmp += peelers[j]->get(i);
         }
+        
+        stringstream ss;
         
         // marker id + total LOD
 	    ss << map->get_name(i) << "\t" << tmp;

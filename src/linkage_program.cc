@@ -61,7 +61,7 @@ Peeler* LinkageProgram::run_pedigree(Pedigree& p) {
 
     MarkovChain chain(&p, &map);
     
-    return chain.run(100000, 0.0);
+    return chain.run(30000, 0.0);
 }
 
 void LinkageProgram::free_peelers(vector<Peeler*>& p) {

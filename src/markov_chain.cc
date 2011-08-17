@@ -95,6 +95,8 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     
     lsampler.reset(); // just in case it was used for sequential imputation
     
+    unsigned num_meioses = 2 * (ped->num_members() - ped->num_founders());
+    
     for(unsigned i = 0; i < iterations; ++i) {
         //if((i % 100) == 0)
         //    printf("%d\n", i);
@@ -127,7 +129,7 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
                 lsampler.step(dg, j);
         }
         else {
-            for(unsigned j = ped->num_founders(); j < ped->num_members(); ++j)
+            for(unsigned j = 0; j < num_meioses; ++j)
                 msampler.step(dg, j);
         }        
         

@@ -126,12 +126,18 @@ void MeiosisSampler::incremental_likelihood(DescentGraph& dg,
 */
 
 void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
-    enum parentage p = get_random_meiosis();
+    //enum parentage p = get_random_meiosis();
     //double meiosis0, meiosis1;
     
+    // parameter is the founder allele
+    unsigned person_id = ped->num_founders() + (parameter / 2);
+    enum parentage p = static_cast<enum parentage>(parameter % 2);
+    
+    //fprintf(stderr, "%d %s\n", int(person_id), p == MATERNAL ? "M" : "P");
+    
     // forwards
-    matrix[0][0] = graph_likelihood(dg, parameter, 0, p, 0);
-    matrix[0][1] = graph_likelihood(dg, parameter, 0, p, 1);
+    matrix[0][0] = graph_likelihood(dg, person_id, 0, p, 0);
+    matrix[0][1] = graph_likelihood(dg, person_id, 0, p, 1);
     //incremental_likelihood(dg, parameter, 0, p, &meiosis0, &meiosis1);
     //matrix[0][0] = meiosis0;
     //matrix[0][1] = meiosis1;
@@ -140,7 +146,7 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
         for(unsigned j = 0; j < 2; ++j) {
             // these are log likelihood, so need to be handled carefully
             matrix[i][j] = log_product( \
-                                       graph_likelihood(dg, parameter, i, p, j), \
+                                       graph_likelihood(dg, person_id, i, p, j), \
                                        log_sum( \
                                                log_product(matrix[i-1][j],   map->get_theta_log(i-1)), \
                                                log_product(matrix[i-1][1-j], map->get_inversetheta_log(i-1)) \
@@ -162,16 +168,16 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
     int i = map->num_markers() - 1;
     matrix[i].normalise();
     //matrix[i].print();
-    dg.set(parameter, i, p, matrix[i].sample());
+    dg.set(person_id, i, p, matrix[i].sample());
     
     while(--i >= 0) {
         for(int j = 0; j < 2; ++j) {
-            matrix[i][j] = log_product(matrix[i][j], ((dg.get(parameter, i+1, p) != j) ? map->get_theta_log(i) : map->get_inversetheta_log(i)));
+            matrix[i][j] = log_product(matrix[i][j], ((dg.get(person_id, i+1, p) != j) ? map->get_theta_log(i) : map->get_inversetheta_log(i)));
         }
         
         matrix[i].normalise();
         //matrix[i].print();
-        dg.set(parameter, i, p, matrix[i].sample());
+        dg.set(person_id, i, p, matrix[i].sample());
     }
     
     /*

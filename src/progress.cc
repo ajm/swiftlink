@@ -22,7 +22,7 @@ void Progress::update_progress() {
 }
 
 void Progress::complete() {
-    printf("\r%s%s done %s\n",
+    printf("\r%s%s done   %s\n",
         DONE_COLOUR,
         label.c_str(),
         END_COLOUR);

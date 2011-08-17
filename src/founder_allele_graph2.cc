@@ -191,10 +191,10 @@ bool FounderAlleleGraph2::legal(GraphComponent& gc, vector<unsigned>& assignment
     int node = gc[assignment.size() - 1];
     int allele = assignment.back();
         
-    AdjacencyRecord tmp = matrix[node];
+    AdjacencyRecord& tmp = matrix[node];
     
     for(unsigned i = 0; i < tmp.size(); ++i) {
-        FounderAlleleNode adj = tmp[i];
+        FounderAlleleNode& adj = tmp[i];
                 
         // if there is a loop
         if(adj.id == node) {
@@ -219,7 +219,9 @@ bool FounderAlleleGraph2::legal(GraphComponent& gc, vector<unsigned>& assignment
         
         // error if not found
         if(j == gc.size()) {
-            fprintf(stderr, "Error: an adjacent allele in the graph was not found in the same component (%s:%d)", __FILE__, __LINE__);
+            fprintf(stderr, "Error: an adjacent allele in the graph was not "
+                            "found in the same component (%s:%d)", 
+                            __FILE__, __LINE__);
             abort();
         }
         

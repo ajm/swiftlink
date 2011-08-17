@@ -59,6 +59,10 @@ class AdjacencyRecord {
         return edges[i];
     }
     
+    FounderAlleleNode& operator[](unsigned i) {
+        return edges[i];
+    }
+    
     bool add(FounderAlleleNode& f) {
         //fprintf(stderr, "edges.size() = %d\n", int(edges.size()));
         
@@ -131,6 +135,10 @@ class AdjacencyMatrix {
     }
     
     const AdjacencyRecord& operator[](unsigned i) const {
+        return nodes[i];
+    }
+    
+    AdjacencyRecord& operator[](unsigned i) {
         return nodes[i];
     }
         

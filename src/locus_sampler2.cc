@@ -134,7 +134,7 @@ void LocusSampler::step(DescentGraph& dg, unsigned parameter) {
         rf->evaluate(&dg, locus, 0.0);
     }
     
-    PeelMatrixKey pmk;
+    PeelMatrixKey pmk(ped->num_members());
     
     // reverse peel, sampling ordered genotypes
     for(int i = static_cast<int>(rfunctions.size()) - 1; i >= 0; --i) {

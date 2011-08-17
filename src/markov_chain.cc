@@ -88,8 +88,8 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     
     // some vars to keep track of what is being sampled
     // just cycle through markers and people
-    unsigned locus = 0;
-    unsigned person = ped->num_founders(); // this will be the index of the first non-founder
+    //unsigned locus = 0;
+    //unsigned person = ped->num_founders(); // this will be the index of the first non-founder
 
     Progress p("MCMC: ", iterations);
     
@@ -99,8 +99,8 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
         //if((i % 100) == 0)
         //    printf("%d\n", i);
         
-        lsampler.step(dg, locus);
-        locus = (locus + 1) % map->num_markers();
+        //lsampler.step(dg, locus);
+        //locus = (locus + 1) % map->num_markers();
         
         //msampler.step(dg, person);
         //person = (person + 1) % ped->num_members();
@@ -121,6 +121,16 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
             }
         }
 */
+
+        if((random() / static_cast<double>(RAND_MAX)) < 0.5) {
+            for(unsigned j = 0; j < map->num_markers(); ++j)
+                lsampler.step(dg, j);
+        }
+        else {
+            for(unsigned j = ped->num_founders(); j < ped->num_members(); ++j)
+                msampler.step(dg, j);
+        }        
+        
         //printf("X %f %d\n", dg._recombination_prob(), dg.num_recombinations());
         
         p.increment();

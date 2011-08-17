@@ -171,7 +171,7 @@ void Rfunction::evaluate_element(
 }
 
 void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
-    PeelMatrixKey k;
+    PeelMatrixKey k(ped->num_members());
     vector<unsigned> q;
     unsigned ndim = peel.get_cutset_size();
     unsigned tmp;

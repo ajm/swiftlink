@@ -117,11 +117,11 @@ void PeelMatrix::set_keys(vector<unsigned int>& k) {
     sort(keys.begin(), keys.end()); // needed to do a comparison later...
     init_offsets();
 }
-
+/*
 bool PeelMatrix::is_legal(PeelMatrixKey& pmk) {
     return pmk.check_keys(keys);
 }
-
+*/
 double PeelMatrix::get(PeelMatrixKey& pmk) {
     return data[generate_index(pmk)];
 }
@@ -177,7 +177,7 @@ void PeelMatrix::print_keys() {
 }
     
 void PeelMatrix::print() {
-    PeelMatrixKey k;
+/*    PeelMatrixKey k;
     vector<unsigned int> q;
     unsigned int ndim = keys.size();
     unsigned int tmp;
@@ -212,5 +212,6 @@ void PeelMatrix::print() {
             }
         }
     }
+*/
 }
 

@@ -15,16 +15,17 @@ using namespace std;
 
 class PeelMatrixKey {
 
-    map<unsigned int, enum phased_trait> key;
+    //map<unsigned int, enum phased_trait> key;
+    vector<enum phased_trait> key;
     
  public :
-    PeelMatrixKey() : 
-        key() {}
-    
+    PeelMatrixKey(unsigned max_keys) : 
+        key(max_keys, TRAIT_UU) {}
+/*    
     PeelMatrixKey(vector<unsigned int>& cutset, vector<unsigned int>& assignments) : key() {
         reassign(cutset, assignments);
     }
-
+*/
     ~PeelMatrixKey() {}
 
     PeelMatrixKey(const PeelMatrixKey& pmk) : 
@@ -50,15 +51,15 @@ class PeelMatrixKey {
     void add(unsigned int k, enum phased_trait value) {
         key[k] = value;
     }
-    
+/*
     void remove(unsigned int k) {
         key.erase(k);
     }
-
+*/
     enum phased_trait get(unsigned int i) {
         return key[i];
     }
-    
+/*    
     // ensure this key can address everything for everything in the
     // vector 'keys'
     bool check_keys(vector<unsigned int>& keys) {
@@ -75,13 +76,14 @@ class PeelMatrixKey {
 
         return true;
     }
-
+*/
     void print() {
-        map<unsigned int, enum phased_trait>::iterator it;
+/*        map<unsigned int, enum phased_trait>::iterator it;
         
         for(it = key.begin(); it != key.end(); it++) {
             printf("%d=%d ", (*it).first, (*it).second);
         }
+*/
     }
 };
 
@@ -109,7 +111,7 @@ class PeelMatrix {
             vector<unsigned int>& additional
         );
     void set_keys(vector<unsigned int>& k);
-    bool is_legal(PeelMatrixKey& pmk);
+    //bool is_legal(PeelMatrixKey& pmk);
     double get(PeelMatrixKey& pmk);
     void set(PeelMatrixKey& pmk, double value);
     void add(PeelMatrixKey& pmk, double value);

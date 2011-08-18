@@ -65,8 +65,8 @@ class Rfunction {
     
     void evaluate(DescentGraph* dg, unsigned locus, double offset);
 
-    void print() { pmatrix_presum.print(); }
-    void print_keys() { pmatrix.print_keys(); }
+    //void print() { pmatrix_presum.print(); }
+    //void print_keys() { pmatrix.print_keys(); }
     
     bool is_used();
     void set_used();

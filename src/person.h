@@ -131,7 +131,6 @@ class Person {
 		return genotypes[i];
 	}
 	
-	// TODO XXX size() is O(n) complexity!
 	unsigned int num_markers() { return genotypes.size(); }
 	unsigned int num_children() { return children.size(); }
 	unsigned int num_mates() { return mates.size(); }
@@ -177,7 +176,10 @@ class Person {
 
     bool peel_operation(PeelOperation& p, PeelingState& state);
     double get_disease_prob(enum phased_trait pt);
-    bool is_parent(unsigned int i);
+    //bool is_parent(unsigned int i);
+    inline bool is_parent(unsigned int i) const {
+        return (i == maternal_id) or (i == paternal_id);
+    }
     
     string debug_string();
 };

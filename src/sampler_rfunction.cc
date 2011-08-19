@@ -80,15 +80,15 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
                                      enum parentage parent) {
     
     enum trait t = get_trait(kid_trait, parent);
-    double tmp = 1.0;
     
     // deal with homozygotes first
     if(parent_trait == TRAIT_AA) {
-        return (t == TRAIT_A) ? 0.5 : 0.0;
+        //return (t == TRAIT_A) ? 0.5 : 0.0;
+        return (t == TRAIT_A) ? 0.25 : 0.0; // XXX <--- transmission prob as well!!!
     }
-    
-    if(parent_trait == TRAIT_UU) {
-        return (t == TRAIT_U) ? 0.5 : 0.0;
+    else if(parent_trait == TRAIT_UU) {
+        //return (t == TRAIT_U) ? 0.5 : 0.0;
+        return (t == TRAIT_U) ? 0.25 : 0.0; // XXX <--- transmission prob as well!!!
     }
     
     // heterozygotes are informative, so i can look up
@@ -101,6 +101,7 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
         p = (t == TRAIT_A) ? 0 : 1;
     }
     
+    double tmp = 1.0;
     if((locus != 0) and (not ignore_left)) {
         tmp *= ((dg->get(person_id, locus-1, parent) == p) ? map->get_inversetheta(locus-1) : map->get_theta(locus-1));
     }
@@ -159,45 +160,57 @@ void SamplerRfunction::evaluate_child_peel(
                     DescentGraph* dg,
                     unsigned locus) {
     
-    double transmission_prob;
+    //double transmission_prob;
     double recombination_prob;
     double disease_prob;
-    double old_prob1;
-    double old_prob2;
+    //double old_prob1;
+    //double old_prob2;
+    double old_prob;
+    double tmp;
+    double total = 0.0;
     
     enum phased_trait kid_trait;
-    enum phased_trait mat_trait;
-    enum phased_trait pat_trait;
     
     unsigned kid_id = peel.get_peelnode();
     Person* kid = ped->get_by_index(kid_id);
     
-    mat_trait = pmatrix_index.get(kid->get_maternalid());
-    pat_trait = pmatrix_index.get(kid->get_paternalid());
-    
+    enum phased_trait mat_trait = pmatrix_index.get(kid->get_maternalid());
+    enum phased_trait pat_trait = pmatrix_index.get(kid->get_paternalid());
     
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         kid_trait = static_cast<enum phased_trait>(i);
         pmatrix_index.add(kid_id, kid_trait);
         
-        disease_prob       = get_trait_probability(kid_id, kid_trait, locus);
-        transmission_prob  = get_transmission_probability(mat_trait, kid_trait, MATERNAL) * \
-                             get_transmission_probability(pat_trait, kid_trait, PATERNAL);
+        old_prob = ((previous_rfunction1 != NULL) ? previous_rfunction1->get(pmatrix_index) : 1.0) * \
+                   ((previous_rfunction2 != NULL) ? previous_rfunction2->get(pmatrix_index) : 1.0);
+        
+        if(old_prob == 0.0)
+            continue;
+        
+        disease_prob = get_trait_probability(kid_id, kid_trait, locus);
+        
+        if(disease_prob == 0.0)
+            continue;
+        
         recombination_prob = get_recombination_probability(dg, locus, kid_id, mat_trait, kid_trait, MATERNAL) *  \
                              get_recombination_probability(dg, locus, kid_id, pat_trait, kid_trait, PATERNAL);
         
-        old_prob1 = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
-        old_prob2 = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
+        if(recombination_prob == 0.0)
+            continue;
+            
+        //old_prob1 = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
+        //old_prob2 = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
         
-        pmatrix_presum.set(pmatrix_index, \
-                           disease_prob * \
-                           transmission_prob * \
-                           recombination_prob * \
-                           old_prob1 * \
-                           old_prob2);
+        tmp = disease_prob * \
+              recombination_prob * \
+              old_prob;
+        
+        pmatrix_presum.set(pmatrix_index, tmp);
+        total += tmp;
     }
     
-    summation(pmatrix_index, kid_id);
+    //summation(pmatrix_index, kid_id);
+    pmatrix.set(pmatrix_index, total);
 }
 
 // TODO XXX this is a mess
@@ -207,8 +220,9 @@ void SamplerRfunction::evaluate_parent_peel(
                                           DescentGraph* dg,
                                           unsigned locus) {
     double disease_prob;
-    double old_prob1;
-    double old_prob2;    
+    //double old_prob1;
+    //double old_prob2;
+    double old_prob;
     
     unsigned parent_id = peel.get_peelnode();
     unsigned child_node = peel.get_cutnode(0);
@@ -228,7 +242,8 @@ void SamplerRfunction::evaluate_parent_peel(
     enum phased_trait child_trait;
     enum phased_trait parent_trait;
     enum phased_trait other_trait;
-    double tmp = 0.0;
+    double tmp;
+    double total = 0.0;
     
     other_trait = pmatrix_index.get(other_parent_id);
     
@@ -239,8 +254,14 @@ void SamplerRfunction::evaluate_parent_peel(
         
         disease_prob = get_trait_probability(parent_id, parent_trait, locus);
         
-        old_prob1 = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
-        old_prob2 = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
+        //old_prob1 = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
+        //old_prob2 = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
+        
+        old_prob = ((previous_rfunction1 != NULL) ? previous_rfunction1->get(pmatrix_index) : 1.0) * \
+                   ((previous_rfunction2 != NULL) ? previous_rfunction2->get(pmatrix_index) : 1.0);
+        
+        if(old_prob == 0.0)
+            continue;
         
         double child_prob = 1.0;
         
@@ -252,16 +273,20 @@ void SamplerRfunction::evaluate_parent_peel(
             
             child_trait = pmatrix_index.get(child->get_internalid());
             
-            child_prob *=  (get_transmission_probability(parent_trait, child_trait, ismother ? MATERNAL : PATERNAL) * \
-                            get_transmission_probability(other_trait,  child_trait, ismother ? PATERNAL : MATERNAL) * \
+            child_prob *=  (/*get_transmission_probability(parent_trait, child_trait, ismother ? MATERNAL : PATERNAL) * \
+                            get_transmission_probability(other_trait,  child_trait, ismother ? PATERNAL : MATERNAL) * \ */
                             get_recombination_probability(dg, locus, child->get_internalid(), parent_trait, child_trait, ismother ? MATERNAL : PATERNAL) *  \
                             get_recombination_probability(dg, locus, child->get_internalid(), other_trait,  child_trait, ismother ? PATERNAL : MATERNAL));            
         }
         
-        tmp = (child_prob * disease_prob * old_prob1 * old_prob2);
+        tmp = (child_prob * disease_prob * old_prob); //old_prob1 * old_prob2);
         
         pmatrix_presum.set(pmatrix_index, tmp);
+        
+        total += tmp;
     }
     
-    summation(pmatrix_index, parent_id);
+    //summation(pmatrix_index, parent_id);
+    pmatrix.set(pmatrix_index, total);
 }
+

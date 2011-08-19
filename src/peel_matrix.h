@@ -118,7 +118,17 @@ class PeelMatrix {
     unsigned int size;
     double* data;
     
-    unsigned int generate_index(PeelMatrixKey& pmk);
+    //unsigned int generate_index(PeelMatrixKey& pmk) const;
+    inline unsigned int generate_index(PeelMatrixKey& pmk) const {
+        unsigned int index = 0;
+
+        for(unsigned int i = 0; i < num_keys; ++i) {
+            index += (offsets[i] * pmk.get(keys[i]));
+        }
+        
+        return index;
+    }
+    
     void init_offsets();
     
  public :
@@ -134,11 +144,13 @@ class PeelMatrix {
             vector<unsigned int>& additional
         );
     */
+    
     void set_keys(vector<unsigned int>& k);
     //bool is_legal(PeelMatrixKey& pmk);
-    double get(PeelMatrixKey& pmk);
-    void set(PeelMatrixKey& pmk, double value);
-    void add(PeelMatrixKey& pmk, double value);
+    
+    //double get(PeelMatrixKey& pmk) const;
+    //void set(PeelMatrixKey& pmk, double value);
+    //void add(PeelMatrixKey& pmk, double value);
     double get_result();
 
     double sum();
@@ -147,6 +159,19 @@ class PeelMatrix {
     //void generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments);
     //void print();
     //void print_keys();
+    
+    inline double get(PeelMatrixKey& pmk) const {
+        return data[generate_index(pmk)];
+    }
+    
+    inline void set(PeelMatrixKey& pmk, double value) {
+        if(value != 0.0)
+            data[generate_index(pmk)] = value;
+    }
+    
+    inline void add(PeelMatrixKey& pmk, double value) {
+        data[generate_index(pmk)] += value;
+    }
 };
 
 #endif

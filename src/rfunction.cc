@@ -120,10 +120,30 @@ enum trait Rfunction::get_trait(enum phased_trait p, enum parentage parent) {
     abort();
 }
 
+void Rfunction::get_traits(enum phased_trait p, enum trait& mat, enum trait& pat) {
+    switch(p) {
+        case TRAIT_UU:
+            mat = pat = TRAIT_U;
+            break;
+        case TRAIT_AU:
+            mat = TRAIT_A;
+            pat = TRAIT_U;
+            break;
+        case TRAIT_UA:
+            mat = TRAIT_U;
+            pat = TRAIT_A;
+            break;
+        case TRAIT_AA:
+            mat = pat = TRAIT_A;
+            break;
+    }
+}
+
 // this function is the same for Traits and Sampling
 void Rfunction::evaluate_partner_peel(PeelMatrixKey& pmatrix_index, unsigned locus) {
     
     double tmp = 0.0;
+    double total = 0.0;
     unsigned partner_id;
     enum phased_trait partner_trait;    
     
@@ -138,9 +158,11 @@ void Rfunction::evaluate_partner_peel(PeelMatrixKey& pmatrix_index, unsigned loc
             (previous_rfunction2 == NULL ? 1.0 : previous_rfunction2->get(pmatrix_index));
         
         pmatrix_presum.set(pmatrix_index, tmp);
+        total += tmp;
     }
     
-    summation(pmatrix_index, partner_id);
+    //summation(pmatrix_index, partner_id);
+    pmatrix.set(pmatrix_index, total);
 }
 
 void Rfunction::evaluate_element(

@@ -127,7 +127,7 @@ bool DescentGraph::random_descentgraph() {
     GenotypeElimination ge(ped);
     return ge.random_descentgraph(*this);
 }
-
+/*
 int DescentGraph::_offset(unsigned person_id, unsigned locus, enum parentage p) {
 	return (graph_size * locus) + (person_id * 2) + p;
 }
@@ -135,7 +135,7 @@ int DescentGraph::_offset(unsigned person_id, unsigned locus, enum parentage p) 
 char DescentGraph::get(unsigned person_id, unsigned locus, enum parentage p) {
     return data[_offset(person_id, locus, p)];
 }
-
+*/
 void DescentGraph::set(unsigned person_id, unsigned locus, enum parentage p, char value) {
     data[_offset(person_id, locus, p)] = value;
 }

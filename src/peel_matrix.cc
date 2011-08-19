@@ -10,8 +10,8 @@ using namespace std;
 #include "trait.h"
 #include "peel_matrix.h"
 
-
-unsigned int PeelMatrix::generate_index(PeelMatrixKey& pmk) {
+/*
+unsigned int PeelMatrix::generate_index(PeelMatrixKey& pmk) const {
     unsigned int index = 0;
 
     for(unsigned int i = 0; i < num_keys; ++i) {
@@ -20,7 +20,7 @@ unsigned int PeelMatrix::generate_index(PeelMatrixKey& pmk) {
     
     return index;
 }
-
+*/
 PeelMatrix::PeelMatrix(unsigned int num_dim, unsigned int val_dim) :
     num_keys(0),
     keys(NULL),
@@ -119,18 +119,20 @@ bool PeelMatrix::is_legal(PeelMatrixKey& pmk) {
     return pmk.check_keys(keys);
 }
 */
-double PeelMatrix::get(PeelMatrixKey& pmk) {
+/*
+double PeelMatrix::get(PeelMatrixKey& pmk) const {
     return data[generate_index(pmk)];
 }
 
 void PeelMatrix::set(PeelMatrixKey& pmk, double value) {
-    data[generate_index(pmk)] = value;
+    if(value != 0.0)
+        data[generate_index(pmk)] = value;
 }
 
 void PeelMatrix::add(PeelMatrixKey& pmk, double value) {
     data[generate_index(pmk)] += value;
 }
-
+*/
 double PeelMatrix::get_result() {
     if(size != 1) {
         fprintf(stderr, "Cannot get result from an intermediate r-function\n");

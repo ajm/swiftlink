@@ -90,7 +90,8 @@ void TraitRfunction::evaluate_child_peel(PeelMatrixKey& pmatrix_index,
     double disease_prob;
     double old_prob1;
     double old_prob2;
-    double tmp = 0.0;
+    double tmp;
+    double total = 0.0;
     
     enum phased_trait kid_trait;
     enum phased_trait mat_trait;
@@ -127,10 +128,13 @@ void TraitRfunction::evaluate_child_peel(PeelMatrixKey& pmatrix_index,
             tmp = (disease_prob * transmission_prob * recombination_prob * old_prob1 * old_prob2);
             
             pmatrix_presum.add(pmatrix_index, tmp);
+            
+            total += tmp;
         }
     }
     
-    summation(pmatrix_index, kid_id);
+    //summation(pmatrix_index, kid_id);
+    pmatrix.set(pmatrix_index, total);
 }
 
 // TODO XXX this is a mess
@@ -166,7 +170,8 @@ void TraitRfunction::evaluate_parent_peel(
     enum phased_trait pivot_trait;
     enum phased_trait parent_trait;
     enum phased_trait other_trait;
-    double tmp = 0.0;
+    double tmp;
+    double total = 0.0;
     
     other_trait = pmatrix_index.get(other_parent_id);
     
@@ -213,7 +218,10 @@ void TraitRfunction::evaluate_parent_peel(
         tmp = (child_prob * disease_prob * old_prob1 * old_prob2);
         
         pmatrix_presum.set(pmatrix_index, tmp);
+        
+        total += tmp;
     }
     
-    summation(pmatrix_index, parent_id);
+    //summation(pmatrix_index, parent_id);
+    pmatrix.set(pmatrix_index, total);
 }

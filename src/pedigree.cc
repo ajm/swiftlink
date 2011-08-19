@@ -25,11 +25,11 @@ bool Pedigree::add(Person& p) {
 bool Pedigree::exists(const string& id) {
 	return get_by_name(id) != NULL;
 }
-
+/*
 Person* Pedigree::get_by_index(int i) {
     return &members[i];
 }
-
+*/
 Person* Pedigree::get_by_name(const string& id) {
 	for(unsigned int i = 0; i < members.size(); ++i) {
         //fprintf(stderr, "member = %d\n", i);

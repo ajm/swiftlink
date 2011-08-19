@@ -59,7 +59,7 @@ class Pedigree {
     }
 
 	// interrogate	
-	string& get_id() { 
+	string get_id() { 
         return id;
     }
     
@@ -83,8 +83,13 @@ class Pedigree {
 			_count_leaves();
 	}
 		
-	Person* get_by_index(int i);
+	//Person* get_by_index(int i);
 	Person* get_by_name(const string& id);
+	
+	inline Person* get_by_index(int i) {
+        return &members[i];
+    }
+
 	
 	// manipulate
 	bool add(Person& p);

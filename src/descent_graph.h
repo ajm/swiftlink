@@ -38,7 +38,10 @@ class DescentGraph {
 	//bool _sum_prior_prob(double* prob);
     bool _best_prior_prob(double* prob);
 	bool _genotype_elimination();
-	int _offset(unsigned person_id, unsigned locus, enum parentage p);
+	//int _offset(unsigned person_id, unsigned locus, enum parentage p);
+	inline int _offset(unsigned person_id, unsigned locus, enum parentage p) const {
+	    return (graph_size * locus) + (person_id * 2) + p;
+    }
 	int _founder_allele(unsigned person_id, enum parentage p);
 	
 	char get_opposite(unsigned person_id, unsigned locus, enum parentage p);
@@ -54,7 +57,10 @@ class DescentGraph {
 
 	DescentGraph& operator=(const DescentGraph& d);
 
-	char get(unsigned person_id, unsigned locus, enum parentage p);
+	//char get(unsigned person_id, unsigned locus, enum parentage p);
+    inline char get(unsigned person_id, unsigned locus, enum parentage p) const {
+        return data[_offset(person_id, locus, p)];
+    }
 	void set(unsigned person_id, unsigned locus, enum parentage p, char value);
 	int get_founderallele(unsigned person_id, unsigned loci, enum parentage p);
 	bool likelihood(double *prob);

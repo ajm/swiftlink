@@ -397,11 +397,11 @@ void Person::neighbours(vector<unsigned int>& nodes, PeelingState& ps) {
         }
     }
 }
-
+/*
 bool Person::is_parent(unsigned int i) {
     return (i == maternal_id) or (i == paternal_id);
 }
-
+*/
 void Person::get_cutset(PeelOperation& operation, PeelingState& state) {
     queue<unsigned int> q;
     vector<unsigned int> n;

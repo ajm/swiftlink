@@ -29,28 +29,28 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
     unsigned tmp = dg.get(person_id, locus, parent);
     
     dg.set(person_id, locus, parent, value);
-    
+    /*
     f.set_locus(locus);
     f.reset();
     
     tmp_likelihood = f.populate(dg) ? f.likelihood() : LOG_ILLEGAL;
+    */
     
-    /*
     // OLD CODE TO COMPARE
     // <delete>
-    double tmp_likelihood2;
-    FounderAlleleGraph fag(map, ped);
+    //double tmp_likelihood2;
+    //FounderAlleleGraph fag(map, ped);
     fag.reset();
     if(fag.populate(dg, locus)) {
         //fag.print();
-        if(not fag.likelihood(&tmp_likelihood2, locus)) {        
-            tmp_likelihood2 = LOG_ILLEGAL;
+        if(not fag.likelihood(&tmp_likelihood, locus)) {        
+            tmp_likelihood = LOG_ILLEGAL;
         }
     }
     else {
-        tmp_likelihood2 = LOG_ILLEGAL;
+        tmp_likelihood = LOG_ILLEGAL;
     }
-    */
+    
     
     //fprintf(stderr, "\n\n");
     //fprintf(stderr, "old = %e, new = %e, illegal = %e\n", tmp_likelihood2, tmp_likelihood, LOG_ILLEGAL);

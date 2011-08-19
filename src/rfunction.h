@@ -33,6 +33,7 @@ class Rfunction {
     bool function_used;
         
     enum trait get_trait(enum phased_trait p, enum parentage parent);
+    void get_traits(enum phased_trait p, enum trait& mat, enum trait& pat);
     void summation(PeelMatrixKey& pmatrix_index, unsigned personid);
         
  private :   

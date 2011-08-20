@@ -6,7 +6,7 @@ LIBS :=
 
 OBJECTS	:= \
 	trait.o \
-    genotype.o \
+	genotype.o \
 	types.o \
 	logarithms.o \
 	disease_model.o \
@@ -15,24 +15,24 @@ OBJECTS	:= \
 	pedigree.o \
 	descent_graph.o \
 	pedigree_parser.o \
-    linkage_parser.o \
-    map_parser.o \
+	linkage_parser.o \
+	map_parser.o \
 	linkage_writer.o \
 	haplotype_writer.o \
 	peel_sequence_generator.o \
 	founder_allele_graph.o \
 	founder_allele_graph2.o \
-    elimination.o \
+	elimination.o \
 	peel_matrix.o \
 	rfunction.o \
 	trait_rfunction.o \
 	sampler_rfunction.o \
 	peeler.o \
 	lod_calculator.o \
-    markov_chain.o \
+	markov_chain.o \
 	locus_sampler2.o \
 	meiosis_sampler.o \
-    linkage_program.o \
+	linkage_program.o \
 	program.o \
 	progress.o \
 	main.o

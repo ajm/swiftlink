@@ -1,5 +1,6 @@
 using namespace std;
 
+#include <cstdlib>
 #include <string>
 
 #include "trait.h"

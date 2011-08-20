@@ -31,7 +31,20 @@ class Rfunction {
     Rfunction* previous_rfunction2;
     bool function_used;
         
-    enum trait get_trait(enum phased_trait p, enum parentage parent);
+    //enum trait get_trait(enum phased_trait p, enum parentage parent);
+    inline enum trait get_trait(enum phased_trait p, enum parentage parent) {
+        switch(parent) {
+            case MATERNAL:
+                return (((p == TRAIT_UU) or (p == TRAIT_UA)) ? TRAIT_U : TRAIT_A);    
+            case PATERNAL:
+                return (((p == TRAIT_UU) or (p == TRAIT_AU)) ? TRAIT_U : TRAIT_A);
+        
+            default:
+                break;
+        }
+        abort();
+    }
+    
     void get_traits(enum phased_trait p, enum trait& mat, enum trait& pat);
     void summation(PeelMatrixKey& pmatrix_index, unsigned personid);
         

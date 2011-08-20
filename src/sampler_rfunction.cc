@@ -33,7 +33,7 @@ SamplerRfunction& SamplerRfunction::operator=(const SamplerRfunction& rhs) {
 double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_trait pt, unsigned locus) {
     Person* p = ped->get_by_index(person_id);
     
-    //if(p->istyped()) {
+    if(p->istyped()) {
     
         switch(p->get_marker(locus)) {
             
@@ -49,7 +49,7 @@ double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_t
             default :
                 break;
         }
-    //}
+    }
     
     // these need to be properly normalised for each marker in the map, right?
     if(not p->isfounder())
@@ -80,7 +80,15 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
                                      enum parentage parent) {
     
     enum trait t = get_trait(kid_trait, parent);
-    
+    /*enum trait t;
+    switch(parent) {
+        case MATERNAL:
+            t = (((kid_trait == TRAIT_UU) or (kid_trait == TRAIT_UA)) ? TRAIT_U : TRAIT_A);
+        
+        case PATERNAL:
+            t = (((kid_trait == TRAIT_UU) or (kid_trait == TRAIT_AU)) ? TRAIT_U : TRAIT_A);
+    }
+    */
     // deal with homozygotes first
     if(parent_trait == TRAIT_AA) {
         //return (t == TRAIT_A) ? 0.5 : 0.0;

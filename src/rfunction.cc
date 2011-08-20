@@ -104,6 +104,7 @@ void Rfunction::summation(PeelMatrixKey& pmatrix_index, unsigned person_id) {
     pmatrix.set(pmatrix_index, tmp);
 }
 
+/*
 enum trait Rfunction::get_trait(enum phased_trait p, enum parentage parent) {
     
     switch(parent) {
@@ -119,6 +120,7 @@ enum trait Rfunction::get_trait(enum phased_trait p, enum parentage parent) {
     
     abort();
 }
+*/
 
 void Rfunction::get_traits(enum phased_trait p, enum trait& mat, enum trait& pat) {
     switch(p) {

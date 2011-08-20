@@ -6,43 +6,44 @@ using namespace std;
 #include <string>
 //#include <iomanip>
 
+#include "types.h"
 #include "disease_model.h"
-#include "trait.h"
 
 
 string DiseaseModel::debug_string() {
     stringstream ss;
     
-    ss << "DiseaseModel:" << endl;
-    ss << "\tsex linked: " << (sexlinked ? "true" : "false") << endl;
-    ss << "\tdisease freq: " << frequency << endl;
+    ss << "DiseaseModel:" << "\n";
+    ss << "\tsex linked: " << (sexlinked ? "true" : "false") << "\n";
+    ss << "\tdisease freq: " << frequency << "\n";
     ss << "\tpenetrance: " << penetrance[0] << ", " 
                            << penetrance[1] << ", " 
-                           << penetrance[2] << endl;
-    ss << endl;
+                           << penetrance[2] << "\n";
+    ss << "\n";
     
     // I hate not doing this inline, like a fmt string...
     // I know about setprecision(n) inline, but that set it permanently
     // which is 'surprising'
-    ss.precision(3);
+    ss.precision(DEBUG_FP_PRECISION);
     
     for(int i = 0; i < 3; ++i) {
         for(int j = 0; j < 3; ++j) {        
-            ss << "\tapriori_prob[" << i << "][" << j << "] = " \
-               << scientific << apriori_prob[i][j] << endl;
+            ss  << "\tapriori_prob[" << affection_str(static_cast<enum affection>(i)) << "][" \
+                << trait_str(static_cast<enum unphased_trait>(j)) << "] = " \
+                << scientific << apriori_prob[i][j] << "\n";
         }
     }
     
     for(int i = 0; i < 3; ++i) {
         for(int j = 0; j < 3; ++j) {        
-            ss << "\tpenetrance_prob[" << i << "][" << j << "] = " \
-               << scientific << penetrance_prob[i][j] << endl;
+            ss  << "\tpenetrance_prob[" \
+                << affection_str(static_cast<enum affection>(i)) << "][" \
+                << trait_str(static_cast<enum unphased_trait>(j)) << "] = " \
+                << scientific << penetrance_prob[i][j] << "\n";
         }
     }
     
-    ss << endl;
-    ss << "(1st index: UNKNOWN_AFFECTION, UNAFFECTED, AFFECTED)" << endl; 
-    ss << "(2nd index: TRAIT_HOMO_U, TRAIT_HETERO, TRAIT_HOMO_A)" << endl;
+    ss << "\n";
     
     return ss.str();
 }
@@ -71,16 +72,21 @@ void DiseaseModel::set_autosomal_dominant() {
 }
 
 void DiseaseModel::set(enum simple_disease_model d) {
+    
     switch(d) {
-        case SIMPLE_AUTOSOMAL_RECESSIVE :
+        case AUTOSOMAL_RECESSIVE :
             set_autosomal_recessive();
             break;
-        case SIMPLE_AUTOSOMAL_DOMINANT :
+            
+        case AUTOSOMAL_DOMINANT :
             set_autosomal_dominant();
             break;
+            
         default :
             abort();
     }
+    
+    abort();
 }
 
 double DiseaseModel::get_prob(const double prob[3][3], enum affection a, enum unphased_trait t) const {
@@ -99,6 +105,7 @@ double DiseaseModel::get_apriori_prob(enum affection a, enum unphased_trait t) c
 // of what the trait might be in an individual given their affection status
 // this info will be used by the Person objects
 void DiseaseModel::finish_init() {
+    
 	// penetrances
 	penetrance_prob[AFFECTED][TRAIT_HOMO_A] = penetrance[TRAIT_HOMO_A];
 	penetrance_prob[AFFECTED][TRAIT_HETERO] = penetrance[TRAIT_HETERO];
@@ -111,7 +118,6 @@ void DiseaseModel::finish_init() {
 	penetrance_prob[UNKNOWN_AFFECTION][TRAIT_HOMO_A] = 0.25;
 	penetrance_prob[UNKNOWN_AFFECTION][TRAIT_HETERO] = 0.25;
 	penetrance_prob[UNKNOWN_AFFECTION][TRAIT_HOMO_U] = 0.25;
-    
     
 	// apriori
 	apriori_prob[AFFECTED][TRAIT_HOMO_A] =		  frequency  *		   frequency  * penetrance[TRAIT_HOMO_A];
@@ -127,4 +133,3 @@ void DiseaseModel::finish_init() {
 	apriori_prob[UNKNOWN_AFFECTION][TRAIT_HOMO_U] = apriori_prob[AFFECTED][TRAIT_HOMO_U] + apriori_prob[UNAFFECTED][TRAIT_HOMO_U];
 
 }
-

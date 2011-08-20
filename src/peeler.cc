@@ -21,10 +21,6 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator& psg) :
     lod(p, g),
     trait_prob(0.0) {
     
-    //PeelSequenceGenerator psg(ped);
-    //psg.build_peel_order();
-    //psg.print();
-
     vector<PeelOperation>& ops = psg.get_peel_order();
         
     RfunctionBuilder<TraitRfunction> build(ped, map, rfunctions);
@@ -92,19 +88,12 @@ double Peeler::calc_trait_prob() {
     return peel(NULL, 0);
 }
 
-bool Peeler::process(DescentGraph& dg) {
+void Peeler::process(DescentGraph& dg) {
     // minus 1 because we want to look between markers
     // m-t-m-t-m-t-m where m is a marker and t is a trait location
-    for(unsigned i = 0; i < map->num_markers() - 1; ++i) {
-        double tmp = peel(&dg, i) + (dg._recombination_prob() - dg._recombination_prob2(i));
-        double tmp2 = dg.trans_prob();
-
-        //printf("%f\n", dg._recombination_prob2(i));
-        //printf("%f\n%f\n%f\n\n", tmp /*/ log(10)*/, tmp2 /*/ log(10)*/, (tmp - tmp2) /*/ log(10)*/);
-        lod.add(i, tmp - tmp2); // this is all in base e
+    for(unsigned i = 0; i < map->num_markers() - 1; ++i) {        
+        lod.add(i, peel(&dg, i) - dg.get_recombination_prob(i, false) - dg.get_marker_transmission());
     }
-    
-    return true;
 }
 
 double Peeler::peel(DescentGraph* dg, unsigned locus) {
@@ -116,12 +105,9 @@ double Peeler::peel(DescentGraph* dg, unsigned locus) {
     
     TraitRfunction* rf = rfunctions.back();
     
-    return log(rf->get_result()); // TODO : convert all peel code to log likelihood?
+    return log(rf->get_result());
 }
 
-// XXX change this so the peeler has the responsibility to
-// print everything to a file
 double Peeler::get(unsigned locus) {
     return lod.get(locus);
 }
-

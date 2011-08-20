@@ -17,10 +17,7 @@ class LodCalculator {
     vector<bool> initialised; // XXX <-- I don't like this, but log(0.0) is -inf :-S
     unsigned count;
     double trait_prob;
-    
-    double log_add(double a, double b);
-    //double exp10(double x);
-    
+        
  public :
     LodCalculator(Pedigree* p, GeneticMap* g);
     LodCalculator(const LodCalculator& l);
@@ -29,6 +26,7 @@ class LodCalculator {
     
     void add(unsigned locus, double prob);
     double get(unsigned locus);
+    
     void set_trait_prob(double p);
 };
 

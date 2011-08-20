@@ -11,9 +11,7 @@ using namespace std;
 #include <sstream>
 #include <string>
 
-#include "misc.h"
-#include "trait.h"
-#include "genotype.h"
+#include "types.h"
 
 
 // XXX create a super class 'marker'?
@@ -28,8 +26,8 @@ class Snp {
     double prob[4];
 
  public :
-    Snp(string name, double genetic, unsigned int physical) 
-        : name(name), 
+    Snp(string name, double genetic, unsigned int physical) : 
+        name(name), 
         genetic_distance(genetic), 
         physical_distance(physical),
         major_freq(1.0), 
@@ -37,16 +35,16 @@ class Snp {
 
     ~Snp() {}
     
-    double major() { return major_freq; }
-    double minor() { return minor_freq; }
+    double major() const { return major_freq; }
+    double minor() const { return minor_freq; }
     void set_minor_freq(double m) {
         minor_freq = m;
         major_freq = 1.0 - m;
     }
     
-    string get_name() { return name; }
-    double get_g_distance() { return genetic_distance; }
-    unsigned int get_p_distance() { return physical_distance; }
+    string get_name() const { return name; }
+    double get_g_distance() const { return genetic_distance; }
+    unsigned int get_p_distance() const { return physical_distance; }
 	
 	string debug_string() {
 	    stringstream ss;
@@ -73,7 +71,7 @@ class Snp {
 	        prob[i] /= total;
 	}
 	
-	double get_prob(enum phased_trait pt) {
+	double get_prob(enum phased_trait pt) const {
 	    return prob[pt];
 	}
 };
@@ -81,13 +79,13 @@ class Snp {
 class GeneticMap {
 
     vector<Snp> map;
-    vector<double> thetas; // both stored in log e
+    vector<double> thetas;
     vector<double> inversethetas;
     vector<double> half_thetas;
     vector<double> half_inversethetas;
     double temperature;
 
-    double haldane(double m);
+    double haldane(double m) const ;
     
  public :
     GeneticMap() : 
@@ -103,7 +101,11 @@ class GeneticMap {
 	Snp& operator[](int i) {
 		return map[i];
 	}
-
+    
+    const Snp& operator[](int i) const {
+		return map[i];
+	}
+    
     void add(Snp& s) {
         map.push_back(s);
     }
@@ -115,39 +117,39 @@ class GeneticMap {
         inversethetas.push_back(1.0 - d);
     }
     
-    Snp& get_marker(unsigned int i) { 
+    Snp& get_marker(unsigned int i) {
         return map[i];
     }
     
-    string get_name(unsigned int i) {
+    string get_name(unsigned int i) const {
         return map[i].get_name();
     }
     
-    double get_minor(unsigned int i) {
+    double get_minor(unsigned int i) const {
         return map[i].minor();
     }
 
-    double get_major(unsigned int i) {
+    double get_major(unsigned int i) const {
         return map[i].major();
     }
     
-    double get_prob(unsigned int i, enum phased_trait pt) {
+    double get_prob(unsigned int i, enum phased_trait pt) const {
         return map[i].get_prob(pt);
     }
 
-    double get_theta(unsigned int i);
-    double get_inversetheta(unsigned int i);
+    double get_theta(unsigned int i) const ;
+    double get_inversetheta(unsigned int i) const ;
     
-    double get_theta_log(unsigned int i);
-    double get_inversetheta_log(unsigned int i);
+    double get_theta_log(unsigned int i) const ;
+    double get_inversetheta_log(unsigned int i) const ;
     
-    double get_theta_halfway(unsigned int i);
-    double get_inversetheta_halfway(unsigned int i);
+    double get_theta_halfway(unsigned int i) const ;
+    double get_inversetheta_halfway(unsigned int i) const ;
     
-    unsigned int num_markers() { 
+    unsigned int num_markers() const { 
         return map.size();
     }
-
+    
     bool sanity_check();
 	string debug_string();
     

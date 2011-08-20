@@ -37,7 +37,7 @@ class Peeler {
     
     double peel(DescentGraph* dg, unsigned locus);
     double get_trait_prob();
-    bool process(DescentGraph& dg);
+    void process(DescentGraph& dg);
     double get(unsigned locus);
 };
 

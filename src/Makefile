@@ -5,31 +5,33 @@ INCLUDES := -I.
 LIBS := 
 
 OBJECTS	:= \
-    pedigree_parser.o \
+	trait.o \
+    genotype.o \
+	types.o \
+	logarithms.o \
+	disease_model.o \
+	genetic_map.o \
+	person.o \
+	pedigree.o \
+	descent_graph.o \
+	pedigree_parser.o \
     linkage_parser.o \
     map_parser.o \
 	linkage_writer.o \
 	haplotype_writer.o \
-	genotype.o \
-	person.o \
-	pedigree.o \
-	genetic_map.o \
-	disease_model.o \
-	descent_graph.o \
+	peel_sequence_generator.o \
 	founder_allele_graph.o \
 	founder_allele_graph2.o \
-    peel_sequence_generator.o \
-    rfunction.o \
+    elimination.o \
+	peel_matrix.o \
+	rfunction.o \
 	trait_rfunction.o \
 	sampler_rfunction.o \
 	peeler.o \
-	peel_matrix.o \
 	lod_calculator.o \
-	elimination.o \
     markov_chain.o \
 	locus_sampler2.o \
 	meiosis_sampler.o \
-	logarithms.o \
     linkage_program.o \
 	program.o \
 	progress.o \

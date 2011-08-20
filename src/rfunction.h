@@ -5,10 +5,9 @@ using namespace std;
 
 #include <vector>
 
+#include "types.h"
 #include "peel_matrix.h"
 #include "peeling.h"
-#include "trait.h"
-#include "descent_graph_types.h"
 
 
 #define NUM_ALLELES 4

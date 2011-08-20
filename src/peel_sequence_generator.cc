@@ -94,47 +94,17 @@ void PeelSequenceGenerator::build_peel_order() {
         }
         
         PeelOperation p = get_best_operation(tmp);
-/*
-        if(p.get_type() == LAST_PEEL) {
-            state.set_peeled(p.get_pivot());
-            break;
-        }
-*/
 
         peelorder.push_back(p);
         
         state.toggle_peel_operation(p);
         
-        p.print();
-        printf("\n");
-        //state.print();
-        //printf("\n");
+        printf("%s\n", p.debug_string().c_str());
     }
 }
 
 vector<PeelOperation>& PeelSequenceGenerator::get_peel_order() {
     return peelorder;
-}
-
-void PeelSequenceGenerator::print() {
-    /*
-    for(unsigned i = 0; i < peelorder.size(); ++i) {
-        printf("rfunction %d: ", i);
-        peelorder[i].print(); // XXX this is not ideal
-        
-        vector<unsigned>& tmp = peelorder[i].get_peelset();
-        printf(" (dependent on : ");
-        for(unsigned j = 0; j < tmp.size(); ++j) {
-            for(unsigned k = 0; k < i; ++k) {
-                if((not peelorder[k].is_used()) and peelorder[k].in_cutset(tmp[j])) {
-                    printf("%d ", k);
-                    peelorder[k].set_used();
-                }
-            }
-        }
-        printf(")\n");
-    }
-    */
 }
 
 unsigned PeelSequenceGenerator::score_peel_sequence() {
@@ -147,3 +117,12 @@ unsigned PeelSequenceGenerator::score_peel_sequence() {
     return total;
 }
 
+string PeelSequenceGenerator::debug_string() {
+    stringstream ss;
+    
+    for(unsigned i = 0; i < peelorder.size(); ++i) {
+        ss << peelorder[i].debug_string() << "\n";
+    }
+    
+    return ss.str();
+}

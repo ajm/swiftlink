@@ -1,11 +1,21 @@
 #ifndef LKG_TRAIT_H_
 #define LKG_TRAIT_H_
 
+using namespace std;
+
+#include <string>
+
 // these need to be ordered the same as penetrance vector
+// which is the same as in the 'linkage' config file
 enum unphased_trait {
-    TRAIT_HOMO_U,   // phenocopies
+    TRAIT_HOMO_U,
     TRAIT_HETERO,
     TRAIT_HOMO_A
+};
+
+enum trait {
+    TRAIT_U,
+    TRAIT_A
 };
 
 enum phased_trait {
@@ -15,13 +25,7 @@ enum phased_trait {
     TRAIT_AA
 };
 
-enum trait {
-    TRAIT_U,
-    TRAIT_A
-};
-
-typedef enum unphased_trait     unphased_trait_t;
-typedef enum phased_trait       phased_trait_t;
+string trait_str(enum phased_trait t);
+string trait_str(enum unphased_trait t);
 
 #endif
-

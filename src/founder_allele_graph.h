@@ -17,8 +17,8 @@ struct adj_node {
 
 class FounderAlleleGraph {
 	
-    GeneticMap* map;
     Pedigree* ped;
+    GeneticMap* map;
     int num_founder_alleles;
     
     int* num_neighbours;
@@ -37,7 +37,7 @@ class FounderAlleleGraph {
     double _enumerate_component(int *component, int component_size, unsigned locus);
     
  public :
-	FounderAlleleGraph(GeneticMap* g, Pedigree* p);
+	FounderAlleleGraph(Pedigree* p, GeneticMap* g);
 	FounderAlleleGraph(const FounderAlleleGraph& fag);    
 	~FounderAlleleGraph();
 	FounderAlleleGraph& operator=(const FounderAlleleGraph& fag);

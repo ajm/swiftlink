@@ -5,38 +5,39 @@
 // one parent homoz - child cannot be other homoz
 // both parents same homoz - child can only be homoz
 // both parents different homoz - child can only be hetero
-bool genotype_compatible(unphased_genotype_t mother, 
-		 				 unphased_genotype_t father, 
-						 unphased_genotype_t child) {
+bool genotype_compatible(enum unphased_genotype mother, 
+		 				 enum unphased_genotype father, 
+						 enum unphased_genotype child) {
 	
-	switch ( child ) {
+	switch (child) {
 		case UNTYPED :
-			return 1;
+			return true;
 		case HOMOZ_A :
-			return (mother != HOMOZ_B) && (father != HOMOZ_B);
+			return (mother != HOMOZ_B) and (father != HOMOZ_B);
+        case HOMOZ_B :
+			return (mother != HOMOZ_A) and (father != HOMOZ_A);
 		case HETERO :
-			return !((mother == HOMOZ_A) && (father == HOMOZ_A)) && \
-                   !((mother == HOMOZ_B) && (father == HOMOZ_B));
-		case HOMOZ_B :
-			return (mother != HOMOZ_A) && (father != HOMOZ_A);
+			return not ((mother == HOMOZ_A) and (father == HOMOZ_A)) and \
+                   not ((mother == HOMOZ_B) and (father == HOMOZ_B));
 	}
 	
 	abort();
 }
 
-bool genotype_untyped(unphased_genotype_t g) {
+bool genotype_untyped(enum unphased_genotype g) {
 	return g == UNTYPED;
 }
 
-bool genotype_homoz(unphased_genotype_t g) {
-	return g == HOMOZ_A || g == HOMOZ_B;
+bool genotype_homoz(enum unphased_genotype g) {
+	return (g == HOMOZ_A) or (g == HOMOZ_B);
 }
 
-bool genotype_hetero(unphased_genotype_t g) {
+bool genotype_hetero(enum unphased_genotype g) {
 	return g == HETERO;
 }
 
 string genotype_string(enum phased_genotype g) {
+    
 	switch(g) {
 		case UN :
 			return "UN";
@@ -54,6 +55,7 @@ string genotype_string(enum phased_genotype g) {
 }
 
 string genotype_string(enum unphased_genotype g) {
+    
     switch(g) {
         case HOMOZ_A :
             return "AA";
@@ -67,5 +69,3 @@ string genotype_string(enum unphased_genotype g) {
     
     abort();
 }
-
-

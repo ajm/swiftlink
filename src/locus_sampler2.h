@@ -5,7 +5,6 @@ using namespace std;
 
 #include <vector>
 
-#include "descent_graph_diff.h"
 #include "descent_graph.h"
 #include "trait.h"
 #include "sampler.h"

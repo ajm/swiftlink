@@ -5,10 +5,9 @@ using namespace std;
 #include <vector>
 
 #include "pedigree_parser.h"
-#include "genotype.h"
 #include "pedigree.h"
 #include "person.h"
-#include "misc.h"
+#include "types.h"
 
 
 bool PedigreeParser::_parse_sex(const string& str, enum sex& s) {

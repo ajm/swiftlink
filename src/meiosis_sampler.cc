@@ -2,11 +2,11 @@ using namespace std;
 
 #include <cmath>
 
+#include "types.h"
 #include "pedigree.h"
 #include "logarithms.h"
 #include "genetic_map.h"
 #include "descent_graph.h"
-#include "descent_graph_types.h"
 #include "meiosis_sampler.h"
 #include "founder_allele_graph2.h"
 #include "founder_allele_graph.h"
@@ -36,10 +36,6 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
     tmp_likelihood = f.populate(dg) ? f.likelihood() : LOG_ILLEGAL;
     */
     
-    // OLD CODE TO COMPARE
-    // <delete>
-    //double tmp_likelihood2;
-    //FounderAlleleGraph fag(map, ped);
     fag.reset();
     if(fag.populate(dg, locus)) {
         //fag.print();
@@ -50,15 +46,7 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
     else {
         tmp_likelihood = LOG_ILLEGAL;
     }
-    
-    
-    //fprintf(stderr, "\n\n");
-    //fprintf(stderr, "old = %e, new = %e, illegal = %e\n", tmp_likelihood2, tmp_likelihood, LOG_ILLEGAL);
-    //dg.print();
-    //abort();
-    // </delete>
-    
-    
+        
     dg.set(person_id, locus, parent, tmp);
     
     /*
@@ -71,7 +59,6 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
     */
     
     return tmp_likelihood;
-    //return tmp_likelihood2;
 }
 
 /*

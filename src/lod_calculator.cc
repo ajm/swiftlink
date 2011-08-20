@@ -6,6 +6,7 @@ using namespace std;
 #include "genetic_map.h"
 #include "pedigree.h"
 #include "lod_calculator.h"
+#include "logarithms.h"
 
 
 LodCalculator::LodCalculator(Pedigree* p, GeneticMap* g) : 
@@ -62,22 +63,11 @@ LodCalculator& LodCalculator::operator=(const LodCalculator& rhs) {
 void LodCalculator::set_trait_prob(double p) {
     trait_prob = p;
 }
-/*
-inline double LodCalculator::exp10(double x) {
-    return pow(10.0, x);
-}
-*/
-double LodCalculator::log_add(double a, double b) {
-    // log(exp(a - b) + exp(b - b)) + b
-    //return log10(exp10(a - b) + 1) + b;
-    //return log(exp(a - b) + 1) + b;
-    return log(exp(b - a) + 1) + a; // b is smaller and was just converted to log
-}
 
 void LodCalculator::add(unsigned locus, double prob) {
 
     lod_scores[locus] = initialised[locus] ? 
-        log_add(lod_scores[locus], prob) : 
+        log_sum(lod_scores[locus], prob) : 
         prob, initialised[locus] = true;
 
     if(locus == 0)

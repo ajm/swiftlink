@@ -3,8 +3,8 @@ using namespace std;
 #include <vector>
 #include <cmath>
 
+#include "types.h"
 #include "peel_sequence_generator.h"
-#include "descent_graph_types.h"
 #include "descent_graph.h"
 #include "pedigree.h"
 #include "genetic_map.h"

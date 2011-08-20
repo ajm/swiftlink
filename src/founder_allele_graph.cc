@@ -7,18 +7,17 @@ using namespace std;
 #include <numeric>
 #include <algorithm>
 
-#include "misc.h"
+#include "types.h"
 #include "person.h"
 #include "pedigree.h"
 #include "founder_allele_graph.h"
 #include "descent_graph.h"
 #include "genetic_map.h"
-#include "genotype.h"
 
 
-FounderAlleleGraph::FounderAlleleGraph(GeneticMap* g, Pedigree* p) : 
-    map(g), 
+FounderAlleleGraph::FounderAlleleGraph(Pedigree* p, GeneticMap* g) : 
     ped(p),
+    map(g),
     num_founder_alleles(p->num_founders() * 2),
     num_neighbours(NULL),
     adj_matrix(NULL),
@@ -28,8 +27,8 @@ FounderAlleleGraph::FounderAlleleGraph(GeneticMap* g, Pedigree* p) :
 }
 
 FounderAlleleGraph::FounderAlleleGraph(const FounderAlleleGraph& fag) : 
-    map(fag.map),
     ped(fag.ped),
+    map(fag.map),
     num_founder_alleles(fag.num_founder_alleles),
     num_neighbours(NULL),
     adj_matrix(NULL),

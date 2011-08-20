@@ -5,8 +5,8 @@ using namespace std;
 
 #include <cstdlib>
 
+#include "types.h"
 #include "descent_graph.h"
-#include "descent_graph_types.h"
 #include "pedigree.h"
 #include "genetic_map.h"
 

@@ -3,9 +3,12 @@
 
 using namespace std;
 
+#include <cstdio>
+#include <cstdlib>
 #include <vector>
 #include <algorithm>
-#include <cstdio>
+#include <string>
+#include <sstream>
 
 #include "pedigree.h"
 
@@ -91,42 +94,42 @@ class PeelOperation {
     void set_peelnode(unsigned i) {
         peelnode = i;
     }
-    
-    void print() const {
-        unsigned int tmp;
+
+    string peeloperation_str(enum peeloperation po) {
         
-        switch(type) {
+        switch(po) {
             case NULL_PEEL:
-                printf("null ");
-                break;
+                return "null";
             case CHILD_PEEL:
-                printf("child ");
-                break;
+                return "child";
             case PARENT_PEEL:
-                printf("parent ");
-                break;
+                return "parent";
             case PARTNER_PEEL:
-                printf("partner ");
-                break;
+                return "partner";
             case LAST_PEEL:
-                printf("last ");
-                break;
-            default:
-                printf("error ");
-                break;
+                return "last";
         }
         
-        printf("peelnode = (%d) ", peelnode);
-                
-        printf("cutset = (");
-        tmp = cutset.size();
+        abort();
+    }
+    
+    string debug_string() {
+        stringstream ss;
+        
+        ss  << peeloperation_str(type) << " " \
+            << "peelnode = " << peelnode << " " \
+            << "cutset = (";
+        
+        unsigned tmp = cutset.size();
         for(unsigned i = 0; i < tmp; ++i) {
-            printf("%d", cutset[i]);
+            ss << cutset[i];
             if(i != (tmp-1)) {
-                putchar(',');
+                ss << ",";
             }
         }
-        printf(") ");
+        ss << ") ";
+        
+        return ss.str();
     }
     
     bool operator<(const PeelOperation& p) const {
@@ -157,10 +160,14 @@ class PeelingState {
         toggle_peeled(operation.get_peelnode());
     }
     
-    void print() {
+    string debug_string() {
+        stringstream ss;
+        
         for(unsigned i = 0; i < peeled.size(); ++i) {
-            printf("%d\t%s\n", i, peeled[i] ? "peeled" : "unpeeled");
+            ss << i << "\t" << (peeled[i] ? "peeled" : "unpeeled") << "\n";
         }
+        
+        return ss.str();
     }
 };
 

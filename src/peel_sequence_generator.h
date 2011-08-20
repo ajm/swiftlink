@@ -59,13 +59,13 @@ class PeelSequenceGenerator {
     bool creates_simple_peel_sequence(PeelOperation& po);
     
     void all_possible_peels(int& unpeeled);
-
+    
     void build_peel_order();
     vector<PeelOperation>& get_peel_order();
-    void print();
     
     unsigned score_peel_sequence();
+    
+    string debug_string();
 };
 
 #endif
-

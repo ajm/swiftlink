@@ -7,7 +7,7 @@ using namespace std;
 #include <string>
 #include <vector>
 
-#include "misc.h"
+#include "types.h"
 #include "person.h"
 
 
@@ -21,15 +21,16 @@ class Pedigree {
 	
 	bool _mendelian_errors() const;
 	bool _parental_relationship_errors();
-	bool _same_number_of_markers();
+	bool _same_number_of_markers() const;
     void _reorder_family();
 	void _rename_parent_ids();
 	void _fill_in_relationships();
+    void _set_typed_flags();
+	void _count_founders();
+    void _count_leaves();
 	int _count_components();
 	int _person_compare(const Person& a, const Person& b) const;
-    unsigned int _count_founders();
-    unsigned int _count_leaves();
-	
+    
  public:
 	Pedigree(const string id) : 
 	    id(id), 
@@ -59,30 +60,26 @@ class Pedigree {
     }
 
 	// interrogate	
-	string get_id() { 
+	string get_id() const { 
         return id;
     }
     
 	unsigned int num_members() const { 
         return members.size();
     }
-
-   	unsigned int num_markers() { 
+    
+   	unsigned int num_markers() const {
 		return members[0].num_markers(); 
 	}
-
-	unsigned int num_founders() { 
-		return number_of_founders != 0 ? 
-			number_of_founders : 
-			_count_founders();
+    
+	unsigned int num_founders() const {
+		return number_of_founders;
 	}
-
-	unsigned int num_leaves() { 
-		return number_of_leaves != 0 ? 
-			number_of_leaves : 
-			_count_leaves();
+    
+	unsigned int num_leaves() const {
+		return number_of_leaves;
 	}
-		
+    
 	//Person* get_by_index(int i);
 	Person* get_by_name(const string& id);
 	

@@ -1,6 +1,7 @@
 using namespace std;
 
 #include <cmath>
+
 #include "logarithms.h"
 
 /*
@@ -8,11 +9,12 @@ double log_sum(double a, double b) {
     return log(exp(b - a) + 1) + a;
 }
 */
+
 double log_sum(double a, double b) {
-    if(a == LOG_ZERO)
+    if(a == LOG_ILLEGAL)
         return b;
     
-    if(b == LOG_ZERO)
+    if(b == LOG_ILLEGAL)
         return a;
     
     return log(exp(b - a) + 1) + a;

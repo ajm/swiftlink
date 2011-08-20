@@ -10,26 +10,24 @@
 #include <climits>
 #include <unistd.h>
 
-#include "misc.h"
+#include "types.h"
+#include "defaults.h"
 #include "linkage_program.h"
 //#include "haplotype_program.h"
 
-
-#define DEFAULT_OUTPUT_FILENAME "output.dat"
 
 enum analysistype {
     LINKAGE,
     HAPLOTYPE
 };
 
-char*   mapfile;
-char*   pedfile;
-char*   datfile;
-char*   outfile;
-int     iterations;
-int     burnin;
-bool    verbose;
-enum analysistype analysis;
+char* mapfile = NULL;
+char* pedfile = NULL;
+char* datfile = NULL;
+char* outfile = DEFAULT_RESULTS_FILENAME;
+int iterations = DEFAULT_MCMC_ITERATIONS;
+bool verbose = false;
+enum analysistype analysis = LINKAGE;
 
 
 void _usage(char *prog) {
@@ -41,7 +39,6 @@ void _usage(char *prog) {
             "\t-o <output file>\n"
 			"\t-a <linkage|haplotype> (default: linkage)\n"
             "\t-i <iterations>\n"
-            "\t-b <burnin iterations>\n"
 			"\t-v verbose\n"
 			"\t-h print usage information\n"
 			"\n", 
@@ -62,15 +59,6 @@ void _meow(void) {
 			);
 	
 	exit(EXIT_SUCCESS);
-}
-
-void _set_defaults() {
-    mapfile = pedfile = datfile = NULL;
-	outfile = DEFAULT_OUTPUT_FILENAME;
-    verbose = false;
-	analysis = LINKAGE;
-    iterations = -1;
-    burnin = -1;
 }
 
 bool str2int(int &i, char *s) {
@@ -99,10 +87,8 @@ void _handle_args(int argc, char **argv) {
     extern int optopt;
 	int ch;
 	int bad = 0;
-	
-	_set_defaults();
-	
-	while ((ch = getopt(argc, argv, ":p:d:m:o:i:b:a:vhc")) != -1) {
+		
+	while ((ch = getopt(argc, argv, ":p:d:m:o:i:a:vhc")) != -1) {
 		switch (ch) {
 			case 'p':
 				pedfile = optarg;
@@ -130,14 +116,14 @@ void _handle_args(int argc, char **argv) {
                     exit(EXIT_FAILURE);
                 }
                 break;
-                
+            /*    
             case 'b':
                 if(not str2int(burnin, optarg)) {
                     fprintf(stderr, "%s: option '-%c' requires an int as an argument (%s given)\n", argv[0], optopt, optarg);
                     exit(EXIT_FAILURE);
                 }
                 break;
-                
+            */
 		    case 'a':
 		        if(strcmp(optarg, "linkage") == 0) {
 		            analysis = LINKAGE;
@@ -193,7 +179,7 @@ void _handle_args(int argc, char **argv) {
 }
 
 int linkage_analysis() {
-    LinkageProgram lp(pedfile, mapfile, datfile, outfile, verbose);
+    LinkageProgram lp(pedfile, mapfile, datfile, outfile, iterations, verbose);
     
     return lp.run() ? EXIT_SUCCESS : EXIT_FAILURE;
 }

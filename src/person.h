@@ -11,24 +11,8 @@ using namespace std;
 #include <vector>
 #include <algorithm>
 
-#include "genotype.h"
-#include "trait.h"
+#include "types.h"
 
-
-const unsigned int UNKNOWN_PARENT = ~0u;
-const unsigned int UNKNOWN_ID = UNKNOWN_PARENT;
-
-enum sex {
-	UNSEXED,
-    MALE,
-    FEMALE
-};
-
-enum affection {
-	UNKNOWN_AFFECTION,
-    UNAFFECTED,
-    AFFECTED
-};
 
 class Pedigree;
 class DiseaseModel;
@@ -67,14 +51,12 @@ class Person {
 	vector<Person*> mates;
 
 
+    
     // private stuff
 	void _init_probs(const DiseaseModel& dm);
 	bool _is_unknown(const string& s) const { 
         return s == "0"; 
     }
-	string gender_str() const;
-	string affection_str() const;
-    
 
     // private, peeling related
     unsigned count_unpeeled(vector<Person*>& v, PeelingState& ps);
@@ -105,7 +87,8 @@ class Person {
 	~Person() {}
 	Person(const Person& rhs);
 	Person& operator=(const Person& p);
-
+    
+    
     /* getters */
 	string get_id() const { return id; }
 	string get_mother() const { return mother; }
@@ -120,31 +103,24 @@ class Person {
 		if(not istyped()) {
 			return UNTYPED;
         }
-		
-#ifndef _FEELING_LUCKY_
-		if(genotypes.size() < i) {
-		    fprintf(stderr, "requested genotype (person: %s, genotype %d) out of range\n", id.c_str(), i);
-			abort();
-        }
-#endif
-		
+        
 		return genotypes[i];
 	}
-	
-	unsigned int num_markers() { return genotypes.size(); }
-	unsigned int num_children() { return children.size(); }
-	unsigned int num_mates() { return mates.size(); }
-	Person* get_child(unsigned int i) const { return children[i]; }
-	Person* get_spouse(unsigned int i) const { return mates[i]; }
-	Person* get_mate(unsigned int i) const { return mates[i]; }
 	enum unphased_genotype get_marker(unsigned i) const { return genotypes[i]; } // <--- redundancy?
+    
+	unsigned int num_markers() const { return genotypes.size(); }
+	unsigned int num_children() const { return children.size(); }
+	unsigned int num_mates() const { return mates.size(); }
+	Person* get_child(unsigned int i) const { return children[i]; }
+	//Person* get_spouse(unsigned int i) const { return mates[i]; }
+	//Person* get_mate(unsigned int i) const { return mates[i]; }
+	
 
 	/* setters */
 	void set_internalid(unsigned int id) { internal_id = id; }
 	void set_maternalid(unsigned int id) { maternal_id = id; }
 	void set_paternalid(unsigned int id) { paternal_id = id; }
-	void set_untyped() { typed = false; }
-
+    
 	void add_genotype(enum unphased_genotype g) {
 		genotypes.push_back(g);
 	}
@@ -158,31 +134,32 @@ class Person {
 	bool istyped() const { return typed; }
 
 	bool isfounder_str() const { return mother_unknown() and father_unknown(); }
-    bool isfounder() const { /*return isfounder_str(); }*/ return (maternal_id == UNKNOWN_PARENT) and (paternal_id == UNKNOWN_PARENT); }
+    bool isfounder() const /*{ return isfounder_str(); }*/ { return (maternal_id == UNKNOWN_PARENT) and (paternal_id == UNKNOWN_PARENT); }
 	bool isleaf() const { return children.size() == 0; }
 
 	bool mother_unknown() const { return _is_unknown(mother); }
 	bool father_unknown() const { return _is_unknown(father); }
 	
     // pedigree construction / validation
-	bool mendelian_errors() const;
+	bool mendelian_errors() const ;
 	void fill_in_relationships();
-
+    void set_typed();
+    
 	// so I can sort, I don't care for a specific (strong) ordering, 
 	// I just want all the founders first
 	bool operator<(const Person& p) const {
 		return isfounder_str() and not p.isfounder_str();
 	}
-
-    bool peel_operation(PeelOperation& p, PeelingState& state);
-    double get_disease_prob(enum phased_trait pt);
+    
+    double get_disease_prob(enum phased_trait pt) { return disease_prob[pt]; }
     //bool is_parent(unsigned int i);
     inline bool is_parent(unsigned int i) const {
         return (i == maternal_id) or (i == paternal_id);
     }
     
+    bool peel_operation(PeelOperation& p, PeelingState& state);
+    
     string debug_string();
 };
 
 #endif
-

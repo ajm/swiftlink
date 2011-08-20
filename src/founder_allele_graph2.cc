@@ -7,13 +7,12 @@ using namespace std;
 #include <numeric>
 #include <algorithm>
 
-#include "misc.h"
+#include "types.h"
 #include "person.h"
 #include "pedigree.h"
 #include "founder_allele_graph2.h"
 #include "descent_graph.h"
 #include "genetic_map.h"
-#include "genotype.h"
 
 
 bool FounderAlleleGraph2::populate(DescentGraph& d) {

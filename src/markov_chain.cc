@@ -22,7 +22,7 @@ void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
     LocusSampler lsampler(ped, map, psg);
     
     tmp.random_descentgraph();
-    if(not tmp.likelihood(&tmp_prob)) {
+    if((tmp_prob = tmp.get_likelihood()) == LOG_ZERO) {
         fprintf(stderr, "error: sequential imputation produced an invalid descent graph\n");
         abort();
     }
@@ -32,12 +32,12 @@ void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
     do {
         lsampler.sequential_imputation(tmp);
     
-        if(not tmp.likelihood(&tmp_prob)) {
+        if((tmp_prob = tmp.get_likelihood()) == LOG_ZERO) {
             fprintf(stderr, "error: sequential imputation produced an invalid descent graph\n");
             abort();
         }
         
-        fprintf(stderr, "sequential imputation = %e\n", tmp_prob);
+        //fprintf(stderr, "sequential imputation = %e\n", tmp_prob);
         
         if(tmp_prob > best_prob) {
             dg = tmp;
@@ -86,11 +86,6 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     LocusSampler lsampler(ped, map, psg);
     MeiosisSampler msampler(ped, map);
     
-    // some vars to keep track of what is being sampled
-    // just cycle through markers and people
-    //unsigned locus = 0;
-    //unsigned person = ped->num_founders(); // this will be the index of the first non-founder
-
     Progress p("MCMC: ", iterations);
     
     lsampler.reset(); // just in case it was used for sequential imputation
@@ -108,21 +103,6 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
         //person = (person + 1) % ped->num_members();
         //if(person == 0)
         //    person = ped->num_founders();
-/*
-        if((random() / static_cast<double>(RAND_MAX)) < 0.5) {
-            //printf("L");
-            lsampler.step(dg, locus);
-            locus = (locus + 1) % map->num_markers();
-        }
-        else {
-            //printf("M");
-            msampler.step(dg, person);
-            person = (person + 1) % ped->num_members();
-            if(person == 0) {
-                person = ped->num_founders();
-            }
-        }
-*/
 
         if((random() / static_cast<double>(RAND_MAX)) < 0.5) {
             for(unsigned j = 0; j < map->num_markers(); ++j)
@@ -132,9 +112,7 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
             for(unsigned j = 0; j < num_meioses; ++j)
                 msampler.step(dg, j);
         }        
-        
-        //printf("X %f %d\n", dg._recombination_prob(), dg.num_recombinations());
-        
+                
         p.increment();
         
         if(i < burnin) {

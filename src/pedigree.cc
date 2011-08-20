@@ -7,8 +7,7 @@ using namespace std;
 #include <algorithm>
 #include <queue>
 
-#include "misc.h"
-#include "genotype.h"
+#include "types.h"
 #include "pedigree.h"
 #include "person.h"
 
@@ -25,15 +24,15 @@ bool Pedigree::add(Person& p) {
 bool Pedigree::exists(const string& id) {
 	return get_by_name(id) != NULL;
 }
+
 /*
 Person* Pedigree::get_by_index(int i) {
     return &members[i];
 }
 */
+
 Person* Pedigree::get_by_name(const string& id) {
 	for(unsigned int i = 0; i < members.size(); ++i) {
-        //fprintf(stderr, "member = %d\n", i);
-        //fprintf(stderr, "id = %s\n", members[i].get_id().c_str());
 		if(members[i].get_id() == id) {
 			return &members[i];
 		}
@@ -41,7 +40,7 @@ Person* Pedigree::get_by_name(const string& id) {
 	return NULL;
 }
 
-unsigned int Pedigree::_count_founders() {
+void Pedigree::_count_founders() {
 	number_of_founders = 0;
 		
 	for(unsigned int i = 0; i < members.size(); ++i) {
@@ -49,11 +48,9 @@ unsigned int Pedigree::_count_founders() {
 			number_of_founders++;
 		}
 	}
-
-	return number_of_founders;
 }
 
-unsigned int Pedigree::_count_leaves() {
+void Pedigree::_count_leaves() {
 	number_of_leaves = 0;
 	
 	for(unsigned int i = 0; i < members.size(); ++i) {
@@ -61,42 +58,39 @@ unsigned int Pedigree::_count_leaves() {
 			number_of_leaves++;
 		}
 	}
-
-	return number_of_leaves;
 }
 
 bool Pedigree::sanity_check() {
     int components;
 
-	if( not _same_number_of_markers() ) {
+	if(not _same_number_of_markers())
 		return false;
-	}
 	
-    if( _parental_relationship_errors() ) {
-		//printf("parent relationship errors\n");
+    if(_parental_relationship_errors())
         return false;
-	}
 	
     _reorder_family();
 	_rename_parent_ids();
 	_fill_in_relationships();
+    _set_typed_flags();
 	
-    if( (components = _count_components()) != 1 ) {
+    if((components = _count_components()) != 1) {
         fprintf(stderr, "error: %s, family %s is actually composed of %d distinct families\n", 
             __func__, id.c_str(), components);
         return false;
     }
 	
-    // ideally this should say what marker and what column, individuals
-    if( _mendelian_errors() ) {
-		//printf("mendelian errors\n");
+    if(_mendelian_errors()) {
         return false;
     }
+    
+    _count_founders();
+    _count_leaves();
 	
 	return true;
 }
 
-bool Pedigree::_same_number_of_markers() {
+bool Pedigree::_same_number_of_markers() const {
 	if(int(members.size()) < 2)
 		return true;
 
@@ -121,7 +115,7 @@ bool Pedigree::_parental_relationship_errors() {
 	
     // check that parents exist
     // check that parents are the correct genders
-    for(uint i = 0; i < members.size(); ++i) {
+    for(unsigned int i = 0; i < members.size(); ++i) {
         p = &members[i];
 		
 		id = p->get_id();
@@ -131,13 +125,11 @@ bool Pedigree::_parental_relationship_errors() {
 		
         if( not p->mother_unknown() ) {
 			if( (tmp = get_by_name(mother)) == NULL ) {
-                fprintf(stderr, "error: %s, mother of %s does not exist\n", 
-						__func__, id.c_str());
+                fprintf(stderr, "error: %s, mother of %s does not exist\n", __func__, id.c_str());
                 error = true;
             }
             else if( not tmp->isfemale() ) {
-                fprintf(stderr, "error: %s, mother of %s is not female\n", 
-						__func__, id.c_str());
+                fprintf(stderr, "error: %s, mother of %s is not female\n", __func__, id.c_str());
                 error = true;
             }
         }
@@ -147,13 +139,11 @@ bool Pedigree::_parental_relationship_errors() {
         
 		if( not p->father_unknown() ) {
             if( (tmp = get_by_name(father)) == NULL ) {
-                fprintf(stderr, "error: %s, father of %s does not exist\n", 
-						__func__, id.c_str());
+                fprintf(stderr, "error: %s, father of %s does not exist\n", __func__, id.c_str());
                 error = true;
             }
             else if( not tmp->ismale() ) { 
-                fprintf(stderr, "error: %s, father of %s is not male\n", 
-						__func__, id.c_str());
+                fprintf(stderr, "error: %s, father of %s is not male\n", __func__, id.c_str());
                 error = true;
             }
         }
@@ -167,7 +157,7 @@ void Pedigree::_reorder_family() {
 	sort(members.begin(), members.end());
     
 	// rename so id is still index
-    for(uint i = 0; i < members.size(); ++i) {
+    for(unsigned int i = 0; i < members.size(); ++i) {
         members[i].set_internalid(i);
     }
 }
@@ -179,20 +169,20 @@ void Pedigree::_rename_parent_ids() {
 	
 	// each person, look at maternal and paternal ids and search
 	// the family for that persons id to find out their internal id
-	for(uint i = 0; i < members.size(); ++i) {
+	for(unsigned int i = 0; i < members.size(); ++i) {
 		p = &members[i];
 		
 		id	   = p->get_id();
 		mother = p->get_mother();
 		father = p->get_father();
 		
-		if( p->mother_unknown() )
+		if(p->mother_unknown())
 			p->set_maternalid(UNKNOWN_PARENT);
 		
-		if( p->father_unknown() )
+		if(p->father_unknown())
 			p->set_paternalid(UNKNOWN_PARENT);
 		
-		for(uint j = 0; j < members.size(); ++j) {
+		for(unsigned int j = 0; j < members.size(); ++j) {
 			tmp = &members[j];
             
 			if(tmp->get_id() == mother)
@@ -205,7 +195,7 @@ void Pedigree::_rename_parent_ids() {
 }
 
 bool Pedigree::_mendelian_errors() const {
-	for(uint i = 0; i < members.size(); ++i) {
+	for(unsigned int i = 0; i < members.size(); ++i) {
 		if(members[i].mendelian_errors())
 			return true;
 	}
@@ -213,8 +203,14 @@ bool Pedigree::_mendelian_errors() const {
 }
 
 void Pedigree::_fill_in_relationships() {
-	for(uint i = 0; i < members.size(); ++i) {
+	for(unsigned int i = 0; i < members.size(); ++i) {
 		members[i].fill_in_relationships();
+	}
+}
+
+void Pedigree::_set_typed_flags() {
+    for(unsigned int i = 0; i < members.size(); ++i) {
+		members[i].set_typed();
 	}
 }
 
@@ -226,15 +222,11 @@ int Pedigree::_count_components() {
 	unsigned int tmp, tmp2;
 	queue<unsigned int> q;
     Person* p;
-	//int visited[members.size()]; // ISO C++ bitches about this...
     vector<int> visited(members.size(), WHITE);
-/*
-	for(uint i = 0; i < members.size(); ++i)
-		visited[i] = WHITE;
-*/
+
 	do {
 		// find a starting point
-		for(uint i = 0; i < members.size(); ++i) {
+		for(unsigned int i = 0; i < members.size(); ++i) {
 			if(visited[i] == WHITE) {
 				q.push(i);
 				visited[i] = GREY;
@@ -248,7 +240,7 @@ int Pedigree::_count_components() {
 			
 			p = &members[tmp];
 
-			for(uint i = 0; i < p->num_children(); ++i) {
+			for(unsigned int i = 0; i < p->num_children(); ++i) {
 				tmp2 = p->get_child(i)->get_internalid();
 				if(visited[tmp2] == WHITE) {
 					visited[tmp2] = GREY;
@@ -257,13 +249,13 @@ int Pedigree::_count_components() {
 			}
 
 			tmp2 = p->get_maternalid();
-			if((tmp2 != UNKNOWN_PARENT) && (visited[tmp2] == WHITE)) {
+			if((tmp2 != UNKNOWN_PARENT) and (visited[tmp2] == WHITE)) {
                 visited[tmp2] = GREY;
                 q.push(tmp2);
             }
 
 			tmp2 = p->get_paternalid();
-			if((tmp2 != UNKNOWN_PARENT) && (visited[tmp2] == WHITE)) {
+			if((tmp2 != UNKNOWN_PARENT) and (visited[tmp2] == WHITE)) {
                 visited[tmp2] = GREY;
                 q.push(tmp2);
             }

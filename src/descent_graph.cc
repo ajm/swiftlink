@@ -12,6 +12,7 @@ using namespace std;
 #include "genetic_map.h"
 #include "founder_allele_graph.h"
 #include "elimination.h"
+#include "founder_allele_graph2.h"
 
 
 DescentGraph::DescentGraph(Pedigree* ped, GeneticMap* map) : 
@@ -195,6 +196,7 @@ double DescentGraph::get_recombination_prob(unsigned locus, bool count_crossover
 }
 
 double DescentGraph::_sum_prior_prob() {
+    /*
     double tmp_prob;
 	double return_prob = 0.0;
 	FounderAlleleGraph fag(ped, map);
@@ -203,17 +205,49 @@ double DescentGraph::_sum_prior_prob() {
 		fag.reset();
         
         if(not fag.populate(*this, i)) {
+            fprintf(stderr, "error: could not populate locus %d\n", int(i));
+            fag.print();
             return LOG_ZERO;
         }
 		
 		if(not fag.likelihood(&tmp_prob, i)) {
-			return LOG_ZERO;
+            fprintf(stderr, "error: could not likelihood locus %d\n", int(i));
+			fag.print();
+            return LOG_ZERO;
         }
         		
 		return_prob += tmp_prob;
     }
-	
-	return return_prob;
+    
+    return return_prob;
+    */
+    
+    
+    double tmp_prob;
+	double return_prob = 0.0;
+    FounderAlleleGraph2 f(ped, map, 0);
+    
+    for(unsigned i = 0; i < map->num_markers(); ++i) {
+        f.set_locus(i);
+        f.reset();
+        
+        if(not f.populate(*this)) {
+            fprintf(stderr, "error: could not populate locus %d\n", int(i));
+            fprintf(stderr, "%s\n", f.debug_string().c_str());
+            return LOG_ZERO;
+        }
+		
+		if((tmp_prob = f.likelihood()) == LOG_ZERO) {
+            fprintf(stderr, "error: could not likelihood locus %d\n", int(i));
+            fprintf(stderr, "%s\n", f.debug_string().c_str());
+			return LOG_ZERO;
+        }
+        
+		return_prob += tmp_prob;
+    }
+    
+    return return_prob;
+    
 }
 
 double DescentGraph::_best_prior_prob() {
@@ -243,16 +277,16 @@ string DescentGraph::debug_string() {
 	
     ss << "DescentGraph: ";
     
-    for(int locus = 0; locus < int(map->num_markers()); ++locus) {
+    for(unsigned locus = 0; locus < map->num_markers(); ++locus) {
         for(unsigned i = 0; i  < ped->num_members(); ++i) {
             if(not (ped->get_by_index(i))->isfounder()) {
-                ss  << get(i, locus, MATERNAL) \
-                    << get(i, locus, PATERNAL);
+                ss  << int(get(i, locus, MATERNAL)) \
+                    << int(get(i, locus, PATERNAL));
             }
         }
         ss << " ";
     }
-    ss << "\n";
+    //ss << "\n";
     
     return ss.str();
 }

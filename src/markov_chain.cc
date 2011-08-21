@@ -23,7 +23,7 @@ void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
     
     tmp.random_descentgraph();
     if((tmp_prob = tmp.get_likelihood()) == LOG_ZERO) {
-        fprintf(stderr, "error: sequential imputation produced an invalid descent graph\n");
+        fprintf(stderr, "error: failed to produce a valid random descent graph\n");
         abort();
     }
     
@@ -34,6 +34,7 @@ void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
     
         if((tmp_prob = tmp.get_likelihood()) == LOG_ZERO) {
             fprintf(stderr, "error: sequential imputation produced an invalid descent graph\n");
+            fprintf(stderr, "%s\n", tmp.debug_string().c_str());
             abort();
         }
         

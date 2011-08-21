@@ -34,7 +34,9 @@ class PeelMatrixKey {
         reassign(cutset, assignments);
     }
 */
-    ~PeelMatrixKey() {}
+    ~PeelMatrixKey() {
+        delete[] key;
+    }
 
     PeelMatrixKey(const PeelMatrixKey& rhs) :
         num_keys(rhs.num_keys), 
@@ -172,6 +174,8 @@ class PeelMatrix {
     inline void add(PeelMatrixKey& pmk, double value) {
         data[generate_index(pmk)] += value;
     }
+    
+    void reset();
 };
 
 #endif

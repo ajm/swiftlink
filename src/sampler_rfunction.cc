@@ -189,12 +189,7 @@ void SamplerRfunction::evaluate_child_peel(
         kid_trait = static_cast<enum phased_trait>(i);
         pmatrix_index.add(kid_id, kid_trait);
         
-        old_prob = ((previous_rfunction1 != NULL) ? previous_rfunction1->get(pmatrix_index) : 1.0) * \
-                   ((previous_rfunction2 != NULL) ? previous_rfunction2->get(pmatrix_index) : 1.0);
-        
-        if(old_prob == 0.0)
-            continue;
-        
+                
         disease_prob = get_trait_probability(kid_id, kid_trait, locus);
         
         if(disease_prob == 0.0)
@@ -205,7 +200,14 @@ void SamplerRfunction::evaluate_child_peel(
         
         if(recombination_prob == 0.0)
             continue;
-            
+        
+        old_prob = ((previous_rfunction1 != NULL) ? previous_rfunction1->get(pmatrix_index) : 1.0) * \
+                   ((previous_rfunction2 != NULL) ? previous_rfunction2->get(pmatrix_index) : 1.0);
+        
+        if(old_prob == 0.0)
+            continue;
+        
+        
         //old_prob1 = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
         //old_prob2 = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
         

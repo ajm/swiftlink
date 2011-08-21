@@ -29,12 +29,15 @@ PeelMatrix::PeelMatrix(unsigned int num_dim, unsigned int val_dim) :
     values_per_dimension(val_dim),
     size((unsigned int) pow(static_cast<double>(values_per_dimension), static_cast<double>(number_of_dimensions))),
     data(NULL) {
-        
-//    size = (unsigned int) pow(static_cast<double>(values_per_dimension), 
-//	       			static_cast<double>(number_of_dimensions));
-
-    data = new double[size];
     
+    data = new double[size];
+    reset();
+    //for(unsigned i = 0; i < size; ++i) {
+    //    data[i] = 0.0;
+    //}
+}
+
+void PeelMatrix::reset() {
     for(unsigned i = 0; i < size; ++i) {
         data[i] = 0.0;
     }
@@ -52,10 +55,10 @@ PeelMatrix::PeelMatrix(const PeelMatrix& rhs) :
     data = new double[size];
     copy(rhs.data, rhs.data + size, data);
     
-    keys = new unsigned int[rhs.num_keys];
+    keys = new unsigned int[num_keys];
     copy(rhs.keys, rhs.keys + num_keys, keys);
     
-    offsets = new unsigned int[rhs.num_keys];
+    offsets = new unsigned int[num_keys];
     copy(rhs.offsets, rhs.offsets + num_keys, offsets);
 }
 

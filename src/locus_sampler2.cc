@@ -127,7 +127,7 @@ void LocusSampler::sample_meiosis_indicators(PeelMatrixKey& pmk, DescentGraph& d
 
 void LocusSampler::step(DescentGraph& dg, unsigned parameter) {
     unsigned locus = parameter;
-    
+        
     // forward peel
     for(unsigned i = 0; i < rfunctions.size(); ++i) {
         SamplerRfunction* rf = rfunctions[i];
@@ -146,8 +146,8 @@ void LocusSampler::step(DescentGraph& dg, unsigned parameter) {
     
     /*
     // XXX comment out when I know everything is cool
-    if(not dg.likelihood()) {
-        fprintf(stderr, "Error: descent graph produced by L-sampler is illegal!\n");
+    if(dg.get_likelihood() == LOG_ZERO) {
+        fprintf(stderr, "Error: descent graph produced by L-sampler is illegal! (%d)\n", int(locus));
         abort();
     }
     */
@@ -164,6 +164,8 @@ void LocusSampler::set_all(bool left, bool right) {
 
 void LocusSampler::sequential_imputation(DescentGraph& dg) {
     unsigned starting_locus = get_random_locus();
+    
+    //fprintf(stderr, "sequential imputation: %d\n", int(starting_locus));
     
     set_all(true, true);
     step(dg, starting_locus);

@@ -136,7 +136,7 @@ class GeneticMap {
     double get_prob(unsigned int i, enum phased_trait pt) const {
         return map[i].get_prob(pt);
     }
-
+    
     double get_theta(unsigned int i) const ;
     double get_inversetheta(unsigned int i) const ;
     

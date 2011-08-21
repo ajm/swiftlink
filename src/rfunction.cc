@@ -200,6 +200,9 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
     unsigned ndim = peel.get_cutset_size();
     unsigned tmp;
     
+    pmatrix.reset();
+    pmatrix_presum.reset();
+    
     // crucial for TraitRfunction
     this->offset = offset;
     

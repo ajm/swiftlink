@@ -30,6 +30,10 @@ class Rfunction {
     Rfunction* previous_rfunction1;
     Rfunction* previous_rfunction2;
     bool function_used;
+    double theta;
+    double antitheta;
+    double theta2;
+    double antitheta2;
         
     //enum trait get_trait(enum phased_trait p, enum parentage parent);
     inline enum trait get_trait(enum phased_trait p, enum parentage parent) {

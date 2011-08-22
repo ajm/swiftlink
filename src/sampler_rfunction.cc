@@ -111,11 +111,13 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
     
     double tmp = 1.0;
     if((locus != 0) and (not ignore_left)) {
-        tmp *= ((dg->get(person_id, locus-1, parent) == p) ? map->get_inversetheta(locus-1) : map->get_theta(locus-1));
+        //tmp *= ((dg->get(person_id, locus-1, parent) == p) ? map->get_inversetheta(locus-1) : map->get_theta(locus-1));
+        tmp *= ((dg->get(person_id, locus-1, parent) == p) ? antitheta2 : theta2);
     }
     
     if((locus != (map->num_markers() - 1)) and (not ignore_right)) {
-        tmp *= ((dg->get(person_id, locus+1, parent) == p) ? map->get_inversetheta(locus) : map->get_theta(locus));
+        //tmp *= ((dg->get(person_id, locus+1, parent) == p) ? map->get_inversetheta(locus) : map->get_theta(locus));
+        tmp *= ((dg->get(person_id, locus+1, parent) == p) ? antitheta : theta);
     }
     
     return tmp;

@@ -22,7 +22,11 @@ Rfunction::Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, Rfunction* pr
       peel(po), 
       previous_rfunction1(prev1),
       previous_rfunction2(prev2),
-      function_used(false) {
+      function_used(false),
+      theta(0.0),
+      antitheta(0.0),
+      theta2(0.0),
+      antitheta2(0.0) {
 
     pmatrix.set_keys(peel.get_cutset());
           
@@ -42,7 +46,11 @@ Rfunction::Rfunction(const Rfunction& r) :
     peel(r.peel),
     previous_rfunction1(r.previous_rfunction1),
     previous_rfunction2(r.previous_rfunction2),
-    function_used(r.function_used) {}
+    function_used(r.function_used),
+    theta(r.theta),
+    antitheta(r.antitheta),
+    theta2(r.theta2),
+    antitheta2(r.antitheta2) {}
     
 Rfunction& Rfunction::operator=(const Rfunction& rhs) {
 
@@ -56,6 +64,10 @@ Rfunction& Rfunction::operator=(const Rfunction& rhs) {
         previous_rfunction1 = rhs.previous_rfunction1;
         previous_rfunction2 = rhs.previous_rfunction2;
         function_used = rhs.function_used;
+        theta = rhs.theta;
+        antitheta = rhs.antitheta;
+        theta2 = rhs.theta2;
+        antitheta2 = rhs.antitheta2;
     }
     
     return *this;
@@ -205,6 +217,18 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
     
     // crucial for TraitRfunction
     this->offset = offset;
+    
+    
+    if(locus != (map->num_markers() - 1)) {
+        theta = map->get_theta(locus);
+        antitheta = map->get_inversetheta(locus);
+    }
+    
+    if(locus != 0) {
+        theta2 = map->get_theta(locus-1);
+        antitheta2 = map->get_inversetheta(locus-1);
+    }
+    
     
     // nothing in the cutset to be enumerated
     if(peel.get_type() == LAST_PEEL) {

@@ -35,6 +35,8 @@ OBJECTS	:= \
 	linkage_program.o \
 	program.o \
 	progress.o \
+	gpu_wrapper.o \
+	test_program.o \
 	main.o
 
 app: $(OBJECTS)

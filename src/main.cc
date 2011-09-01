@@ -13,12 +13,14 @@
 #include "types.h"
 #include "defaults.h"
 #include "linkage_program.h"
+#include "test_program.h"
 //#include "haplotype_program.h"
 
 
 enum analysistype {
     LINKAGE,
-    HAPLOTYPE
+    HAPLOTYPE,
+    TESTING
 };
 
 char* mapfile = NULL;
@@ -131,6 +133,9 @@ void _handle_args(int argc, char **argv) {
 		        else if(strcmp(optarg, "haplotype") == 0) {
 		            analysis = HAPLOTYPE;
 		        }
+		        else if(strcmp(optarg, "test") == 0) {
+		            analysis = TESTING;
+		        }
 		        else {
 		            fprintf(stderr, "%s: option '-a' can only accept 'linkage' or "
                                     "'haplotype' as arguments ('%s' given)\n",
@@ -196,6 +201,12 @@ int haplotype_analysis() {
 	return EXIT_FAILURE;
 }
 
+int testing_mode() {
+    TestProgram tp(pedfile, mapfile, datfile, outfile, iterations, verbose);
+    
+    return tp.run() ? EXIT_SUCCESS : EXIT_FAILURE;
+}
+
 int main(int argc, char **argv) {
 	_handle_args(argc, argv);
     
@@ -205,6 +216,9 @@ int main(int argc, char **argv) {
             
         case HAPLOTYPE :
             return haplotype_analysis();
+            
+        case TESTING :
+            return testing_mode();
         
         default :
             break;

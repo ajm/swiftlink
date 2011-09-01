@@ -56,19 +56,28 @@ struct rfunction {
     struct rfunction* prev2;    // must be NULL if not used    
 };
 
-// XXX
-// get, set, add, zero are a bad idea perhaps, because they
-// always assume a certain matrix...
-//
+#define RFUNCTION_GET(rf_ptr, index)        ((rf)->matrix[(index)])
+#define RFUNCTION_SET(rf_ptr, index, value) ((rf)->matrix[(index)] = (value))
+#define RFUNCTION_ADD(rf_ptr, index, value) ((rf)->matrix[(index)] += (value))
+
+#define RFUNCTION_PRESUM_GET(rf_ptr, index)         ((rf)->presum_matrix[(index)])
+#define RFUNCTION_PRESUM_SET(rf_ptr, index, value)  ((rf)->presum_matrix[(index)] = (value))
+#define RFUNCTION_PRESUM_ADD(rf_ptr, index, value)  ((rf)->presum_matrix[(index)] += (value))
+
 void rfunction_zero(struct rfunction* rf) {
     int i;
     
     for(i = 0; i < rf->matrix_length; ++i) {
         rf->matrix[i] = 0.0;
     }
+    
+    for(i = 0; i < rf->presum_length; ++i) {
+        rf->presum_matrix[i] = 0.0;
+    }
 }
 
-double rfunction_get(struct rfunction* rf, int index) {
+/*
+float rfunction_get(struct rfunction* rf, int index) {
     return rf->matrix[index];
 }
 
@@ -79,6 +88,7 @@ void rfunction_set(struct rfunction* rf, int index, float val) {
 void rfunction_add(struct rfunction* rf, int index, float val) {
     rf->matrix[index] += val;
 }
+*/
 
 // I am going to assume that the length of 'assignment' is to the number of 
 // pedigree members and that everything that is not assigned is -1
@@ -86,7 +96,7 @@ void rfunction_add(struct rfunction* rf, int index, float val) {
 int rfunction_index(struct rfunction* rf, int* assignment, int length) {
     int i, tmp = 0;
     
-    for(i = 0; i < rf->cutset_length; ++i) {
+    for(i = 0; i < (rf->cutset_length - 1); ++i) {
         tmp += (assignment[rf->cutset[i]] * offset[i]);
     }
     
@@ -101,7 +111,7 @@ int rfunction_index(struct rfunction* rf, int* assignment, int length) {
 int rfunction_presum_index(struct rfunction* rf, int* assignment, int length) {
     int i, tmp = 0;
     
-    for(i = 0; i < (rf->cutset_length - 1); ++i) {
+    for(i = 0; i < rf->cutset_length; ++i) {
         tmp += (assignment[rf->cutset[i]] * offset[i]);
     }
     
@@ -110,7 +120,7 @@ int rfunction_presum_index(struct rfunction* rf, int* assignment, int length) {
 
 // from an index, construct the assignment of genotypes to cutset nodes
 // 
-void rfunction_assignment(struct rfunction* rf, int ind, int* assignment, int length) {
+void rfunction_presum_assignment(struct rfunction* rf, int ind, int* assignment, int length) {
     int index = ind;
     int i;
     
@@ -123,6 +133,8 @@ void rfunction_assignment(struct rfunction* rf, int ind, int* assignment, int le
         index %= offsets[i];
     }
 }
+
+
 
 // -----
 

@@ -87,6 +87,15 @@ class PeelOperation {
         return cutset[i];
     }
     
+    bool contains_cutnodes(vector<unsigned>& nodes) {
+        for(unsigned i = 0; i < nodes.size(); ++i) {
+            if(find(cutset.begin(), cutset.end(), nodes[i]) == cutset.end())
+                return false;
+        }
+        
+        return true;
+    }
+    
     unsigned get_peelnode() const {
         return peelnode;
     }

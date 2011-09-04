@@ -69,8 +69,8 @@ struct rfunction {
 #define RFUNCTION_PRESUM_SET(rf_ptr, index, value)  ((rf_ptr)->presum_matrix[(index)] = (value))
 #define RFUNCTION_PRESUM_ADD(rf_ptr, index, value)  ((rf_ptr)->presum_matrix[(index)] += (value))
 
-#define RFUNCTION_PEELNODE(rf_ptr)  (rf_ptr)->peel_node
-#define RFUNCTION_TYPE(rf_ptr)      (rf_ptr)->peel_type
+#define RFUNCTION_PEELNODE(rf_ptr)  ((rf_ptr)->peel_node)
+#define RFUNCTION_TYPE(rf_ptr)      ((rf_ptr)->peel_type)
 
 
 int rfunction_index(struct rfunction* rf, int* assignment, int length);

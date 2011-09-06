@@ -16,12 +16,15 @@ class GPUWrapper {
     Pedigree* ped;
     GeneticMap* map;
     
-    struct rfunction* data;
+    struct global_state* data;
     
     size_t calculate_memory_requirements(PeelSequenceGenerator& psg);
     unsigned num_samplers();
     int convert_type(enum peeloperation type);
     void init(PeelSequenceGenerator& psg);
+    void init_map();
+    void init_pedigree();
+    void init_rfunctions(PeelSequenceGenerator& psg);
     
     void find_previous_functions(vector<PeelOperation>& ops, int current_index, int& prev1_index, int& prev2_index);
     void find_generic_functions(vector<PeelOperation>& ops, int current_index, int& prev1_index, int& prev2_index);

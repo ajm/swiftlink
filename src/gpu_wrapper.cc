@@ -71,6 +71,69 @@ int GPUWrapper::convert_type(enum peeloperation type) {
 
 void GPUWrapper::init(PeelSequenceGenerator& psg) {
     
+    data = (struct global_state*) malloc(sizeof(struct global_state));
+    if(!data) {
+        fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+        abort();
+    }
+    
+    init_rfunctions(psg);
+    //init_pedigree();
+    //init_map();
+}
+
+void GPUWrapper::init_map() {
+    
+    data->thetas_length = map->num_markers() - 1;
+    data->thetas = (float*) malloc((map->num_markers() - 1) * sizeof(float));
+    if(!(data->thetas)) {
+        fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+        abort();
+    }
+    
+    data->antithetas = (float*) malloc((map->num_markers() - 1) * sizeof(float));
+    if(!(data->antithetas)) {
+        fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+        abort();
+    }
+    
+    for(unsigned i = 0; i < (map->num_markers() - 1); ++i) {
+        data->thetas[i] = map->get_theta(i);
+        data->antithetas[i] = map->get_inversetheta(i);
+    }
+}
+
+void GPUWrapper::init_pedigree() {
+
+    data->pedigree = (struct person*) malloc(ped->num_members() * sizeof(struct person));
+    if(!(data->pedigree)) {
+        fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+        abort();
+    }
+    
+    for(unsigned i = 0; i < ped->num_members(); ++i) {
+        Person* tmp = ped->get_by_index(i);
+        struct person* p = &(data->pedigree[i]);
+        
+        p->id       = tmp->get_internalid();
+        p->mother   = tmp->get_maternalid();
+        p->father   = tmp->get_paternalid();
+        p->isfounder = tmp->isfounder() ? 1 : 0;
+        p->istyped  = tmp->istyped() ? 1 : 0;
+        
+        // probs
+        for(int j = 0; j < 4; ++j) {
+            enum phased_trait pt = static_cast<enum phased_trait>(j);
+            p->prob[j] = tmp->get_disease_prob(pt);
+        }
+        
+        // genotypes
+        
+    }
+}
+
+void GPUWrapper::init_rfunctions(PeelSequenceGenerator& psg) {
+    
     vector<PeelOperation>& ops = psg.get_peel_order();
     
     size_t mem_needed = calculate_memory_requirements(psg);
@@ -87,7 +150,7 @@ void GPUWrapper::init(PeelSequenceGenerator& psg) {
     //return;
     
     // need to allocate a shed-load of r-functions
-    data = (struct rfunction*) malloc(num_samplers() * ops.size() * sizeof(struct rfunction));
+    data->functions = (struct rfunction*) malloc(num_samplers() * ops.size() * sizeof(struct rfunction));
     if(!data) {
         fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
         abort();
@@ -128,12 +191,12 @@ void GPUWrapper::init(PeelSequenceGenerator& psg) {
         }
         
         for(unsigned i = 0; i < num_samp; ++i) {
-            struct rfunction* rf = &data[(i * num_samp) + j];
+            struct rfunction* rf = &data->functions[(i * num_samp) + j];
             
             rf->peel_type = peel_type;
             rf->peel_node = peel_node;
-            rf->prev1 = prev1_index == -1 ? NULL : &data[(i * num_samp) + prev1_index];
-            rf->prev2 = prev2_index == -1 ? NULL : &data[(i * num_samp) + prev2_index];
+            rf->prev1 = prev1_index == -1 ? NULL : &data->functions[(i * num_samp) + prev1_index];
+            rf->prev2 = prev2_index == -1 ? NULL : &data->functions[(i * num_samp) + prev2_index];
             
             rf->matrix_length = matrix_length;
             rf->matrix = (float*) malloc(matrix_length * sizeof(float));
@@ -222,4 +285,3 @@ int GPUWrapper::find_function_containing(vector<PeelOperation>& ops, int current
     
     return -1;
 }
-

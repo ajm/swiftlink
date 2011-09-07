@@ -97,6 +97,12 @@ struct person {
     int istyped;
 };
 
+struct descentgraph {
+    int* graph;
+    int graph_length;
+    int subgraph_length;
+};
+
 #define RFUNCTION_GET(rf_ptr, index)        ((rf_ptr)->matrix[(index)])
 #define RFUNCTION_SET(rf_ptr, index, value) ((rf_ptr)->matrix[(index)] = (value))
 #define RFUNCTION_ADD(rf_ptr, index, value) ((rf_ptr)->matrix[(index)] += (value))
@@ -111,13 +117,21 @@ struct person {
 #define THETA(state_ptr, n)     ((state_ptr)->map[(n)].theta)
 #define ANTITHETA(state_ptr, n) ((state_ptr)->map[(n)].inversetheta)
 
-#define GET_PERSON(state_ptr, n)        ((state_ptr)->pedigree[(n)])
+#define GET_PERSON(state_ptr, n)    ((state_ptr)->pedigree[(n)])
 
 #define PERSON_ISFOUNDER(person_ptr)        ((person_ptr)->isfounder)
 #define PERSON_ISTYPED(person_ptr)          ((person_ptr)->istyped)
 #define PERSON_DISEASEPROB(person_ptr, n)   ((person_ptr)->prob[(n)])
 #define PERSON_GENOTYPE(person_ptr, n)      ((person_ptr)->genotypes[(n)])
 
+#define DESCENTGRAPH_OFFSET(dg_ptr, personid, locusid, parentid) \
+    (((dg_ptr)->subgraph_length * (locusid)) + ((personid) * 2) + (parentid))
+
+#define DESCENTGRAPH_GET(dg_ptr, n) \
+    ((dg_ptr)[(n)])
+
+#define DESCENTGRAPH_SET(dg_ptr, n, value) \
+    ((dg_ptr)[(n)] = (value))
 
 int rfunction_index(struct rfunction* rf, int* assignment, int length);
 int rfunction_presum_index(struct rfunction* rf, int* assignment, int length);

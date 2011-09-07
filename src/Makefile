@@ -35,9 +35,9 @@ OBJECTS	:= \
 	linkage_program.o \
 	program.o \
 	progress.o \
+	main.o \
 	gpu_wrapper.o \
-	test_program.o \
-	main.o
+	test_program.o
 
 app: $(OBJECTS)
 	$(CXX) -o $@ $(LIBS) $(OBJECTS)

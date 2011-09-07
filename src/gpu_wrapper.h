@@ -16,7 +16,7 @@ class GPUWrapper {
     Pedigree* ped;
     GeneticMap* map;
     
-    struct global_state* data;
+    struct gpu_state* data;
     
     size_t calculate_memory_requirements(PeelSequenceGenerator& psg);
     unsigned num_samplers();
@@ -25,6 +25,8 @@ class GPUWrapper {
     void init_map();
     void init_pedigree();
     void init_rfunctions(PeelSequenceGenerator& psg);
+    
+    void kill_everything();
     
     void find_previous_functions(vector<PeelOperation>& ops, int current_index, int& prev1_index, int& prev2_index);
     void find_generic_functions(vector<PeelOperation>& ops, int current_index, int& prev1_index, int& prev2_index);
@@ -46,7 +48,7 @@ class GPUWrapper {
         data(rhs.data) {}
     
     ~GPUWrapper() {
-        // XXX
+        kill_everything();
     }
     
     GPUWrapper& operator=(const GPUWrapper& rhs) {
@@ -54,7 +56,7 @@ class GPUWrapper {
         if(&rhs != this) {
             ped = rhs.ped;
             map = rhs.map;
-            data = rhs.data;
+            data = rhs.data; // XXX this could be a problem, but I don't keep PeelSequenceGenerator obj
         }
         
         return *this;

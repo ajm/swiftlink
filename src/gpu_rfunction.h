@@ -16,9 +16,10 @@ enum {
 };
 
 enum {
-    GPU_GENOTYPE_AA,
-    GPU_GENOTYPE_AB,
-    GPU_GENOTYPE_BB
+	GPU_GENOTYPE_UNTYPED,
+	GPU_GENOTYPE_AB,
+	GPU_GENOTYPE_AA,
+	GPU_GENOTYPE_BB
 };
 
 enum {
@@ -42,23 +43,29 @@ int gpu_offsets[] = {
 };
 */
 
-struct global_state {
+struct gpu_state {
     struct rfunction* functions;
-    struct person* pedigree;
+    int functions_length;
     
-    float* thetas;
-    float* antithetas;
-    int thetas_length;
+    struct person* pedigree;
+    int pedigree_length;
+    
+    struct recombination* map;
+    int map_length;
 };
 
+struct recombination {
+    float theta;
+    float inversetheta;
+};
+
+// THE 'peel_node' MUST ALWAYS BE LOCATED
+// AT cutset[cutset_length - 2], SO IT CAN 
+// BE IGNORED EASILY
 struct rfunction {
     int peel_node;
     int peel_type;
-    
-    // THE 'peel_node' MUST ALWAYS BE LOCATED
-    // AT cutset[cutset_length - 2], SO IT CAN 
-    // BE IGNORED EASILY
-    
+        
     int* cutset;                // eg: [1,2,3] (including the 'peel_node')
     int cutset_length;
     
@@ -101,8 +108,8 @@ struct person {
 #define RFUNCTION_PEELNODE(rf_ptr)  ((rf_ptr)->peel_node)
 #define RFUNCTION_TYPE(rf_ptr)      ((rf_ptr)->peel_type)
 
-#define THETA(state_ptr, n)     ((state_ptr)->thetas[(n)])
-#define ANTITHETA(state_ptr, n) ((state_ptr)->antithetas[(n)])
+#define THETA(state_ptr, n)     ((state_ptr)->map[(n)].theta)
+#define ANTITHETA(state_ptr, n) ((state_ptr)->map[(n)].inversetheta)
 
 #define GET_PERSON(state_ptr, n)        ((state_ptr)->pedigree[(n)])
 
@@ -118,3 +125,4 @@ void rfunction_presum_assignment(struct rfunction* rf, int ind, int* assignment,
 
 
 #endif
+

@@ -59,6 +59,9 @@ class Person {
     }
 
     // private, peeling related
+    bool in_nuclear_family(unsigned int node);
+    bool is_offspring(unsigned int node);
+    
     unsigned count_unpeeled(vector<Person*>& v, PeelingState& ps);
     unsigned get_unpeeled_mate(PeelingState& ps);
     bool offspring_peeled(PeelingState& ps);
@@ -157,7 +160,7 @@ class Person {
         return (i == maternal_id) or (i == paternal_id);
     }
     
-    bool peel_operation(PeelOperation& p, PeelingState& state);
+    PeelOperation peel_operation(PeelingState& state);
     
     string debug_string();
 };

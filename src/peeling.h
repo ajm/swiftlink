@@ -24,15 +24,20 @@ enum peeloperation {
 class PeelOperation {
     enum peeloperation type;
     vector<unsigned int> cutset; // what is being peeled on to by this operation
+    vector<unsigned int> nuclearset; // what is the nuclear family of the peelnode that is contained in the cutset
     unsigned int peelnode;       // what is being peeled by this operation
     bool used;
     
  public :
-    PeelOperation() :  
+    PeelOperation(unsigned int peelnode) :  
         type(NULL_PEEL), 
         cutset(), 
-        peelnode(0), 
-        used(false) {}
+        nuclearset(),
+        peelnode(peelnode), 
+        used(false) {
+    
+        nuclearset.push_back(peelnode);    
+    }
         
     ~PeelOperation() {}
     
@@ -45,12 +50,14 @@ class PeelOperation {
     }
     
     bool in_cutset(unsigned node) const {
-        for(unsigned i = 0; i < cutset.size(); ++i) {
+/*        for(unsigned i = 0; i < cutset.size(); ++i) {
             if(cutset[i] == node) {
                 return true;
             }
         }
         return false;
+        */
+        return find(cutset.begin(), cutset.end(), node) != cutset.end();
     }
     
     void set_type(enum peeloperation po) {
@@ -69,12 +76,22 @@ class PeelOperation {
         return cutset;
     }
     
-    void add_cutnode(unsigned int c) {
-        for(unsigned int i = 0; i < cutset.size(); ++i) {
-            if(cutset[i] == c)
-                return;
+    unsigned int get_nuclearset_size() {
+        return nuclearset.size();
+    }
+    
+    vector<unsigned int>& get_nuclearset() {
+        return nuclearset;
+    }
+    
+    void add_cutnode(unsigned int c, bool in_nuclear_fam) {
+        if(not in_cutset(c)) {
+            cutset.push_back(c);
+            
+            if(in_nuclear_fam) {
+                nuclearset.push_back(c);
+            }
         }
-        cutset.push_back(c);
     }
     
     void remove_cutnode(unsigned int c) {
@@ -83,7 +100,7 @@ class PeelOperation {
             cutset.erase(it);
     }
     
-    unsigned get_cutnode(unsigned i) const {
+    unsigned get_cutnode(unsigned int i) const {
         return cutset[i];
     }
     
@@ -124,14 +141,25 @@ class PeelOperation {
     
     string debug_string() {
         stringstream ss;
+        unsigned tmp;
         
-        ss  << peeloperation_str(type) << " " \
-            << "peelnode = " << peelnode << " " \
-            << "cutset = (";
+        ss << peeloperation_str(type) << " " \
+           << "peelnode = " << peelnode << " " \
+           << "cutset = (";
         
-        unsigned tmp = cutset.size();
+        tmp = cutset.size();
         for(unsigned i = 0; i < tmp; ++i) {
             ss << cutset[i];
+            if(i != (tmp-1)) {
+                ss << ",";
+            }
+        }
+        ss << ") ";
+        
+        ss << "nuclear = (";
+        tmp = nuclearset.size();
+        for(unsigned i = 0; i < tmp; ++i) {
+            ss << nuclearset[i];
             if(i != (tmp-1)) {
                 ss << ",";
             }

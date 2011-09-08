@@ -149,6 +149,19 @@ void Person::fill_in_relationships() {
 
 //--- peeling related ---
 
+bool Person::in_nuclear_family(unsigned int node) {
+    return is_parent(node) or is_offspring(node);
+}
+
+bool Person::is_offspring(unsigned int node) {
+    for(unsigned i = 0; i < children.size(); ++i) {
+        if(children[i]->get_internalid() == node) {
+            return true;
+        }
+    }
+    return false;
+}
+
 unsigned Person::count_unpeeled(vector<Person*>& v, PeelingState& ps) {
     unsigned int count = 0;
 
@@ -263,13 +276,15 @@ bool Person::ripe_to_peel_down(PeelingState& ps) {
         ripe_above_singular_mate(ps);// and (count_unpeeled(children, ps) == 1);
 }
 
-bool Person::peel_operation(PeelOperation& p, PeelingState& state) {
+PeelOperation Person::peel_operation(PeelingState& state) {
     
     if(state.is_peeled(internal_id)) {
         return false;
     }
     
-    p.set_type(NULL_PEEL);
+    PeelOperation p(internal_id);
+    
+    //p.set_type(NULL_PEEL);
     
     if(ripe_to_peel_final(state)) {
         p.set_type(LAST_PEEL);
@@ -285,12 +300,11 @@ bool Person::peel_operation(PeelOperation& p, PeelingState& state) {
     }
     
     if(p.get_type() != NULL_PEEL) {
-        p.set_peelnode(internal_id);
+        //p.set_peelnode(internal_id);
         get_cutset(p, state);
-        return true;
     }
     
-    return false;
+    return p;
 }
 
 void Person::neighbours(vector<unsigned int>& nodes, PeelingState& ps) {
@@ -371,7 +385,7 @@ void Person::get_cutset(PeelOperation& operation, PeelingState& state) {
 
             if(not state.is_peeled(tmp2)) {
                 //if(tmp2 != internal_id) {
-                    operation.add_cutnode(tmp2);
+                    operation.add_cutnode(tmp2, in_nuclear_family(tmp2));
                 //}
                 continue;
             }
@@ -413,10 +427,10 @@ string Person::debug_string() {
     ss << "\n";
     
     ss << "\tprobabilities:" << "\n" \
-    << "\t\tTRAIT_AA = " << fixed << disease_prob[TRAIT_AA] << "\n" \
-    << "\t\tTRAIT_AU = " << fixed << disease_prob[TRAIT_AU] << "\n" \
-    << "\t\tTRAIT_UA = " << fixed << disease_prob[TRAIT_UA] << "\n" \
-    << "\t\tTRAIT_UU = " << fixed << disease_prob[TRAIT_UU] << "\n";
+       << "\t\tTRAIT_AA = " << fixed << disease_prob[TRAIT_AA] << "\n" \
+       << "\t\tTRAIT_AU = " << fixed << disease_prob[TRAIT_AU] << "\n" \
+       << "\t\tTRAIT_UA = " << fixed << disease_prob[TRAIT_UA] << "\n" \
+       << "\t\tTRAIT_UU = " << fixed << disease_prob[TRAIT_UU] << "\n";
     
     return ss.str(); 
 }

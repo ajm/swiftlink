@@ -62,16 +62,21 @@ void PeelSequenceGenerator::all_possible_peels(int& unpeeled) {
     tmp.clear();
     
     for(unsigned i = 0; i < ped->num_members(); ++i) {
-        PeelOperation p;
+        //PeelOperation p;
         
         if(not state.is_peeled(i)) {
             unpeeled++;
             
             per = ped->get_by_index(i);
+            
+            PeelOperation p = per->peel_operation(state);
 
-            if(per->peel_operation(p, state)) {
+            if(p.get_type() != NULL_PEEL)
                 tmp.push_back(p);
-            }
+
+            //if(per->peel_operation(p, state)) {
+            //    tmp.push_back(p);
+            //}
         }
     }
 }

@@ -77,7 +77,7 @@ class PeelMatrixKey {
         key.erase(k);
     }
 */
-    enum phased_trait get(unsigned int i) {
+    inline enum phased_trait get(unsigned int i) {
         return key[i];
     }
 /*    
@@ -106,6 +106,12 @@ class PeelMatrixKey {
         }
 */
     }
+    
+    void raw_print() {
+        for(unsigned int i = 0; i < num_keys; ++i)
+            printf("%d ", (int) key[i]);
+        printf("\n");
+    }
 };
 
 class PeelMatrix {
@@ -125,7 +131,8 @@ class PeelMatrix {
         unsigned int index = 0;
 
         for(unsigned int i = 0; i < num_keys; ++i) {
-            index += (offsets[i] * pmk.get(keys[i]));
+            //index += (offsets[i] * pmk.get(keys[i]));
+            index |= (pmk.get(keys[i]) << (i * 2));
         }
         
         return index;
@@ -172,10 +179,18 @@ class PeelMatrix {
     }
     
     inline void add(PeelMatrixKey& pmk, double value) {
-        data[generate_index(pmk)] += value;
+        if(value != 0.0)
+            data[generate_index(pmk)] += value;
     }
     
     void reset();
+    
+    void raw_print() {
+        for(unsigned int i = 0; i < size; ++i) {
+            printf("%.3f\n", data[i]);
+        }
+        printf("\n");
+    }
 };
 
 #endif

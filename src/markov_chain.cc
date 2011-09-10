@@ -120,7 +120,7 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
             continue;
         }
         
-        if((i % 10) == 0)
+        //if((i % 10) == 0)
             peel->process(dg);
         
         /*

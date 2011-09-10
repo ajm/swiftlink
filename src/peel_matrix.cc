@@ -113,7 +113,8 @@ void PeelMatrix::init_offsets() {
     offsets = new unsigned int[num_keys];
     
     for(unsigned int i = 0; i < num_keys; ++i) {
-        offsets[i] = (unsigned int) pow(static_cast<double>(values_per_dimension), static_cast<double>(i));
+        //offsets[i] = (unsigned int) pow(static_cast<double>(values_per_dimension), static_cast<double>(i));
+        offsets[i] = i * 2;
     }
 }
 

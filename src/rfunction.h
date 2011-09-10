@@ -52,7 +52,8 @@ class Rfunction {
     void get_traits(enum phased_trait p, enum trait& mat, enum trait& pat);
     void summation(PeelMatrixKey& pmatrix_index, unsigned personid);
         
- private :   
+ private :
+    bool legal_genotype(unsigned personid, unsigned locus, enum phased_trait g);   
     void generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments);
     virtual double get_trait_probability(unsigned person_id, enum phased_trait pt, unsigned locus)=0;
     virtual void evaluate_child_peel(

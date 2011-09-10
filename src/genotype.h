@@ -58,3 +58,4 @@ string genotype_string(enum unphased_genotype g);
 #define paternal_B(g)			((g) & (AB | BB))
 
 #endif
+

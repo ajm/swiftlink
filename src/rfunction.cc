@@ -158,20 +158,23 @@ void Rfunction::evaluate_partner_peel(PeelMatrixKey& pmatrix_index, unsigned loc
     
     double tmp = 0.0;
     double total = 0.0;
-    unsigned partner_id;
-    enum phased_trait partner_trait;    
     
-    partner_id = peel.get_peelnode();
+    enum phased_trait partner_trait;
+    unsigned partner_id = peel.get_peelnode();
         
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         partner_trait = static_cast<enum phased_trait>(i);
         pmatrix_index.add(partner_id, partner_trait);
         
-        tmp = get_trait_probability(partner_id, partner_trait, locus) * \
-            (previous_rfunction1 == NULL ? 1.0 : previous_rfunction1->get(pmatrix_index)) * \
-            (previous_rfunction2 == NULL ? 1.0 : previous_rfunction2->get(pmatrix_index));
+        tmp = get_trait_probability(partner_id, partner_trait, locus);
+        if(tmp == 0.0)
+            continue;
+        
+        tmp *= (previous_rfunction1 == NULL ? 1.0 : previous_rfunction1->get(pmatrix_index)) * \
+               (previous_rfunction2 == NULL ? 1.0 : previous_rfunction2->get(pmatrix_index));
         
         pmatrix_presum.set(pmatrix_index, tmp);
+        
         total += tmp;
     }
     
@@ -206,11 +209,21 @@ void Rfunction::evaluate_element(
     }
 }
 
+bool Rfunction::legal_genotype(unsigned personid, unsigned locus, enum phased_trait g) {
+
+    //return true;
+
+    Person* p = ped->get_by_index(personid);
+    
+    return p->legal_genotype(locus, g);
+}
+
 void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
     PeelMatrixKey k(ped->num_members());
     vector<unsigned> q;
     unsigned ndim = peel.get_cutset_size();
     unsigned tmp;
+    bool skip = false;
     
     pmatrix.reset();
     pmatrix_presum.reset();
@@ -236,31 +249,85 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
         return;
     }
     
+    
     // generate all assignments to iterate through n-dimensional matrix
     
-    // initialise to the first element of matrix
-    for(unsigned i = 0; i < ndim; ++i) {
-        q.push_back(0);
-    }
-
-    // enumerate all elements in ndim-dimenstional matrix
-    while(not q.empty()) {
-        
-        if(q.size() == ndim) {
-            generate_key(k, q);
-            evaluate_element(k, dg, locus);
+    // -------
+    if(offset != 0.0) {
+        // initialise to the first element of matrix
+        for(unsigned i = 0; i < ndim; ++i) {
+            q.push_back(0);
         }
-        
-        tmp = q.back() + 1;
-        q.pop_back();
-        
-        if(tmp < NUM_ALLELES) {
-            q.push_back(tmp);
-            tmp = ndim - q.size();
-            // fill out rest with zeroes
-            for(unsigned i = 0; i < tmp; ++i) {
-                q.push_back(0);
+
+        // enumerate all elements in ndim-dimenstional matrix
+        while(not q.empty()) {
+            
+            if(q.size() == ndim) {
+                generate_key(k, q);
+                //k.raw_print();
+                evaluate_element(k, dg, locus);
+            }
+            
+            tmp = q.back() + 1;
+            q.pop_back();
+            
+            if(tmp < NUM_ALLELES) {
+                q.push_back(tmp);
+                tmp = ndim - q.size();
+                // fill out rest with zeroes
+                for(unsigned i = 0; i < tmp; ++i) {
+                    q.push_back(0);
+                }
             }
         }
     }
+    // ------
+    else {
+        while(true) {
+            
+	        while(q.size() != ndim) {
+	            q.push_back(0);
+                if(not legal_genotype(peel.get_cutnode(q.size()-1), locus, (enum phased_trait) q.back())) {
+                    skip = true;
+                    break;
+                }
+	        }
+	        
+	        if(not skip) {
+        	    generate_key(k, q);
+        	    //k.raw_print();
+                evaluate_element(k, dg, locus);
+            }
+            
+            while(true) {
+                
+                while((q.size() != 0) and (q.back() == 3)) {
+                    q.pop_back();
+                }
+            
+                if(q.size() == 0) {
+                    goto no_more_assignments;
+                }
+            
+                q.back()++;
+                
+                if(legal_genotype(peel.get_cutnode(q.size()-1), locus, (enum phased_trait) q.back())) {
+                    skip = false;
+                    break;
+                }
+            }
+	    }
+	}
+	
+no_more_assignments:
+    ;
+    /*
+    printf("pmatrix\n");
+    pmatrix.raw_print();
+    printf("pmatrix_presum\n");
+    pmatrix_presum.raw_print();
+    
+    abort();
+    */
 }
+

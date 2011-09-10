@@ -127,6 +127,25 @@ class Person {
 	void add_genotype(enum unphased_genotype g) {
 		genotypes.push_back(g);
 	}
+	
+	bool legal_genotype(unsigned locus, enum phased_trait g) {
+	    
+	    if(not typed)
+	        return true;
+	    
+	    switch(genotypes[locus]) {
+	        case UNTYPED :
+	            return true;
+	        case HETERO :
+	            return (g == TRAIT_AU) or (g == TRAIT_UA);
+	        case HOMOZ_A :
+	            return g == TRAIT_UU;
+	        case HOMOZ_B :
+	            return g == TRAIT_AA;
+	    }
+	    
+	    abort();
+	}
 
 	/* tests */
 	bool ismale() const { return gender == MALE; }

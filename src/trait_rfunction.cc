@@ -85,11 +85,6 @@ void TraitRfunction::evaluate_child_peel(PeelMatrixKey& pmatrix_index,
                                     DescentGraph* dg,
                                     unsigned locus) {
     
-    double recombination_prob;
-    double transmission_prob;
-    double disease_prob;
-    double old_prob1;
-    double old_prob2;
     double tmp;
     double total = 0.0;
     
@@ -103,12 +98,6 @@ void TraitRfunction::evaluate_child_peel(PeelMatrixKey& pmatrix_index,
     mat_trait = pmatrix_index.get(kid->get_maternalid());
     pat_trait = pmatrix_index.get(kid->get_paternalid());
     
-    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
-        kid_trait = static_cast<enum phased_trait>(i);
-        pmatrix_index.add(kid_id, kid_trait);
-        pmatrix_presum.set(pmatrix_index, 0.0);
-    }
-    
     // iterate over all descent graphs to determine child trait 
     // based on parents' traits
     for(int i = 0; i < 2; ++i) {        // maternal
@@ -118,14 +107,16 @@ void TraitRfunction::evaluate_child_peel(PeelMatrixKey& pmatrix_index,
             
             pmatrix_index.add(kid_id, kid_trait);
             
-            disease_prob        = get_trait_probability(kid_id, kid_trait, locus);
-            transmission_prob   = 0.25; //get_transmission_probability(mat_trait) *
-                                  //get_transmission_probability(pat_trait);
-            recombination_prob  = !dg ? 1.0 : get_recombination_probability(dg, locus, kid_id, i, j);
-            old_prob1           = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
-            old_prob2           = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
+            tmp = 0.25 * get_trait_probability(kid_id, kid_trait, locus);
+            if(tmp == 0.0)
+                continue;
             
-            tmp = (disease_prob * transmission_prob * recombination_prob * old_prob1 * old_prob2);
+            tmp *= (!dg ? 1.0 : get_recombination_probability(dg, locus, kid_id, i, j));
+            if(tmp == 0.0)
+                continue;
+            
+            tmp *= (previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0) * \
+                   (previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0);
             
             pmatrix_presum.add(pmatrix_index, tmp);
             
@@ -144,12 +135,6 @@ void TraitRfunction::evaluate_parent_peel(
                                      DescentGraph* dg,
                                      unsigned locus) {
     
-    double disease_prob;
-    double recombination_prob;
-    double old_prob1;
-    double old_prob2;
-    
-    
     unsigned parent_id = peel.get_peelnode();
     unsigned child_node = peel.get_cutnode(0);
     
@@ -164,12 +149,11 @@ void TraitRfunction::evaluate_parent_peel(
     
     Person* p = ped->get_by_index(child_node);
     bool ismother = parent_id == p->get_maternalid();
-    unsigned other_parent_id = ismother ? \
-    p->get_paternalid() : \
-    p->get_maternalid();
+    unsigned other_parent_id = ismother ? p->get_paternalid() : p->get_maternalid();
     enum phased_trait pivot_trait;
     enum phased_trait parent_trait;
     enum phased_trait other_trait;
+    
     double tmp;
     double total = 0.0;
     
@@ -180,10 +164,14 @@ void TraitRfunction::evaluate_parent_peel(
         parent_trait = static_cast<enum phased_trait>(a);
         pmatrix_index.add(parent_id, parent_trait);
         
-        disease_prob = get_trait_probability(parent_id, parent_trait, locus);
+        tmp = get_trait_probability(parent_id, parent_trait, locus);
+        if(tmp == 0.0)
+            continue;
         
-        old_prob1 = previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0;
-        old_prob2 = previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0;
+        tmp *= (previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0) * \
+               (previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0);
+        if(tmp == 0)
+            continue;
         
         double child_prob = 1.0;
         
@@ -205,17 +193,14 @@ void TraitRfunction::evaluate_parent_peel(
                     if(pivot_trait != pmatrix_index.get(child->get_internalid()))
                         continue;
                     
-                    recombination_prob = !dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus, child->get_internalid(), i, j);
-                    
-                    child_tmp += recombination_prob; //(disease_prob * recombination_prob * old_prob1 * old_prob2);
+                    child_tmp += (!dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus, child->get_internalid(), i, j));
                 }
             }
             
             child_prob *= child_tmp;
         }
         
-        //tmp += (child_prob * disease_prob * old_prob1 * old_prob2);
-        tmp = (child_prob * disease_prob * old_prob1 * old_prob2);
+        tmp *= child_prob;
         
         pmatrix_presum.set(pmatrix_index, tmp);
         

@@ -1,6 +1,9 @@
 CXX	:= g++
+CC := gcc
 #CXXFLAGS := -g -O3 -Wall -Wextra -pedantic -std=c++98 -pipe -Wno-variadic-macros -Weffc++ -Werror
 CXXFLAGS := -g -O2 -Wall -Wextra -pedantic -std=c++98 -pipe -Wno-variadic-macros -Weffc++
+CXXFLAGS := -g -O2 -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe
+CFLAGS := -g -O2 -Wall -pipe
 INCLUDES := -I.
 LIBS := 
 
@@ -37,6 +40,7 @@ OBJECTS	:= \
 	progress.o \
 	main.o \
 	gpu_wrapper.o \
+	gpu_rfunction.o \
 	test_program.o
 
 app: $(OBJECTS)
@@ -44,6 +48,9 @@ app: $(OBJECTS)
 
 %.o: %.cc
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
 	rm -f $(OBJECTS) app

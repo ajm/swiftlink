@@ -25,6 +25,10 @@ class GPUWrapper {
     void init_map();
     void init_pedigree();
     void init_rfunctions(PeelSequenceGenerator& psg);
+    void init_descentgraph();
+    
+    void copy_to_gpu(DescentGraph& dg);
+    void copy_from_gpu(DescentGraph& dg);
     
     void kill_everything();
     
@@ -62,7 +66,7 @@ class GPUWrapper {
         return *this;
     }
     
-    void step(DescentGraph& dg, unsigned parameter) {}
+    void step(DescentGraph& dg);
 };
 
 #endif

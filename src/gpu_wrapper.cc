@@ -38,7 +38,9 @@ size_t GPUWrapper::calculate_memory_requirements(PeelSequenceGenerator& psg) {
     size_t mem_map;
     vector<PeelOperation>& ops = psg.get_peel_order();
     
-    mem_map = sizeof(struct recombination) * (map->num_markers() - 1);
+    mem_map = sizeof(struct geneticmap) + \
+                (2 * sizeof(float) * (map->num_markers() - 1)) + \
+                (4 * sizeof(float) *  map->num_markers());
     
     mem_pedigree = ped->num_members() * sizeof(struct person);
     for(unsigned i = 0; i < ped->num_members(); ++i) {
@@ -63,7 +65,8 @@ size_t GPUWrapper::calculate_memory_requirements(PeelSequenceGenerator& psg) {
 }
 
 unsigned GPUWrapper::num_samplers() {
-    return (map->num_markers() + 1) / 2; // + 1 in case there is an odd number of markers in the map
+    //return (map->num_markers() + 1) / 2; // + 1 in case there is an odd number of markers in the map
+    return map->num_markers(); // wasteful yes, but let's keep everything easy to address ;-P
 }
 
 int GPUWrapper::convert_type(enum peeloperation type) {
@@ -105,7 +108,14 @@ void GPUWrapper::kill_everything() {
     free(data->pedigree);
     
     // map info
+    free(data->map->thetas);
+    free(data->map->inversethetas);
+    free(data->map->markerprobs);
     free(data->map);
+    
+    // descent graph copy
+    free(data->dg->graph);
+    free(data->dg);
     
     // state
     free(data);
@@ -135,22 +145,66 @@ void GPUWrapper::init(PeelSequenceGenerator& psg) {
     init_rfunctions(psg);
     init_pedigree();
     init_map();
+    init_descentgraph();
+}
+
+void GPUWrapper::init_descentgraph() {
+    
+    data->dg = (struct descentgraph*) malloc(sizeof(struct descentgraph));
+    if(!(data->dg)) {
+        fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+        abort();
+    }
+    
+    data->dg->subgraph_length = 2 * ped->num_members();
+    data->dg->graph_length = 2 * ped->num_members() * map->num_markers();
+    
+    data->dg->graph = (int*) malloc(sizeof(int) * (2 * ped->num_members() * map->num_markers()));
+    if(!(data->dg->graph)) {
+        fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+        abort();
+    }
 }
 
 void GPUWrapper::init_map() {
     
-    data->map_length = map->num_markers() - 1;
-    data->map = (struct recombination*) malloc((map->num_markers() - 1) * sizeof(struct recombination));
+    data->map = (struct geneticmap*) malloc(sizeof(struct geneticmap));
     if(!(data->map)) {
+        fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+        abort();
+    }
+
+    data->map->map_length = map->num_markers();
+    
+    data->map->thetas = (float*) malloc(sizeof(float) * (map->num_markers() - 1));
+    if(!(data->map->thetas)) {
+        fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+        abort();
+    }
+    
+    data->map->inversethetas = (float*) malloc(sizeof(float) * (map->num_markers() - 1));
+    if(!(data->map->inversethetas)) {
+        fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+        abort();
+    }
+    
+    data->map->markerprobs = (float*) malloc(sizeof(float) * 4 * map->num_markers());
+    if(!(data->map->markerprobs)) {
         fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
         abort();
     }
     
     for(unsigned i = 0; i < (map->num_markers() - 1); ++i) {
-        struct recombination* r = &data->map[i];
-        
-        r->theta = map->get_theta(i);
-        r->inversetheta = map->get_inversetheta(i);
+        data->map->thetas[i] = map->get_theta(i);
+        data->map->inversethetas[i] = map->get_inversetheta(i);
+    }
+    
+    for(unsigned i = 0; i < map->num_markers(); ++i) {
+        Snp& marker = map->get_marker(i);
+        for(unsigned j = 0; j < 4; ++j) {
+            enum phased_trait pt = static_cast<enum phased_trait>(j);
+            data->map->markerprobs[(i * 4) + j] = marker.get_prob(pt);
+        }
     }
 }
 
@@ -200,6 +254,7 @@ void GPUWrapper::init_rfunctions(PeelSequenceGenerator& psg) {
     
     // need to allocate a shed-load of r-functions
     data->functions_length = num_samplers() * ops.size();
+    data->functions_per_locus = ops.size();
     data->functions = (struct rfunction*) malloc(num_samplers() * ops.size() * sizeof(struct rfunction));
     if(!data->functions) {
         fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
@@ -337,3 +392,25 @@ int GPUWrapper::find_function_containing(vector<PeelOperation>& ops, int current
     return -1;
 }
 
+void GPUWrapper::copy_to_gpu(DescentGraph& dg) {
+    for(unsigned i = 0; i < unsigned(data->dg->graph_length); ++i) {
+        data->dg->graph[i] = dg.get_bit(i);
+    }
+}
+
+void GPUWrapper::copy_from_gpu(DescentGraph& dg) {
+    for(unsigned i = 0; i < unsigned(data->dg->graph_length); ++i) {
+        dg.set_bit(i, data->dg->graph[i]);
+    }
+}
+
+
+void GPUWrapper::step(DescentGraph& dg) {
+    copy_to_gpu(dg);
+    
+    for(unsigned i = 0; i < map->num_markers(); ++i) {
+        sampler_step(data, i);
+    }
+    
+    copy_from_gpu(dg);
+}

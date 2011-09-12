@@ -1,5 +1,6 @@
 #include "gpu_rfunction.h"
 
+
 /* the largest matrix possible is 16-dimensions pre-sum because each
  * dimension is always length 4 (2-bits) and the index is a 32-bit int */
 int gpu_offsets[] = {
@@ -165,12 +166,12 @@ void rfunction_sample(struct rfunction* rf, int* assignment, int assignment_leng
     }
     
     /*
-     printf("node = %u\n", node);
-     printf("random = %f\n", r);
-     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
-     printf("  sample[%d] = %f\n", i, prob_dist[i]);
-     }
-     */
+    printf("node = %d\n", peelnode);
+    printf("random = %f\n", r);
+    for(i = 0; i < NUM_ALLELES; ++i) {
+        printf("  sample[%d] = %f\n", i, prob_dist[i]);
+    }
+    */
 
     // sample
     total = 0.0;
@@ -201,6 +202,16 @@ void rfunction_evaluate_partner_peel(struct rfunction* rf, struct gpu_state* sta
         rfunction_trait_prob(state, peelnode, peelnode_value, locus) * \
         (rf->prev1 == NULL ? 1.0 : rfunction_get(rf->prev1, assignment, assignment_length)) * \
         (rf->prev2 == NULL ? 1.0 : rfunction_get(rf->prev2, assignment, assignment_length)));
+
+    //printf(" - %d: %e\n", ind, RFUNCTION_PRESUM_GET(rf, ind));
+    
+    /*
+    if(peelnode == 3) {
+        printf("\t%f %f %f\n", rfunction_trait_prob(state, peelnode, peelnode_value, locus),
+        (rf->prev1 == NULL ? 1.0 : rfunction_get(rf->prev1, assignment, assignment_length)),
+        (rf->prev2 == NULL ? 1.0 : rfunction_get(rf->prev2, assignment, assignment_length)));
+    }
+    */
 }
 
 void rfunction_evaluate_child_peel(struct rfunction* rf, struct gpu_state* state, int locus, int ind) {
@@ -226,11 +237,41 @@ void rfunction_evaluate_child_peel(struct rfunction* rf, struct gpu_state* state
         rfunction_trans_prob(state, locus, peelnode, mother_value, peelnode_value, GPU_MATERNAL_ALLELE) * \
         rfunction_trans_prob(state, locus, peelnode, father_value, peelnode_value, GPU_PATERNAL_ALLELE) * \
         (rf->prev1 == NULL ? 1.0 : rfunction_get(rf->prev1, assignment, assignment_length)) * \
-        (rf->prev2 == NULL ? 1.0 : rfunction_get(rf->prev2, assignment, assignment_length)));    
+        (rf->prev2 == NULL ? 1.0 : rfunction_get(rf->prev2, assignment, assignment_length)));
+        
+    //printf(" - %d: %e\n", ind, RFUNCTION_PRESUM_GET(rf, ind));
 }
 
 void rfunction_evaluate_parent_peel(struct rfunction* rf, struct gpu_state* state, int locus, int ind) {
-    abort();
+    
+    struct person* p;
+    int assignment_length = state->pedigree_length;
+    int assignment[assignment_length];
+    int peelnode;
+    int peelnode_value;
+    int i;
+    float tmp;
+    
+    rfunction_presum_assignment(rf, ind, assignment, assignment_length);
+    
+    peelnode = RFUNCTION_PEELNODE(rf);
+    peelnode_value = assignment[peelnode];
+    
+    tmp = rfunction_trait_prob(state, peelnode, peelnode_value, locus) * \
+          (rf->prev1 == NULL ? 1.0 : rfunction_get(rf->prev1, assignment, assignment_length)) * \
+          (rf->prev2 == NULL ? 1.0 : rfunction_get(rf->prev2, assignment, assignment_length));
+    
+    for(i = 0; i < rf->cutset_length; ++i) {
+        p = GET_PERSON(state, rf->cutset[i]);
+        
+        if(! PERSON_ISPARENT(p, peelnode))
+            continue;
+            
+        tmp *= (rfunction_trans_prob(state, locus, PERSON_ID(p), assignment[PERSON_MOTHER(p)], assignment[PERSON_ID(p)], GPU_MATERNAL_ALLELE) * \
+                rfunction_trans_prob(state, locus, PERSON_ID(p), assignment[PERSON_FATHER(p)], assignment[PERSON_ID(p)], GPU_PATERNAL_ALLELE));
+    }
+    
+    RFUNCTION_PRESUM_SET(rf, ind, tmp);
 }
 
 void rfunction_sum(struct rfunction* rf, int ind) {
@@ -243,6 +284,8 @@ void rfunction_sum(struct rfunction* rf, int ind) {
     for(i = 0; i < 4; ++i) {
         RFUNCTION_ADD(rf, ind, RFUNCTION_PRESUM_GET(rf, ind + (gpu_offsets[tmp] * i)));
     }
+    
+    //printf(" + %d: %e\n", ind, RFUNCTION_GET(rf, ind));
 }
 
 void rfunction_evaluate_element(struct rfunction* rf, struct gpu_state* state, int locus, int ind) {
@@ -261,16 +304,27 @@ void rfunction_evaluate_element(struct rfunction* rf, struct gpu_state* state, i
             break;
             
         default:
+            abort();
             break;
     }
+}
+
+void rfunction_print(struct rfunction* rf) {
+    printf("rfunction: peelnode = %d, type = %d\n", RFUNCTION_PEELNODE(rf), RFUNCTION_TYPE(rf));
 }
 
 // for now, to test the code on the CPU
 void rfunction_evaluate(struct rfunction* rf, struct gpu_state* state, int locus) {
     int i;
     
+    //rfunction_print(rf);
+    
     for(i = 0; i < rf->presum_length; ++i) {
         rfunction_evaluate_element(rf, state, locus, i);
+    }
+    
+    for(i = 0; i < rf->matrix_length; ++i) {
+        rfunction_sum(rf, i);
     }
 }
 
@@ -407,3 +461,4 @@ void sampler_step(struct gpu_state* state, int locus) {
     
     sample_meiosis_indicators(state, assignment, locus);
 }
+

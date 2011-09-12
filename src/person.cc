@@ -384,9 +384,7 @@ void Person::get_cutset(PeelOperation& operation, PeelingState& state) {
             tmp2 = n[i];
 
             if(not state.is_peeled(tmp2)) {
-                //if(tmp2 != internal_id) {
-                    operation.add_cutnode(tmp2, in_nuclear_family(tmp2));
-                //}
+                operation.add_cutnode(tmp2, in_nuclear_family(tmp2));
                 continue;
             }
 

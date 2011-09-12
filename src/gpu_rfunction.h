@@ -61,8 +61,9 @@ struct geneticmap {
 // AT cutset[cutset_length - 1], SO IT CAN 
 // BE IGNORED EASILY
 struct rfunction {
-    int peel_node;
     int peel_type;
+    int peel_node;
+    int peel_partner;           // only used for parent_peel
         
     int* cutset;                // eg: [1,2,3] (including the 'peel_node')
     int cutset_length;
@@ -122,12 +123,14 @@ struct descentgraph {
 #define MAP_LENGTH(map_ptr)            ((map_ptr)->map_length)
 #define MAP_PROB(map_ptr, n, val)      ((map_ptr)->markerprobs[((n) * 4) + val])
 
+#define PERSON_ID(person_ptr)               ((person_ptr)->id)
 #define PERSON_ISFOUNDER(person_ptr)        ((person_ptr)->isfounder)
 #define PERSON_ISTYPED(person_ptr)          ((person_ptr)->istyped)
 #define PERSON_DISEASEPROB(person_ptr, n)   ((person_ptr)->prob[(n)])
 #define PERSON_GENOTYPE(person_ptr, n)      ((person_ptr)->genotypes[(n)])
 #define PERSON_MOTHER(person_ptr)           ((person_ptr)->mother)
 #define PERSON_FATHER(person_ptr)           ((person_ptr)->father)
+#define PERSON_ISPARENT(person_ptr, n)      (((person_ptr)->mother == (n)) || ((person_ptr)->father == (n)))
 
 #define DESCENTGRAPH_OFFSET(dg_ptr, personid, locusid, parentid) \
     (((dg_ptr)->subgraph_length * (locusid)) + ((personid) * 2) + (parentid))
@@ -147,6 +150,7 @@ void rfunction_evaluate_parent_peel(struct rfunction* rf, struct gpu_state* stat
 void rfunction_sum(struct rfunction* rf, int ind);
 void rfunction_evaluate_element(struct rfunction* rf, struct gpu_state* state, int locus, int ind);
 void rfunction_evaluate(struct rfunction* rf, struct gpu_state* state, int locus);
+void rfunction_print(struct rfunction* rf);
 float rfunction_get(struct rfunction* rf, int* assignment, int length);
 float rfunction_trait_prob(struct gpu_state* state, int id, int value, int locus);
 float rfunction_trans_prob(struct gpu_state* state, int locus, int peelnode, int parent_trait, int child_trait, int parent);
@@ -166,3 +170,4 @@ void sampler_step(struct gpu_state* state, int locus);
 
 
 #endif
+

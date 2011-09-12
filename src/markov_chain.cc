@@ -12,6 +12,7 @@ using namespace std;
 #include "descent_graph.h"
 #include "linkage_writer.h"
 #include "progress.h"
+#include "gpu_wrapper.h"
 
 
 void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
@@ -84,12 +85,14 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     Peeler* peel = new Peeler(ped, map, psg);
     
     // create samplers
-    LocusSampler lsampler(ped, map, psg);
+    //LocusSampler lsampler(ped, map, psg);
     MeiosisSampler msampler(ped, map);
+    
+    GPUWrapper gpu(ped, map, psg);
     
     Progress p("MCMC: ", iterations);
     
-    lsampler.reset(); // just in case it was used for sequential imputation
+    //lsampler.reset(); // just in case it was used for sequential imputation
     
     unsigned num_meioses = 2 * (ped->num_members() - ped->num_founders());
     
@@ -106,8 +109,9 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
         //    person = ped->num_founders();
 
         if((random() / static_cast<double>(RAND_MAX)) < 0.5) {
-            for(unsigned j = 0; j < map->num_markers(); ++j)
-                lsampler.step(dg, j);
+//            for(unsigned j = 0; j < map->num_markers(); ++j)
+//                lsampler.step(dg, j);
+            gpu.step(dg);
         }
         else {
             for(unsigned j = 0; j < num_meioses; ++j)
@@ -120,7 +124,7 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
             continue;
         }
         
-        //if((i % 10) == 0)
+        if((i % 10) == 0)
             peel->process(dg);
         
         /*
@@ -135,3 +139,4 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     
     return peel;
 }
+

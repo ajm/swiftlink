@@ -185,7 +185,6 @@ void SamplerRfunction::evaluate_child_peel(
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         kid_trait = static_cast<enum phased_trait>(i);
         pmatrix_index.add(kid_id, kid_trait);
-        
                 
         tmp = get_trait_probability(kid_id, kid_trait, locus);
         if(tmp == 0.0)

@@ -301,8 +301,8 @@ void GPUWrapper::init_rfunctions(PeelSequenceGenerator& psg) {
             
             rf->peel_type = peel_type;
             rf->peel_node = peel_node;
-            rf->prev1 = (prev1_index == -1) ? NULL : &data->functions[(i * num_samp) + prev1_index];
-            rf->prev2 = (prev2_index == -1) ? NULL : &data->functions[(i * num_samp) + prev2_index];
+            rf->prev1 = (prev1_index == -1) ? NULL : &data->functions[(i * num_func_per_samp) + prev1_index];
+            rf->prev2 = (prev2_index == -1) ? NULL : &data->functions[(i * num_func_per_samp) + prev2_index];
             
             rf->matrix_length = matrix_length;
             rf->matrix = (float*) malloc(matrix_length * sizeof(float));
@@ -404,7 +404,6 @@ void GPUWrapper::copy_from_gpu(DescentGraph& dg) {
     }
 }
 
-
 void GPUWrapper::step(DescentGraph& dg) {
     copy_to_gpu(dg);
     
@@ -414,3 +413,4 @@ void GPUWrapper::step(DescentGraph& dg) {
     
     copy_from_gpu(dg);
 }
+

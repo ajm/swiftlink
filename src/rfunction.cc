@@ -253,7 +253,7 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
     // generate all assignments to iterate through n-dimensional matrix
     
     // -------
-    if(offset != 0.0) {
+    //if(offset != 0.0) {
         // initialise to the first element of matrix
         for(unsigned i = 0; i < ndim; ++i) {
             q.push_back(0);
@@ -280,8 +280,8 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
                 }
             }
         }
-    }
-    // ------
+    //}
+    /*
     else {
         while(true) {
             
@@ -321,6 +321,9 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
 	
 no_more_assignments:
     ;
+    
+    */
+    
     /*
     printf("pmatrix\n");
     pmatrix.raw_print();

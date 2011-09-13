@@ -61,9 +61,10 @@ struct geneticmap {
 // AT cutset[cutset_length - 1], SO IT CAN 
 // BE IGNORED EASILY
 struct rfunction {
+    int id;
+
     int peel_type;
     int peel_node;
-    int peel_partner;           // only used for parent_peel
         
     int* cutset;                // eg: [1,2,3] (including the 'peel_node')
     int cutset_length;
@@ -163,11 +164,20 @@ int sample_homo_mi(struct gpu_state* state, int personid, int locus, int parent)
 int sample_mi(struct gpu_state* state, int allele, int trait, int personid, int locus, int parent);
 void sample_meiosis_indicators(struct gpu_state* state, int* assignment, int locus);
 
-#ifdef __cplusplus
-extern "C" 
-#endif
-void sampler_step(struct gpu_state* state, int locus);
+void print_descentgraph(struct descentgraph* dg, int ped_length, int map_length);
+void print_map(struct geneticmap* map);
+void print_person(struct person* p);
+void print_rfunction(struct rfunction* r);
+void print_ints(int* data, int length);
 
+#ifdef __cplusplus
+extern "C" { 
+#endif
+    void sampler_step(struct gpu_state* state, int locus);
+    void print_everything(struct gpu_state* state);
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

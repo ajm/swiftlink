@@ -100,6 +100,8 @@ void PeelSequenceGenerator::build_peel_order() {
         
         PeelOperation p = get_best_operation(tmp);
 
+        find_previous_functions(p);
+
         peelorder.push_back(p);
         
         state.toggle_peel_operation(p);
@@ -131,3 +133,52 @@ string PeelSequenceGenerator::debug_string() {
     
     return ss.str();
 }
+
+void PeelSequenceGenerator::find_previous_functions(PeelOperation& op) {
+    if(op.get_type() == CHILD_PEEL) {
+        find_child_functions(op);
+    }
+    else {
+        find_generic_functions(op);
+    }
+}
+
+void PeelSequenceGenerator::find_generic_functions(PeelOperation& op) {
+    vector<unsigned> tmp;
+    tmp.push_back(op.get_peelnode());
+    
+    op.set_previous_operation(find_function_containing(tmp));
+    op.set_previous_operation(find_function_containing(tmp));
+}
+
+void PeelSequenceGenerator::find_child_functions(PeelOperation& op) {
+    Person* p = ped->get_by_index(op.get_peelnode());
+    vector<unsigned> tmp;
+    tmp.push_back(p->get_maternalid());
+    tmp.push_back(p->get_paternalid());
+    
+    op.set_previous_operation(find_function_containing(tmp));
+    
+    if(p->isleaf())
+        return;
+    
+    tmp.clear();
+    tmp.push_back(p->get_internalid());
+    
+    op.set_previous_operation(find_function_containing(tmp));
+}
+
+int PeelSequenceGenerator::find_function_containing(vector<unsigned>& nodes) {
+    for(int i = 0; i < int(peelorder.size()); ++i) {
+        if(peelorder[i].is_used())
+            continue;
+        
+        if(peelorder[i].contains_cutnodes(nodes)) {
+            peelorder[i].set_used();
+            return i;
+        }
+    }
+    
+    return -1;
+}
+

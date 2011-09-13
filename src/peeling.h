@@ -27,6 +27,8 @@ class PeelOperation {
     vector<unsigned int> nuclearset; // what is the nuclear family of the peelnode that is contained in the cutset
     unsigned int peelnode;       // what is being peeled by this operation
     bool used;
+    int prev1;
+    int prev2;
     
  public :
     PeelOperation(unsigned int peelnode) :  
@@ -34,7 +36,9 @@ class PeelOperation {
         cutset(), 
         nuclearset(),
         peelnode(peelnode), 
-        used(false) {
+        used(false),
+        prev1(-1),
+        prev2(-1) {
     
         nuclearset.push_back(peelnode);    
     }
@@ -119,6 +123,28 @@ class PeelOperation {
     
     void set_peelnode(unsigned i) {
         peelnode = i;
+    }
+    
+    void set_previous_operation(int i) {
+        if(prev1 == -1) {
+            prev1 = i;
+            return;
+        }
+        
+        if(prev2 == -1) {
+            prev2 = i;
+            return;
+        }
+        
+        abort();
+    }
+    
+    int get_previous_op1() const {
+        return prev1;
+    }
+
+    int get_previous_op2() const {
+        return prev2;
     }
 
     string peeloperation_str(enum peeloperation po) {

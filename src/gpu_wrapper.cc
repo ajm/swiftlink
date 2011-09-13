@@ -281,20 +281,8 @@ void GPUWrapper::init_rfunctions(PeelSequenceGenerator& psg) {
         int presum_length = static_cast<int>(pow(4.0, s + 1));
         int cutset_length = ops[j].get_cutset_size() + 1;
         
-        int prev1_index = -1;
-        int prev2_index = -1;
-        
-        find_previous_functions(ops, j, prev1_index, prev2_index);
-        
-        if(prev1_index >= int(j)) {
-            fprintf(stderr, "error: rfunction %d : prev1 %d\n", j, prev1_index);
-            abort();
-        }
-        
-        if(prev2_index >= int(j)) {
-            fprintf(stderr, "error: rfunction %d : prev1 %d\n", j, prev2_index);
-            abort();
-        }
+        int prev1_index = ops[j].get_previous_op1();
+        int prev2_index = ops[j].get_previous_op2();
         
         for(unsigned i = 0; i < num_samp; ++i) {
             struct rfunction* rf = &data->functions[(i * num_func_per_samp) + j];
@@ -332,64 +320,6 @@ void GPUWrapper::init_rfunctions(PeelSequenceGenerator& psg) {
         }
     }
     
-}
-
-// -----
-
-void GPUWrapper::find_previous_functions(vector<PeelOperation>& ops, int current_index, int& prev1_index, int& prev2_index) {
-    if(ops[current_index].get_type() == CHILD_PEEL) {
-        find_child_functions(ops, current_index, prev1_index, prev2_index);
-    }
-    else {
-        find_generic_functions(ops, current_index, prev1_index, prev2_index);
-    }
-}
-
-void GPUWrapper::find_generic_functions(vector<PeelOperation>& ops, int current_index, int& prev1_index, int& prev2_index) {
-    vector<unsigned> tmp;
-    tmp.push_back(ops[current_index].get_peelnode());
-    
-    prev1_index = find_function_containing(ops, current_index, tmp);
-    prev2_index = find_function_containing(ops, current_index, tmp);
-}
-
-void GPUWrapper::find_child_functions(vector<PeelOperation>& ops, int current_index, int& prev1_index, int& prev2_index) {
-    Person* p = ped->get_by_index(ops[current_index].get_peelnode());
-    vector<unsigned> tmp;
-    tmp.push_back(p->get_maternalid());
-    tmp.push_back(p->get_paternalid());
-    
-    prev1_index = find_function_containing(ops, current_index, tmp);
-    
-    // don't even bother looking if the child is a leaf
-    if(p->isleaf()) {
-        prev2_index = -1;
-        return;
-    }
-    
-    tmp.clear();
-    tmp.push_back(ops[current_index].get_peelnode());
-    
-    prev2_index = find_function_containing(ops, current_index, tmp);
-}
-
-int GPUWrapper::find_function_containing(vector<PeelOperation>& ops, int current_index, vector<unsigned>& nodes) {
-    for(int i = 0; i < int(ops.size()); ++i) {
-        if(ops[i].is_used()) {
-            continue;
-        }
-        
-        if(i >= current_index) {
-            break;
-        }
-        
-        if(ops[i].contains_cutnodes(nodes)) {
-            ops[i].set_used();
-            return i;
-        }
-    }
-    
-    return -1;
 }
 
 void GPUWrapper::copy_to_gpu(DescentGraph& dg) {

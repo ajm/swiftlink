@@ -26,6 +26,11 @@ class PeelSequenceGenerator {
     vector<PeelOperation> peelorder;
     vector<PeelOperation> tmp;
     PeelingState state;
+    
+    void find_previous_functions(PeelOperation& op);
+    void find_generic_functions(PeelOperation& op);
+    void find_child_functions(PeelOperation& op);
+    int  find_function_containing(vector<unsigned>& nodes);
 
   public :
     PeelSequenceGenerator(Pedigree* p) : 

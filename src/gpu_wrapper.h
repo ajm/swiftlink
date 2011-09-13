@@ -32,10 +32,6 @@ class GPUWrapper {
     
     void kill_everything();
     
-    void find_previous_functions(vector<PeelOperation>& ops, int current_index, int& prev1_index, int& prev2_index);
-    void find_generic_functions(vector<PeelOperation>& ops, int current_index, int& prev1_index, int& prev2_index);
-    void find_child_functions(vector<PeelOperation>& ops, int current_index, int& prev1_index, int& prev2_index);
-    int find_function_containing(vector<PeelOperation>& ops, int current_index, vector<unsigned>& nodes);
     
  public :
     GPUWrapper(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator& psg) :

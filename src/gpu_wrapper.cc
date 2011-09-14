@@ -6,8 +6,7 @@ using namespace std;
 #include <cerrno>
 #include <cmath>
 
-#include "cuda.h"
-#include "cuda_runtime.h"
+#include "cuda_quiet.h"
 
 #include "gpu_rfunction.h"
 #include "gpu_wrapper.h"
@@ -155,8 +154,6 @@ void GPUWrapper::init(vector<PeelOperation>& ops) {
     init_pedigree();
     init_map();
     init_descentgraph();
-    
-    print_everything(loc_state);
 }
 
 void GPUWrapper::gpu_init(vector<PeelOperation>& ops) {
@@ -434,8 +431,10 @@ struct rfunction* GPUWrapper::gpu_init_rfunctions(vector<PeelOperation>& ops) {
             CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.matrix, sizeof(float) * rf->matrix_length));
             
             // 2 pointers
-            tmp.prev1 = &dev_rfunc[(j * loc_state->functions_per_locus) + ops[i].get_previous_op1()];
-            tmp.prev2 = &dev_rfunc[(j * loc_state->functions_per_locus) + ops[i].get_previous_op2()];
+            if(ops[i].get_previous_op1() != -1)
+                tmp.prev1 = &dev_rfunc[(j * loc_state->functions_per_locus) + ops[i].get_previous_op1()];
+            if(ops[i].get_previous_op2() != -1)
+                tmp.prev2 = &dev_rfunc[(j * loc_state->functions_per_locus) + ops[i].get_previous_op2()];
             
             CUDA_CALLANDTEST(cudaMemcpy(dev_rf, &tmp, sizeof(struct rfunction), cudaMemcpyHostToDevice));
         }
@@ -460,7 +459,7 @@ void GPUWrapper::step(DescentGraph& dg) {
     copy_to_gpu(dg);
     
     for(unsigned i = 0; i < map->num_markers(); ++i) {
-        sampler_step(loc_state, i);
+        //sampler_step(loc_state, i);
     }
     
     copy_from_gpu(dg);

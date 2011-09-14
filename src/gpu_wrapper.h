@@ -3,8 +3,7 @@
 
 #include <cstdlib>
 
-#include "cuda.h"
-#include "cuda_runtime.h"
+#include "cuda_quiet.h"
 
 #include "peeling.h"
 #include "peel_sequence_generator.h"
@@ -55,8 +54,12 @@ class GPUWrapper {
         dev_state(NULL) {
         
         vector<PeelOperation>& ops = psg.get_peel_order();
+        
         init(ops);
         gpu_init(ops);
+        
+        //print_everything(loc_state);
+        run_gpu_kernel(dev_state);
     }
         
     GPUWrapper(const GPUWrapper& rhs) :

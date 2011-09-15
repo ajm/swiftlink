@@ -108,16 +108,26 @@ __device__ void print_everything(struct gpu_state* state) {
     printf("\n");
 }
 
-__global__ void kernel(struct gpu_state* state) {
+__global__ void print_kernel(struct gpu_state* state) {
     if(threadIdx.x == 0)
         print_everything(state);
 }
 
-void run_gpu_kernel(struct gpu_state* state) {
-    printf("pre-kernel\n");
-
-    kernel<<<1, 1>>>(state);
+__global__ void sampler_kernel(struct gpu_state* state) {
+    int locus = blockIdx.x;
+    int i;
+    int numcell = 
     
-    printf("post-kernel\n");
+    for(i = 0; i < ) {
+    
+    }
+}
+
+void run_gpu_print_kernel(struct gpu_state* state) {
+    print_kernel<<<1, 1>>>(state);
+}
+
+void run_gpu_sampler_kernel(int numblocks, int numthreads, struct gpu_state* dev_state) {
+    sampler_kernel<<<numblocks, numthreads>>>(state);
 }
 

@@ -175,7 +175,8 @@ extern "C" {
 #endif
     void sampler_step(struct gpu_state* state, int locus);
     void print_everything(struct gpu_state* state);
-    void run_gpu_kernel(struct gpu_state* state);
+    void run_gpu_print_kernel(struct gpu_state* state);
+    void run_gpu_sampler_kernel(int numblocks, int numthreads, struct gpu_state* state);
 #ifdef __cplusplus
 }
 #endif

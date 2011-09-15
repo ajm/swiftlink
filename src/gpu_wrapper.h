@@ -59,7 +59,7 @@ class GPUWrapper {
         gpu_init(ops);
         
         //print_everything(loc_state);
-        run_gpu_kernel(dev_state);
+        //run_gpu_print_kernel(dev_state);
     }
         
     GPUWrapper(const GPUWrapper& rhs) :

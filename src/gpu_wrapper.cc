@@ -456,11 +456,21 @@ void GPUWrapper::copy_from_gpu(DescentGraph& dg) {
 }
 
 void GPUWrapper::step(DescentGraph& dg) {
+    int numblocks;
+    int numthreads;
+    
+    numthreads = 256;
+    numblocks = (map->num_markers() + 1) / 2;
+    
     copy_to_gpu(dg);
     
+    /*
     for(unsigned i = 0; i < map->num_markers(); ++i) {
-        //sampler_step(loc_state, i);
+        sampler_step(loc_state, i);
     }
+    */
+    
+    run_gpu_sampler_step(numblocks, numthreads, dev_state);
     
     copy_from_gpu(dg);
 }

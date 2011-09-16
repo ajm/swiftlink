@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "cuda_quiet.h"
+
 
 #define NUM_ALLELES 4
 
@@ -48,6 +50,8 @@ struct gpu_state {
     
     struct geneticmap* map;
     struct descentgraph* dg;
+    
+    curandState *randstates;
 };
 
 struct geneticmap {
@@ -163,18 +167,18 @@ int sample_hetero_mi(int allele, int trait);
 int sample_homo_mi(struct gpu_state* state, int personid, int locus, int parent);
 int sample_mi(struct gpu_state* state, int allele, int trait, int personid, int locus, int parent);
 void sample_meiosis_indicators(struct gpu_state* state, int* assignment, int locus);
+void sampler_run(struct gpu_state* state, int locus);
 
 void print_descentgraph(struct descentgraph* dg, int ped_length, int map_length);
 void print_map(struct geneticmap* map);
 void print_person(struct person* p);
 void print_rfunction(struct rfunction* r);
 void print_ints(int* data, int length);
+void print_everything(struct gpu_state* state);
 
 #ifdef __cplusplus
 extern "C" { 
-#endif
-    void sampler_step(struct gpu_state* state, int locus);
-    void print_everything(struct gpu_state* state);
+#endif    
     void run_gpu_print_kernel(struct gpu_state* state);
     void run_gpu_sampler_kernel(int numblocks, int numthreads, struct gpu_state* state);
 #ifdef __cplusplus

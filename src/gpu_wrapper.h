@@ -21,9 +21,12 @@ class GPUWrapper {
     
     struct gpu_state* loc_state;
     struct gpu_state* dev_state;
+    int* dev_graph;
     
     size_t calculate_memory_requirements(vector<PeelOperation>& ops);
     unsigned num_samplers();
+    int num_threads_per_block();
+    int num_blocks();
     int convert_type(enum peeloperation type);
     
     void init(vector<PeelOperation>& ops);
@@ -51,7 +54,8 @@ class GPUWrapper {
         ped(ped),
         map(map),
         loc_state(NULL),
-        dev_state(NULL) {
+        dev_state(NULL),
+        dev_graph(NULL) {
         
         vector<PeelOperation>& ops = psg.get_peel_order();
         
@@ -66,7 +70,8 @@ class GPUWrapper {
         ped(rhs.ped),
         map(rhs.map),
         loc_state(rhs.loc_state),
-        dev_state(rhs.dev_state) {}
+        dev_state(rhs.dev_state),
+        dev_graph(rhs.dev_graph) {}
     
     ~GPUWrapper() {
         kill_everything();
@@ -81,6 +86,7 @@ class GPUWrapper {
             map = rhs.map;
             loc_state = rhs.loc_state; // XXX this could be a problem, but I don't keep PeelSequenceGenerator obj
             dev_state = rhs.dev_state;
+            dev_graph = rhs.dev_graph;
         }
         
         return *this;

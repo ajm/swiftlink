@@ -8,13 +8,14 @@ using namespace std;
 
 #include "types.h"
 #include "logarithms.h"
+#include "genetic_map.h"
 
 class Pedigree;
-class GeneticMap;
+//class GeneticMap;
 
 class DescentGraph {
 
-	char* data;
+	int* data;
 	Pedigree* ped;
 	GeneticMap* map;
 	double prob;
@@ -46,15 +47,15 @@ class DescentGraph {
 	
 	//void copy_from(DescentGraph& d, unsigned start, unsigned end);
     
-    //char get(unsigned person_id, unsigned locus, enum parentage p) const ;
-    inline char get(unsigned person_id, unsigned locus, enum parentage p) const {
+    //int get(unsigned person_id, unsigned locus, enum parentage p) const ;
+    inline int get(unsigned person_id, unsigned locus, enum parentage p) const {
         return data[_offset(person_id, locus, p)];
     }
-    void set(unsigned person_id, unsigned locus, enum parentage p, char value);
+    void set(unsigned person_id, unsigned locus, enum parentage p, int value);
     void flip(unsigned person_id, unsigned locus, enum parentage p);
     
-    char get_bit(unsigned i) const ;
-    void set_bit(unsigned i, char b);
+    int get_bit(unsigned i) const ;
+    void set_bit(unsigned i, int b);
     void flip_bit(unsigned i);
 	
     int get_founderallele(unsigned person_id, unsigned loci, enum parentage p) const;
@@ -69,6 +70,12 @@ class DescentGraph {
     double get_likelihood();
     
     string debug_string();
+    
+    int* get_internal_ptr() { return data; }
+    size_t get_internal_size() { 
+        return sizeof(int) * graph_size * map->num_markers();
+    }
 };
 
 #endif
+

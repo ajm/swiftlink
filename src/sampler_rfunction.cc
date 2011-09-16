@@ -101,7 +101,7 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
     
     // heterozygotes are informative, so i can look up
     // the recombination fractions
-    char p = 0;
+    int p = 0;
     if(parent_trait == TRAIT_UA) {
         p = (t == TRAIT_U) ? 0 : 1;
     }

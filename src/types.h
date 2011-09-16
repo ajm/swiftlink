@@ -39,7 +39,7 @@ enum {
 	BLACK
 };
 
-typedef char meiosis_indicator_t;
+typedef int meiosis_indicator_t;
 typedef enum parentage allele_t;
 
 string gender_str(enum sex s);

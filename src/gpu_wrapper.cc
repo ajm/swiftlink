@@ -77,6 +77,14 @@ unsigned GPUWrapper::num_samplers() {
     return map->num_markers(); // wasteful yes, but let's keep everything easy to address ;-P
 }
 
+int GPUWrapper::num_threads_per_block() {
+    return 256;
+}
+
+int GPUWrapper::num_blocks() {
+    return (map->num_markers() / 2) + ((map->num_markers() % 2) == 0 ? 0 : 1);
+}
+
 int GPUWrapper::convert_type(enum peeloperation type) {
     
     switch(type) {
@@ -165,11 +173,13 @@ void GPUWrapper::gpu_init(vector<PeelOperation>& ops) {
     tmp.dg = gpu_init_descentgraph();
     
     tmp.pedigree = gpu_init_pedigree();
-    tmp.pedigree_length = loc_state->pedigree_length;
+//    tmp.pedigree_length = loc_state->pedigree_length;
     
     tmp.functions = gpu_init_rfunctions(ops);
-    tmp.functions_length = loc_state->functions_length;
-    tmp.functions_per_locus = loc_state->functions_per_locus;
+//    tmp.functions_length = loc_state->functions_length;
+//    tmp.functions_per_locus = loc_state->functions_per_locus;
+    
+    CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.randstates, sizeof(curandState) * num_threads_per_block() * num_blocks()));
     
     CUDA_CALLANDTEST(cudaMalloc((void**)&dev_state, sizeof(struct gpu_state)));
     CUDA_CALLANDTEST(cudaMemcpy(dev_state, &tmp, sizeof(struct gpu_state), cudaMemcpyHostToDevice));
@@ -206,6 +216,8 @@ struct descentgraph* GPUWrapper::gpu_init_descentgraph() {
     
     CUDA_CALLANDTEST(cudaMalloc((void**)&dev_dg, sizeof(struct descentgraph)));
     CUDA_CALLANDTEST(cudaMemcpy(dev_dg, &tmp, sizeof(struct descentgraph), cudaMemcpyHostToDevice));
+    
+    dev_graph = tmp.graph;
     
     return dev_dg;
 }
@@ -456,23 +468,29 @@ void GPUWrapper::copy_from_gpu(DescentGraph& dg) {
 }
 
 void GPUWrapper::step(DescentGraph& dg) {
-    int numblocks;
-    int numthreads;
-    
-    numthreads = 256;
-    numblocks = (map->num_markers() + 1) / 2;
-    
+    /*
     copy_to_gpu(dg);
     
-    /*
     for(unsigned i = 0; i < map->num_markers(); ++i) {
         sampler_step(loc_state, i);
     }
-    */
-    
-    run_gpu_sampler_step(numblocks, numthreads, dev_state);
     
     copy_from_gpu(dg);
+    */
+    
+    CUDA_CALLANDTEST(cudaMemcpy(dev_graph, dg.get_internal_ptr(), dg.get_internal_size(), cudaMemcpyHostToDevice));
+    
+    run_gpu_sampler_kernel(num_blocks(), num_threads_per_block(), dev_state);
+    
+    cudaThreadSynchronize();
+    
+    cudaError_t error = cudaGetLastError();
+    if(error != cudaSuccess) {
+        printf("CUDA kernel error: %s\n", cudaGetErrorString(error));
+        abort();
+    }
+    
+    CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
 }
 
 void GPUWrapper::select_best_gpu() {

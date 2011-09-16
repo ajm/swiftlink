@@ -24,7 +24,7 @@ DescentGraph::DescentGraph(Pedigree* ped, GeneticMap* map) :
     graph_size(2 * ped->num_members()),
     recombinations(-1) {
     
-    data = new char[graph_size * map->num_markers()];
+    data = new int[graph_size * map->num_markers()];
     
     for(unsigned i = 0; i < (graph_size * map->num_markers()); ++i) {
         data[i] = 0;
@@ -42,7 +42,7 @@ DescentGraph::DescentGraph(const DescentGraph& d) :
 
     unsigned int data_length = graph_size * map->num_markers();
     
-	data = new char[data_length];
+	data = new int[data_length];
     copy(d.data, 
          d.data + data_length, 
          data);
@@ -80,11 +80,11 @@ void DescentGraph::copy_from(DescentGraph& d, unsigned start, unsigned end) {
 }
 */
 
-char DescentGraph::get_bit(unsigned i) const {
+int DescentGraph::get_bit(unsigned i) const {
     return data[i];
 }
 
-void DescentGraph::set_bit(unsigned i, char b) {
+void DescentGraph::set_bit(unsigned i, int b) {
     data[i] = b;
 }
 
@@ -97,12 +97,12 @@ int DescentGraph::_offset(unsigned person_id, unsigned locus, enum parentage p) 
 	return (graph_size * locus) + (person_id * 2) + p;
 }
 
-char DescentGraph::get(unsigned person_id, unsigned locus, enum parentage p) const {
+int DescentGraph::get(unsigned person_id, unsigned locus, enum parentage p) const {
     return data[_offset(person_id, locus, p)];
 }
 */
 
-void DescentGraph::set(unsigned person_id, unsigned locus, enum parentage p, char value) {
+void DescentGraph::set(unsigned person_id, unsigned locus, enum parentage p, int value) {
     data[_offset(person_id, locus, p)] = value;
 }
 

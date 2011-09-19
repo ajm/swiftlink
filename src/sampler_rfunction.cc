@@ -149,10 +149,11 @@ void SamplerRfunction::sample(PeelMatrixKey& pmk) {
     
     /*
     printf("node = %u\n", node);
-    printf("random = %f\n", r);
+    //printf("random = %f\n", r);
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
-        printf("  sample[%d] = %f\n", i, prob_dist[i]);
+        printf(" prob[%d] = %.3f\n", i, prob_dist[i]);
     }
+    printf("\n");
     */
     
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {

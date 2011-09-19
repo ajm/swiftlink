@@ -173,16 +173,18 @@ void GPUWrapper::gpu_init(vector<PeelOperation>& ops) {
     tmp.dg = gpu_init_descentgraph();
     
     tmp.pedigree = gpu_init_pedigree();
-//    tmp.pedigree_length = loc_state->pedigree_length;
+    tmp.pedigree_length = loc_state->pedigree_length;
     
     tmp.functions = gpu_init_rfunctions(ops);
-//    tmp.functions_length = loc_state->functions_length;
-//    tmp.functions_per_locus = loc_state->functions_per_locus;
+    tmp.functions_length = loc_state->functions_length;
+    tmp.functions_per_locus = loc_state->functions_per_locus;
     
-    CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.randstates, sizeof(curandState) * num_threads_per_block() * num_blocks()));
+    CUDA_CALLANDTEST(cudaMalloc((void**) &(tmp.randstates), sizeof(curandState) * num_threads_per_block() * num_blocks()));
     
     CUDA_CALLANDTEST(cudaMalloc((void**)&dev_state, sizeof(struct gpu_state)));
     CUDA_CALLANDTEST(cudaMemcpy(dev_state, &tmp, sizeof(struct gpu_state), cudaMemcpyHostToDevice));
+    
+    run_gpu_sampler_kernel(num_blocks(), num_threads_per_block(), dev_state);
 }
 
 void GPUWrapper::init_descentgraph() {
@@ -481,6 +483,8 @@ void GPUWrapper::step(DescentGraph& dg) {
     CUDA_CALLANDTEST(cudaMemcpy(dev_graph, dg.get_internal_ptr(), dg.get_internal_size(), cudaMemcpyHostToDevice));
     
     run_gpu_sampler_kernel(num_blocks(), num_threads_per_block(), dev_state);
+    
+    //run_gpu_print_kernel(dev_state);
     
     cudaThreadSynchronize();
     

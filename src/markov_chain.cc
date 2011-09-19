@@ -86,7 +86,7 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     
     // create samplers
     LocusSampler lsampler(ped, map, psg);
-    //MeiosisSampler msampler(ped, map);
+    MeiosisSampler msampler(ped, map);
     
     GPUWrapper gpu(ped, map, psg);
     

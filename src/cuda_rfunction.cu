@@ -392,6 +392,16 @@ __device__ void rfunction_sample(struct rfunction* rf, struct gpu_state* state, 
         prob_dist[i] /= total;
     }
     
+    /*
+    if((blockIdx.x == 0) && (threadIdx.x == 0)) {
+        printf("node = %d\n", RFUNCTION_PEELNODE(rf));
+        for(i = 0; i < NUM_ALLELES; ++i) {
+            printf(" prob[%d] = %.3f\n", i, prob_dist[i]);
+        }
+        printf("\n");
+    }
+    */
+    
     // sample
     total = 0.0;
     for(i = 0; i < NUM_ALLELES; ++i) {
@@ -483,13 +493,13 @@ __device__ void rfunction_evaluate_parent_peel(struct rfunction* rf, struct gpu_
 
 __device__ void rfunction_sum(struct rfunction* rf, int ind) {
     int i;
-    int tmp = rf->cutset_length - 1;
+    int tmp = gpu_offsets[rf->cutset_length - 1];
     
     RFUNCTION_SET(rf, ind, 0.0);
     
     // unroll?
     for(i = 0; i < 4; ++i) {
-        RFUNCTION_ADD(rf, ind, RFUNCTION_PRESUM_GET(rf, ind + (gpu_offsets[tmp] * i)));
+        RFUNCTION_ADD(rf, ind, RFUNCTION_PRESUM_GET(rf, ind + (tmp * i)));
     }
 }
 
@@ -530,6 +540,12 @@ __device__ void sampler_run(struct gpu_state* state, int locus) {
     int i;
     int assignment[128];
     
+    /*
+    if(threadIdx.x == 0) { 
+        printf("locus = %d (block = %d)\n", locus, blockIdx.x);
+    }
+    */
+    
     // forward peel
     for(i = 0; i < state->functions_per_locus; ++i) {
         rfunction_evaluate(GET_RFUNCTION(state, i, locus), state, locus);
@@ -537,6 +553,7 @@ __device__ void sampler_run(struct gpu_state* state, int locus) {
     
     // reverse peel, sampling ordered genotypes
     if(threadIdx.x == 0) {
+        //printf("sample\n");
         for(i = state->functions_per_locus - 1; i >= 0; --i) {
             rfunction_sample(GET_RFUNCTION(state, i, locus), state, assignment);
         }
@@ -545,25 +562,39 @@ __device__ void sampler_run(struct gpu_state* state, int locus) {
     }
 }
 
-__global__ void sampler_kernel(struct gpu_state* state) {
+__global__ void init_kernel(struct gpu_state* state) {
     int id = (blockIdx.x * 256) + threadIdx.x;
-    int locus = blockIdx.x * 2;
-
-    //if(threadIdx.x == 0)
-    //    printf("locus = %d\n", locus);
     
+    curand_init(1234, id, 0, &(state->randstates[id]));
+    //curand_init(id, 0, 0, &(state->randstates[id]));
+}
+
+__global__ void sampler_kernel(struct gpu_state* state) {
+    //int id = (blockIdx.x * 256) + threadIdx.x;
+//    int locus = blockIdx.x * 2;
+    
+    //if(id == 0) print_descentgraph(state->dg, state->pedigree_length, state->map->map_length);
+
     // XXX i don't really know what I am doing with this yet
     // try to understand all the issues beforehand...
-    curand_init(1234, id, 0, &state->randstates[id]);
-    
+    //curand_init(1234, id, 0, &(state->randstates[id]));
+
+
+    if(blockIdx.x == 0) {
+        sampler_run(state, 0);
+        sampler_run(state, 1);
+        sampler_run(state, 2);
+    }
+
+/*
     sampler_run(state, locus);
     
     if(locus != (state->map->map_length - 1)) {
         sampler_run(state, locus + 1);
     }
+*/
     
-    
-    //printf("kernel end (block = %d, thread = %d)\n", blockIdx.x, threadIdx.x);
+    //if(id == 0) print_descentgraph(state->dg, state->pedigree_length, state->map->map_length);
 }
 
 void run_gpu_print_kernel(struct gpu_state* state) {
@@ -573,4 +604,9 @@ void run_gpu_print_kernel(struct gpu_state* state) {
 void run_gpu_sampler_kernel(int numblocks, int numthreads, struct gpu_state* state) {
     sampler_kernel<<<numblocks, numthreads>>>(state);
 }
+
+void run_gpu_init_kernel(int numblocks, int numthreads, struct gpu_state* state) {
+    init_kernel<<<numblocks, numthreads>>>(state);
+}
+
 

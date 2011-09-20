@@ -112,6 +112,7 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
 //            for(unsigned j = 0; j < map->num_markers(); ++j)
 //                lsampler.step(dg, j);
             gpu.step(dg);
+            //break;
 /*        }
         else {
             for(unsigned j = 0; j < num_meioses; ++j)

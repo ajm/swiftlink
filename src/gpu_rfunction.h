@@ -181,7 +181,7 @@ extern "C" {
 #endif    
     void run_gpu_print_kernel(struct gpu_state* state);
     void run_gpu_sampler_kernel(int numblocks, int numthreads, struct gpu_state* state);
-    void run_gpu_init_kernel(int numblocks, int numthreads, struct gpu_state* state);
+    void run_gpu_init_kernel(int numblocks, int numthreads, struct gpu_state* state, unsigned long seed);
 #ifdef __cplusplus
 }
 #endif

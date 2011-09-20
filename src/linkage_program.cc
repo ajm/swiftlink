@@ -20,8 +20,8 @@ bool LinkageProgram::run() {
     Peeler* tmp;
     
     if(verbose) {
-        fprintf(stderr, "%s\n", dm.debug_string().c_str());
-        fprintf(stderr, "%s\n", map.debug_string().c_str());
+        //fprintf(stderr, "%s\n", dm.debug_string().c_str());
+        //fprintf(stderr, "%s\n", map.debug_string().c_str());
     }
 
     // TODO XXX need to know how to do this properly, 
@@ -29,8 +29,9 @@ bool LinkageProgram::run() {
     srandom(time(NULL));
 
     for(unsigned int i = 0; i < pedigrees.size(); ++i) {
-        if(verbose)
-            fprintf(stderr, "%s\n", pedigrees[i].debug_string().c_str());
+        if(verbose) {
+            //fprintf(stderr, "%s\n", pedigrees[i].debug_string().c_str());
+        }
         
         // it cannot actually be NULL, the program will call
         // abort() at the slightest hint of a problem
@@ -56,8 +57,9 @@ bool LinkageProgram::run() {
 
 Peeler* LinkageProgram::run_pedigree(Pedigree& p) {
     
-    if(verbose)
+    if(verbose) {
         fprintf(stderr, "processing pedigree %s\n", p.get_id().c_str());
+    }
 
     MarkovChain chain(&p, &map);
     

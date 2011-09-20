@@ -7,7 +7,7 @@ CXXFLAGS := -g -O2 -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe
 CFLAGS := -g -O2 -Wall -pipe
 INCLUDES := -I. -I/usr/local/cuda/include
 LIBS := -L /usr/local/cuda/lib64 -lcudart
-GPUFLAGS := -arch=sm_20 -g -O2 
+GPUFLAGS := -arch=sm_20 -O2 
 
 OBJECTS	:= \
 	trait.o \

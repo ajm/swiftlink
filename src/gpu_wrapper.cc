@@ -5,6 +5,7 @@ using namespace std;
 #include <cstring>
 #include <cerrno>
 #include <cmath>
+#include <ctime>
 
 #include "cuda_quiet.h"
 
@@ -184,7 +185,7 @@ void GPUWrapper::gpu_init(vector<PeelOperation>& ops) {
     CUDA_CALLANDTEST(cudaMalloc((void**)&dev_state, sizeof(struct gpu_state)));
     CUDA_CALLANDTEST(cudaMemcpy(dev_state, &tmp, sizeof(struct gpu_state), cudaMemcpyHostToDevice));
     
-    run_gpu_sampler_kernel(num_blocks(), num_threads_per_block(), dev_state);
+    run_gpu_init_kernel(num_blocks(), num_threads_per_block(), dev_state, time(NULL));
 }
 
 void GPUWrapper::init_descentgraph() {
@@ -480,6 +481,8 @@ void GPUWrapper::step(DescentGraph& dg) {
     copy_from_gpu(dg);
     */
     
+    //printf("GPUWrapper::step()\n");
+    
     CUDA_CALLANDTEST(cudaMemcpy(dev_graph, dg.get_internal_ptr(), dg.get_internal_size(), cudaMemcpyHostToDevice));
     
     run_gpu_sampler_kernel(num_blocks(), num_threads_per_block(), dev_state);
@@ -495,6 +498,8 @@ void GPUWrapper::step(DescentGraph& dg) {
     }
     
     CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
+    
+    //printf("%s\n", dg.debug_string().c_str());
 }
 
 void GPUWrapper::select_best_gpu() {

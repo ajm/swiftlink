@@ -135,7 +135,6 @@ __global__ void print_kernel(struct gpu_state* state) {
         print_everything(state);
 }
 
-
 // I am going to assume that the length of 'assignment' is to the number of 
 // pedigree members and that everything that is not assigned is -1
 //
@@ -562,30 +561,22 @@ __device__ void sampler_run(struct gpu_state* state, int locus) {
     }
 }
 
-__global__ void init_kernel(struct gpu_state* state) {
+__global__ void init_kernel(struct gpu_state* state, unsigned long seed) {
     int id = (blockIdx.x * 256) + threadIdx.x;
     
-    curand_init(1234, id, 0, &(state->randstates[id]));
-    //curand_init(id, 0, 0, &(state->randstates[id]));
+    curand_init(seed, id, 0, &(state->randstates[id]));
 }
 
 __global__ void sampler_kernel(struct gpu_state* state) {
     //int id = (blockIdx.x * 256) + threadIdx.x;
 //    int locus = blockIdx.x * 2;
     
-    //if(id == 0) print_descentgraph(state->dg, state->pedigree_length, state->map->map_length);
-
-    // XXX i don't really know what I am doing with this yet
-    // try to understand all the issues beforehand...
-    //curand_init(1234, id, 0, &(state->randstates[id]));
-
-
     if(blockIdx.x == 0) {
         sampler_run(state, 0);
         sampler_run(state, 1);
         sampler_run(state, 2);
     }
-
+    
 /*
     sampler_run(state, locus);
     
@@ -593,8 +584,15 @@ __global__ void sampler_kernel(struct gpu_state* state) {
         sampler_run(state, locus + 1);
     }
 */
+
+    //printf("blockIdx.x = %d, threadIdx.x = %d\n", blockIdx.x, threadIdx.x);
     
-    //if(id == 0) print_descentgraph(state->dg, state->pedigree_length, state->map->map_length);
+    /*
+    if(id == 0) {
+        printf("blockIdx.x = %d, threadIdx.x = %d\n", blockIdx.x, threadIdx.x);
+        print_descentgraph(state->dg, state->pedigree_length, state->map->map_length);
+    }
+    */
 }
 
 void run_gpu_print_kernel(struct gpu_state* state) {
@@ -605,8 +603,37 @@ void run_gpu_sampler_kernel(int numblocks, int numthreads, struct gpu_state* sta
     sampler_kernel<<<numblocks, numthreads>>>(state);
 }
 
-void run_gpu_init_kernel(int numblocks, int numthreads, struct gpu_state* state) {
-    init_kernel<<<numblocks, numthreads>>>(state);
+void run_gpu_init_kernel(int numblocks, int numthreads, struct gpu_state* state, unsigned long seed) {
+    init_kernel<<<numblocks, numthreads>>>(state, seed);
 }
 
+/*
+void fake_sampler_kernel(struct gpu_state* state) {
+    int i, j, locus;
+    int assignment[128];
+    struct rfunction* rf;
+    
+    for(locus = 0; locus < state->map->map_length; ++locus) {
+        // forward peel
+        for(i = 0; i < state->functions_per_locus; ++i) {
+            rf = GET_RFUNCTION(state, i, locus);
+
+            for(j = 0; j < rf->presum_length; ++j) {
+                rfunction_evaluate_element(rf, state, locus, j);
+            }
+            
+            for(j = 0; j < rf->matrix_length; ++j) {
+                rfunction_sum(rf, j);
+            }
+        }
+        
+        // reverse peel, sampling ordered genotypes
+        for(i = state->functions_per_locus - 1; i >= 0; --i) {
+            rfunction_sample(GET_RFUNCTION(state, i, locus), assignment, state->pedigree_length);
+        }
+        
+        sample_meiosis_indicators(state, assignment, locus);
+    }
+}
+*/
 

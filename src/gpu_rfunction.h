@@ -51,7 +51,7 @@ struct gpu_state {
     struct geneticmap* map;
     struct descentgraph* dg;
     
-    curandState *randstates;
+    curandState* randstates;
 };
 
 struct geneticmap {
@@ -148,7 +148,8 @@ struct descentgraph {
 
 
 void rfunction_presum_assignment(struct rfunction* rf, int ind, int* assignment, int length);
-void rfunction_sample(struct rfunction* rf, int* assignment, int assignment_length);
+//void rfunction_sample(struct rfunction* rf, int* assignment, int assignment_length);
+void rfunction_sample(struct rfunction* rf, struct gpu_state* state, int* assignment);
 void rfunction_evaluate_partner_peel(struct rfunction* rf, struct gpu_state* state, int locus, int ind);
 void rfunction_evaluate_child_peel(struct rfunction* rf, struct gpu_state* state, int locus, int ind);
 void rfunction_evaluate_parent_peel(struct rfunction* rf, struct gpu_state* state, int locus, int ind);
@@ -181,7 +182,7 @@ extern "C" {
 #endif    
     void run_gpu_print_kernel(struct gpu_state* state);
     void run_gpu_sampler_kernel(int numblocks, int numthreads, struct gpu_state* state);
-    void run_gpu_init_kernel(int numblocks, int numthreads, struct gpu_state* state, unsigned long seed);
+    void run_gpu_init_kernel(int numblocks, int numthreads, curandState* states, long int* seeds);
 #ifdef __cplusplus
 }
 #endif

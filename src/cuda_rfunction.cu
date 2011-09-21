@@ -521,6 +521,7 @@ __device__ void rfunction_evaluate_element(struct rfunction* rf, struct gpu_stat
 
 __device__ void rfunction_evaluate(struct rfunction* rf, struct gpu_state* state, int locus) {
     int i;
+    
         
     for(i = threadIdx.x; i < rf->presum_length; i += 256) {
         rfunction_evaluate_element(rf, state, locus, i);
@@ -533,17 +534,23 @@ __device__ void rfunction_evaluate(struct rfunction* rf, struct gpu_state* state
     }
     
     __syncthreads();
+    
+    
+    /*
+    // assumes only one thread active
+    for(i = 0; i < rf->presum_length; ++i) {
+        rfunction_evaluate_element(rf, state, locus, i);
+    }
+    
+    for(i = 0; i < rf->matrix_length; ++i) {
+        rfunction_sum(rf, i);
+    }
+    */
 }
 
 __device__ void sampler_run(struct gpu_state* state, int locus) {
     int i;
     int assignment[128];
-    
-    /*
-    if(threadIdx.x == 0) { 
-        printf("locus = %d (block = %d)\n", locus, blockIdx.x);
-    }
-    */
     
     // forward peel
     for(i = 0; i < state->functions_per_locus; ++i) {
@@ -561,31 +568,31 @@ __device__ void sampler_run(struct gpu_state* state, int locus) {
     }
 }
 
-__global__ void init_kernel(struct gpu_state* state, unsigned long seed) {
+__global__ void init_kernel(curandState* states, long int* seeds) {
     int id = (blockIdx.x * 256) + threadIdx.x;
     
-    curand_init(seed, id, 0, &(state->randstates[id]));
+    printf("%d %ld\n", id, seeds[id]);
+    
+    curand_init(seeds[id], 0, 0, &states[id]);
 }
 
 __global__ void sampler_kernel(struct gpu_state* state) {
     //int id = (blockIdx.x * 256) + threadIdx.x;
-//    int locus = blockIdx.x * 2;
-    
+    int locus = blockIdx.x * 2;
+
+/*    
     if(blockIdx.x == 0) {
         sampler_run(state, 0);
         sampler_run(state, 1);
         sampler_run(state, 2);
     }
-    
-/*
+*/
+
     sampler_run(state, locus);
     
     if(locus != (state->map->map_length - 1)) {
         sampler_run(state, locus + 1);
     }
-*/
-
-    //printf("blockIdx.x = %d, threadIdx.x = %d\n", blockIdx.x, threadIdx.x);
     
     /*
     if(id == 0) {
@@ -603,37 +610,7 @@ void run_gpu_sampler_kernel(int numblocks, int numthreads, struct gpu_state* sta
     sampler_kernel<<<numblocks, numthreads>>>(state);
 }
 
-void run_gpu_init_kernel(int numblocks, int numthreads, struct gpu_state* state, unsigned long seed) {
-    init_kernel<<<numblocks, numthreads>>>(state, seed);
+void run_gpu_init_kernel(int numblocks, int numthreads, curandState* states, long int* seeds) {
+    init_kernel<<<numblocks, numthreads>>>(states, seeds);
 }
-
-/*
-void fake_sampler_kernel(struct gpu_state* state) {
-    int i, j, locus;
-    int assignment[128];
-    struct rfunction* rf;
-    
-    for(locus = 0; locus < state->map->map_length; ++locus) {
-        // forward peel
-        for(i = 0; i < state->functions_per_locus; ++i) {
-            rf = GET_RFUNCTION(state, i, locus);
-
-            for(j = 0; j < rf->presum_length; ++j) {
-                rfunction_evaluate_element(rf, state, locus, j);
-            }
-            
-            for(j = 0; j < rf->matrix_length; ++j) {
-                rfunction_sum(rf, j);
-            }
-        }
-        
-        // reverse peel, sampling ordered genotypes
-        for(i = state->functions_per_locus - 1; i >= 0; --i) {
-            rfunction_sample(GET_RFUNCTION(state, i, locus), assignment, state->pedigree_length);
-        }
-        
-        sample_meiosis_indicators(state, assignment, locus);
-    }
-}
-*/
 

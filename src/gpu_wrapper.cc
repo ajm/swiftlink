@@ -25,7 +25,7 @@ using namespace std;
         cudaDeviceReset();\
         abort();\
     }\
-} while(0);
+} while(0)
 
 /*
  * TODO
@@ -180,12 +180,38 @@ void GPUWrapper::gpu_init(vector<PeelOperation>& ops) {
     tmp.functions_length = loc_state->functions_length;
     tmp.functions_per_locus = loc_state->functions_per_locus;
     
-    CUDA_CALLANDTEST(cudaMalloc((void**) &(tmp.randstates), sizeof(curandState) * num_threads_per_block() * num_blocks()));
+    tmp.randstates = gpu_init_random();
     
     CUDA_CALLANDTEST(cudaMalloc((void**)&dev_state, sizeof(struct gpu_state)));
     CUDA_CALLANDTEST(cudaMemcpy(dev_state, &tmp, sizeof(struct gpu_state), cudaMemcpyHostToDevice));
+}
+
+curandState* GPUWrapper::gpu_init_random() {
+    long int* host_seeds;
+    long int* dev_seeds;
+    curandState* dev_rng_state;
     
-    run_gpu_init_kernel(num_blocks(), num_threads_per_block(), dev_state, time(NULL));
+    host_seeds = (long int*) malloc(sizeof(*host_seeds) * num_threads_per_block() * num_blocks());
+    if(! host_seeds) {
+        fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+        abort();
+    }
+    
+    for(int i = 0; i < num_threads_per_block() * num_blocks(); ++i)
+        host_seeds[i] = random();
+    
+    CUDA_CALLANDTEST(cudaMalloc((void**) &dev_seeds,   sizeof(*dev_seeds) * num_threads_per_block() * num_blocks()));
+    CUDA_CALLANDTEST(cudaMemcpy(dev_seeds, host_seeds, sizeof(*dev_seeds) * num_threads_per_block() * num_blocks(), cudaMemcpyHostToDevice));
+    
+    free(host_seeds);
+    
+    CUDA_CALLANDTEST(cudaMalloc((void**) &dev_rng_state, sizeof(*dev_rng_state) * num_threads_per_block() * num_blocks()));
+    
+    run_gpu_init_kernel(num_blocks(), num_threads_per_block(), dev_rng_state, dev_seeds);
+    
+    cudaFree(dev_seeds);
+    
+    return dev_rng_state;
 }
 
 void GPUWrapper::init_descentgraph() {

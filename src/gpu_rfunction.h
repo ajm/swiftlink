@@ -7,6 +7,8 @@
 
 #include "cuda_quiet.h"
 
+#include "tinymt/tinymt32_host.h"
+
 
 #define NUM_ALLELES 4
 
@@ -52,6 +54,7 @@ struct gpu_state {
     struct descentgraph* dg;
     
     curandState* randstates;
+    tinymt32_status_t* randmt;
 };
 
 struct geneticmap {
@@ -182,7 +185,9 @@ extern "C" {
 #endif    
     void run_gpu_print_kernel(struct gpu_state* state);
     void run_gpu_sampler_kernel(int numblocks, int numthreads, struct gpu_state* state);
-    void run_gpu_init_kernel(int numblocks, int numthreads, curandState* states, long int* seeds);
+    void run_gpu_curand_init_kernel(int numblocks, int numthreads, curandState* states, long int* seeds);
+    void run_gpu_tinymt_init_kernel(int numblocks, int numthreads, tinymt32_status_t* states, uint32_t* params, uint32_t* seeds);
+
 #ifdef __cplusplus
 }
 #endif

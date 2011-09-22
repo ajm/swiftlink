@@ -1,6 +1,10 @@
 
 #include "gpu_rfunction.h"
 
+#include "tinymt/tinymt32_kernel.cuh"
+
+#define RANDOM_USE_MT 1
+
 /* the largest matrix possible is 16-dimensions pre-sum because each
  * dimension is always length 4 (2-bits) and the index is a 32-bit int */
 __device__ int gpu_offsets[] = {
@@ -254,7 +258,7 @@ __device__ int get_trait(int value, int parent) {
     return -1;
 }
 
-__device__ float get_random(struct gpu_state* state) {
+__device__ float get_curand_random(struct gpu_state* state) {
     //return random() / (float) RAND_MAX;
     curandState localstate;
     int offset;
@@ -269,6 +273,21 @@ __device__ float get_random(struct gpu_state* state) {
     state->randstates[offset] = localstate;
 
     return tmp;
+}
+
+__device__ float get_mt_random(struct gpu_state* state) {
+    
+    return tinymt32_single(&state->randmt[(blockIdx.x * 256) + threadIdx.x]);
+}
+
+__device__ float get_random(struct gpu_state* state) {
+
+#ifdef RANDOM_USE_MT
+    return get_mt_random(state);
+#else
+    return get_curand_random(state);
+#endif
+
 }
 
 __device__ int sample_hetero_mi(int allele, int trait) {
@@ -568,12 +587,22 @@ __device__ void sampler_run(struct gpu_state* state, int locus) {
     }
 }
 
-__global__ void init_kernel(curandState* states, long int* seeds) {
+__global__ void init_curand_kernel(curandState* states, long int* seeds) {
     int id = (blockIdx.x * 256) + threadIdx.x;
     
-    printf("%d %ld\n", id, seeds[id]);
+    //printf("%d %ld\n", id, seeds[id]);
     
     curand_init(seeds[id], 0, 0, &states[id]);
+}
+
+__global__ void init_mt_kernel(tinymt32_status_t* states, uint32_t* params, uint32_t* seeds) {
+    int id = (blockIdx.x * 256) + threadIdx.x;
+    
+    states->mat1 = params[id * 3];
+    states->mat2 = params[(id * 3) + 1];
+    states->tmat = params[(id * 3) + 2];
+
+    tinymt32_init(&(states[id]), seeds[id]);
 }
 
 __global__ void sampler_kernel(struct gpu_state* state) {
@@ -593,7 +622,8 @@ __global__ void sampler_kernel(struct gpu_state* state) {
     if(locus != (state->map->map_length - 1)) {
         sampler_run(state, locus + 1);
     }
-    
+
+
     /*
     if(id == 0) {
         printf("blockIdx.x = %d, threadIdx.x = %d\n", blockIdx.x, threadIdx.x);
@@ -610,7 +640,11 @@ void run_gpu_sampler_kernel(int numblocks, int numthreads, struct gpu_state* sta
     sampler_kernel<<<numblocks, numthreads>>>(state);
 }
 
-void run_gpu_init_kernel(int numblocks, int numthreads, curandState* states, long int* seeds) {
-    init_kernel<<<numblocks, numthreads>>>(states, seeds);
+void run_gpu_curand_init_kernel(int numblocks, int numthreads, curandState* states, long int* seeds) {
+    init_curand_kernel<<<numblocks, numthreads>>>(states, seeds);
+}
+
+void run_gpu_tinymt_init_kernel(int numblocks, int numthreads, tinymt32_status_t* states, uint32_t* params, uint32_t* seeds) {
+    init_mt_kernel<<<numblocks, numthreads>>>(states, params, seeds);
 }
 

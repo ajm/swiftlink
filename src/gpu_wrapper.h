@@ -40,7 +40,8 @@ class GPUWrapper {
     struct person* gpu_init_pedigree();
     struct rfunction* gpu_init_rfunctions(vector<PeelOperation>& ops);
     struct descentgraph* gpu_init_descentgraph();
-    curandState* gpu_init_random();
+    curandState* gpu_init_random_curand();
+    tinymt32_status_t* gpu_init_random_tinymt();
     
     void copy_to_gpu(DescentGraph& dg);
     void copy_from_gpu(DescentGraph& dg);

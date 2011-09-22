@@ -43,7 +43,8 @@ OBJECTS	:= \
 	main.o \
 	gpu_wrapper.o \
 	cuda_rfunction.o \
-	test_program.o
+	test_program.o \
+	tinymt/tinymt32_host.o
 
 app: $(OBJECTS)
 	$(CXX) -o $@ $(LIBS) $(OBJECTS)

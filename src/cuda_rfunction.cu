@@ -3,7 +3,7 @@
 
 #include "tinymt/tinymt32_kernel.cuh"
 
-#define RANDOM_USE_MT 1
+//#define RANDOM_USE_MT 1
 
 /* the largest matrix possible is 16-dimensions pre-sum because each
  * dimension is always length 4 (2-bits) and the index is a 32-bit int */
@@ -261,23 +261,23 @@ __device__ int get_trait(int value, int parent) {
 __device__ float get_curand_random(struct gpu_state* state) {
     //return random() / (float) RAND_MAX;
     curandState localstate;
-    int offset;
+    //int offset;
     float tmp;
     
-    offset = (blockIdx.x * 256) + threadIdx.x;
+    //offset = (blockIdx.x * 256) + threadIdx.x;
     
-    localstate = state->randstates[offset];
+    localstate = state->randstates[blockIdx.x];
     
     tmp = curand_uniform(&localstate);
     
-    state->randstates[offset] = localstate;
+    state->randstates[blockIdx.x] = localstate;
 
     return tmp;
 }
 
 __device__ float get_mt_random(struct gpu_state* state) {
     
-    return tinymt32_single(&state->randmt[(blockIdx.x * 256) + threadIdx.x]);
+    return tinymt32_single(&state->randmt[blockIdx.x]);
 }
 
 __device__ float get_random(struct gpu_state* state) {
@@ -440,6 +440,8 @@ __device__ void rfunction_evaluate_partner_peel(struct rfunction* rf, struct gpu
     int peelnode;
     int peelnode_value;
     
+    //printf("e b%d t%d\n", blockIdx.x, threadIdx.x);
+    
     rfunction_presum_assignment(rf, ind, assignment, assignment_length);
     
     peelnode = RFUNCTION_PEELNODE(rf);
@@ -460,6 +462,8 @@ __device__ void rfunction_evaluate_child_peel(struct rfunction* rf, struct gpu_s
     int peelnode_value;
     int mother_value;
     int father_value;
+    
+    //printf("e b%d t%d\n", blockIdx.x, threadIdx.x);
     
     rfunction_presum_assignment(rf, ind, assignment, assignment_length);
     
@@ -487,6 +491,8 @@ __device__ void rfunction_evaluate_parent_peel(struct rfunction* rf, struct gpu_
     int i;
     float tmp;
     
+    //printf("e b%d t%d\n", blockIdx.x, threadIdx.x);
+    
     rfunction_presum_assignment(rf, ind, assignment, assignment_length);
     
     peelnode = RFUNCTION_PEELNODE(rf);
@@ -513,6 +519,8 @@ __device__ void rfunction_sum(struct rfunction* rf, int ind) {
     int i;
     int tmp = gpu_offsets[rf->cutset_length - 1];
     
+    //printf("s b%d t%d\n", blockIdx.x, threadIdx.x);
+    
     RFUNCTION_SET(rf, ind, 0.0);
     
     // unroll?
@@ -522,6 +530,9 @@ __device__ void rfunction_sum(struct rfunction* rf, int ind) {
 }
 
 __device__ void rfunction_evaluate_element(struct rfunction* rf, struct gpu_state* state, int locus, int ind) {
+    
+    //printf("e b%d t%d\n", blockIdx.x, threadIdx.x);
+    
     switch(RFUNCTION_TYPE(rf)) {
         case GPU_CHILD_PEEL:
             rfunction_evaluate_child_peel(rf, state, locus, ind);
@@ -585,18 +596,22 @@ __device__ void sampler_run(struct gpu_state* state, int locus) {
         
         sample_meiosis_indicators(state, assignment, locus);
     }
+    
+    __syncthreads();
 }
 
 __global__ void init_curand_kernel(curandState* states, long int* seeds) {
-    int id = (blockIdx.x * 256) + threadIdx.x;
+    int id = blockIdx.x; // (blockIdx.x * 256) + threadIdx.x;
     
     //printf("%d %ld\n", id, seeds[id]);
     
     curand_init(seeds[id], 0, 0, &states[id]);
+    //curand_init(id, 0, 0, &states[id]);
+    //curand_init(1234, id, 0, &states[id]);
 }
 
 __global__ void init_mt_kernel(tinymt32_status_t* states, uint32_t* params, uint32_t* seeds) {
-    int id = (blockIdx.x * 256) + threadIdx.x;
+    int id = blockIdx.x; //(blockIdx.x * 256) + threadIdx.x;
     
     states->mat1 = params[id * 3];
     states->mat2 = params[(id * 3) + 1];
@@ -622,7 +637,6 @@ __global__ void sampler_kernel(struct gpu_state* state) {
     if(locus != (state->map->map_length - 1)) {
         sampler_run(state, locus + 1);
     }
-
 
     /*
     if(id == 0) {

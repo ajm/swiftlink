@@ -93,8 +93,8 @@ static int read_line32(uint32_t *mat1, uint32_t *mat2, uint32_t *tmat, FILE *fp)
 	        return -1;
 	    }
 	    
-	    fgets(buff, BUFF_SIZE, fp);
-	    if (errno) {
+	    if(fgets(buff, BUFF_SIZE, fp) == NULL) {
+	    //if (errno) {
 	        return errno;
 	    }
 	    

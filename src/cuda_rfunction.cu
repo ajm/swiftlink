@@ -1,9 +1,11 @@
 
 #include "gpu_rfunction.h"
 
-#include "tinymt/tinymt32_kernel.cuh"
-
 //#define RANDOM_USE_MT 1
+
+//#ifdef RANDOM_USE_MT
+    #include "tinymt/tinymt32_kernel.cuh"
+//#endif
 
 /* the largest matrix possible is 16-dimensions pre-sum because each
  * dimension is always length 4 (2-bits) and the index is a 32-bit int */
@@ -188,7 +190,7 @@ __device__ float rfunction_get(struct rfunction* rf, int* assignment, int length
 }
 
 __device__ float rfunction_trait_prob(struct gpu_state* state, int id, int value, int locus) {
-    struct person* p = GET_PERSON(state, id); //pedigree[id];
+    struct person* p = GET_PERSON(state, id);
     
     if(PERSON_ISTYPED(p)) {
         switch(PERSON_GENOTYPE(p, locus)) {

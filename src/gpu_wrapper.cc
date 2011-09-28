@@ -52,6 +52,8 @@ size_t GPUWrapper::calculate_memory_requirements(vector<PeelOperation>& ops) {
     size_t mem_per_sampler;
     size_t mem_pedigree;
     size_t mem_map;
+    size_t mem_rand;
+    size_t mem_shared;
     
     mem_map = sizeof(struct geneticmap) + \
                 (2 * sizeof(float) * (map->num_markers() - 1)) + \
@@ -67,16 +69,24 @@ size_t GPUWrapper::calculate_memory_requirements(vector<PeelOperation>& ops) {
     }
     
     mem_per_sampler = 0;
+    mem_shared = 0;
     for(unsigned i = 0; i < ops.size(); ++i) {
         double s = ops[i].get_cutset_size();
         
         mem_per_sampler += (pow(4.0, s)     * sizeof(float));   // matrix
         mem_per_sampler += (pow(4.0, s + 1) * sizeof(float));   // presum_matrix
+        
+        mem_shared += ((pow(4.0, s) + pow(4.0, s+1)) * sizeof(float));
+        
         mem_per_sampler += (int(s + 1)      * sizeof(int));     // cutset
         mem_per_sampler += sizeof(struct rfunction);            // containing struct
     }
     
-    return (num_samplers() * mem_per_sampler) + mem_pedigree + mem_map + sizeof(struct gpu_state);
+    mem_rand = sizeof(curandState) * num_blocks();
+    
+    printf("[shared] %d bytes\n", int(mem_shared));
+    
+    return (num_samplers() * mem_per_sampler) + mem_pedigree + mem_map + mem_rand + sizeof(struct gpu_state);
 }
 
 unsigned GPUWrapper::num_samplers() {
@@ -602,13 +612,28 @@ void GPUWrapper::step(DescentGraph& dg) {
     
     //printf("GPUWrapper::step()\n");
     
+    
+    cudaEvent_t start, stop;
+    float time;
+    
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    
+    
     CUDA_CALLANDTEST(cudaMemcpy(dev_graph, dg.get_internal_ptr(), dg.get_internal_size(), cudaMemcpyHostToDevice));
+    
+    
+    cudaEventRecord(start, 0);
     
     run_gpu_sampler_kernel(num_blocks(), num_threads_per_block(), dev_state);
     
     //run_gpu_print_kernel(dev_state);
     
     cudaThreadSynchronize();
+    
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    
     
     cudaError_t error = cudaGetLastError();
     if(error != cudaSuccess) {
@@ -619,6 +644,16 @@ void GPUWrapper::step(DescentGraph& dg) {
     CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
     
     //printf("%s\n", dg.debug_string().c_str());
+    
+    
+    cudaEventElapsedTime(&time, start, stop);
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+    
+    printf("kernel took %.2fms\n", time);
+    
+    abort();
+    
 }
 
 void GPUWrapper::select_best_gpu() {

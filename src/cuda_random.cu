@@ -1,8 +1,7 @@
 #include "cuda_common.h"
+#include "tinymt/tinymt32_kernel.cuh"
 
 //#define RANDOM_USE_MT 1
-
-#include "tinymt/tinymt32_kernel.cuh"
 
 
 __device__ float get_curand_random(struct gpu_state* state) {

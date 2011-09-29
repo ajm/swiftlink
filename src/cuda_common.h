@@ -160,8 +160,9 @@ struct descentgraph {
 extern "C" { 
 #endif    
     void run_gpu_print_kernel(struct gpu_state* state);
-    void run_gpu_sampler_kernel(int numblocks, int numthreads, struct gpu_state* state);
+    void run_gpu_lsampler_kernel(int numblocks, int numthreads, struct gpu_state* state);
     void run_gpu_lodscore_kernel(int numblocks, int numthreads, struct gpu_state* state);
+    void run_gpu_lodscoreinit_kernel(int numblocks, int numthreads, float* lodscores);
     void run_gpu_curand_init_kernel(int numblocks, int numthreads, curandState* states, long int* seeds);
     void run_gpu_tinymt_init_kernel(int numblocks, int numthreads, tinymt32_status_t* states, uint32_t* params, uint32_t* seeds);
 #ifdef __cplusplus

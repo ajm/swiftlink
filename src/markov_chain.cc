@@ -88,7 +88,17 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     LocusSampler lsampler(ped, map, psg);
     MeiosisSampler msampler(ped, map);
     
+    
     GPUWrapper gpu(ped, map, psg);
+    
+    
+    
+    gpu.run(dg, iterations, burnin, 10);
+    
+    exit(0);
+    
+    
+    
     
     Progress p("MCMC: ", iterations);
     
@@ -97,9 +107,6 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     unsigned num_meioses = 2 * (ped->num_members() - ped->num_founders());
     
     for(unsigned i = 0; i < iterations; ++i) {
-        //if((i % 100) == 0)
-        //    printf("%d\n", i);
-        
         //lsampler.step(dg, locus);
         //locus = (locus + 1) % map->num_markers();
         
@@ -107,38 +114,27 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
         //person = (person + 1) % ped->num_members();
         //if(person == 0)
         //    person = ped->num_founders();
-
-//        if((random() / static_cast<double>(RAND_MAX)) < 0.5) {
-//            for(unsigned j = 0; j < map->num_markers(); ++j)
-//                lsampler.step(dg, j);
-            gpu.step(dg);
-            /*
-            double tmp_prob = dg.get_likelihood();
-            int tmp_rec = dg.num_recombinations();
-            fprintf(stderr, "%.4f %d\n", tmp_prob, tmp_rec);
-            */
-            //break;
-/*        }
+        
+        //if((random() / static_cast<double>(RAND_MAX)) < 0.5) {
+            for(unsigned j = 0; j < map->num_markers(); ++j)
+                lsampler.step(dg, j);
+            //gpu.step(dg);    
+        /*}
         else {
             for(unsigned j = 0; j < num_meioses; ++j)
                 msampler.step(dg, j);
         }
-*/
+        */
+        
         p.increment();
         
         if(i < burnin) {
             continue;
         }
         
-        if((i % 10) == 0)
-            peel->process(dg);
-        
-        /*
         if((i % 10) == 0) {
-            LinkageWriter lw(map, peel, "linkage.txt", true);
-            lw.write();
+            peel->process(dg);
         }
-        */
     }
     
     p.finish();

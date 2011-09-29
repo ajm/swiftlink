@@ -1,43 +1,8 @@
-#include "cuda_common.h"
-#include "cuda_common.cu"
-#include "cuda_random.cu"
-#include "cuda_print.cu"
-//#include "cuda_lodscore.cu"
+// CUDA locus sampler
+// one thread per cell in the pre-sum matrix
+// number of threads actually utilised really depends on which 
+// r-function is currently being calculated
 
-
-__device__ int get_trait(int value, int parent) {
-    switch(parent) {
-        case GPU_MATERNAL_ALLELE:
-            return (((value == GPU_TRAIT_AA) || (value == GPU_TRAIT_AB)) ? GPU_TRAIT_A : GPU_TRAIT_B);    
-        case GPU_PATERNAL_ALLELE:
-            return (((value == GPU_TRAIT_AA) || (value == GPU_TRAIT_BA)) ? GPU_TRAIT_A : GPU_TRAIT_B);            
-        default:
-            break;
-    }
-    return -1;
-}
-
-__device__ float rfunction_trait_prob(struct gpu_state* state, int id, int value, int locus) {
-    struct person* p = GET_PERSON(state, id);
-    
-    if(PERSON_ISTYPED(p)) {
-        switch(PERSON_GENOTYPE(p, locus)) {
-            case GPU_GENOTYPE_AB :
-                return ((value == GPU_TRAIT_AB) || (value == GPU_TRAIT_BA)) ? 0.5 : 0.0;
-            case GPU_GENOTYPE_AA :
-                return (value == GPU_TRAIT_AA) ? 1.0 : 0.0;
-            case GPU_GENOTYPE_BB :
-                return (value == GPU_TRAIT_BB) ? 1.0 : 0.0;
-            default :
-                break;
-        }
-    }
-    
-    if(! PERSON_ISFOUNDER(p))
-        return 0.25;
-    
-    return MAP_PROB(GET_MAP(state), locus, value);
-}
 
 __device__ float rfunction_trans_prob(struct gpu_state* state, int locus, int peelnode, 
                            int parent_trait, int child_trait, int parent) {
@@ -385,7 +350,7 @@ __device__ void sampler_run(struct gpu_state* state, int locus) {
 }
 
 // number of blocks is half the number of loci
-__global__ void sampler_kernel(struct gpu_state* state) {
+__global__ void lsampler_kernel(struct gpu_state* state) {
     int locus = blockIdx.x * 2;
 
     sampler_run(state, locus);
@@ -395,7 +360,7 @@ __global__ void sampler_kernel(struct gpu_state* state) {
     }
 }
 
-void run_gpu_sampler_kernel(int numblocks, int numthreads, struct gpu_state* state) {
-    sampler_kernel<<<numblocks, numthreads>>>(state);
+void run_gpu_lsampler_kernel(int numblocks, int numthreads, struct gpu_state* state) {
+    lsampler_kernel<<<numblocks, numthreads>>>(state);
 }
 

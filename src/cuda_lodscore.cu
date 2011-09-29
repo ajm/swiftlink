@@ -1,4 +1,13 @@
-#include "cuda_common.h"
+// calculate LOD scores
+// 
+// functions derived from TraitRfunction.cc and Rfunction.cc
+// but without using an intermediate matrix, just summing everything on
+// the fly
+// 
+// i cannot have a thread per cell in presum matrix, but instead
+// one thread per cell in matrix, where each thread calculates the 
+// likelihood of each of the four assignments for the peel node
+// 
 
 
 __device__ float lodscore_trait_prob(struct gpu_state* state, int id, int value) {
@@ -8,7 +17,8 @@ __device__ float lodscore_trait_prob(struct gpu_state* state, int id, int value)
 }
 
 __device__ float lodscore_trans_prob(struct gpu_state* state, int locus, int peelnode, int m_allele, int p_allele) {
-    float tmp = 0.25;    
+    //float tmp = 0.25; // i am only going to remove this term later...
+    float tmp = 1.0;    
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     struct geneticmap* map = GET_MAP(state);
     float half_theta = MAP_HALF_INVERSETHETA(map, locus);
@@ -59,7 +69,7 @@ __device__ void lodscore_evaluate_partner_peel(struct rfunction* rf, struct gpu_
     int assignment_length = state->pedigree_length;
     int assignment[128];
     int peelnode;
-    int peelnode_value;
+    //int peelnode_value;
     int i;
     float tmp;
     //printf("e b%d t%d\n", blockIdx.x, threadIdx.x);
@@ -67,12 +77,15 @@ __device__ void lodscore_evaluate_partner_peel(struct rfunction* rf, struct gpu_
     rfunction_assignment(rf, ind, assignment, assignment_length);
     
     peelnode = RFUNCTION_PEELNODE(rf);
-    peelnode_value = assignment[peelnode];
+    //peelnode_value = assignment[peelnode];
     tmp = 0;
     
     for(i = 0; i < NUM_ALLELES; ++i) {
+        
+        assignment[peelnode] = i;
+    
         tmp += \
-            rfunction_trait_prob(state, peelnode, peelnode_value, locus) * \
+            rfunction_trait_prob(state, peelnode, i, locus) * \
             (rf->prev1 == NULL ? 1.0 : rfunction_get(rf->prev1, assignment, assignment_length)) * \
             (rf->prev2 == NULL ? 1.0 : rfunction_get(rf->prev2, assignment, assignment_length));
     }
@@ -107,6 +120,8 @@ __device__ void lodscore_evaluate_child_peel(struct rfunction* rf, struct gpu_st
         for(j = 0; j < 2; ++j) {
             
             peelnode_value = get_phased_trait(mother_value, father_value, i, j);
+            
+            assignment[peelnode] = peelnode_value;
             
             tmp += (\
                 lodscore_trait_prob(state, peelnode, peelnode_value) * \
@@ -208,21 +223,69 @@ __device__ void lodscore_evaluate(struct rfunction* rf, struct gpu_state* state,
     __syncthreads();
 }
 
-// number of blocks is number of loci
+// this can be done inline?
+__device__ float descentgraph_recombination_prob(struct gpu_state* state, int locus) {
+    struct geneticmap* map = GET_MAP(state);
+    struct descentgraph* dg = GET_DESCENTGRAPH(state);
+    struct person* p;
+    float theta = log(MAP_INVERSETHETA(map, locus));
+    float antitheta = log(MAP_THETA(map, locus));
+    float tmp = 0.0;
+	int i;
+	int j;
+	
+    for(i = 0; i < state->pedigree_length; ++i) {
+        p = GET_PERSON(state, i);
+        
+        if(PERSON_ISFOUNDER(p))
+            continue;
+        
+        for(j = 0; j < 2; ++j) { // mother and father
+            if(DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, i, locus,   j)) != \
+               DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, i, locus+1, j))) { 
+                tmp += theta;
+            }
+            else {
+                tmp += antitheta;
+            }
+        }
+    }
+    
+    return tmp;
+}
+
+__device__ void lodscore_add(struct gpu_state* state, float likelihood) { 
+    state->lodscores[blockIdx.x] = log_sum(state->lodscores[blockIdx.x], likelihood - descentgraph_recombination_prob(state, blockIdx.x));
+}
+
+// number of blocks is number of loci - 1
 __global__ void lodscore_kernel(struct gpu_state* state) {
     int locus = blockIdx.x;
     int i;
-
+    struct rfunction* rf;
+    
     // forward peel
     for(i = 0; i < state->functions_per_locus; ++i) {
-        lodscore_evaluate(GET_RFUNCTION(state, i, locus), state, locus);
+        rf = GET_RFUNCTION(state, i, locus);
+        lodscore_evaluate(rf, state, locus);
     }
     
     // get result from last rfunction
     // calculate a lod score
+    if(threadIdx.x == 0)
+        lodscore_add(state, log(RFUNCTION_GET(rf, 0)));
+}
+
+__global__ void lodscoreinit_kernel(float* lodscores) {
+    if(threadIdx.x == 0)
+        lodscores[blockIdx.x] = LOG_ZERO;
 }
 
 void run_gpu_lodscore_kernel(int numblocks, int numthreads, struct gpu_state* state) {
     lodscore_kernel<<<numblocks, numthreads>>>(state);
+}
+
+void run_gpu_lodscoreinit_kernel(int numblocks, int numthreads, float* lodscores) {
+    lodscoreinit_kernel<<<numblocks, numthreads>>>(lodscores);
 }
 

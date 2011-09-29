@@ -1,3 +1,7 @@
+// generic functions needed by multiple kernels
+// eg: handling common r-function things
+
+#include <float.h>
 
 __device__ int gpu_offsets[] = {
     1 <<  0, 
@@ -17,6 +21,8 @@ __device__ int gpu_offsets[] = {
     1 << 28,
     1 << 30
 };
+
+__device__ float LOG_ZERO = FLT_MIN;
 
 // I am going to assume that the length of 'assignment' is to the number of 
 // pedigree members and that everything that is not assigned is -1
@@ -78,5 +84,53 @@ __device__ void rfunction_assignment(struct rfunction* rf, int ind, int* assignm
 
 __device__ float rfunction_get(struct rfunction* rf, int* assignment, int length) {
     return rf->matrix[rfunction_index(rf, assignment, length)];
+}
+
+__device__ int get_trait(int value, int parent) {
+    switch(parent) {
+        case GPU_MATERNAL_ALLELE:
+            return (((value == GPU_TRAIT_AA) || (value == GPU_TRAIT_AB)) ? GPU_TRAIT_A : GPU_TRAIT_B);    
+        case GPU_PATERNAL_ALLELE:
+            return (((value == GPU_TRAIT_AA) || (value == GPU_TRAIT_BA)) ? GPU_TRAIT_A : GPU_TRAIT_B);            
+        default:
+            break;
+    }
+    return -1;
+}
+
+__device__ float rfunction_trait_prob(struct gpu_state* state, int id, int value, int locus) {
+    struct person* p = GET_PERSON(state, id);
+    
+    if(PERSON_ISTYPED(p)) {
+        switch(PERSON_GENOTYPE(p, locus)) {
+            case GPU_GENOTYPE_AB :
+                return ((value == GPU_TRAIT_AB) || (value == GPU_TRAIT_BA)) ? 0.5 : 0.0;
+            case GPU_GENOTYPE_AA :
+                return (value == GPU_TRAIT_AA) ? 1.0 : 0.0;
+            case GPU_GENOTYPE_BB :
+                return (value == GPU_TRAIT_BB) ? 1.0 : 0.0;
+            default :
+                break;
+        }
+    }
+    
+    if(! PERSON_ISFOUNDER(p))
+        return 0.25;
+    
+    return MAP_PROB(GET_MAP(state), locus, value);
+}
+
+__device__ float log_sum(float a, float b) {
+    if(a == LOG_ZERO)
+        return b;
+    
+    if(b == LOG_ZERO)
+        return a;
+    
+    return log(exp(b - a) + 1) + a;
+}
+
+__device__ float log_product(float a, float b) {
+    return ((a == LOG_ZERO) or (b == LOG_ZERO)) ? LOG_ZERO : a + b;
 }
 

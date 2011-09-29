@@ -7,7 +7,7 @@ CXXFLAGS := -g -O2 -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe
 CFLAGS := -g -O2 -Wall -pipe
 INCLUDES := -I. -I/usr/local/cuda/include
 LIBS := -L /usr/local/cuda/lib64 -lcudart
-GPUFLAGS := -arch=sm_20 -O2 
+GPUFLAGS := -arch=sm_20 -O2 -g
 
 OBJECTS	:= \
 	trait.o \
@@ -42,7 +42,7 @@ OBJECTS	:= \
 	progress.o \
 	main.o \
 	gpu_wrapper.o \
-	cuda_rfunction.o \
+	cuda_linkage.o \
 	test_program.o \
 	tinymt/tinymt32_host.o
 

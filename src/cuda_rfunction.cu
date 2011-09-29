@@ -1,192 +1,20 @@
-
-#include "gpu_rfunction.h"
-
-//#define RANDOM_USE_MT 1
-
-//#ifdef RANDOM_USE_MT
-    #include "tinymt/tinymt32_kernel.cuh"
-//#endif
-
-/* the largest matrix possible is 16-dimensions pre-sum because each
- * dimension is always length 4 (2-bits) and the index is a 32-bit int */
-__device__ int gpu_offsets[] = {
-    1 <<  0, 
-    1 <<  2, 
-    1 <<  4, 
-    1 <<  6, 
-    1 <<  8, 
-    1 << 10, 
-    1 << 12,
-    1 << 14,
-    1 << 16,
-    1 << 18,
-    1 << 20,
-    1 << 22,
-    1 << 24,
-    1 << 26,
-    1 << 28,
-    1 << 30
-};
+#include "cuda_common.h"
+#include "cuda_common.cu"
+#include "cuda_random.cu"
+#include "cuda_print.cu"
+//#include "cuda_lodscore.cu"
 
 
-__device__ void print_ints(int* data, int length) {
-    int i;
-    
-    for(i = 0; i < length; ++i) {
-        printf("%d ", data[i]);
+__device__ int get_trait(int value, int parent) {
+    switch(parent) {
+        case GPU_MATERNAL_ALLELE:
+            return (((value == GPU_TRAIT_AA) || (value == GPU_TRAIT_AB)) ? GPU_TRAIT_A : GPU_TRAIT_B);    
+        case GPU_PATERNAL_ALLELE:
+            return (((value == GPU_TRAIT_AA) || (value == GPU_TRAIT_BA)) ? GPU_TRAIT_A : GPU_TRAIT_B);            
+        default:
+            break;
     }
-    
-    printf("\n");
-}
-
-__device__ void print_rfunction(struct rfunction* r) {
-    printf( "\tid: %d\n"
-            "\ttype: %d\n"
-            "\tprev1: %d\n"
-            "\tprev2: %d\n",
-            r->id,
-            r->peel_type,
-            r->prev1 != NULL ? r->prev1->id : -1,
-            r->prev2 != NULL ? r->prev2->id : -1
-    );
-    
-    printf("\tcutset: ");
-    print_ints(r->cutset, r->cutset_length);
-    printf("\n");
-}
-
-__device__ void print_person(struct person* p) {
-    printf( "\tid: %d\n"
-            "\tmother: %d\n"
-            "\tfather: %d\n"
-            "\tfounder: %d\n"
-            "\ttyped: %d\n"
-            "\tprobs: %.3f %.3f %.3f %.3f\n",
-            p->id,
-            p->mother,
-            p->father,
-            p->isfounder,
-            p->istyped,
-            p->prob[0],
-            p->prob[1],
-            p->prob[2],
-            p->prob[3]
-    );
-    
-    printf("\tgenotypes: ");
-    print_ints(p->genotypes, p->genotypes_length);
-    printf("\n");
-}
-
-__device__ void print_map(struct geneticmap* map) {
-    int i, j;
-    
-    for(i = 0; i < (map->map_length - 1); ++i) {
-        printf("\t%d\t%.3f %.3f\n", i, map->thetas[i], map->inversethetas[i]);
-    }
-    printf("\n");
-    
-    for(i = 0; i < map->map_length; ++i) {
-        printf("\t%d:\t", i);
-        for(j = 0; j < 4; ++j) {
-            printf("%.3f ", MAP_PROB(map, i, j));
-        }
-        printf("\n");
-    }
-    printf("\n");
-}
-
-__device__ void print_descentgraph(struct descentgraph* dg, int ped_length, int map_length) {
-    int i, j;
-    
-    for(i = 0; i < ped_length; ++i) {
-        printf("\t%d:\t", i);
-        for(j = 0; j < map_length; ++j) {
-            printf( "%d%d ",
-                    DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, i, j, GPU_MATERNAL_ALLELE)),
-                    DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, i, j, GPU_PATERNAL_ALLELE))
-            );
-        }
-        printf("\n");
-    }
-    printf("\n");
-}
-
-__device__ void print_everything(struct gpu_state* state) {
-    int i;
-    
-    printf("RFUNCTIONS:\n");
-    for(i = 0; i < state->functions_length; ++i) {
-        print_rfunction(&state->functions[i]);
-    }
-    printf("\n");
-    
-    printf("PEDIGREE:\n");
-    for(i = 0; i < state->pedigree_length; ++i) {
-        print_person(&state->pedigree[i]);
-    }
-    printf("\n");
-    
-    printf("MAP:\n");
-    print_map(state->map);
-    printf("\n");
-    
-    printf("DESCENTGRAPH:\n");
-    print_descentgraph(state->dg, state->pedigree_length, state->map->map_length);
-    printf("\n");
-}
-
-__global__ void print_kernel(struct gpu_state* state) {
-    if(threadIdx.x == 0)
-        print_everything(state);
-}
-
-// I am going to assume that the length of 'assignment' is to the number of 
-// pedigree members and that everything that is not assigned is -1
-//
-__device__ int rfunction_index(struct rfunction* rf, int* assignment, int length) {
-    int i, tmp = 0;
-    
-    for(i = 0; i < (rf->cutset_length - 1); ++i) {
-        tmp += (assignment[rf->cutset[i]] * gpu_offsets[i]);
-    }
-    
-    return tmp;
-}
-
-// this works out the index for the 'presum_matrix', though with this
-// scheme I can always just do:
-//      rf->matrix[index - ((0..3) * offset[rf->cutset_length - 1])]
-// when I sum over one of the dimensions so long as I ensure that
-// the peel_node is always in cutset[cutset_length - 1]
-__device__ int rfunction_presum_index(struct rfunction* rf, int* assignment, int length) {
-    int i, tmp = 0;
-    
-    for(i = 0; i < rf->cutset_length; ++i) {
-        tmp += (assignment[rf->cutset[i]] * gpu_offsets[i]);
-    }
-    
-    return tmp;
-}
-
-// from an index, construct the assignment of genotypes to cutset nodes
-// 
-__device__ void rfunction_presum_assignment(struct rfunction* rf, int ind, int* assignment, int length) {
-    int index = ind;
-    int i;
-    
-    for(i = 0; i < length; ++i) {
-        assignment[i] = -1;
-    }
-    
-    for(i = (rf->cutset_length - 1); i > -1; --i) {
-        assignment[rf->cutset[i]] = index / gpu_offsets[i];
-        index %= gpu_offsets[i];
-    }
-}
-
-__device__ float rfunction_get(struct rfunction* rf, int* assignment, int length) {
-    return rf->matrix[rfunction_index(rf, assignment, length)];
+    return -1;
 }
 
 __device__ float rfunction_trait_prob(struct gpu_state* state, int id, int value, int locus) {
@@ -246,50 +74,6 @@ __device__ float rfunction_trans_prob(struct gpu_state* state, int locus, int pe
     }
     
     return tmp;
-}
-
-__device__ int get_trait(int value, int parent) {
-    switch(parent) {
-        case GPU_MATERNAL_ALLELE:
-            return (((value == GPU_TRAIT_AA) || (value == GPU_TRAIT_AB)) ? GPU_TRAIT_A : GPU_TRAIT_B);    
-        case GPU_PATERNAL_ALLELE:
-            return (((value == GPU_TRAIT_AA) || (value == GPU_TRAIT_BA)) ? GPU_TRAIT_A : GPU_TRAIT_B);            
-        default:
-            break;
-    }
-    return -1;
-}
-
-__device__ float get_curand_random(struct gpu_state* state) {
-    //return random() / (float) RAND_MAX;
-    curandState localstate;
-    //int offset;
-    float tmp;
-    
-    //offset = (blockIdx.x * 256) + threadIdx.x;
-    
-    localstate = state->randstates[blockIdx.x];
-    
-    tmp = curand_uniform(&localstate);
-    
-    state->randstates[blockIdx.x] = localstate;
-
-    return tmp;
-}
-
-__device__ float get_mt_random(struct gpu_state* state) {
-    
-    return tinymt32_single(&state->randmt[blockIdx.x]);
-}
-
-__device__ float get_random(struct gpu_state* state) {
-
-#ifdef RANDOM_USE_MT
-    return get_mt_random(state);
-#else
-    return get_curand_random(state);
-#endif
-
 }
 
 __device__ int sample_hetero_mi(int allele, int trait) {
@@ -554,7 +338,6 @@ __device__ void rfunction_evaluate_element(struct rfunction* rf, struct gpu_stat
 __device__ void rfunction_evaluate(struct rfunction* rf, struct gpu_state* state, int locus) {
     int i;
     
-        
     for(i = threadIdx.x; i < rf->presum_length; i += 256) {
         rfunction_evaluate_element(rf, state, locus, i);
     }
@@ -566,7 +349,6 @@ __device__ void rfunction_evaluate(struct rfunction* rf, struct gpu_state* state
     }
     
     __syncthreads();
-    
     
     /*
     // assumes only one thread active
@@ -602,65 +384,18 @@ __device__ void sampler_run(struct gpu_state* state, int locus) {
     __syncthreads();
 }
 
-__global__ void init_curand_kernel(curandState* states, long int* seeds) {
-    int id = blockIdx.x; // (blockIdx.x * 256) + threadIdx.x;
-    
-    //printf("%d %ld\n", id, seeds[id]);
-    
-    curand_init(seeds[id], 0, 0, &states[id]);
-    //curand_init(id, 0, 0, &states[id]);
-    //curand_init(1234, id, 0, &states[id]);
-}
-
-__global__ void init_mt_kernel(tinymt32_status_t* states, uint32_t* params, uint32_t* seeds) {
-    int id = blockIdx.x; //(blockIdx.x * 256) + threadIdx.x;
-    
-    states->mat1 = params[id * 3];
-    states->mat2 = params[(id * 3) + 1];
-    states->tmat = params[(id * 3) + 2];
-
-    tinymt32_init(&(states[id]), seeds[id]);
-}
-
+// number of blocks is half the number of loci
 __global__ void sampler_kernel(struct gpu_state* state) {
-    //int id = (blockIdx.x * 256) + threadIdx.x;
     int locus = blockIdx.x * 2;
-
-/*    
-    if(blockIdx.x == 0) {
-        sampler_run(state, 0);
-        sampler_run(state, 1);
-        sampler_run(state, 2);
-    }
-*/
 
     sampler_run(state, locus);
     
     if(locus != (state->map->map_length - 1)) {
         sampler_run(state, locus + 1);
     }
-
-    /*
-    if(id == 0) {
-        printf("blockIdx.x = %d, threadIdx.x = %d\n", blockIdx.x, threadIdx.x);
-        print_descentgraph(state->dg, state->pedigree_length, state->map->map_length);
-    }
-    */
-}
-
-void run_gpu_print_kernel(struct gpu_state* state) {
-    print_kernel<<<1, 1>>>(state);
 }
 
 void run_gpu_sampler_kernel(int numblocks, int numthreads, struct gpu_state* state) {
     sampler_kernel<<<numblocks, numthreads>>>(state);
-}
-
-void run_gpu_curand_init_kernel(int numblocks, int numthreads, curandState* states, long int* seeds) {
-    init_curand_kernel<<<numblocks, numthreads>>>(states, seeds);
-}
-
-void run_gpu_tinymt_init_kernel(int numblocks, int numthreads, tinymt32_status_t* states, uint32_t* params, uint32_t* seeds) {
-    init_mt_kernel<<<numblocks, numthreads>>>(states, params, seeds);
 }
 

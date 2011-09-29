@@ -156,35 +156,6 @@ struct descentgraph {
     ((dg_ptr)->graph[(n)] = (value))
 
 
-void rfunction_presum_assignment(struct rfunction* rf, int ind, int* assignment, int length);
-void rfunction_sample(struct rfunction* rf, struct gpu_state* state, int* assignment);
-void rfunction_evaluate_partner_peel(struct rfunction* rf, struct gpu_state* state, int locus, int ind);
-void rfunction_evaluate_child_peel(struct rfunction* rf, struct gpu_state* state, int locus, int ind);
-void rfunction_evaluate_parent_peel(struct rfunction* rf, struct gpu_state* state, int locus, int ind);
-void rfunction_sum(struct rfunction* rf, int ind);
-void rfunction_evaluate_element(struct rfunction* rf, struct gpu_state* state, int locus, int ind);
-void rfunction_evaluate(struct rfunction* rf, struct gpu_state* state, int locus);
-void rfunction_print(struct rfunction* rf);
-float rfunction_get(struct rfunction* rf, int* assignment, int length);
-float rfunction_trait_prob(struct gpu_state* state, int id, int value, int locus);
-float rfunction_trans_prob(struct gpu_state* state, int locus, int peelnode, int parent_trait, int child_trait, int parent);
-int rfunction_index(struct rfunction* rf, int* assignment, int length);
-int rfunction_presum_index(struct rfunction* rf, int* assignment, int length);
-float get_random();
-int get_trait(int value, int parent);
-int sample_hetero_mi(int allele, int trait);
-int sample_homo_mi(struct gpu_state* state, int personid, int locus, int parent);
-int sample_mi(struct gpu_state* state, int allele, int trait, int personid, int locus, int parent);
-void sample_meiosis_indicators(struct gpu_state* state, int* assignment, int locus);
-void sampler_run(struct gpu_state* state, int locus);
-
-void print_descentgraph(struct descentgraph* dg, int ped_length, int map_length);
-void print_map(struct geneticmap* map);
-void print_person(struct person* p);
-void print_rfunction(struct rfunction* r);
-void print_ints(int* data, int length);
-void print_everything(struct gpu_state* state);
-
 #ifdef __cplusplus
 extern "C" { 
 #endif    
@@ -193,10 +164,10 @@ extern "C" {
     void run_gpu_lodscore_kernel(int numblocks, int numthreads, struct gpu_state* state);
     void run_gpu_curand_init_kernel(int numblocks, int numthreads, curandState* states, long int* seeds);
     void run_gpu_tinymt_init_kernel(int numblocks, int numthreads, tinymt32_status_t* states, uint32_t* params, uint32_t* seeds);
-
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif
 

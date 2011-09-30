@@ -91,9 +91,8 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     
     GPUWrapper gpu(ped, map, psg);
     
+    gpu.run(dg, iterations, burnin, 10, peel->get_trait_prob());
     
-    
-    gpu.run(dg, iterations, burnin, 10);
     
     exit(0);
     

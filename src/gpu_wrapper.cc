@@ -93,7 +93,7 @@ unsigned GPUWrapper::num_samplers() {
 }
 
 int GPUWrapper::num_threads_per_block() {
-    return 256;
+    return NUM_THREADS;
 }
 
 int GPUWrapper::num_blocks() {
@@ -239,7 +239,7 @@ curandState* GPUWrapper::gpu_init_random_curand() {
     CUDA_CALLANDTEST(cudaMalloc((void**) &dev_rng_state, sizeof(*dev_rng_state) * prng_num));
     
     
-    run_gpu_curand_init_kernel(num_blocks(), 1, dev_rng_state, dev_seeds);
+    run_gpu_curand_init_kernel(num_blocks(), dev_rng_state, dev_seeds);
     
     
     free(host_seeds);
@@ -304,7 +304,7 @@ tinymt32_status_t* GPUWrapper::gpu_init_random_tinymt() {
     CUDA_CALLANDTEST(cudaMalloc((void**) &dev_rng_state, sizeof(*dev_rng_state) * prng_num));
     
     
-    run_gpu_tinymt_init_kernel(num_blocks(), 1, dev_rng_state, dparams, dseeds);
+    run_gpu_tinymt_init_kernel(num_blocks(), dev_rng_state, dparams, dseeds);
     
     cudaThreadSynchronize();
     
@@ -612,7 +612,7 @@ float* GPUWrapper::gpu_init_lodscores() {
     
     CUDA_CALLANDTEST(cudaMalloc((void**)&tmp, sizeof(float) * (map->num_markers() - 1)));
     
-    run_gpu_lodscoreinit_kernel(num_blocks(), 1, tmp);
+    run_gpu_lodscoreinit_kernel(num_blocks(), tmp);
     
     cudaThreadSynchronize();
     
@@ -676,11 +676,13 @@ void GPUWrapper::step(DescentGraph& dg) {
     */
 }
 
-void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int burnin, unsigned int scoring_period) {
+void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int burnin, unsigned int scoring_period, float trait_likelihood) {
+    int count = 0;
     
     CUDA_CALLANDTEST(cudaMemcpy(dev_graph, dg.get_internal_ptr(), dg.get_internal_size(), cudaMemcpyHostToDevice));
     
     Progress p("CUDA MCMC: ", iterations);
+    
     
     for(unsigned i = 0; i < iterations; ++i) {
         
@@ -700,8 +702,9 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
             continue;
         
         if((i % scoring_period) == 0) {
-            // 256 should be max matrix dimensions
-            run_gpu_lodscore_kernel(map->num_markers() - 1, 256, dev_state);
+            run_gpu_lodscore_kernel(map->num_markers() - 1, NUM_THREADS, dev_state);
+            
+            count++;
             
             cudaThreadSynchronize();
             
@@ -714,6 +717,14 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
     }
     
     p.finish();
+    
+    
+    run_gpu_lodscorenormalise_kernel(map->num_markers() - 1, dev_state, count, trait_likelihood);
+    cudaThreadSynchronize();
+    run_gpu_lodscoreprint_kernel(dev_state);
+    cudaThreadSynchronize();
+    
+    printf("count = %d, P(T) = %.3f\n", count, trait_likelihood / log(10));
     
     //CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
 }

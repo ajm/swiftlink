@@ -78,19 +78,23 @@ __device__ void lodscore_evaluate_partner_peel(struct rfunction* rf, struct gpu_
     
     peelnode = RFUNCTION_PEELNODE(rf);
     //peelnode_value = assignment[peelnode];
-    tmp = 0;
+    tmp = 0.0;
     
     for(i = 0; i < NUM_ALLELES; ++i) {
         
         assignment[peelnode] = i;
     
-        tmp += \
+        tmp += (\
             rfunction_trait_prob(state, peelnode, i, locus) * \
             (rf->prev1 == NULL ? 1.0 : rfunction_get(rf->prev1, assignment, assignment_length)) * \
-            (rf->prev2 == NULL ? 1.0 : rfunction_get(rf->prev2, assignment, assignment_length));
+            (rf->prev2 == NULL ? 1.0 : rfunction_get(rf->prev2, assignment, assignment_length)) \
+        );
     }
     
     RFUNCTION_SET(rf, ind, tmp);
+    
+    //if(locus == 1)
+    //    printf("x %d %e\n", locus, tmp);
 }
 
 __device__ void lodscore_evaluate_child_peel(struct rfunction* rf, struct gpu_state* state, int locus, int ind) {
@@ -114,7 +118,7 @@ __device__ void lodscore_evaluate_child_peel(struct rfunction* rf, struct gpu_st
     p = GET_PERSON(state, peelnode);
     mother_value = assignment[PERSON_MOTHER(p)];
     father_value = assignment[PERSON_FATHER(p)];
-    tmp = 0;
+    tmp = 0.0;
     
     for(i = 0; i < 2; ++i) {
         for(j = 0; j < 2; ++j) {
@@ -133,6 +137,9 @@ __device__ void lodscore_evaluate_child_peel(struct rfunction* rf, struct gpu_st
     }
     
     RFUNCTION_SET(rf, ind, tmp);
+    
+    //if(locus == 1)
+    //    printf("c %d %e\n", locus, tmp);
 }
 
 __device__ void lodscore_evaluate_parent_peel(struct rfunction* rf, struct gpu_state* state, int locus, int ind) {
@@ -158,12 +165,12 @@ __device__ void lodscore_evaluate_parent_peel(struct rfunction* rf, struct gpu_s
     
     peelnode = RFUNCTION_PEELNODE(rf);
     //peelnode_value = assignment[peelnode];
-    p = GET_PERSON(state, peelnode);
-    mother_value = assignment[PERSON_MOTHER(p)];
-    father_value = assignment[PERSON_FATHER(p)];
+    //p = GET_PERSON(state, peelnode);
     total = 0.0;
     
     for(peelnode_value = 0; peelnode_value < NUM_ALLELES; ++peelnode_value) {
+    
+        assignment[peelnode] = peelnode_value;
     
         tmp = rfunction_trait_prob(state, peelnode, peelnode_value, locus) * \
               (rf->prev1 == NULL ? 1.0 : rfunction_get(rf->prev1, assignment, assignment_length)) * \
@@ -171,11 +178,14 @@ __device__ void lodscore_evaluate_parent_peel(struct rfunction* rf, struct gpu_s
         
         child_prob = 1.0;
         
-        for(pid = 0; pid < rf->cutset_length; ++pid) {
+        for(pid = 0; pid < (rf->cutset_length - 1); ++pid) {
             p = GET_PERSON(state, rf->cutset[pid]);
             
             if(! PERSON_ISPARENT(p, peelnode))
                 continue;
+            
+            mother_value = assignment[PERSON_MOTHER(p)];
+            father_value = assignment[PERSON_FATHER(p)];
             
             child_tmp = 0.0;
             
@@ -194,6 +204,9 @@ __device__ void lodscore_evaluate_parent_peel(struct rfunction* rf, struct gpu_s
     }
     
     RFUNCTION_SET(rf, ind, total);
+    
+    //if(locus == 1)
+    //    printf("p %d %e\n", locus, total);
 }
 
 __device__ void lodscore_evaluate_element(struct rfunction* rf, struct gpu_state* state, int locus, int ind) {
@@ -216,7 +229,7 @@ __device__ void lodscore_evaluate_element(struct rfunction* rf, struct gpu_state
 __device__ void lodscore_evaluate(struct rfunction* rf, struct gpu_state* state, int locus) {
     int i;
     
-    for(i = threadIdx.x; i < rf->matrix_length; i += 256) {
+    for(i = threadIdx.x; i < rf->matrix_length; i += NUM_THREADS) {
         lodscore_evaluate_element(rf, state, locus, i);
     }
     
@@ -231,8 +244,7 @@ __device__ float descentgraph_recombination_prob(struct gpu_state* state, int lo
     float theta = log(MAP_INVERSETHETA(map, locus));
     float antitheta = log(MAP_THETA(map, locus));
     float tmp = 0.0;
-	int i;
-	int j;
+	int i, j;
 	
     for(i = 0; i < state->pedigree_length; ++i) {
         p = GET_PERSON(state, i);
@@ -254,8 +266,12 @@ __device__ float descentgraph_recombination_prob(struct gpu_state* state, int lo
     return tmp;
 }
 
-__device__ void lodscore_add(struct gpu_state* state, float likelihood) { 
-    state->lodscores[blockIdx.x] = log_sum(state->lodscores[blockIdx.x], likelihood - descentgraph_recombination_prob(state, blockIdx.x));
+__device__ void lodscore_add(struct gpu_state* state, float likelihood) {
+    float recomb = descentgraph_recombination_prob(state, blockIdx.x);
+    
+    printf("l = %.4f, r = %.4f\n", likelihood, recomb);
+    
+    state->lodscores[blockIdx.x] = log_sum(state->lodscores[blockIdx.x], likelihood - recomb);
 }
 
 // number of blocks is number of loci - 1
@@ -272,20 +288,50 @@ __global__ void lodscore_kernel(struct gpu_state* state) {
     
     // get result from last rfunction
     // calculate a lod score
-    if(threadIdx.x == 0)
+    if(threadIdx.x == 0) {
+        printf("%.4f %.4f\n", state->lodscores[blockIdx.x], log(RFUNCTION_GET(rf, 0)));
         lodscore_add(state, log(RFUNCTION_GET(rf, 0)));
+    }
 }
 
 __global__ void lodscoreinit_kernel(float* lodscores) {
-    if(threadIdx.x == 0)
+    if(threadIdx.x == 0) {
         lodscores[blockIdx.x] = LOG_ZERO;
+        //printf("%.4f\n", lodscores[blockIdx.x]);
+    }
+}
+
+__global__ void lodscorenormalise_kernel(struct gpu_state* state, int count, float trait_likelihood) {
+    if(threadIdx.x == 0) {
+        printf("%.4f\n", state->lodscores[blockIdx.x]);
+        state->lodscores[blockIdx.x] = (state->lodscores[blockIdx.x] - log((float)count) - trait_likelihood) / log(10.0);
+    }
+}
+
+__global__ void lodscoreprint_kernel(struct gpu_state* state) {
+    int i;
+    struct geneticmap* map = GET_MAP(state);
+    
+    for(i = 0; i < (map->map_length - 1); ++i) {
+        printf("%d\n\t%.3f\n", i, state->lodscores[i]);
+    }
+    
+    printf("%d\n", map->map_length - 1);
 }
 
 void run_gpu_lodscore_kernel(int numblocks, int numthreads, struct gpu_state* state) {
     lodscore_kernel<<<numblocks, numthreads>>>(state);
 }
 
-void run_gpu_lodscoreinit_kernel(int numblocks, int numthreads, float* lodscores) {
-    lodscoreinit_kernel<<<numblocks, numthreads>>>(lodscores);
+void run_gpu_lodscoreinit_kernel(int numblocks, float* lodscores) {
+    lodscoreinit_kernel<<<numblocks, 1>>>(lodscores);
+}
+
+void run_gpu_lodscorenormalise_kernel(int numblocks, struct gpu_state* state, int count, float trait_likelihood) {
+    lodscorenormalise_kernel<<<numblocks, 1>>>(state, count, trait_likelihood);
+}
+
+void run_gpu_lodscoreprint_kernel(struct gpu_state* state) {
+    lodscoreprint_kernel<<<1, 1>>>(state);
 }
 

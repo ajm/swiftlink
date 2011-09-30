@@ -96,7 +96,7 @@ class GPUWrapper {
     }
     
     void step(DescentGraph& dg);
-    void run(DescentGraph& dg, unsigned int iterations, unsigned int burnin, unsigned int scoring_interval);
+    void run(DescentGraph& dg, unsigned int iterations, unsigned int burnin, unsigned int scoring_period, float trait_likelihood);
 };
 
 #endif

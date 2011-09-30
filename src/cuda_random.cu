@@ -55,11 +55,11 @@ __global__ void init_mt_kernel(tinymt32_status_t* states, uint32_t* params, uint
     tinymt32_init(&(states[id]), seeds[id]);
 }
 
-void run_gpu_curand_init_kernel(int numblocks, int numthreads, curandState* states, long int* seeds) {
-    init_curand_kernel<<<numblocks, numthreads>>>(states, seeds);
+void run_gpu_curand_init_kernel(int numblocks, curandState* states, long int* seeds) {
+    init_curand_kernel<<<numblocks, 1>>>(states, seeds);
 }
 
-void run_gpu_tinymt_init_kernel(int numblocks, int numthreads, tinymt32_status_t* states, uint32_t* params, uint32_t* seeds) {
-    init_mt_kernel<<<numblocks, numthreads>>>(states, params, seeds);
+void run_gpu_tinymt_init_kernel(int numblocks, tinymt32_status_t* states, uint32_t* params, uint32_t* seeds) {
+    init_mt_kernel<<<numblocks, 1>>>(states, params, seeds);
 }
 

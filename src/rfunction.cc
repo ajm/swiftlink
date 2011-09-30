@@ -223,7 +223,7 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
     vector<unsigned> q;
     unsigned ndim = peel.get_cutset_size();
     unsigned tmp;
-    bool skip = false;
+    //bool skip = false;
     
     pmatrix.reset();
     pmatrix_presum.reset();
@@ -280,8 +280,7 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
                 }
             }
         }
-    //}
-    /*
+    /*}
     else {
         while(true) {
             

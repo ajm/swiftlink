@@ -22,7 +22,7 @@ __device__ int gpu_offsets[] = {
     1 << 30
 };
 
-__device__ float LOG_ZERO = FLT_MIN;
+__device__ float LOG_ZERO = -FLT_MAX;
 
 // I am going to assume that the length of 'assignment' is to the number of 
 // pedigree members and that everything that is not assigned is -1

@@ -329,6 +329,7 @@ void GPUWrapper::init_descentgraph() {
     
     loc_state->dg->subgraph_length = 2 * ped->num_members();
     loc_state->dg->graph_length = 2 * ped->num_members() * map->num_markers();
+    loc_state->dg->transmission_prob = log(0.5) * (2 * (ped->num_members() - ped->num_founders()));
     
     loc_state->dg->graph = (int*) malloc(sizeof(int) * (2 * ped->num_members() * map->num_markers()));
     if(!(loc_state->dg->graph)) {
@@ -344,6 +345,7 @@ struct descentgraph* GPUWrapper::gpu_init_descentgraph() {
     
     tmp.graph_length = loc_state->dg->graph_length;
     tmp.subgraph_length = loc_state->dg->subgraph_length;
+    tmp.transmission_prob = loc_state->dg->transmission_prob;
     
     CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.graph, sizeof(int) * tmp.graph_length));
     CUDA_CALLANDTEST(cudaMemcpy(tmp.graph, loc_state->dg->graph, sizeof(int) * tmp.graph_length, cudaMemcpyHostToDevice));
@@ -678,6 +680,12 @@ void GPUWrapper::step(DescentGraph& dg) {
 
 void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int burnin, unsigned int scoring_period, float trait_likelihood) {
     int count = 0;
+    
+    /*
+    run_gpu_print_kernel(dev_state);
+    cudaThreadSynchronize();
+    exit(0);
+    */
     
     CUDA_CALLANDTEST(cudaMemcpy(dev_graph, dg.get_internal_ptr(), dg.get_internal_size(), cudaMemcpyHostToDevice));
     

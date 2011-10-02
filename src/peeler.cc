@@ -91,7 +91,10 @@ double Peeler::calc_trait_prob() {
 void Peeler::process(DescentGraph& dg) {
     // minus 1 because we want to look between markers
     // m-t-m-t-m-t-m where m is a marker and t is a trait location
-    for(unsigned i = 0; i < map->num_markers() - 1; ++i) {        
+    for(unsigned i = 0; i < map->num_markers() - 1; ++i) {
+    
+        //printf("%.4f\n", peel(&dg, i));
+    
         lod.add(i, peel(&dg, i) - dg.get_recombination_prob(i, false) - dg.get_marker_transmission());
     }
 }

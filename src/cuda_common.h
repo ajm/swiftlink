@@ -9,7 +9,7 @@
 
 #include "tinymt/tinymt32_host.h"
 
-#define NUM_THREADS 32
+#define NUM_THREADS 64
 
 #define NUM_ALLELES 4
 
@@ -113,6 +113,7 @@ struct descentgraph {
     int* graph;
     int graph_length;
     int subgraph_length;
+    float transmission_prob;
 };
 
 #define GET_RFUNCTION(state_ptr, n, locus) (&(state_ptr)->functions[((locus) * (state_ptr)->functions_per_locus) + (n)])

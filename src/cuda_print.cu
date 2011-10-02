@@ -32,7 +32,7 @@ __device__ void print_person(struct person* p) {
             "\tfather: %d\n"
             "\tfounder: %d\n"
             "\ttyped: %d\n"
-            "\tprobs: %.3f %.3f %.3f %.3f\n",
+            "\tprobs: %.2e %.2e %.2e %.2e\n",
             p->id,
             p->mother,
             p->father,

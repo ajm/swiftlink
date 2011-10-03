@@ -42,7 +42,7 @@ class GPUWrapper {
     struct descentgraph* gpu_init_descentgraph();
     curandState* gpu_init_random_curand();
     tinymt32_status_t* gpu_init_random_tinymt();
-    float* gpu_init_lodscores();
+    double* gpu_init_lodscores();
     
     void copy_to_gpu(DescentGraph& dg);
     void copy_from_gpu(DescentGraph& dg);
@@ -96,7 +96,7 @@ class GPUWrapper {
     }
     
     void step(DescentGraph& dg);
-    void run(DescentGraph& dg, unsigned int iterations, unsigned int burnin, unsigned int scoring_period, float trait_likelihood);
+    void run(DescentGraph& dg, unsigned int iterations, unsigned int burnin, unsigned int scoring_period, double trait_likelihood);
 };
 
 #endif

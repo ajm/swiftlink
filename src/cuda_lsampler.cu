@@ -4,12 +4,12 @@
 // r-function is currently being calculated
 
 
-__device__ float rfunction_trans_prob(struct gpu_state* state, int locus, int peelnode, 
+__device__ double rfunction_trans_prob(struct gpu_state* state, int locus, int peelnode, 
                            int parent_trait, int child_trait, int parent) {
     
     int trait = get_trait(child_trait, parent);
     int meiosis = 0;
-    float tmp = 1.0;
+    double tmp = 1.0;
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     struct geneticmap* map = GET_MAP(state);
     
@@ -54,8 +54,8 @@ __device__ int sample_hetero_mi(int allele, int trait) {
 // find prob of setting mi to 1
 // normalise + sample
 __device__ int sample_homo_mi(struct gpu_state* state, int personid, int locus, int parent) {
-    float prob_dist[2];
-    float total;
+    double prob_dist[2];
+    double total;
     int i;
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     struct geneticmap* map = GET_MAP(state);
@@ -143,9 +143,9 @@ __device__ void sample_meiosis_indicators(struct gpu_state* state, int* assignme
 }
 
 __device__ void rfunction_sample(struct rfunction* rf, struct gpu_state* state, int* assignment) {
-    float prob_dist[NUM_ALLELES];
-    float total = 0.0;
-    float r = get_random(state);
+    double prob_dist[NUM_ALLELES];
+    double total = 0.0;
+    double r = get_random(state);
     int peelnode = RFUNCTION_PEELNODE(rf);
     int i;
     
@@ -240,7 +240,7 @@ __device__ void rfunction_evaluate_parent_peel(struct rfunction* rf, struct gpu_
     int peelnode;
     int peelnode_value;
     int i;
-    float tmp;
+    double tmp;
     
     //printf("e b%d t%d\n", blockIdx.x, threadIdx.x);
     
@@ -350,17 +350,18 @@ __device__ void sampler_run(struct gpu_state* state, int locus) {
 }
 
 // number of blocks is half the number of loci
-__global__ void lsampler_kernel(struct gpu_state* state) {
-    int locus = blockIdx.x * 2;
+__global__ void lsampler_kernel(struct gpu_state* state, int offset) {
+    int locus = (blockIdx.x * 2) + offset;
 
     sampler_run(state, locus);
-    
+/*    
     if(locus != (state->map->map_length - 1)) {
         sampler_run(state, locus + 1);
     }
+*/
 }
 
-void run_gpu_lsampler_kernel(int numblocks, int numthreads, struct gpu_state* state) {
-    lsampler_kernel<<<numblocks, numthreads>>>(state);
+void run_gpu_lsampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int offset) {
+    lsampler_kernel<<<numblocks, numthreads>>>(state, offset);
 }
 

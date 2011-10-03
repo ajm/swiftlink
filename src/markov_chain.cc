@@ -113,16 +113,16 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
         //if(person == 0)
         //    person = ped->num_founders();
         
-        //if((random() / static_cast<double>(RAND_MAX)) < 0.5) {
+        if((random() / static_cast<double>(RAND_MAX)) < 0.5) {
             for(unsigned j = 0; j < map->num_markers(); ++j)
                 lsampler.step(dg, j);
-            //gpu.step(dg);    
-        /*}
+            //gpu.step(dg);
+        }
         else {
             for(unsigned j = 0; j < num_meioses; ++j)
                 msampler.step(dg, j);
         }
-        */
+        
         
         p.increment();
         

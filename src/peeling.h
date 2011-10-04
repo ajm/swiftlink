@@ -182,6 +182,7 @@ class PeelOperation {
         }
         ss << ") ";
         
+        /*
         ss << "nuclear = (";
         tmp = nuclearset.size();
         for(unsigned i = 0; i < tmp; ++i) {
@@ -191,6 +192,9 @@ class PeelOperation {
             }
         }
         ss << ") ";
+        */
+        
+        ss << " prev = (" << prev1 << ", " << prev2 << ")";
         
         return ss.str();
     }

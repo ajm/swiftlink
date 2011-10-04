@@ -613,7 +613,7 @@ double* GPUWrapper::gpu_init_lodscores() {
     
     CUDA_CALLANDTEST(cudaMalloc((void**)&tmp, sizeof(double) * (map->num_markers() - 1)));
     
-    run_gpu_lodscoreinit_kernel(num_blocks(), tmp);
+    run_gpu_lodscoreinit_kernel(map->num_markers() - 1, tmp);
     
     cudaThreadSynchronize();
     

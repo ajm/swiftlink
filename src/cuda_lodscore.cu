@@ -288,6 +288,12 @@ __global__ void lodscore_kernel(struct gpu_state* state) {
     int i;
     struct rfunction* rf;
     
+    /*
+    if(threadIdx.x == 0) {
+        printf("%d %.3f\n", blockIdx.x, state->lodscores[blockIdx.x]);
+    }
+    */
+    
     // forward peel
     for(i = 0; i < state->functions_per_locus; ++i) {
         rf = GET_RFUNCTION(state, i, locus);
@@ -304,7 +310,7 @@ __global__ void lodscore_kernel(struct gpu_state* state) {
 __global__ void lodscoreinit_kernel(double* lodscores) {
     if(threadIdx.x == 0) {
         lodscores[blockIdx.x] = LOG_ZERO;
-        //printf("%.4f\n", lodscores[blockIdx.x]);
+        //printf("[init] %d %.3f\n", blockIdx.x, lodscores[blockIdx.x]);
     }
 }
 

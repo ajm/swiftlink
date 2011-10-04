@@ -405,6 +405,10 @@ void Person::get_cutset(PeelOperation& operation, PeelingState& state) {
 string Person::debug_string() {
     stringstream ss;
     
+    ss << "1\t" << internal_id + 1 << "\t" << paternal_id + 1 << "\t" << maternal_id + 1 << "\t" << gender << "\t" << affection;
+    
+    return ss.str(); 
+    
     ss.precision(DEBUG_FP_PRECISION);
     
     ss  << "\tid: " << id << "(" << internal_id << ")" << "\n" \

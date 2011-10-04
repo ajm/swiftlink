@@ -30,7 +30,7 @@ bool LinkageProgram::run() {
 
     for(unsigned int i = 0; i < pedigrees.size(); ++i) {
         if(verbose) {
-            //fprintf(stderr, "%s\n", pedigrees[i].debug_string().c_str());
+            fprintf(stderr, "%s\n", pedigrees[i].debug_string().c_str());
         }
         
         // it cannot actually be NULL, the program will call

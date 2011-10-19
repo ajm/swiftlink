@@ -107,6 +107,40 @@ int founderallelegraph_populate(struct gpu_state* state, int locus) {
 	return legal;
 }
 
+int founderallelegraph_populate_parallel(struct gpu_state* state, int locus) {
+    // 1. assign founder alleles to all alleles in the pedigree
+    //    - parallel n ways where n is the number of founder alleles (ie: 2x num founders)
+    //      longest running thread is equal to the height of the tree
+    //    founder allele assignments are write-only
+    // 
+    // sync
+    //
+    // 2. create founder allele graph by each thread tracing from top to bottom again
+    //    founder allele assignments are read-only
+    //    founder allele graph is write-only
+    // 
+    // sync
+    // 
+    // 3. breadth-first search of components, calculation of likelihoods
+    //    start a thread at each founder allele? then disregard dups...
+    //    founder allele graph is read-only
+    //
+    //    dups : node prob = component prob / n components
+    //           prob = product of node probs
+    //
+    // sync
+    //
+    // 4. one meiosis will change
+    //    this will change the founder allele assignments below the person with
+    //    the meiosis, ie: their kids, grandkids etc... 
+    //    one thread
+    //
+    // sync
+    //
+    // 5. rerun 2+3(?) seems wasteful... can i do BFS from the founder allele assignment instead of the graph? yes!
+    // 
+}
+
 void msampler_run(struct gpu_state* state, int locus) {
     int i;
     struct founder_allele_graph* graph = GET_FOUNDERALLELEGRAPH(state, locus);

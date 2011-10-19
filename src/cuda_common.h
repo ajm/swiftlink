@@ -44,21 +44,44 @@ enum {
 };
 
 struct gpu_state {
+    // lsampler stuff
     struct rfunction* functions;
     int functions_length;
     int functions_per_locus;
     
+    // msampler stuff
+    struct founder_allele_graph* graphs;
+    int founderallele_count;
+    
+    // constant information
     struct person* pedigree;
     int pedigree_length;
     
     struct geneticmap* map;
     struct descentgraph* dg;
     
+    // scoring
     double* lodscores;
     
+    // random number generation
     curandState* randstates;
     tinymt32_status_t* randmt;
 };
+
+struct adjacent_node {
+    int id;
+    int label;
+};
+
+struct founder_allele_graph {
+    int* num_neighbours;            // length num founder alleles
+    struct adjacent_node** graph;   // num founder alleles * (num founder alleles + 1)
+};
+
+#define FAG_GET_NODE(fag_ptr, node)         (&(fag_ptr)->graph[(node)])
+#define FAG_GET_NEIGHBOURS(fag_ptr, node)   (&(fag_ptr)->num_neighbours[(node)])
+#define NODE_ID(node_ptr, n)                ((node_ptr)[(n)]->id)
+#define NODE_LABEL(node_ptr, n)             ((node_ptr)[(n)]->label)
 
 struct geneticmap {
     double* thetas;
@@ -120,6 +143,7 @@ struct descentgraph {
 #define GET_PERSON(state_ptr, n) (&(state_ptr)->pedigree[(n)])
 #define GET_DESCENTGRAPH(state_ptr) ((state_ptr)->dg)
 #define GET_MAP(state_ptr) ((state_ptr)->map)
+#define GET_FOUNDERALLELEGRAPH(state_ptr, n) (&(state_ptr)->graphs[(n)])
 
 #define RFUNCTION_GET(rf_ptr, index)        ((rf_ptr)->matrix[(index)])
 #define RFUNCTION_SET(rf_ptr, index, value) ((rf_ptr)->matrix[(index)] = (value))
@@ -162,11 +186,15 @@ struct descentgraph {
 extern "C" { 
 #endif    
     void run_gpu_print_kernel(struct gpu_state* state);
+    
     void run_gpu_lsampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int offset);
+    void run_gpu_msampler_kernel(int numblocks, int numthreads, struct gpu_state* state);
+    
     void run_gpu_lodscore_kernel(int numblocks, int numthreads, struct gpu_state* state);
     void run_gpu_lodscoreinit_kernel(int numblocks, double* lodscores);
     void run_gpu_lodscorenormalise_kernel(int numblocks, struct gpu_state* state, int count, double trait_likelihood);
     void run_gpu_lodscoreprint_kernel(struct gpu_state* state);
+    
     void run_gpu_curand_init_kernel(int numblocks, curandState* states, long int* seeds);
     void run_gpu_tinymt_init_kernel(int numblocks, tinymt32_status_t* states, uint32_t* params, uint32_t* seeds);
 #ifdef __cplusplus

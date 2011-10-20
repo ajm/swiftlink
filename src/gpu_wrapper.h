@@ -34,6 +34,7 @@ class GPUWrapper {
     void init_pedigree();
     void init_rfunctions(vector<PeelOperation>& ops);
     void init_descentgraph();
+    void init_founderallelegraph();
     
     void gpu_init(vector<PeelOperation>& ops);
     struct geneticmap* gpu_init_map();

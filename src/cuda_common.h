@@ -43,6 +43,12 @@ enum {
     GPU_PATERNAL_ALLELE
 };
 
+enum {
+    WHITE,
+    GREY,
+    BLACK
+};
+
 struct gpu_state {
     // lsampler stuff
     struct rfunction* functions;
@@ -50,7 +56,7 @@ struct gpu_state {
     int functions_per_locus;
     
     // msampler stuff
-    struct founder_allele_graph* graphs;
+    struct founderallelegraph* graphs;
     int founderallele_count;
     
     // constant information
@@ -73,7 +79,7 @@ struct adjacent_node {
     int label;
 };
 
-struct founder_allele_graph {
+struct founderallelegraph {
     int* num_neighbours;            // length num founder alleles
     struct adjacent_node** graph;   // num founder alleles * (num founder alleles + 1)
 };
@@ -124,6 +130,9 @@ struct person {
     int mother;
     
     double prob[4];
+    
+    //int* children;
+    //int children_length;
 
     int* genotypes;
     int genotypes_length;

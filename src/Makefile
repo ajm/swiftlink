@@ -43,6 +43,7 @@ OBJECTS	:= \
 	main.o \
 	gpu_wrapper.o \
 	cuda_linkage.o \
+	cuda_msampler.o \
 	test_program.o \
 	tinymt/tinymt32_host.o
 

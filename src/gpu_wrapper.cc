@@ -176,6 +176,7 @@ void GPUWrapper::init(vector<PeelOperation>& ops) {
     init_pedigree();
     init_map();
     init_descentgraph();
+    init_founderallelegraph();
 }
 
 void GPUWrapper::gpu_init(vector<PeelOperation>& ops) {
@@ -316,6 +317,28 @@ tinymt32_status_t* GPUWrapper::gpu_init_random_tinymt() {
     #undef TINYMT_PARAM_FILENAME
     
     return dev_rng_state;
+}
+
+void GPUWrapper::init_founderallelegraph() {
+
+    int num_founderalleles = ped->num_founders() * 2;
+    
+    loc_state->graphs = (struct founderallelegraph*) malloc(sizeof(struct founderallelegraph) * map->num_markers());
+    if(!(loc_state->graphs)) {
+        fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+        abort();
+    }
+    
+    for(unsigned i = 0; i < map->num_markers(); ++i) {
+        loc_state->graphs[i].num_neighbours = (int*) malloc(sizeof(int) * num_founderalleles);
+        loc_state->graphs[i].graph = (struct adjacent_node**) malloc(sizeof(struct adjacent_node*) * num_founderalleles);
+        
+        for(int j = 0; j < num_founderalleles; ++j) {
+            loc_state->graphs[i].graph[j] = (struct adjacent_node*) malloc(sizeof(struct adjacent_node) * num_founderalleles);
+        }
+    }
+    
+    loc_state->founderallele_count = num_founderalleles;
 }
 
 void GPUWrapper::init_descentgraph() {
@@ -682,6 +705,13 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
     int even_count;
     int odd_count;
     cudaError_t error;
+    
+    // XXX
+    
+    copy_to_gpu(dg);
+    run_gpu_msampler_kernel(1, 1, loc_state);
+    // XXX
+    
     
     odd_count  = map->num_markers() / 2;
     even_count = odd_count + ((map->num_markers() % 2) != 0 ? 1 : 0);

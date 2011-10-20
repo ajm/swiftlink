@@ -44,9 +44,9 @@ enum {
 };
 
 enum {
-    WHITE,
-    GREY,
-    BLACK
+    _WHITE,
+    _GREY,
+    _BLACK
 };
 
 struct gpu_state {
@@ -95,6 +95,7 @@ struct geneticmap {
     double* halfthetas;
     double* halfinversethetas;
     double* markerprobs;
+    double* allelefreqs;
     int map_length;
 };
 
@@ -171,6 +172,8 @@ struct descentgraph {
 #define MAP_HALF_INVERSETHETA(map_ptr, n)   ((map_ptr)->halfinversethetas[(n)])
 #define MAP_LENGTH(map_ptr)            ((map_ptr)->map_length)
 #define MAP_PROB(map_ptr, n, val)      ((map_ptr)->markerprobs[((n) * 4) + val])
+#define MAP_MINOR(map_ptr, n)          ((map_ptr)->allelefreqs[(n)])
+#define MAP_MAJOR(map_ptr, n)          (1.0 - (map_ptr)->allelefreqs[(n)])
 
 #define PERSON_ID(person_ptr)               ((person_ptr)->id)
 #define PERSON_ISFOUNDER(person_ptr)        ((person_ptr)->isfounder)

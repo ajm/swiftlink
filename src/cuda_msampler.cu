@@ -123,7 +123,7 @@ int founderallelegraph_populate(struct gpu_state* state, int locus) {
             
             if(!founderallele_add(fag, mat, pat, g)) {
                 legal = 0;
-                printf("illegal!\n");
+                printf("illegal (locus = %d, person = %d, [%d %d %d])!\n", locus, i, mat, pat, g);
             }
 		}
         
@@ -133,17 +133,217 @@ int founderallelegraph_populate(struct gpu_state* state, int locus) {
 	return legal;
 }
 
-double founderallelegraph_enumerate(struct gpu_state* state, int locus, int* component, int cindex) {
-    int i;
+// for loops in the allele graph, hetero is always a contradiction
+int correct_alleles_loop(int g, int allele1) {
+    switch(g) {
+        case GPU_GENOTYPE_AA:
+            return allele1 == 1;
+        case GPU_GENOTYPE_BB:
+            return allele1 == 2;
+        case GPU_GENOTYPE_AB:
+            //return 0;
+        case GPU_GENOTYPE_UNTYPED:
+            //abort();
+            break;
+    }
+    return 0;
+}
+
+int correct_alleles(int g, int allele1) {
+    switch(g) {
+        case GPU_GENOTYPE_AA:
+            return allele1 == 1;
+        case GPU_GENOTYPE_BB:
+            return allele1 == 2;
+        case GPU_GENOTYPE_AB:
+            return 1;
+        case GPU_GENOTYPE_UNTYPED:
+            //abort();
+            break;
+    }
+    return 0;
+}
+
+int correct_alleles(int g, int allele1, int allele2) {
+    switch(g) {
+        case GPU_GENOTYPE_AA:
+            return (allele1 == 1) && (allele2 == 1);
+        case GPU_GENOTYPE_BB:
+            return (allele1 == 2) && (allele2 == 2);
+        case GPU_GENOTYPE_AB:
+            return ((allele1 == 1) && (allele2 == 2)) || \
+                   ((allele1 == 2) && (allele2 == 1));
+        case GPU_GENOTYPE_UNTYPED:
+            //abort();
+            break;
+    }
+    return 0;
+}
+
+
+int legal(struct gpu_state* state, int locus, int* component, int clength, int* q, int qlength) {
+//bool FounderAlleleGraph2::legal(GraphComponent& gc, vector<unsigned>& assignment) {
+    //int node = gc[assignment.size() - 1];
+    //int allele = assignment.back();
+    int node = component[qlength-1];
+    int allele = q[qlength-1];
+    int i, j;  
     
+    //AdjacencyRecord& tmp = matrix[node];
+    struct founderallelegraph* fag = GET_FOUNDERALLELEGRAPH(state, locus);
+    struct adjacent_node* adj;
+
+    //for(unsigned i = 0; i < tmp.size(); ++i) {
+    for(i = 0; i < fag->num_neighbours[node]; ++i) {
+        //FounderAlleleNode& adj = tmp[i];
+        adj = &(fag->graph[node][i]);
+        
+        // if there is a loop
+        //if(adj.id == node) {
+        //    if(not correct_alleles_loop(adj.label, allele)) {
+        //        return false;
+        //    }
+        //    continue;
+        //}
+        
+        // if there is a loop
+        if(adj->id == node) {
+            if(! correct_alleles_loop(adj->label, allele)) {
+                return 0;
+            }
+            continue;
+        }
+        
+        // test if compatible with label
+        //if(not correct_alleles(adj.label, allele)) {
+        //    return false;
+        //}
+        
+        // test if compatible with label
+        if(! correct_alleles(adj->label, allele)) {
+            return 0;
+        }
+        
+        // find offset of adjacent node in assignment vector
+        //unsigned j;
+        //for(j = 0; j < gc.size(); ++j) {
+        //    if(gc[j] == adj.id)
+        //        break;
+        //}
+        
+        // find offset of adjacent node in assignment vector
+        for(j = 0; j < clength; ++j) {
+            if(component[j] == adj->id) {
+                break;
+            }
+        }
+        
+        // error if not found
+        //if(j == gc.size()) {
+        //    fprintf(stderr, "Error: an adjacent allele in the graph was not "
+        //                    "found in the same component (%s:%d)", 
+        //                    __FILE__, __LINE__);
+        //    abort();
+        //}
+
+        // error if not found
+        if(j == clength) {
+            // XXX abort on gpu?
+            abort();
+            //return 0;
+        }
+        
+        // if not assigned yet, then ignore
+        //if(j > (assignment.size() - 1))
+        //    continue;
+
+        // if not assigned yet, then ignore
+        if(j > (qlength-1))
+            continue;
+        
+        // if assigned, then test legality
+        //if(not correct_alleles(adj.label, allele, assignment[j])) {
+        //    return false;
+        //}
+
+        // if assigned, then test legality
+        if(! correct_alleles(adj->label, allele, q[j])) {
+            return 0;
+        }
+
+    }
+    
+    return 1;
+}
+
+double component_likelihood(struct gpu_state* state, int locus, int* q, int length) {
+    struct geneticmap* map = GET_MAP(state);
+    double minor = MAP_MINOR(map, locus);
+    double major = MAP_MAJOR(map, locus);
+    double tmp = 1.0;
+    int i;    
+    
+    for(i = 0; i < length; ++i) {
+        tmp *= ((q[i] == 1) ? major : minor);
+    }
+    
+    return tmp;
+}
+
+double founderallelegraph_enumerate(struct gpu_state* state, int locus, int* component, int cindex) {
+    int q[128];
+    int qindex = 0;
+    int skip = 0;
+    double prob = 0.0;
+    int i;
+
+    // <debug>
     printf("* ");
     for(i = 0; i < cindex; ++i)
         printf("%d ", component[i]);
     printf("\n");
+    // </debug>
     
-    // XXX
+    if(cindex == 1) {
+        return 1.0;
+    }
+
+    while(1) {
+        
+        while(qindex != cindex) {
+            q[qindex++] = 1; // push
+            if(! legal(state, locus, component, cindex, q, qindex)) {
+                skip = 1;
+                break;
+            }
+        }
+        
+        if(!skip) {
+            prob += component_likelihood(state, locus, q, qindex);
+        }
+        
+        while(1) {
+            
+            while((qindex != 0) and (q[qindex-1] == 2)) { // not empty and last value is 2
+                qindex--; // pop
+            }
+        
+            if(qindex == 0) {
+                goto no_more_assignments;
+            }
+        
+            q[qindex-1] = 2; // set last value to 2
+            
+            if(legal(state, locus, component, cindex, q, qindex)) {
+                skip = 0;
+                break;
+            }
+        }
+    }
+       
+no_more_assignments:
     
-    return 1.0;
+    return prob;
 }
 
 double founderallelegraph_likelihood(struct gpu_state* state, int locus) {
@@ -167,7 +367,7 @@ double founderallelegraph_likelihood(struct gpu_state* state, int locus) {
     
     
     for(i = 0; i < 128; ++i) {
-        visited[i] = WHITE;
+        visited[i] = _WHITE;
     }
     
     do {
@@ -175,8 +375,8 @@ double founderallelegraph_likelihood(struct gpu_state* state, int locus) {
         
         // find start point
         for(i = 0; i < state->founderallele_count; ++i) {
-            if(visited[i] == WHITE) {
-                visited[i] = GREY;
+            if(visited[i] == _WHITE) {
+                visited[i] = _GREY;
                 q[qindex++] = i;
                 break;
             }
@@ -188,13 +388,13 @@ double founderallelegraph_likelihood(struct gpu_state* state, int locus) {
             for(i = 0; i < fag->num_neighbours[tmp]; ++i) {
                 tmp2 = &(fag->graph[tmp][i]);
                 
-                if(visited[tmp2->id] == WHITE) {
-                    visited[tmp2->id] = GREY;
+                if(visited[tmp2->id] == _WHITE) {
+                    visited[tmp2->id] = _GREY;
                     q[qindex++] = tmp2->id;
                 }
             }
             
-            visited[tmp] = BLACK;
+            visited[tmp] = _BLACK;
             total--;
             
             component[cindex++] = tmp;
@@ -213,14 +413,15 @@ double founderallelegraph_likelihood(struct gpu_state* state, int locus) {
 void msampler_run(struct gpu_state* state, int locus) {
     struct founderallelegraph* fag = GET_FOUNDERALLELEGRAPH(state, locus);
     int i;
-    double prob;
+    double prob = TMP_LOG_ZERO;
     
     for(i = 0; i < state->founderallele_count; ++i) {
         fag->num_neighbours[i] = 0;
     }
     
-    founderallelegraph_populate(state, locus);
-    prob = founderallelegraph_likelihood(state, locus);
+    if(founderallelegraph_populate(state, locus)) {
+        prob = founderallelegraph_likelihood(state, locus);
+    }
     
     printf("%f\n", prob);
     

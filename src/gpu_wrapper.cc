@@ -716,7 +716,6 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
     cudaError_t error;
     
     // XXX
-    
     copy_to_gpu(dg);
     run_gpu_msampler_kernel(1, 1, loc_state);
     // XXX

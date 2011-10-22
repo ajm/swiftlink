@@ -57,12 +57,12 @@ int get_founderallele(struct gpu_state* state, int person, int locus, int allele
             return (current * 2) + parent_allele;
         }
         
-        parent_allele = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, current, locus, parent_allele));
-                
         if(parent_allele == GPU_PATERNAL_ALLELE) {
+            parent_allele = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, current, locus, parent_allele));
             current = PERSON_FATHER(p);
         }
         else {
+            parent_allele = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, current, locus, parent_allele));
             current = PERSON_MOTHER(p);
 		}
     }

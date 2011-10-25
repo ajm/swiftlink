@@ -72,6 +72,8 @@ struct gpu_state {
     // random number generation
     curandState* randstates;
     tinymt32_status_t* randmt;
+    
+    int* fa_sequence;
 };
 
 struct adjacent_node {
@@ -80,6 +82,7 @@ struct adjacent_node {
 };
 
 struct founderallelegraph {
+    double prob[2];
     int* num_neighbours;            // length num founder alleles
     struct adjacent_node** graph;   // num founder alleles * (num founder alleles + 1)
 };
@@ -200,7 +203,7 @@ extern "C" {
     void run_gpu_print_kernel(struct gpu_state* state);
     
     void run_gpu_lsampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int offset);
-    void run_gpu_msampler_kernel(int numblocks, int numthreads, struct gpu_state* state);
+    void run_gpu_msampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis);
     
     void run_gpu_lodscore_kernel(int numblocks, int numthreads, struct gpu_state* state);
     void run_gpu_lodscoreinit_kernel(int numblocks, double* lodscores);

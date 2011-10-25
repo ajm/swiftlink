@@ -95,8 +95,20 @@ int GPUWrapper::num_threads_per_block() {
     return NUM_THREADS;
 }
 
-int GPUWrapper::num_blocks() {
+int GPUWrapper::lsampler_num_blocks() {
     return (map->num_markers() / 2) + ((map->num_markers() % 2) == 0 ? 0 : 1);
+}
+
+int GPUWrapper::num_blocks() {
+    return lsampler_num_blocks();
+}
+
+int GPUWrapper::msampler_num_blocks() {
+    return map->num_markers();
+}
+
+int GPUWrapper::lodscore_num_blocks() {
+    return map->num_markers() - 1;
 }
 
 int GPUWrapper::convert_type(enum peeloperation type) {
@@ -339,6 +351,14 @@ void GPUWrapper::init_founderallelegraph() {
     }
     
     loc_state->founderallele_count = num_founderalleles;
+    
+    loc_state->fa_sequence = (int*) malloc(sizeof(int) * ped->num_members());
+    if(!(loc_state->fa_sequence)) {
+        fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+        abort();
+    }
+    
+    find_founderallelegraph_ordering(loc_state);
 }
 
 void GPUWrapper::init_descentgraph() {
@@ -717,7 +737,8 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
     
     // XXX
     copy_to_gpu(dg);
-    run_gpu_msampler_kernel(1, 1, loc_state);
+    run_gpu_msampler_kernel(1, 1, loc_state, 0);
+    abort();
     // XXX
     
     
@@ -817,6 +838,44 @@ void GPUWrapper::select_best_gpu() {
         }
         
         cudaSetDevice(max_device);
+    }
+}
+
+void GPUWrapper::find_founderallelegraph_ordering(struct gpu_state* state) {
+    vector<unsigned> seq;
+    vector<bool> visited(ped->num_members(), false);
+    int total = ped->num_members();
+    
+    // we can start by putting in all founders as there are clearly
+    // no dependencies
+    for(unsigned i = 0; i < ped->num_founders(); ++i) {
+        seq.push_back(i);
+        visited[i] = true;
+        total--;
+    }
+    
+    while(total > 0) {
+        for(unsigned i = ped->num_founders(); i < ped->num_members(); ++i) {        
+            if(visited[i])
+                continue;
+        
+            Person* p = ped->get_by_index(i);
+            
+            if(visited[p->get_maternalid()] and visited[p->get_paternalid()]) {
+                seq.push_back(i);
+                visited[i] = true;
+                total--;
+            }
+        }
+    }
+    
+    if(seq.size() != ped->num_members()) {
+        fprintf(stderr, "Founder allele sequence generation failed\n");
+        abort();
+    }
+    
+    for(unsigned i = 0; i < ped->num_members(); ++i) {
+        state->fa_sequence[i] = static_cast<int>(seq[i]);
     }
 }
 

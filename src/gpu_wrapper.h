@@ -27,7 +27,11 @@ class GPUWrapper {
     unsigned num_samplers();
     int num_threads_per_block();
     int num_blocks();
+    int lsampler_num_blocks();
+    int msampler_num_blocks();
+    int lodscore_num_blocks();
     int convert_type(enum peeloperation type);
+    void find_founderallelegraph_ordering(struct gpu_state* state);
     
     void init(vector<PeelOperation>& ops);
     void init_map();

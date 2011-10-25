@@ -44,28 +44,14 @@ double tmp_log_product(double a, double b) {
     return ((a == TMP_LOG_ZERO) or (b == TMP_LOG_ZERO)) ? TMP_LOG_ZERO : a + b;
 }
 
-int get_founderallele(struct gpu_state* state, int person, int locus, int allele) {
-    int current = person;
-    int parent_allele = allele;
-	struct person* p;
-	struct descentgraph* dg = GET_DESCENTGRAPH(state);
+double tmp_log_sum(double a, double b) {
+    if(a == TMP_LOG_ZERO)
+        return b;
     
-    while(1) {
-		p = GET_PERSON(state, current);
-
-        if(PERSON_ISFOUNDER(p)) {
-            return (current * 2) + parent_allele;
-        }
-        
-        if(parent_allele == GPU_PATERNAL_ALLELE) {
-            parent_allele = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, current, locus, parent_allele));
-            current = PERSON_FATHER(p);
-        }
-        else {
-            parent_allele = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, current, locus, parent_allele));
-            current = PERSON_MOTHER(p);
-		}
-    }
+    if(b == TMP_LOG_ZERO)
+        return a;
+    
+    return log(exp(b - a) + 1) + a;
 }
 
 int founderallele_add(struct founderallelegraph* fag, int mat_fa, int pat_fa, int g) {
@@ -107,27 +93,50 @@ int founderallele_add(struct founderallelegraph* fag, int mat_fa, int pat_fa, in
 int founderallelegraph_populate(struct gpu_state* state, int locus) {
 	struct person* p;
 	struct founderallelegraph* fag = GET_FOUNDERALLELEGRAPH(state, locus);
-	int mat;
-	int pat;
+	struct descentgraph* dg = GET_DESCENTGRAPH(state);
 	int g;
 	int i;
 	int legal = 1;
-    
+	int pid;
+	int founderalleles[256];
+	int parent_allele;
+	int mat, pat;
+	
+	// find founder allele assignments, this is only related to the current 
+	// descent graph and not whether people are typed or not
 	for(i = 0; i < state->pedigree_length; ++i) {
-        p = GET_PERSON(state, i);
-        
-        if(PERSON_ISTYPED(p)) {
-            mat = get_founderallele(state, i, locus, GPU_MATERNAL_ALLELE);
-            pat = get_founderallele(state, i, locus, GPU_PATERNAL_ALLELE);
-            g = PERSON_GENOTYPE(p, locus);
-            
-            if(!founderallele_add(fag, mat, pat, g)) {
+	    pid = state->fa_sequence[i];
+	    p = GET_PERSON(state, pid);
+	    
+	    if(PERSON_ISFOUNDER(p)) {
+	        founderalleles[pid * 2] = pid * 2;
+	        founderalleles[(pid * 2) + 1] = (pid * 2) + 1;
+	    }
+	    else {
+	        parent_allele = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, pid, locus, GPU_MATERNAL_ALLELE));
+	        founderalleles[pid * 2] = founderalleles[ (PERSON_MOTHER(p) * 2) + parent_allele ];
+	        
+	        parent_allele = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, pid, locus, GPU_PATERNAL_ALLELE));
+	        founderalleles[(pid * 2) + 1] = founderalleles[ (PERSON_FATHER(p) * 2) + parent_allele ];
+	    }
+	}
+	
+	// construct the actual graph from the assignments and the genotype
+	// information
+	for(i = 0; i < state->pedigree_length; ++i) {
+	    pid = state->fa_sequence[i];
+	    p = GET_PERSON(state, pid);
+	    
+	    if(PERSON_ISTYPED(p)) {
+	        mat = founderalleles[pid * 2];
+	        pat = founderalleles[(pid * 2) + 1];
+	        g = PERSON_GENOTYPE(p, locus);
+	        
+	        if(! founderallele_add(fag, mat, pat, g)) {
                 legal = 0;
                 printf("illegal (locus = %d, person = %d, [%d %d %d])!\n", locus, i, mat, pat, g);
             }
-		}
-        
-		//__syncthreads();
+        }
 	}
 	
 	return legal;
@@ -410,51 +419,138 @@ double founderallelegraph_likelihood(struct gpu_state* state, int locus) {
     return prob;
 }
 
-void msampler_run(struct gpu_state* state, int locus) {
+int founderallele_sample(struct founderallelegraph* fag) {
+    double total; // = fag->prob[0] + fag->prob[1];
+    
+    if((fag->prob[0] == TMP_LOG_ZERO) && (fag->prob[1] == TMP_LOG_ZERO)) {
+        abort();
+    }
+    
+    if(fag->prob[0] == TMP_LOG_ZERO)
+        return 1;
+        
+    if(fag->prob[1] == TMP_LOG_ZERO)
+        return 0;
+    
+    total = fag->prob[0] + fag->prob[1];
+    
+    return (rand() / double(RAND_MAX)) < (fag->prob[0] / total) ? 0 : 1;
+}
+
+double founderallele_run(struct gpu_state* state, int locus, int personid, int allele, int value) {
     struct founderallelegraph* fag = GET_FOUNDERALLELEGRAPH(state, locus);
+    struct descentgraph* dg = GET_DESCENTGRAPH(state);
     int i;
+    int tmp;
+    int populate_legal;
     double prob = TMP_LOG_ZERO;
+    
+    // save the previous value
+    i = DESCENTGRAPH_OFFSET(dg, personid, locus, allele);
+    tmp = DESCENTGRAPH_GET(dg, i);
+    DESCENTGRAPH_SET(dg, i, value);
     
     for(i = 0; i < state->founderallele_count; ++i) {
         fag->num_neighbours[i] = 0;
     }
     
-    if(founderallelegraph_populate(state, locus)) {
+    populate_legal = founderallelegraph_populate(state, locus);
+    
+    if(populate_legal) {
         prob = founderallelegraph_likelihood(state, locus);
     }
     
-    printf("%f\n", prob);
+    //printf("%f\n", prob);
     
-    founderallelegraph_print(state, locus);
-    print_descentgraph2(GET_DESCENTGRAPH(state), state->pedigree_length, state->map->map_length);
+    // restore previous value
+    i = DESCENTGRAPH_OFFSET(dg, personid, locus, allele);
+    DESCENTGRAPH_SET(dg, i, tmp);
     
-    //__syncthreads();
-    
-    // enumerate + likelihood
-    
+    return prob;
 }
 
-void msampler_kernel(struct gpu_state* state) {
+void msampler_kernel(struct gpu_state* state, int meiosis) {
     //int locus = blockIdx.x;
     //sampler_run(state, locus);
     
-    int locus;
+    /*
+    printf("fa_sequence = ");
+    for(i = 0; i < state->pedigree_length; ++i) {
+        printf("%d ", state->fa_sequence[i]);
+    }
+    printf("\n");
+    */
     
+    int locus;
+    int personid = (state->founderallele_count / 2) + (meiosis / 2);
+    int allele = meiosis % 2;
+    struct founderallelegraph* fag;
+    struct geneticmap* map;
+    struct descentgraph* dg = GET_DESCENTGRAPH(state);
+    int i, j;
+    
+    map = GET_MAP(state);
+        
     // build fags
-    for(locus = 0; locus < state->map->map_length; ++locus) {
-        msampler_run(state, locus);
+    for(locus = 0; locus < map->map_length; ++locus) {
+        fag = GET_FOUNDERALLELEGRAPH(state, locus);
+        
+        fag->prob[0] = founderallele_run(state, locus, personid, allele, 0);
+        fag->prob[1] = founderallele_run(state, locus, personid, allele, 1);
     }
     
-    printf("\n\n");
     
-    abort();
+    // sampling
     
-    // sample
-    // XXX
+    // forward
+    for(i = 1; i < state->map->map_length; ++i) {
+        for(j = 0; j < 2; ++j) {
+            state->graphs[i].prob[j] = tmp_log_product( \
+                                            state->graphs[i].prob[j], \
+                                            tmp_log_sum( \
+                                                tmp_log_product(state->graphs[i-1].prob[j],   MAP_THETA(map, i-1)), \
+                                                tmp_log_product(state->graphs[i-1].prob[1-j], MAP_INVERSETHETA(map, i-1)) \
+                                            ) \
+                                        );
+        }
+    }
+    
+    /*
+    // print
+    for(locus = 0; locus < state->map->map_length; ++locus) {
+        fag = GET_FOUNDERALLELEGRAPH(state, locus);
+        printf("%d %.3f %.3f\n", locus, fag->prob[0], fag->prob[1]);
+    }
+    */
+    
+    // backward
+    i = map->map_length - 1;
+    fag = GET_FOUNDERALLELEGRAPH(state, i);
+    DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, allele), founderallele_sample(fag));
+    
+    while(--i >= 0) {
+        fag = GET_FOUNDERALLELEGRAPH(state, i);
+        
+        for(j = 0; j < 2; ++j) {
+            fag->prob[j] = tmp_log_product(fag->prob[j], ((DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, i+1, allele)) != j) ? \
+                log(MAP_THETA(map, i)) : \
+                log(MAP_INVERSETHETA(map, i))));
+        }
+        
+        DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, allele), founderallele_sample(fag));
+    }
+    
+    /*
+    // print
+    for(locus = 0; locus < state->map->map_length; ++locus) {
+        fag = GET_FOUNDERALLELEGRAPH(state, locus);
+        printf("%d %.3f %.3f\n", locus, fag->prob[0], fag->prob[1]);
+    }
+    */
 }
 
-void run_gpu_msampler_kernel(int numblocks, int numthreads, struct gpu_state* state) {
-    //msampler_kernel<<<numblocks, numthreads>>>(state);
-    msampler_kernel(state);
+void run_gpu_msampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis) {
+    //msampler_kernel<<<numblocks, numthreads>>>(state, meiosis);
+    msampler_kernel(state, meiosis);
 }
 

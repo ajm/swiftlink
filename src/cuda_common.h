@@ -84,7 +84,7 @@ struct adjacent_node {
 struct founderallelegraph {
     double prob[2];
     int* num_neighbours;            // length num founder alleles
-    struct adjacent_node** graph;   // num founder alleles * (num founder alleles + 1)
+    struct adjacent_node* graph;   // num founder alleles * (num founder alleles + 1)
 };
 
 #define FAG_GET_NODE(fag_ptr, node)         (&(fag_ptr)->graph[(node)])

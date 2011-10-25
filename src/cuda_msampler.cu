@@ -3,8 +3,8 @@
 
 #include "cuda_common.h"
 
-
-double TMP_LOG_ZERO = -DBL_MAX;
+/*
+double LOG_ZERO = -DBL_MAX;
 
 void founderallelegraph_print(struct gpu_state* state, int locus) {
     struct founderallelegraph* fag = GET_FOUNDERALLELEGRAPH(state, locus);
@@ -40,21 +40,21 @@ void print_descentgraph2(struct descentgraph* dg, int ped_length, int map_length
     printf("\n");
 }
 
-double tmp_log_product(double a, double b) {
-    return ((a == TMP_LOG_ZERO) or (b == TMP_LOG_ZERO)) ? TMP_LOG_ZERO : a + b;
+double gpu_log_product(double a, double b) {
+    return ((a == LOG_ZERO) or (b == LOG_ZERO)) ? LOG_ZERO : a + b;
 }
 
-double tmp_log_sum(double a, double b) {
-    if(a == TMP_LOG_ZERO)
+double gpu_log_sum(double a, double b) {
+    if(a == LOG_ZERO)
         return b;
     
-    if(b == TMP_LOG_ZERO)
+    if(b == LOG_ZERO)
         return a;
     
     return log(exp(b - a) + 1) + a;
 }
-
-int founderallele_add(struct founderallelegraph* fag, int mat_fa, int pat_fa, int g) {
+*/
+__device__ int founderallele_add(struct gpu_state* state, struct founderallelegraph* fag, int mat_fa, int pat_fa, int g) {
     struct adjacent_node* tmp;
     int i;
     int neighbours;
@@ -68,20 +68,20 @@ int founderallele_add(struct founderallelegraph* fag, int mat_fa, int pat_fa, in
     neighbours = fag->num_neighbours[mat_fa];
     
     for(i = 0; i < neighbours; ++i) {
-        tmp = &(fag->graph[mat_fa][i]);
+        tmp = &(fag->graph[(mat_fa * state->founderallele_count) + i]);
         
         if(tmp->id == pat_fa) {
             return tmp->label == g;
         }
     }
     
-    tmp = &(fag->graph[mat_fa][fag->num_neighbours[mat_fa]]);
+    tmp = &(fag->graph[(mat_fa * state->founderallele_count) + fag->num_neighbours[mat_fa]]);
     tmp->id = pat_fa;
     tmp->label = g;
     fag->num_neighbours[mat_fa]++;
     
     if(mat_fa != pat_fa) {
-        tmp = &(fag->graph[pat_fa][fag->num_neighbours[pat_fa]]);
+        tmp = &(fag->graph[(pat_fa * state->founderallele_count) + fag->num_neighbours[pat_fa]]);
         tmp->id = mat_fa;
         tmp->label = g;
         fag->num_neighbours[pat_fa]++;
@@ -90,7 +90,7 @@ int founderallele_add(struct founderallelegraph* fag, int mat_fa, int pat_fa, in
     return 1;
 }
 
-int founderallelegraph_populate(struct gpu_state* state, int locus) {
+__device__ int founderallelegraph_populate(struct gpu_state* state, int locus) {
 	struct person* p;
 	struct founderallelegraph* fag = GET_FOUNDERALLELEGRAPH(state, locus);
 	struct descentgraph* dg = GET_DESCENTGRAPH(state);
@@ -132,7 +132,7 @@ int founderallelegraph_populate(struct gpu_state* state, int locus) {
 	        pat = founderalleles[(pid * 2) + 1];
 	        g = PERSON_GENOTYPE(p, locus);
 	        
-	        if(! founderallele_add(fag, mat, pat, g)) {
+	        if(! founderallele_add(state, fag, mat, pat, g)) {
                 legal = 0;
                 printf("illegal (locus = %d, person = %d, [%d %d %d])!\n", locus, i, mat, pat, g);
             }
@@ -143,7 +143,7 @@ int founderallelegraph_populate(struct gpu_state* state, int locus) {
 }
 
 // for loops in the allele graph, hetero is always a contradiction
-int correct_alleles_loop(int g, int allele1) {
+__device__ int correct_alleles_loop(int g, int allele1) {
     switch(g) {
         case GPU_GENOTYPE_AA:
             return allele1 == 1;
@@ -158,7 +158,7 @@ int correct_alleles_loop(int g, int allele1) {
     return 0;
 }
 
-int correct_alleles(int g, int allele1) {
+__device__ int correct_alleles(int g, int allele1) {
     switch(g) {
         case GPU_GENOTYPE_AA:
             return allele1 == 1;
@@ -173,7 +173,7 @@ int correct_alleles(int g, int allele1) {
     return 0;
 }
 
-int correct_alleles(int g, int allele1, int allele2) {
+__device__ int correct_alleles(int g, int allele1, int allele2) {
     switch(g) {
         case GPU_GENOTYPE_AA:
             return (allele1 == 1) && (allele2 == 1);
@@ -190,7 +190,7 @@ int correct_alleles(int g, int allele1, int allele2) {
 }
 
 
-int legal(struct gpu_state* state, int locus, int* component, int clength, int* q, int qlength) {
+__device__ int legal(struct gpu_state* state, int locus, int* component, int clength, int* q, int qlength) {
 //bool FounderAlleleGraph2::legal(GraphComponent& gc, vector<unsigned>& assignment) {
     //int node = gc[assignment.size() - 1];
     //int allele = assignment.back();
@@ -205,7 +205,7 @@ int legal(struct gpu_state* state, int locus, int* component, int clength, int* 
     //for(unsigned i = 0; i < tmp.size(); ++i) {
     for(i = 0; i < fag->num_neighbours[node]; ++i) {
         //FounderAlleleNode& adj = tmp[i];
-        adj = &(fag->graph[node][i]);
+        adj = &(fag->graph[(node * state->founderallele_count) + i]);
         
         // if there is a loop
         //if(adj.id == node) {
@@ -258,8 +258,9 @@ int legal(struct gpu_state* state, int locus, int* component, int clength, int* 
         // error if not found
         if(j == clength) {
             // XXX abort on gpu?
-            abort();
-            //return 0;
+            //abort();
+            printf("error in legal()\n");
+            return 0;
         }
         
         // if not assigned yet, then ignore
@@ -285,7 +286,7 @@ int legal(struct gpu_state* state, int locus, int* component, int clength, int* 
     return 1;
 }
 
-double component_likelihood(struct gpu_state* state, int locus, int* q, int length) {
+__device__ double component_likelihood(struct gpu_state* state, int locus, int* q, int length) {
     struct geneticmap* map = GET_MAP(state);
     double minor = MAP_MINOR(map, locus);
     double major = MAP_MAJOR(map, locus);
@@ -299,7 +300,7 @@ double component_likelihood(struct gpu_state* state, int locus, int* q, int leng
     return tmp;
 }
 
-double founderallelegraph_enumerate(struct gpu_state* state, int locus, int* component, int cindex) {
+__device__ double founderallelegraph_enumerate(struct gpu_state* state, int locus, int* component, int cindex) {
     int q[128];
     int qindex = 0;
     int skip = 0;
@@ -355,7 +356,7 @@ no_more_assignments:
     return prob;
 }
 
-double founderallelegraph_likelihood(struct gpu_state* state, int locus) {
+__device__ double founderallelegraph_likelihood(struct gpu_state* state, int locus) {
     int q[128];
     int qindex = 0;
     
@@ -395,7 +396,7 @@ double founderallelegraph_likelihood(struct gpu_state* state, int locus) {
             tmp = q[--qindex];
             
             for(i = 0; i < fag->num_neighbours[tmp]; ++i) {
-                tmp2 = &(fag->graph[tmp][i]);
+                tmp2 = &(fag->graph[(tmp * state->founderallele_count) + i]);
                 
                 if(visited[tmp2->id] == _WHITE) {
                     visited[tmp2->id] = _GREY;
@@ -410,40 +411,42 @@ double founderallelegraph_likelihood(struct gpu_state* state, int locus) {
         }
         
         tmp_prob = founderallelegraph_enumerate(state, locus, component, cindex);
-		tmp_prob = ((tmp_prob == 0.0) ? TMP_LOG_ZERO : log(tmp_prob));
+		tmp_prob = ((tmp_prob == 0.0) ? LOG_ZERO : log(tmp_prob));
 		
-		prob = tmp_log_product(tmp_prob, prob);
+		prob = gpu_log_product(tmp_prob, prob);
     
     } while(total != 0);
     
     return prob;
 }
 
-int founderallele_sample(struct founderallelegraph* fag) {
+__device__ int founderallele_sample(struct gpu_state* state, struct founderallelegraph* fag) {
     double total; // = fag->prob[0] + fag->prob[1];
     
-    if((fag->prob[0] == TMP_LOG_ZERO) && (fag->prob[1] == TMP_LOG_ZERO)) {
-        abort();
+    if((fag->prob[0] == LOG_ZERO) && (fag->prob[1] == LOG_ZERO)) {
+        //abort();
+        printf("error in founderallele_sample\n");
     }
     
-    if(fag->prob[0] == TMP_LOG_ZERO)
+    if(fag->prob[0] == LOG_ZERO)
         return 1;
         
-    if(fag->prob[1] == TMP_LOG_ZERO)
+    if(fag->prob[1] == LOG_ZERO)
         return 0;
     
     total = fag->prob[0] + fag->prob[1];
     
-    return (rand() / double(RAND_MAX)) < (fag->prob[0] / total) ? 0 : 1;
+    //return (rand() / double(RAND_MAX)) < (fag->prob[0] / total) ? 0 : 1;
+    return get_random(state) < (fag->prob[0] / total) ? 0 : 1;
 }
 
-double founderallele_run(struct gpu_state* state, int locus, int personid, int allele, int value) {
+__device__ double founderallele_run(struct gpu_state* state, int locus, int personid, int allele, int value) {
     struct founderallelegraph* fag = GET_FOUNDERALLELEGRAPH(state, locus);
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     int i;
     int tmp;
     int populate_legal;
-    double prob = TMP_LOG_ZERO;
+    double prob = LOG_ZERO;
     
     // save the previous value
     i = DESCENTGRAPH_OFFSET(dg, personid, locus, allele);
@@ -469,7 +472,7 @@ double founderallele_run(struct gpu_state* state, int locus, int personid, int a
     return prob;
 }
 
-void msampler_kernel(struct gpu_state* state, int meiosis) {
+__global__ void msampler_kernel(struct gpu_state* state, int meiosis) {
     //int locus = blockIdx.x;
     //sampler_run(state, locus);
     
@@ -489,6 +492,8 @@ void msampler_kernel(struct gpu_state* state, int meiosis) {
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     int i, j;
     
+    if(threadIdx.x == 0) {
+    
     map = GET_MAP(state);
         
     // build fags
@@ -505,11 +510,11 @@ void msampler_kernel(struct gpu_state* state, int meiosis) {
     // forward
     for(i = 1; i < state->map->map_length; ++i) {
         for(j = 0; j < 2; ++j) {
-            state->graphs[i].prob[j] = tmp_log_product( \
+            state->graphs[i].prob[j] = gpu_log_product( \
                                             state->graphs[i].prob[j], \
-                                            tmp_log_sum( \
-                                                tmp_log_product(state->graphs[i-1].prob[j],   MAP_THETA(map, i-1)), \
-                                                tmp_log_product(state->graphs[i-1].prob[1-j], MAP_INVERSETHETA(map, i-1)) \
+                                            gpu_log_sum( \
+                                                gpu_log_product(state->graphs[i-1].prob[j],   MAP_THETA(map, i-1)), \
+                                                gpu_log_product(state->graphs[i-1].prob[1-j], MAP_INVERSETHETA(map, i-1)) \
                                             ) \
                                         );
         }
@@ -526,18 +531,20 @@ void msampler_kernel(struct gpu_state* state, int meiosis) {
     // backward
     i = map->map_length - 1;
     fag = GET_FOUNDERALLELEGRAPH(state, i);
-    DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, allele), founderallele_sample(fag));
+    DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, allele), founderallele_sample(state, fag));
     
     while(--i >= 0) {
         fag = GET_FOUNDERALLELEGRAPH(state, i);
         
         for(j = 0; j < 2; ++j) {
-            fag->prob[j] = tmp_log_product(fag->prob[j], ((DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, i+1, allele)) != j) ? \
+            fag->prob[j] = gpu_log_product(fag->prob[j], ((DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, i+1, allele)) != j) ? \
                 log(MAP_THETA(map, i)) : \
                 log(MAP_INVERSETHETA(map, i))));
         }
         
-        DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, allele), founderallele_sample(fag));
+        DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, allele), founderallele_sample(state, fag));
+    }
+    
     }
     
     /*
@@ -550,7 +557,7 @@ void msampler_kernel(struct gpu_state* state, int meiosis) {
 }
 
 void run_gpu_msampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis) {
-    //msampler_kernel<<<numblocks, numthreads>>>(state, meiosis);
-    msampler_kernel(state, meiosis);
+    msampler_kernel<<<numblocks, numthreads>>>(state, meiosis);
+    //msampler_kernel(state, meiosis);
 }
 

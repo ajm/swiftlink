@@ -211,6 +211,8 @@ void GPUWrapper::gpu_init(vector<PeelOperation>& ops) {
     
     tmp.lodscores = gpu_init_lodscores();
     
+    tmp.graphs = gpu_init_founderallelegraph();
+    
     CUDA_CALLANDTEST(cudaMalloc((void**)&dev_state, sizeof(struct gpu_state)));
     CUDA_CALLANDTEST(cudaMemcpy(dev_state, &tmp, sizeof(struct gpu_state), cudaMemcpyHostToDevice));
 }
@@ -343,11 +345,7 @@ void GPUWrapper::init_founderallelegraph() {
     
     for(unsigned i = 0; i < map->num_markers(); ++i) {
         loc_state->graphs[i].num_neighbours = (int*) malloc(sizeof(int) * num_founderalleles);
-        loc_state->graphs[i].graph = (struct adjacent_node**) malloc(sizeof(struct adjacent_node*) * num_founderalleles);
-        
-        for(int j = 0; j < num_founderalleles; ++j) {
-            loc_state->graphs[i].graph[j] = (struct adjacent_node*) malloc(sizeof(struct adjacent_node) * num_founderalleles);
-        }
+        loc_state->graphs[i].graph = (struct adjacent_node*) malloc(sizeof(struct adjacent_node*) * num_founderalleles * num_founderalleles);        
     }
     
     loc_state->founderallele_count = num_founderalleles;
@@ -359,6 +357,31 @@ void GPUWrapper::init_founderallelegraph() {
     }
     
     find_founderallelegraph_ordering(loc_state);
+}
+
+struct founderallelegraph* GPUWrapper::gpu_init_founderallelegraph() {
+    
+    int num_founderalleles = ped->num_founders() * 2;
+    
+    struct founderallelegraph* tmp = (struct founderallelegraph*) malloc(sizeof(struct founderallelegraph) * map->num_markers());
+    if(!tmp) {
+        fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+        abort();
+    }
+    
+    for(unsigned i = 0; i < map->num_markers(); ++i) {
+        CUDA_CALLANDTEST(cudaMalloc((void**)&(tmp[i].num_neighbours), sizeof(int) * num_founderalleles));
+        CUDA_CALLANDTEST(cudaMalloc((void**)&(tmp[i].graph), sizeof(struct adjacent_node) * num_founderalleles * num_founderalleles));
+    }
+    
+    struct founderallelegraph* dev_fag;
+    
+    CUDA_CALLANDTEST(cudaMalloc((void**)&dev_fag, sizeof(struct founderallelegraph) * map->num_markers()));
+    CUDA_CALLANDTEST(cudaMemcpy(dev_fag, &tmp,    sizeof(struct founderallelegraph) * map->num_markers(), cudaMemcpyHostToDevice));
+    
+    free(tmp);
+    
+    return dev_fag;
 }
 
 void GPUWrapper::init_descentgraph() {
@@ -734,11 +757,12 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
     int even_count;
     int odd_count;
     cudaError_t error;
+    int num_meioses = 2 * (ped->num_members() - ped->num_founders());
     
     // XXX
-    copy_to_gpu(dg);
-    run_gpu_msampler_kernel(1, 1, loc_state, 0);
-    abort();
+    //copy_to_gpu(dg);
+    //run_gpu_msampler_kernel(1, 1, loc_state, 0);
+    //abort();
     // XXX
     
     
@@ -760,29 +784,47 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
     
     for(unsigned i = 0; i < iterations; ++i) {
         
-        run_gpu_lsampler_kernel(even_count, num_threads_per_block(), dev_state, 0);
-        
-        cudaThreadSynchronize();
-        
-        error = cudaGetLastError();
-        if(error != cudaSuccess) {
-            printf("CUDA kernel error: %s\n", cudaGetErrorString(error));
-            abort();
+        if((rand() / double(RAND_MAX)) < 0.5) {
+            printf("lsampler\n");
+            run_gpu_lsampler_kernel(even_count, num_threads_per_block(), dev_state, 0);
+            
+            cudaThreadSynchronize();
+            
+            error = cudaGetLastError();
+            if(error != cudaSuccess) {
+                printf("CUDA kernel error: %s\n", cudaGetErrorString(error));
+                abort();
+            }
+            
+            //---
+            
+            run_gpu_lsampler_kernel(odd_count, num_threads_per_block(), dev_state, 1);
+            
+            cudaThreadSynchronize();
+            
+            error = cudaGetLastError();
+            if(error != cudaSuccess) {
+                printf("CUDA kernel error: %s\n", cudaGetErrorString(error));
+                abort();
+            }
+            
+            //---
         }
-        
-        //---
-        
-        run_gpu_lsampler_kernel(odd_count, num_threads_per_block(), dev_state, 1);
-        
-        cudaThreadSynchronize();
-        
-        error = cudaGetLastError();
-        if(error != cudaSuccess) {
-            printf("CUDA kernel error: %s\n", cudaGetErrorString(error));
-            abort();
+        else {
+            for(int j = 0; j < num_meioses; ++j) {
+                printf("msampler\n");
+                
+                run_gpu_msampler_kernel(1, num_threads_per_block(), dev_state, j);
+            
+                cudaThreadSynchronize();
+            
+                error = cudaGetLastError();
+                if(error != cudaSuccess) {
+                    printf("CUDA kernel error: %s\n", cudaGetErrorString(error));
+                    abort();
+                }
+            }
         }
-        
-        //---
         
         p.increment();
         

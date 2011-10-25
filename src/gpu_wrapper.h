@@ -48,6 +48,7 @@ class GPUWrapper {
     curandState* gpu_init_random_curand();
     tinymt32_status_t* gpu_init_random_tinymt();
     double* gpu_init_lodscores();
+    struct founderallelegraph* gpu_init_founderallelegraph();
     
     void copy_to_gpu(DescentGraph& dg);
     void copy_from_gpu(DescentGraph& dg);

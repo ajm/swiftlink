@@ -19,6 +19,7 @@ void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
     DescentGraph tmp(ped, map);
     double tmp_prob, best_prob = LOG_ILLEGAL;
     int iterations = 100;
+    //int iterations = 1;
     
     LocusSampler lsampler(ped, map, psg);
     

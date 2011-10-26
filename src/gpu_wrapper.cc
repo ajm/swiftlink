@@ -54,6 +54,7 @@ size_t GPUWrapper::calculate_memory_requirements(vector<PeelOperation>& ops) {
     size_t mem_map;
     size_t mem_rand;
     //size_t mem_shared;
+    size_t mem_fag;
     
     mem_map = sizeof(struct geneticmap) + \
                 (4 * sizeof(double) * (map->num_markers() - 1)) + \
@@ -84,7 +85,10 @@ size_t GPUWrapper::calculate_memory_requirements(vector<PeelOperation>& ops) {
     
     mem_rand = sizeof(curandState) * num_blocks();
     
-    return (num_samplers() * mem_per_sampler) + mem_pedigree + mem_map + mem_rand + sizeof(struct gpu_state);
+    int num_fa = ped->num_founders() * 2;
+    mem_fag = (sizeof(struct founderallelegraph) + (num_fa * sizeof(int)) + (num_fa * num_fa * sizeof(struct adjacent_node))) * map->num_markers();
+    
+    return (num_samplers() * mem_per_sampler) + mem_pedigree + mem_map + mem_rand + mem_fag + sizeof(struct gpu_state) + (sizeof(int) * ped->num_members());
 }
 
 unsigned GPUWrapper::num_samplers() {
@@ -104,7 +108,7 @@ int GPUWrapper::num_blocks() {
 }
 
 int GPUWrapper::msampler_num_blocks() {
-    return map->num_markers();
+    return map->num_markers() / NUM_THREADS + ((map->num_markers() % NUM_THREADS) == 0 ? 0 : 1);
 }
 
 int GPUWrapper::lodscore_num_blocks() {
@@ -815,10 +819,19 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
             //---
         }
         else {
+            //printf("msampler\n");
             for(int j = 0; j < num_meioses; ++j) {
-                //printf("msampler\n");
+                run_gpu_msampler_likelihood_kernel(msampler_num_blocks(), num_threads_per_block(), dev_state, j);
+            
+                cudaThreadSynchronize();
+            
+                error = cudaGetLastError();
+                if(error != cudaSuccess) {
+                    printf("CUDA kernel error: %s\n", cudaGetErrorString(error));
+                    abort();
+                }
                 
-                run_gpu_msampler_kernel(1, num_threads_per_block(), dev_state, j);
+                run_gpu_msampler_sampling_kernel(dev_state, j);
             
                 cudaThreadSynchronize();
             
@@ -836,7 +849,7 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
             continue;
         
         if((i % scoring_period) == 0) {
-            run_gpu_lodscore_kernel(map->num_markers() - 1, NUM_THREADS, dev_state);
+            run_gpu_lodscore_kernel(lodscore_num_blocks(), num_threads_per_block(), dev_state);
             
             count++;
             

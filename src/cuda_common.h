@@ -204,6 +204,8 @@ extern "C" {
     
     void run_gpu_lsampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int offset);
     void run_gpu_msampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis);
+    void run_gpu_msampler_likelihood_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis);
+    void run_gpu_msampler_sampling_kernel(struct gpu_state* state, int meiosis);
     
     void run_gpu_lodscore_kernel(int numblocks, int numthreads, struct gpu_state* state);
     void run_gpu_lodscoreinit_kernel(int numblocks, double* lodscores);

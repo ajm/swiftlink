@@ -28,6 +28,7 @@ __device__ float get_mt_random(struct gpu_state* state) {
 
 __device__ float get_random(struct gpu_state* state) {
 
+    return 0.5;
 #ifdef RANDOM_USE_MT
     return get_mt_random(state);
 #else

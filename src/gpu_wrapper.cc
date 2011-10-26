@@ -212,6 +212,10 @@ void GPUWrapper::gpu_init(vector<PeelOperation>& ops) {
     tmp.lodscores = gpu_init_lodscores();
     
     tmp.graphs = gpu_init_founderallelegraph();
+    tmp.founderallele_count = loc_state->founderallele_count;
+    
+    CUDA_CALLANDTEST(cudaMalloc((void**)&(tmp.fa_sequence), sizeof(int) * ped->num_members()));
+    CUDA_CALLANDTEST(cudaMemcpy(tmp.fa_sequence, loc_state->fa_sequence, sizeof(int) * ped->num_members(), cudaMemcpyHostToDevice));
     
     CUDA_CALLANDTEST(cudaMalloc((void**)&dev_state, sizeof(struct gpu_state)));
     CUDA_CALLANDTEST(cudaMemcpy(dev_state, &tmp, sizeof(struct gpu_state), cudaMemcpyHostToDevice));
@@ -377,7 +381,7 @@ struct founderallelegraph* GPUWrapper::gpu_init_founderallelegraph() {
     struct founderallelegraph* dev_fag;
     
     CUDA_CALLANDTEST(cudaMalloc((void**)&dev_fag, sizeof(struct founderallelegraph) * map->num_markers()));
-    CUDA_CALLANDTEST(cudaMemcpy(dev_fag, &tmp,    sizeof(struct founderallelegraph) * map->num_markers(), cudaMemcpyHostToDevice));
+    CUDA_CALLANDTEST(cudaMemcpy(dev_fag, tmp,    sizeof(struct founderallelegraph) * map->num_markers(), cudaMemcpyHostToDevice));
     
     free(tmp);
     
@@ -785,7 +789,7 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
     for(unsigned i = 0; i < iterations; ++i) {
         
         if((rand() / double(RAND_MAX)) < 0.5) {
-            printf("lsampler\n");
+            //printf("lsampler\n");
             run_gpu_lsampler_kernel(even_count, num_threads_per_block(), dev_state, 0);
             
             cudaThreadSynchronize();
@@ -812,7 +816,7 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
         }
         else {
             for(int j = 0; j < num_meioses; ++j) {
-                printf("msampler\n");
+                //printf("msampler\n");
                 
                 run_gpu_msampler_kernel(1, num_threads_per_block(), dev_state, j);
             

@@ -3,57 +3,7 @@
 
 #include "cuda_common.h"
 
-/*
-double LOG_ZERO = -DBL_MAX;
 
-void founderallelegraph_print(struct gpu_state* state, int locus) {
-    struct founderallelegraph* fag = GET_FOUNDERALLELEGRAPH(state, locus);
-    struct adjacent_node* tmp;
-    int i, j;
-    
-    printf("\nFOUNDER ALLELE GRAPH:\n");
-    
-	for(i = 0; i < state->founderallele_count; ++i) {
-        printf("%d: ", i);
-        for(j = 0; j < fag->num_neighbours[i]; ++j) {
-            tmp = &(fag->graph[i][j]);
-            printf("{%d, %d} ", tmp->id, tmp->label);
-        }
-        printf("\n");
-    }
-    printf("\n");
-}
-
-void print_descentgraph2(struct descentgraph* dg, int ped_length, int map_length) {
-    int i, j;
-    
-    for(i = 0; i < ped_length; ++i) {
-        printf("\t%d:\t", i);
-        for(j = 0; j < map_length; ++j) {
-            printf( "%d%d ",
-                    DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, i, j, GPU_MATERNAL_ALLELE)),
-                    DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, i, j, GPU_PATERNAL_ALLELE))
-            );
-        }
-        printf("\n");
-    }
-    printf("\n");
-}
-
-double gpu_log_product(double a, double b) {
-    return ((a == LOG_ZERO) or (b == LOG_ZERO)) ? LOG_ZERO : a + b;
-}
-
-double gpu_log_sum(double a, double b) {
-    if(a == LOG_ZERO)
-        return b;
-    
-    if(b == LOG_ZERO)
-        return a;
-    
-    return log(exp(b - a) + 1) + a;
-}
-*/
 __device__ int founderallele_add(struct gpu_state* state, struct founderallelegraph* fag, int mat_fa, int pat_fa, int g) {
     struct adjacent_node* tmp;
     int i;
@@ -134,7 +84,7 @@ __device__ int founderallelegraph_populate(struct gpu_state* state, int locus) {
 	        
 	        if(! founderallele_add(state, fag, mat, pat, g)) {
                 legal = 0;
-                printf("illegal (locus = %d, person = %d, [%d %d %d])!\n", locus, i, mat, pat, g);
+                //printf("illegal (locus = %d, person = %d, [%d %d %d])!\n", locus, i, mat, pat, g);
             }
         }
 	}
@@ -191,29 +141,15 @@ __device__ int correct_alleles(int g, int allele1, int allele2) {
 
 
 __device__ int legal(struct gpu_state* state, int locus, int* component, int clength, int* q, int qlength) {
-//bool FounderAlleleGraph2::legal(GraphComponent& gc, vector<unsigned>& assignment) {
-    //int node = gc[assignment.size() - 1];
-    //int allele = assignment.back();
     int node = component[qlength-1];
     int allele = q[qlength-1];
     int i, j;  
     
-    //AdjacencyRecord& tmp = matrix[node];
     struct founderallelegraph* fag = GET_FOUNDERALLELEGRAPH(state, locus);
     struct adjacent_node* adj;
 
-    //for(unsigned i = 0; i < tmp.size(); ++i) {
     for(i = 0; i < fag->num_neighbours[node]; ++i) {
-        //FounderAlleleNode& adj = tmp[i];
         adj = &(fag->graph[(node * state->founderallele_count) + i]);
-        
-        // if there is a loop
-        //if(adj.id == node) {
-        //    if(not correct_alleles_loop(adj.label, allele)) {
-        //        return false;
-        //    }
-        //    continue;
-        //}
         
         // if there is a loop
         if(adj->id == node) {
@@ -224,21 +160,9 @@ __device__ int legal(struct gpu_state* state, int locus, int* component, int cle
         }
         
         // test if compatible with label
-        //if(not correct_alleles(adj.label, allele)) {
-        //    return false;
-        //}
-        
-        // test if compatible with label
         if(! correct_alleles(adj->label, allele)) {
             return 0;
         }
-        
-        // find offset of adjacent node in assignment vector
-        //unsigned j;
-        //for(j = 0; j < gc.size(); ++j) {
-        //    if(gc[j] == adj.id)
-        //        break;
-        //}
         
         // find offset of adjacent node in assignment vector
         for(j = 0; j < clength; ++j) {
@@ -248,33 +172,16 @@ __device__ int legal(struct gpu_state* state, int locus, int* component, int cle
         }
         
         // error if not found
-        //if(j == gc.size()) {
-        //    fprintf(stderr, "Error: an adjacent allele in the graph was not "
-        //                    "found in the same component (%s:%d)", 
-        //                    __FILE__, __LINE__);
-        //    abort();
-        //}
-
-        // error if not found
         if(j == clength) {
             // XXX abort on gpu?
             //abort();
             printf("error in legal()\n");
             return 0;
         }
-        
-        // if not assigned yet, then ignore
-        //if(j > (assignment.size() - 1))
-        //    continue;
 
         // if not assigned yet, then ignore
         if(j > (qlength-1))
             continue;
-        
-        // if assigned, then test legality
-        //if(not correct_alleles(adj.label, allele, assignment[j])) {
-        //    return false;
-        //}
 
         // if assigned, then test legality
         if(! correct_alleles(adj->label, allele, q[j])) {
@@ -305,15 +212,16 @@ __device__ double founderallelegraph_enumerate(struct gpu_state* state, int locu
     int qindex = 0;
     int skip = 0;
     double prob = 0.0;
+/*
     int i;
-
     // <debug>
     printf("* ");
     for(i = 0; i < cindex; ++i)
         printf("%d ", component[i]);
     printf("\n");
     // </debug>
-    
+*/
+
     if(cindex == 1) {
         return 1.0;
     }
@@ -498,10 +406,13 @@ __global__ void msampler_kernel(struct gpu_state* state, int meiosis) {
         
     // build fags
     for(locus = 0; locus < map->map_length; ++locus) {
+        //printf("locus = %d\n", locus);
+    
         fag = GET_FOUNDERALLELEGRAPH(state, locus);
         
-        fag->prob[0] = founderallele_run(state, locus, personid, allele, 0);
-        fag->prob[1] = founderallele_run(state, locus, personid, allele, 1);
+        for(i = 0; i < 2; ++i)
+            fag->prob[i] = founderallele_run(state, locus, personid, allele, i);
+        //fag->prob[1] = founderallele_run(state, locus, personid, allele, 1);
     }
     
     

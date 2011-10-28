@@ -108,7 +108,9 @@ int GPUWrapper::num_blocks() {
 }
 
 int GPUWrapper::msampler_num_blocks() {
-    return map->num_markers() / NUM_THREADS + ((map->num_markers() % NUM_THREADS) == 0 ? 0 : 1);
+    return (map->num_markers() / 8) + ((map->num_markers() % 8) == 0 ? 0 : 1); 
+    // 8 because I will use 256 threads
+    // 256 (threads) / 32 (threads per warp) = 8
 }
 
 int GPUWrapper::lodscore_num_blocks() {
@@ -821,8 +823,8 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
         else {
             //printf("msampler\n");
             for(int j = 0; j < num_meioses; ++j) {
-                run_gpu_msampler_likelihood_kernel(msampler_num_blocks(), num_threads_per_block(), dev_state, j);
-            
+                run_gpu_msampler_likelihood_kernel(msampler_num_blocks(), 256, dev_state, j);
+                
                 cudaThreadSynchronize();
             
                 error = cudaGetLastError();
@@ -830,6 +832,8 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
                     printf("CUDA kernel error: %s\n", cudaGetErrorString(error));
                     abort();
                 }
+                
+                //abort();
                 
                 run_gpu_msampler_sampling_kernel(dev_state, j);
             
@@ -845,8 +849,8 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
         
         p.increment();
         
-        if(i < burnin)
-            continue;
+        //if(i < burnin)
+        //    continue;
         
         if((i % scoring_period) == 0) {
             run_gpu_lodscore_kernel(lodscore_num_blocks(), num_threads_per_block(), dev_state);

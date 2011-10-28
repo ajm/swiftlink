@@ -381,12 +381,14 @@ __device__ double founderallele_run(struct gpu_state* state, int locus, int pers
 }
 
 __global__ void msampler_likelihood_kernel(struct gpu_state* state, int meiosis) {
-    int locus = (blockIdx.x * NUM_THREADS) + threadIdx.x;
+    //int locus = (blockIdx.x * NUM_THREADS) + threadIdx.x;
+    int locus = ((blockIdx.x * 256) + threadIdx.x) / 32;
     int personid = (state->founderallele_count / 2) + (meiosis / 2);
     int allele = meiosis % 2;
     struct founderallelegraph* fag;
     struct geneticmap* map;
     
+    //printf("locus = %d\n", locus);
     
     map = GET_MAP(state);
     

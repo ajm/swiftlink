@@ -329,7 +329,7 @@ __device__ double founderallelegraph_likelihood(struct gpu_state* state, int loc
 }
 
 __device__ int founderallele_sample(struct gpu_state* state, struct founderallelegraph* fag) {
-    double total; // = fag->prob[0] + fag->prob[1];
+    double total;
     
     if((fag->prob[0] == LOG_ZERO) && (fag->prob[1] == LOG_ZERO)) {
         //abort();
@@ -342,10 +342,29 @@ __device__ int founderallele_sample(struct gpu_state* state, struct founderallel
     if(fag->prob[1] == LOG_ZERO)
         return 0;
     
-    total = fag->prob[0] + fag->prob[1];
+    total = gpu_log_sum(fag->prob[0], fag->prob[1]);
     
     //return (rand() / double(RAND_MAX)) < (fag->prob[0] / total) ? 0 : 1;
-    return get_random(state) < (fag->prob[0] / total) ? 0 : 1;
+    return log(get_random(state)) < (fag->prob[0] - total) ? 0 : 1;
+}
+
+__device__ int founderallele_sample2(struct gpu_state* state, float prob0, float prob1) {
+    double total;
+    
+    if((prob0 == LOG_ZERO) && (prob1 == LOG_ZERO)) {
+        //abort();
+        printf("error in founderallele_sample\n");
+    }
+    
+    if(prob0 == LOG_ZERO)
+        return 1;
+        
+    if(prob1 == LOG_ZERO)
+        return 0;
+    
+    total = gpu_log_sum(prob0, prob1);
+    
+    return log(get_random(state)) < (prob0 - total) ? 0 : 1;
 }
 
 __device__ double founderallele_run(struct gpu_state* state, int locus, int personid, int allele, int value) {
@@ -386,59 +405,85 @@ __global__ void msampler_likelihood_kernel(struct gpu_state* state, int meiosis)
     int personid = (state->founderallele_count / 2) + (meiosis / 2);
     int allele = meiosis % 2;
     struct founderallelegraph* fag;
-    struct geneticmap* map;
+    struct geneticmap* map = GET_MAP(state);
     
-    //printf("locus = %d\n", locus);
-    
-    map = GET_MAP(state);
+    //struct descentgraph* dg = GET_DESCENTGRAPH(state);
+    //int tmp;
     
     if(locus < map->map_length) {
         fag = GET_FOUNDERALLELEGRAPH(state, locus);
         
         fag->prob[0] = founderallele_run(state, locus, personid, allele, 0);
         fag->prob[1] = founderallele_run(state, locus, personid, allele, 1);
+        
+        /*
+        if(meiosis == 0) {
+            fag->prob[0] = founderallele_run(state, locus, personid, allele, 0);
+            fag->prob[1] = founderallele_run(state, locus, personid, allele, 1);
+        }
+        else {
+            tmp = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, locus, allele));
+            
+            if(tmp == 1)
+                fag->prob[0] = founderallele_run(state, locus, personid, allele, 0);
+            else if(tmp == 0) 
+                fag->prob[1] = founderallele_run(state, locus, personid, allele, 1);
+            else 
+                printf("tmp = %d\n", tmp);
+            //fag->prob[1 - tmp] = founderallele_run(state, locus, personid, allele, 1 - tmp);
+        }
+        */
     }
 }
 
 __global__ void msampler_sampling_kernel(struct gpu_state* state, int meiosis) {
     int personid = (state->founderallele_count / 2) + (meiosis / 2);
     int allele = meiosis % 2;
-    struct founderallelegraph *fag0, *fag1;
-    struct geneticmap* map;
+    //struct founderallelegraph *fag0, *fag1;
+    struct geneticmap* map = GET_MAP(state);
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     int i, j;
     
-    map = GET_MAP(state);
+    __shared__ float sh_theta[1024];
+    __shared__ float sh_inversetheta[1024];
+    __shared__ float sh_matrix[1024][2];
+    
+    // we just have one block for now, 1024 threads
+    for(i = threadIdx.x; i < map->map_length; i += 512) {
+        sh_theta[i] = log(MAP_THETA(map, i));
+        sh_inversetheta[i] = log(MAP_INVERSETHETA(map, i));
+        sh_matrix[i][0] = state->graphs[i].prob[0];
+        sh_matrix[i][1] = state->graphs[i].prob[1];
+    }
+    
+    __syncthreads();
+    
     
     if(threadIdx.x == 0) {
         // forward
-        for(i = 1; i < state->map->map_length; ++i) {
-            fag0 = GET_FOUNDERALLELEGRAPH(state, i - 1);
-            fag1 = GET_FOUNDERALLELEGRAPH(state, i);
-        
+        for(i = 1; i < map->map_length; ++i) {
             for(j = 0; j < 2; ++j) {
-                fag1->prob[j] = gpu_log_product(fag1->prob[j], \
-                                gpu_log_sum(
-                                gpu_log_product(fag0->prob[j],   log(MAP_THETA(map, i-1))), 
-                                gpu_log_product(fag0->prob[1-j], log(MAP_INVERSETHETA(map, i-1)))));
+                sh_matrix[i][j] = gpu_log_product(sh_matrix[i][j], \
+                                    gpu_log_sum( \
+                                        gpu_log_product(sh_matrix[i-1][j],   sh_theta[i-1]), \
+                                        gpu_log_product(sh_matrix[i-1][1-j], sh_inversetheta[i-1]) \
+                                    ) \
+                                  );
             }
         }
         
         // backward
         i = map->map_length - 1;
-        fag0 = GET_FOUNDERALLELEGRAPH(state, i);
-        DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, allele), founderallele_sample(state, fag0));
+        DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, allele), founderallele_sample2(state, sh_matrix[i][0], sh_matrix[i][1]));
         
         while(--i >= 0) {
-            fag0 = GET_FOUNDERALLELEGRAPH(state, i);
-            
             for(j = 0; j < 2; ++j) {
-                fag0->prob[j] = gpu_log_product(fag0->prob[j], ((DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, i+1, allele)) != j) ? \
-                    log(MAP_THETA(map, i)) : \
-                    log(MAP_INVERSETHETA(map, i))));
+                sh_matrix[i][j] = \
+                    gpu_log_product(sh_matrix[i][j], ((DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, i+1, allele)) != j) ? \
+                    sh_theta[i] : sh_inversetheta[i]));
             }
             
-            DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, allele), founderallele_sample(state, fag0));
+            DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, allele), founderallele_sample2(state, sh_matrix[i][0], sh_matrix[i][1]));
         }
     }
 }
@@ -448,14 +493,12 @@ __global__ void msampler_singlethread_kernel(struct gpu_state* state, int meiosi
     int personid = (state->founderallele_count / 2) + (meiosis / 2);
     int allele = meiosis % 2;
     struct founderallelegraph* fag;
-    struct geneticmap* map;
+    struct geneticmap* map = GET_MAP(state);
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     int i, j;
     
-    if(threadIdx.x == 0) {
     
-        map = GET_MAP(state);
-            
+    if(threadIdx.x == 0) {        
         // build fags
         for(locus = 0; locus < map->map_length; ++locus) {
             //printf("locus = %d\n", locus);
@@ -511,6 +554,6 @@ void run_gpu_msampler_likelihood_kernel(int numblocks, int numthreads, struct gp
 }
 
 void run_gpu_msampler_sampling_kernel(struct gpu_state* state, int meiosis) {
-    msampler_sampling_kernel<<<1, 1>>>(state, meiosis);
+    msampler_sampling_kernel<<<1, 512>>>(state, meiosis);
 }
 

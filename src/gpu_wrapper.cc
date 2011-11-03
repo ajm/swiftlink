@@ -794,7 +794,8 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
     
     for(unsigned i = 0; i < iterations; ++i) {
         
-        if((rand() / double(RAND_MAX)) < 0.5) {
+        if((random() / double(RAND_MAX)) < 0.5) {
+        //if((i % 2) == 0) {
             //printf("lsampler\n");
             run_gpu_lsampler_kernel(even_count, num_threads_per_block(), dev_state, 0);
             
@@ -823,6 +824,8 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
         else {
             //printf("msampler\n");
             for(int j = 0; j < num_meioses; ++j) {
+                //run_gpu_msampler_kernel(1, 1, dev_state, j);
+            
                 run_gpu_msampler_likelihood_kernel(msampler_num_blocks(), 256, dev_state, j);
                 
                 cudaThreadSynchronize();
@@ -849,8 +852,8 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
         
         p.increment();
         
-        //if(i < burnin)
-        //    continue;
+        if(i < burnin)
+            continue;
         
         if((i % scoring_period) == 0) {
             run_gpu_lodscore_kernel(lodscore_num_blocks(), num_threads_per_block(), dev_state);

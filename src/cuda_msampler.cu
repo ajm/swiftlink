@@ -407,16 +407,17 @@ __global__ void msampler_likelihood_kernel(struct gpu_state* state, int meiosis)
     struct founderallelegraph* fag;
     struct geneticmap* map = GET_MAP(state);
     
-    //struct descentgraph* dg = GET_DESCENTGRAPH(state);
-    //int tmp;
+    struct descentgraph* dg = GET_DESCENTGRAPH(state);
+    int tmp, tmp2;
     
     if(locus < map->map_length) {
         fag = GET_FOUNDERALLELEGRAPH(state, locus);
         
+        /*
         fag->prob[0] = founderallele_run(state, locus, personid, allele, 0);
         fag->prob[1] = founderallele_run(state, locus, personid, allele, 1);
+        */
         
-        /*
         if(meiosis == 0) {
             fag->prob[0] = founderallele_run(state, locus, personid, allele, 0);
             fag->prob[1] = founderallele_run(state, locus, personid, allele, 1);
@@ -424,22 +425,20 @@ __global__ void msampler_likelihood_kernel(struct gpu_state* state, int meiosis)
         else {
             tmp = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, locus, allele));
             
-            if(tmp == 1)
-                fag->prob[0] = founderallele_run(state, locus, personid, allele, 0);
-            else if(tmp == 0) 
-                fag->prob[1] = founderallele_run(state, locus, personid, allele, 1);
-            else 
-                printf("tmp = %d\n", tmp);
-            //fag->prob[1 - tmp] = founderallele_run(state, locus, personid, allele, 1 - tmp);
+            tmp2 = DESCENTGRAPH_GET(dg, 
+                    DESCENTGRAPH_OFFSET(dg, (state->founderallele_count / 2) + ((meiosis - 1) / 2), 
+                                        locus, (meiosis - 1) % 2));
+            
+            fag->prob[tmp] = fag->prob[tmp2];
+            fag->prob[1-tmp] = founderallele_run(state, locus, personid, allele, 1-tmp);
         }
-        */
+        
     }
 }
 
 __global__ void msampler_sampling_kernel(struct gpu_state* state, int meiosis) {
     int personid = (state->founderallele_count / 2) + (meiosis / 2);
     int allele = meiosis % 2;
-    //struct founderallelegraph *fag0, *fag1;
     struct geneticmap* map = GET_MAP(state);
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     int i, j;

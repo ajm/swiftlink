@@ -13,7 +13,7 @@
 #include "types.h"
 #include "defaults.h"
 #include "linkage_program.h"
-#include "test_program.h"
+//#include "test_program.h"
 //#include "haplotype_program.h"
 
 
@@ -202,9 +202,9 @@ int haplotype_analysis() {
 }
 
 int testing_mode() {
-    TestProgram tp(pedfile, mapfile, datfile, outfile, iterations, verbose);
-    
-    return tp.run() ? EXIT_SUCCESS : EXIT_FAILURE;
+    //TestProgram tp(pedfile, mapfile, datfile, outfile, iterations, verbose);
+    //return tp.run() ? EXIT_SUCCESS : EXIT_FAILURE;
+    return EXIT_FAILURE;
 }
 
 int main(int argc, char **argv) {

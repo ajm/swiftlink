@@ -1,5 +1,5 @@
-#ifndef LKG_FounderAlleleGraph2_H_
-#define LKG_FounderAlleleGraph2_H_
+#ifndef LKG_FOUNDERALLELEGRAPH2_H_
+#define LKG_FOUNDERALLELEGRAPH2_H_
 
 using namespace std;
 

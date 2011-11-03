@@ -444,9 +444,9 @@ __global__ void msampler_sampling_kernel(struct gpu_state* state, int meiosis) {
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     int i, j;
     
-    __shared__ float sh_theta[1024];
-    __shared__ float sh_inversetheta[1024];
-    __shared__ float sh_matrix[1024][2];
+    __shared__ double sh_theta[1024];
+    __shared__ double sh_inversetheta[1024];
+    __shared__ double sh_matrix[1024][2];
     
     // we just have one block for now, 1024 threads
     for(i = threadIdx.x; i < map->map_length; i += 512) {

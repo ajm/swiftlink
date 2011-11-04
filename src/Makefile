@@ -5,8 +5,8 @@ GPUCC := nvcc
 #CXXFLAGS := -g -O2 -Wall -Wextra -pedantic -std=c++98 -pipe -Wno-variadic-macros -Weffc++
 CXXFLAGS := -g -O2 -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe
 CFLAGS := -g -O2 -Wall -pipe
-INCLUDES := -I. # -I/usr/local/cuda/include
-LIBS := # -L /usr/local/cuda/lib64 -lcudart
+INCLUDES := -I. -I/usr/local/cuda/include
+LIBS := -L /usr/local/cuda/lib64 -lcudart
 GPUFLAGS := -arch=sm_20 -O2
 
 OBJECTS	:= \
@@ -27,7 +27,6 @@ OBJECTS	:= \
 	peel_sequence_generator.o \
 	founder_allele_graph.o \
 	founder_allele_graph2.o \
-	founder_allele_graph3.o \
 	elimination.o \
 	peel_matrix.o \
 	rfunction.o \
@@ -41,11 +40,11 @@ OBJECTS	:= \
 	linkage_program.o \
 	program.o \
 	progress.o \
-	main.o
-#	test_program.o \
-#	gpu_wrapper.o \
-#	cuda_linkage.o \
-#	tinymt/tinymt32_host.o
+	main.o \
+	test_program.o \
+	gpu_wrapper.o \
+	cuda_linkage.o \
+	tinymt/tinymt32_host.o
 
 app: $(OBJECTS)
 	$(CXX) -o $@ $(LIBS) $(OBJECTS)

@@ -407,17 +407,17 @@ __global__ void msampler_likelihood_kernel(struct gpu_state* state, int meiosis)
     struct founderallelegraph* fag;
     struct geneticmap* map = GET_MAP(state);
     
-    struct descentgraph* dg = GET_DESCENTGRAPH(state);
-    int tmp, tmp2;
+    //struct descentgraph* dg = GET_DESCENTGRAPH(state);
+    //int tmp, tmp2, tmp3;
     
     if(locus < map->map_length) {
         fag = GET_FOUNDERALLELEGRAPH(state, locus);
         
-        /*
+        
         fag->prob[0] = founderallele_run(state, locus, personid, allele, 0);
         fag->prob[1] = founderallele_run(state, locus, personid, allele, 1);
-        */
         
+        /*
         if(meiosis == 0) {
             fag->prob[0] = founderallele_run(state, locus, personid, allele, 0);
             fag->prob[1] = founderallele_run(state, locus, personid, allele, 1);
@@ -429,10 +429,11 @@ __global__ void msampler_likelihood_kernel(struct gpu_state* state, int meiosis)
                     DESCENTGRAPH_OFFSET(dg, (state->founderallele_count / 2) + ((meiosis - 1) / 2), 
                                         locus, (meiosis - 1) % 2));
             
+            tmp3 = 1 - tmp; // XXX if i just do this inline i get a invalid write of 8 bytes!
             fag->prob[tmp] = fag->prob[tmp2];
-            fag->prob[1-tmp] = founderallele_run(state, locus, personid, allele, 1-tmp);
+            fag->prob[tmp3] = founderallele_run(state, locus, personid, allele, tmp3);
         }
-        
+        */
     }
 }
 

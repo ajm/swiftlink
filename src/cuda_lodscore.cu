@@ -10,19 +10,19 @@
 // 
 
 
-__device__ double lodscore_trait_prob(struct gpu_state* state, int id, int value) {
+__device__ float lodscore_trait_prob(struct gpu_state* state, int id, int value) {
     struct person* p = GET_PERSON(state, id);
     
     return PERSON_DISEASEPROB(p, value);
 }
 
-__device__ double lodscore_trans_prob(struct gpu_state* state, int locus, int peelnode, int m_allele, int p_allele) {
-    double tmp = 0.25; // i am only going to remove this term later...
-    //double tmp = 1.0;    
+__device__ float lodscore_trans_prob(struct gpu_state* state, int locus, int peelnode, int m_allele, int p_allele) {
+    float tmp = 0.25; // i am only going to remove this term later...
+    //float tmp = 1.0;    
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     struct geneticmap* map = GET_MAP(state);
-    double half_theta = MAP_HALF_THETA(map, locus);
-    double half_inversetheta = MAP_HALF_INVERSETHETA(map, locus);
+    float half_theta = MAP_HALF_THETA(map, locus);
+    float half_inversetheta = MAP_HALF_INVERSETHETA(map, locus);
     
     tmp *= ((DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, peelnode, locus, GPU_MATERNAL_ALLELE)) == m_allele) ? \
             half_inversetheta : half_theta);
@@ -71,7 +71,7 @@ __device__ void lodscore_evaluate_partner_peel(struct rfunction* rf, struct gpu_
     int peelnode;
     //int peelnode_value;
     int i;
-    double tmp;
+    float tmp;
     //printf("e b%d t%d\n", blockIdx.x, threadIdx.x);
     
     rfunction_assignment(rf, ind, assignment, assignment_length);
@@ -107,7 +107,7 @@ __device__ void lodscore_evaluate_child_peel(struct rfunction* rf, struct gpu_st
     int mother_value;
     int father_value;
     int i, j;
-    double tmp;
+    float tmp;
     
     //printf("e b%d t%d\n", blockIdx.x, threadIdx.x);
     
@@ -154,10 +154,10 @@ __device__ void lodscore_evaluate_parent_peel(struct rfunction* rf, struct gpu_s
     int i;
     int j;
     int pid;
-    double tmp;
-    double child_tmp;
-    double child_prob;
-    double total;
+    float tmp;
+    float child_tmp;
+    float child_prob;
+    float total;
     
     //printf("e b%d t%d\n", blockIdx.x, threadIdx.x);
     
@@ -245,13 +245,13 @@ __device__ void lodscore_evaluate(struct rfunction* rf, struct gpu_state* state,
 }
 
 // this can be done inline?
-__device__ double descentgraph_recombination_prob(struct gpu_state* state, int locus) {
+__device__ float descentgraph_recombination_prob(struct gpu_state* state, int locus) {
     struct geneticmap* map = GET_MAP(state);
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     struct person* p;
-    double theta = log(MAP_THETA(map, locus));
-    double antitheta = log(MAP_INVERSETHETA(map, locus));
-    double tmp = 0.0;
+    float theta = log(MAP_THETA(map, locus));
+    float antitheta = log(MAP_INVERSETHETA(map, locus));
+    float tmp = 0.0;
 	int i, j;
 	
     for(i = 0; i < state->pedigree_length; ++i) {
@@ -274,8 +274,8 @@ __device__ double descentgraph_recombination_prob(struct gpu_state* state, int l
     return tmp;
 }
 
-__device__ void lodscore_add(struct gpu_state* state, double likelihood) {
-    double recomb = descentgraph_recombination_prob(state, blockIdx.x);
+__device__ void lodscore_add(struct gpu_state* state, float likelihood) {
+    float recomb = descentgraph_recombination_prob(state, blockIdx.x);
     
     //printf("l = %.4f, r = %.4f\n", likelihood, recomb);
     
@@ -307,17 +307,17 @@ __global__ void lodscore_kernel(struct gpu_state* state) {
     }
 }
 
-__global__ void lodscoreinit_kernel(double* lodscores) {
+__global__ void lodscoreinit_kernel(float* lodscores) {
     if(threadIdx.x == 0) {
-        lodscores[blockIdx.x] = LOG_ZERO;
+        lodscores[blockIdx.x] = _LOG_ZERO;
         //printf("[init] %d %.3f\n", blockIdx.x, lodscores[blockIdx.x]);
     }
 }
 
-__global__ void lodscorenormalise_kernel(struct gpu_state* state, int count, double trait_likelihood) {
+__global__ void lodscorenormalise_kernel(struct gpu_state* state, int count, float trait_likelihood) {
     if(threadIdx.x == 0) {
         //printf("%.4f\n", state->lodscores[blockIdx.x]);
-        double tmp = (state->lodscores[blockIdx.x] - log((double)count) - trait_likelihood) / log(10.0);
+        float tmp = (state->lodscores[blockIdx.x] - log((float)count) - trait_likelihood) / log(10.0);
         state->lodscores[blockIdx.x] = tmp;
     }
 }
@@ -337,11 +337,11 @@ void run_gpu_lodscore_kernel(int numblocks, int numthreads, struct gpu_state* st
     lodscore_kernel<<<numblocks, numthreads>>>(state);
 }
 
-void run_gpu_lodscoreinit_kernel(int numblocks, double* lodscores) {
+void run_gpu_lodscoreinit_kernel(int numblocks, float* lodscores) {
     lodscoreinit_kernel<<<numblocks, 1>>>(lodscores);
 }
 
-void run_gpu_lodscorenormalise_kernel(int numblocks, struct gpu_state* state, int count, double trait_likelihood) {
+void run_gpu_lodscorenormalise_kernel(int numblocks, struct gpu_state* state, int count, float trait_likelihood) {
     lodscorenormalise_kernel<<<numblocks, 1>>>(state, count, trait_likelihood);
 }
 

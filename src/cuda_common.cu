@@ -22,7 +22,7 @@ __device__ int gpu_offsets[] = {
     1 << 30
 };
 
-__device__ double LOG_ZERO = -DBL_MAX;
+__device__ float _LOG_ZERO = -FLT_MAX;
 
 // I am going to assume that the length of 'assignment' is to the number of 
 // pedigree members and that everything that is not assigned is -1
@@ -82,7 +82,7 @@ __device__ void rfunction_assignment(struct rfunction* rf, int ind, int* assignm
     }
 }
 
-__device__ double rfunction_get(struct rfunction* rf, int* assignment, int length) {
+__device__ float rfunction_get(struct rfunction* rf, int* assignment, int length) {
     return rf->matrix[rfunction_index(rf, assignment, length)];
 }
 
@@ -98,7 +98,7 @@ __device__ int get_trait(int value, int parent) {
     return -1;
 }
 
-__device__ double rfunction_trait_prob(struct gpu_state* state, int id, int value, int locus) {
+__device__ float rfunction_trait_prob(struct gpu_state* state, int id, int value, int locus) {
     struct person* p = GET_PERSON(state, id);
     
     if(PERSON_ISTYPED(p)) {
@@ -120,17 +120,17 @@ __device__ double rfunction_trait_prob(struct gpu_state* state, int id, int valu
     return MAP_PROB(GET_MAP(state), locus, value);
 }
 
-__device__ double gpu_log_sum(double a, double b) {
-    if(a == LOG_ZERO)
+__device__ float gpu_log_sum(float a, float b) {
+    if(a == _LOG_ZERO)
         return b;
     
-    if(b == LOG_ZERO)
+    if(b == _LOG_ZERO)
         return a;
     
     return log(exp(b - a) + 1) + a;
 }
 
-__device__ double gpu_log_product(double a, double b) {
-    return ((a == LOG_ZERO) or (b == LOG_ZERO)) ? LOG_ZERO : a + b;
+__device__ float gpu_log_product(float a, float b) {
+    return ((a == _LOG_ZERO) or (b == _LOG_ZERO)) ? _LOG_ZERO : a + b;
 }
 

@@ -67,7 +67,7 @@ struct gpu_state {
     struct descentgraph* dg;
     
     // scoring
-    double* lodscores;
+    float* lodscores;
     
     // random number generation
     curandState* randstates;
@@ -82,7 +82,7 @@ struct adjacent_node {
 };
 
 struct founderallelegraph {
-    double prob[2];
+    float prob[2];
     int* num_neighbours;            // length num founder alleles
     struct adjacent_node* graph;   // num founder alleles * (num founder alleles + 1)
 };
@@ -93,12 +93,12 @@ struct founderallelegraph {
 #define NODE_LABEL(node_ptr, n)             ((node_ptr)[(n)]->label)
 
 struct geneticmap {
-    double* thetas;
-    double* inversethetas;
-    double* halfthetas;
-    double* halfinversethetas;
-    double* markerprobs;
-    double* allelefreqs;
+    float* thetas;
+    float* inversethetas;
+    float* halfthetas;
+    float* halfinversethetas;
+    float* markerprobs;
+    float* allelefreqs;
     int map_length;
 };
 
@@ -118,10 +118,10 @@ struct rfunction {
     // could the index to one be a factor of the other
     // eg: presum_matrix[(x,y,z)] and matrix[(x,y,z) / z]?
     
-    double* presum_matrix;
+    float* presum_matrix;
     int presum_length;          // 4 ** (cutset_length - 1)
     
-    double* matrix;
+    float* matrix;
     int matrix_length;          // 4 ** cutset_length
     
     struct rfunction* prev1;    // must be NULL if not used
@@ -133,7 +133,7 @@ struct person {
     int father;
     int mother;
     
-    double prob[4];
+    float prob[4];
     
     //int* children;
     //int children_length;
@@ -149,7 +149,7 @@ struct descentgraph {
     int* graph;
     int graph_length;
     int subgraph_length;
-    double transmission_prob;
+    float transmission_prob;
 };
 
 #define GET_RFUNCTION(state_ptr, n, locus) (&(state_ptr)->functions[((locus) * (state_ptr)->functions_per_locus) + (n)])
@@ -208,8 +208,8 @@ extern "C" {
     void run_gpu_msampler_sampling_kernel(struct gpu_state* state, int meiosis);
     
     void run_gpu_lodscore_kernel(int numblocks, int numthreads, struct gpu_state* state);
-    void run_gpu_lodscoreinit_kernel(int numblocks, double* lodscores);
-    void run_gpu_lodscorenormalise_kernel(int numblocks, struct gpu_state* state, int count, double trait_likelihood);
+    void run_gpu_lodscoreinit_kernel(int numblocks, float* lodscores);
+    void run_gpu_lodscorenormalise_kernel(int numblocks, struct gpu_state* state, int count, float trait_likelihood);
     void run_gpu_lodscoreprint_kernel(struct gpu_state* state);
     
     void run_gpu_curand_init_kernel(int numblocks, curandState* states, long int* seeds);

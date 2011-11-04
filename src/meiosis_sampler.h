@@ -34,6 +34,12 @@ class MeiosisMatrix {
     }
     
     void normalise() {
+    
+        if((prob[0] == LOG_ZERO) and (prob[1] == LOG_ZERO)) {
+            fprintf(stderr, "error: both meiosis likelihoods were zero (%s:%d)\n", __FILE__, __LINE__);
+            abort();
+        }
+    
         if(prob[0] == LOG_ZERO) {
             prob[1] = 0.0;
             return;

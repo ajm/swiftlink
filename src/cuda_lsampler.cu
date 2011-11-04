@@ -4,12 +4,12 @@
 // r-function is currently being calculated
 
 
-__device__ double rfunction_trans_prob(struct gpu_state* state, int locus, int peelnode, 
+__device__ float rfunction_trans_prob(struct gpu_state* state, int locus, int peelnode, 
                            int parent_trait, int child_trait, int parent) {
     
     int trait = get_trait(child_trait, parent);
     int meiosis = 0;
-    double tmp = 1.0;
+    float tmp = 1.0;
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     struct geneticmap* map = GET_MAP(state);
     
@@ -54,8 +54,8 @@ __device__ int sample_hetero_mi(int allele, int trait) {
 // find prob of setting mi to 1
 // normalise + sample
 __device__ int sample_homo_mi(struct gpu_state* state, int personid, int locus, int parent) {
-    double prob_dist[2];
-    double total;
+    float prob_dist[2];
+    float total;
     int i;
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     struct geneticmap* map = GET_MAP(state);
@@ -97,6 +97,7 @@ __device__ int sample_mi(struct gpu_state* state, int allele, int trait, int per
             return sample_homo_mi(state, personid, locus, parent);
             
         default:
+            printf("error in sample_mi\n");
             break;
             //abort();
     }
@@ -143,9 +144,9 @@ __device__ void sample_meiosis_indicators(struct gpu_state* state, int* assignme
 }
 
 __device__ void rfunction_sample(struct rfunction* rf, struct gpu_state* state, int* assignment) {
-    double prob_dist[NUM_ALLELES];
-    double total = 0.0;
-    double r = get_random(state);
+    float prob_dist[NUM_ALLELES];
+    float total = 0.0;
+    float r = get_random(state);
     int peelnode = RFUNCTION_PEELNODE(rf);
     int i;
     
@@ -181,6 +182,12 @@ __device__ void rfunction_sample(struct rfunction* rf, struct gpu_state* state, 
         }
     }
     
+    if(isnan(total)) {
+        printf("total is nan!\n");
+    }
+    
+    printf("error in rfunction_sample (total = %f, r = %f)\n", total, r);
+    printf("%f %f %f %f\n", prob_dist[0], prob_dist[1], prob_dist[2], prob_dist[3]);
     //abort();
 }
 
@@ -202,6 +209,10 @@ __device__ void rfunction_evaluate_partner_peel(struct rfunction* rf, struct gpu
         rfunction_trait_prob(state, peelnode, peelnode_value, locus) * \
         (rf->prev1 == NULL ? 1.0 : rfunction_get(rf->prev1, assignment, assignment_length)) * \
         (rf->prev2 == NULL ? 1.0 : rfunction_get(rf->prev2, assignment, assignment_length)));
+        
+    if(isnan(RFUNCTION_PRESUM_GET(rf, ind))) {
+        printf("nan! %d\n", __LINE__);
+    }
 }
 
 __device__ void rfunction_evaluate_child_peel(struct rfunction* rf, struct gpu_state* state, int locus, int ind) {
@@ -230,6 +241,10 @@ __device__ void rfunction_evaluate_child_peel(struct rfunction* rf, struct gpu_s
         rfunction_trans_prob(state, locus, peelnode, father_value, peelnode_value, GPU_PATERNAL_ALLELE) * \
         (rf->prev1 == NULL ? 1.0 : rfunction_get(rf->prev1, assignment, assignment_length)) * \
         (rf->prev2 == NULL ? 1.0 : rfunction_get(rf->prev2, assignment, assignment_length)));
+
+    if(isnan(RFUNCTION_PRESUM_GET(rf, ind))) {
+        printf("nan! %d\n", __LINE__);
+    }
 }
 
 __device__ void rfunction_evaluate_parent_peel(struct rfunction* rf, struct gpu_state* state, int locus, int ind) {
@@ -240,7 +255,7 @@ __device__ void rfunction_evaluate_parent_peel(struct rfunction* rf, struct gpu_
     int peelnode;
     int peelnode_value;
     int i;
-    double tmp;
+    float tmp;
     
     //printf("e b%d t%d\n", blockIdx.x, threadIdx.x);
     
@@ -264,6 +279,10 @@ __device__ void rfunction_evaluate_parent_peel(struct rfunction* rf, struct gpu_
     }
     
     RFUNCTION_PRESUM_SET(rf, ind, tmp);
+    
+    if(isnan(RFUNCTION_PRESUM_GET(rf, ind))) {
+        printf("nan! %d\n", __LINE__);
+    }
 }
 
 __device__ void rfunction_sum(struct rfunction* rf, int ind) {
@@ -277,6 +296,10 @@ __device__ void rfunction_sum(struct rfunction* rf, int ind) {
     // unroll?
     for(i = 0; i < 4; ++i) {
         RFUNCTION_ADD(rf, ind, RFUNCTION_PRESUM_GET(rf, ind + (tmp * i)));
+    }
+    
+    if(isnan(RFUNCTION_GET(rf, ind))) {
+        printf("nan! %d\n", __LINE__);
     }
 }
 
@@ -295,6 +318,7 @@ __device__ void rfunction_evaluate_element(struct rfunction* rf, struct gpu_stat
             rfunction_evaluate_parent_peel(rf, state, locus, ind);
             break;
         default:
+            printf("error in rfunction_evaluate_element\n");
             //abort();
             break;
     }
@@ -314,21 +338,11 @@ __device__ void rfunction_evaluate(struct rfunction* rf, struct gpu_state* state
     }
     
     __syncthreads();
-    
-    /*
-    // assumes only one thread active
-    for(i = 0; i < rf->presum_length; ++i) {
-        rfunction_evaluate_element(rf, state, locus, i);
-    }
-    
-    for(i = 0; i < rf->matrix_length; ++i) {
-        rfunction_sum(rf, i);
-    }
-    */
 }
 
-__device__ void sampler_run(struct gpu_state* state, int locus) {
+__global__ void lsampler_kernel(struct gpu_state* state, int offset) {
     int i;
+    int locus = (blockIdx.x * 2) + offset;
     int assignment[128];
     
     // forward peel
@@ -347,18 +361,6 @@ __device__ void sampler_run(struct gpu_state* state, int locus) {
     }
     
     __syncthreads();
-}
-
-// number of blocks is half the number of loci
-__global__ void lsampler_kernel(struct gpu_state* state, int offset) {
-    int locus = (blockIdx.x * 2) + offset;
-
-    sampler_run(state, locus);
-/*    
-    if(locus != (state->map->map_length - 1)) {
-        sampler_run(state, locus + 1);
-    }
-*/
 }
 
 void run_gpu_lsampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int offset) {

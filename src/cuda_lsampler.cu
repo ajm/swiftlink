@@ -9,7 +9,7 @@ __device__ float rfunction_trans_prob(struct gpu_state* state, int locus, int pe
     
     int trait = get_trait(child_trait, parent);
     int meiosis = 0;
-    float tmp = 1.0;
+    float tmp = 0.5;
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     struct geneticmap* map = GET_MAP(state);
     
@@ -149,6 +149,7 @@ __device__ void rfunction_sample(struct rfunction* rf, struct gpu_state* state, 
     float r = get_random(state);
     int peelnode = RFUNCTION_PEELNODE(rf);
     int i;
+    float tmp;
     
     // extract probabilities
     for(i = 0; i < NUM_ALLELES; ++i) {
@@ -187,7 +188,15 @@ __device__ void rfunction_sample(struct rfunction* rf, struct gpu_state* state, 
     }
     
     printf("error in rfunction_sample (total = %f, r = %f)\n", total, r);
-    printf("%f %f %f %f\n", prob_dist[0], prob_dist[1], prob_dist[2], prob_dist[3]);
+    printf("cache: %f %f %f %f\n", prob_dist[0], prob_dist[1], prob_dist[2], prob_dist[3]);
+    
+    printf("retry: ");
+    for(i = 0; i < NUM_ALLELES; ++i) {
+        assignment[peelnode] = i;
+        tmp = RFUNCTION_PRESUM_GET(rf, rfunction_presum_index(rf, assignment, state->pedigree_length));
+        printf("%f ", tmp);
+    }
+    printf("\n");
     //abort();
 }
 

@@ -109,7 +109,8 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
         p = (t == TRAIT_A) ? 0 : 1;
     }
     
-    double tmp = 1.0;
+    //double tmp = 1.0;
+    double tmp = 0.5; // XXX <--- transmission prob
     if((locus != 0) and (not ignore_left)) {
         //tmp *= ((dg->get(person_id, locus-1, parent) == p) ? map->get_inversetheta(locus-1) : map->get_theta(locus-1));
         tmp *= ((dg->get(person_id, locus-1, parent) == p) ? antitheta2 : theta2);

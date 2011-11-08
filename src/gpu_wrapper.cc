@@ -32,6 +32,8 @@ using namespace std;
     }\
 } while(0)
 
+#define fp_type double
+
 
 /*
  * TODO
@@ -56,8 +58,8 @@ size_t GPUWrapper::calculate_memory_requirements(vector<PeelOperation>& ops) {
     size_t mem_fag;
     
     mem_map = sizeof(struct geneticmap) + \
-                (4 * sizeof(float) * (map->num_markers() - 1)) + \
-                (4 * sizeof(float) *  map->num_markers());
+                (4 * sizeof(fp_type) * (map->num_markers() - 1)) + \
+                (4 * sizeof(fp_type) *  map->num_markers());
     
     mem_pedigree = ped->num_members() * sizeof(struct person);
     for(unsigned i = 0; i < ped->num_members(); ++i) {
@@ -73,8 +75,8 @@ size_t GPUWrapper::calculate_memory_requirements(vector<PeelOperation>& ops) {
     for(unsigned i = 0; i < ops.size(); ++i) {
         double s = ops[i].get_cutset_size();
         
-        mem_per_sampler += (pow(4.0, s)     * sizeof(float));   // matrix
-        mem_per_sampler += (pow(4.0, s + 1) * sizeof(float));   // presum_matrix
+        mem_per_sampler += (pow(4.0, s)     * sizeof(fp_type));   // matrix
+        mem_per_sampler += (pow(4.0, s + 1) * sizeof(fp_type));   // presum_matrix
         
         mem_per_sampler += (int(s + 1)      * sizeof(int));     // cutset
         mem_per_sampler += sizeof(struct rfunction);            // containing struct
@@ -105,7 +107,7 @@ int GPUWrapper::num_blocks() {
 }
 
 int GPUWrapper::msampler_num_blocks() {
-    return (map->num_markers() / 8) + ((map->num_markers() % 8) == 0 ? 0 : 1); 
+    return (map->num_markers() / 8) + ((map->num_markers() % 8) == 0 ? 0 : 1);
     // 8 because I will use 256 threads
     // 256 (threads) / 32 (threads per warp) = 8
 }
@@ -440,37 +442,37 @@ void GPUWrapper::init_map() {
 
     loc_state->map->map_length = map->num_markers();
     
-    loc_state->map->thetas = (float*) malloc(sizeof(float) * (map->num_markers() - 1));
+    loc_state->map->thetas = (fp_type*) malloc(sizeof(fp_type) * (map->num_markers() - 1));
     if(!(loc_state->map->thetas)) {
         fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
         abort();
     }
     
-    loc_state->map->inversethetas = (float*) malloc(sizeof(float) * (map->num_markers() - 1));
+    loc_state->map->inversethetas = (fp_type*) malloc(sizeof(fp_type) * (map->num_markers() - 1));
     if(!(loc_state->map->inversethetas)) {
         fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
         abort();
     }
     
-    loc_state->map->halfthetas = (float*) malloc(sizeof(float) * (map->num_markers() - 1));
+    loc_state->map->halfthetas = (fp_type*) malloc(sizeof(fp_type) * (map->num_markers() - 1));
     if(!(loc_state->map->halfthetas)) {
         fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
         abort();
     }
     
-    loc_state->map->halfinversethetas = (float*) malloc(sizeof(float) * (map->num_markers() - 1));
+    loc_state->map->halfinversethetas = (fp_type*) malloc(sizeof(fp_type) * (map->num_markers() - 1));
     if(!(loc_state->map->halfinversethetas)) {
         fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
         abort();
     }
     
-    loc_state->map->markerprobs = (float*) malloc(sizeof(float) * 4 * map->num_markers());
+    loc_state->map->markerprobs = (fp_type*) malloc(sizeof(fp_type) * 4 * map->num_markers());
     if(!(loc_state->map->markerprobs)) {
         fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
         abort();
     }
 
-    loc_state->map->allelefreqs = (float*) malloc(sizeof(float) * map->num_markers());
+    loc_state->map->allelefreqs = (fp_type*) malloc(sizeof(fp_type) * map->num_markers());
     if(!(loc_state->map->allelefreqs)) {
         fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
         abort();
@@ -500,19 +502,19 @@ struct geneticmap* GPUWrapper::gpu_init_map() {
     
     tmp.map_length = loc_state->map->map_length;
     
-    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.thetas,            sizeof(float) * (map->num_markers() - 1)));
-    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.inversethetas,     sizeof(float) * (map->num_markers() - 1)));
-    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.halfthetas,        sizeof(float) * (map->num_markers() - 1)));
-    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.halfinversethetas, sizeof(float) * (map->num_markers() - 1)));
-    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.markerprobs,       sizeof(float) * (map->num_markers() * 4)));
-    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.allelefreqs,       sizeof(float) *  map->num_markers()));
+    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.thetas,            sizeof(fp_type) * (map->num_markers() - 1)));
+    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.inversethetas,     sizeof(fp_type) * (map->num_markers() - 1)));
+    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.halfthetas,        sizeof(fp_type) * (map->num_markers() - 1)));
+    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.halfinversethetas, sizeof(fp_type) * (map->num_markers() - 1)));
+    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.markerprobs,       sizeof(fp_type) * (map->num_markers() * 4)));
+    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.allelefreqs,       sizeof(fp_type) *  map->num_markers()));
     
-    CUDA_CALLANDTEST(cudaMemcpy(tmp.thetas,             loc_state->map->thetas,             sizeof(float) * (map->num_markers() - 1), cudaMemcpyHostToDevice));
-    CUDA_CALLANDTEST(cudaMemcpy(tmp.inversethetas,      loc_state->map->inversethetas,      sizeof(float) * (map->num_markers() - 1), cudaMemcpyHostToDevice));
-    CUDA_CALLANDTEST(cudaMemcpy(tmp.halfthetas,         loc_state->map->halfthetas,         sizeof(float) * (map->num_markers() - 1), cudaMemcpyHostToDevice));
-    CUDA_CALLANDTEST(cudaMemcpy(tmp.halfinversethetas,  loc_state->map->halfinversethetas,  sizeof(float) * (map->num_markers() - 1), cudaMemcpyHostToDevice));
-    CUDA_CALLANDTEST(cudaMemcpy(tmp.markerprobs,        loc_state->map->markerprobs,        sizeof(float) * (map->num_markers() * 4), cudaMemcpyHostToDevice));
-    CUDA_CALLANDTEST(cudaMemcpy(tmp.allelefreqs,        loc_state->map->allelefreqs,        sizeof(float) *  map->num_markers(),      cudaMemcpyHostToDevice));
+    CUDA_CALLANDTEST(cudaMemcpy(tmp.thetas,             loc_state->map->thetas,             sizeof(fp_type) * (map->num_markers() - 1), cudaMemcpyHostToDevice));
+    CUDA_CALLANDTEST(cudaMemcpy(tmp.inversethetas,      loc_state->map->inversethetas,      sizeof(fp_type) * (map->num_markers() - 1), cudaMemcpyHostToDevice));
+    CUDA_CALLANDTEST(cudaMemcpy(tmp.halfthetas,         loc_state->map->halfthetas,         sizeof(fp_type) * (map->num_markers() - 1), cudaMemcpyHostToDevice));
+    CUDA_CALLANDTEST(cudaMemcpy(tmp.halfinversethetas,  loc_state->map->halfinversethetas,  sizeof(fp_type) * (map->num_markers() - 1), cudaMemcpyHostToDevice));
+    CUDA_CALLANDTEST(cudaMemcpy(tmp.markerprobs,        loc_state->map->markerprobs,        sizeof(fp_type) * (map->num_markers() * 4), cudaMemcpyHostToDevice));
+    CUDA_CALLANDTEST(cudaMemcpy(tmp.allelefreqs,        loc_state->map->allelefreqs,        sizeof(fp_type) *  map->num_markers(),      cudaMemcpyHostToDevice));
     
     CUDA_CALLANDTEST(cudaMalloc((void**)&dev_map, sizeof(struct geneticmap)));
     CUDA_CALLANDTEST(cudaMemcpy(dev_map, &tmp, sizeof(struct geneticmap), cudaMemcpyHostToDevice));
@@ -626,14 +628,14 @@ void GPUWrapper::init_rfunctions(vector<PeelOperation>& ops) {
             rf->prev2 = (prev2_index == -1) ? NULL : &loc_state->functions[(i * num_func_per_samp) + prev2_index];
             
             rf->matrix_length = matrix_length;
-            rf->matrix = (float*) malloc(matrix_length * sizeof(float));
+            rf->matrix = (fp_type*) malloc(matrix_length * sizeof(fp_type));
             if(! rf->matrix) {
                 fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
                 abort();
             }
             
             rf->presum_length = presum_length;
-            rf->presum_matrix = (float*) malloc(presum_length * sizeof(float));
+            rf->presum_matrix = (fp_type*) malloc(presum_length * sizeof(fp_type));
             if(! rf->presum_matrix) {
                 fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
                 abort();
@@ -674,8 +676,8 @@ struct rfunction* GPUWrapper::gpu_init_rfunctions(vector<PeelOperation>& ops) {
             CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.cutset, sizeof(int) * rf->cutset_length));
             CUDA_CALLANDTEST(cudaMemcpy(tmp.cutset, rf->cutset, sizeof(int) * rf->cutset_length, cudaMemcpyHostToDevice));
             
-            CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.presum_matrix, sizeof(float) * rf->presum_length));
-            CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.matrix, sizeof(float) * rf->matrix_length));
+            CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.presum_matrix, sizeof(fp_type) * rf->presum_length));
+            CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.matrix, sizeof(fp_type) * rf->matrix_length));
             
             // 2 pointers
             if(ops[i].get_previous_op1() != -1)
@@ -690,10 +692,10 @@ struct rfunction* GPUWrapper::gpu_init_rfunctions(vector<PeelOperation>& ops) {
     return dev_rfunc;
 }
 
-float* GPUWrapper::gpu_init_lodscores() {
-    float* tmp;
+fp_type* GPUWrapper::gpu_init_lodscores() {
+    fp_type* tmp;
     
-    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp, sizeof(float) * (map->num_markers() - 1)));
+    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp, sizeof(fp_type) * (map->num_markers() - 1)));
     
     run_gpu_lodscoreinit_kernel(map->num_markers() - 1, tmp);
     
@@ -782,6 +784,11 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
     exit(0);
     */
     
+    setup_lsampler_kernel();
+    setup_lodscore_kernel();
+    setup_msampler_kernel();
+    
+    
     printf("odd = %d, even = %d\n", odd_count, even_count);
     
     CUDA_CALLANDTEST(cudaMemcpy(dev_graph, dg.get_internal_ptr(), dg.get_internal_size(), cudaMemcpyHostToDevice));
@@ -817,13 +824,14 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
                 abort();
             }
             
+            /*
             CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
-        
+            
             if(dg.get_likelihood() == LOG_ILLEGAL) {
                 fprintf(stderr, "error: descent graph illegal after l-sampler (%d)\n", i);
                 abort();
             }
-            
+            */
             //---
         }
         else {
@@ -853,23 +861,17 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
                     abort();
                 }
                 
+                /*
                 CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
-        
+                
                 if(dg.get_likelihood() == LOG_ILLEGAL) {
                     fprintf(stderr, "error: descent graph illegal after m-sampler (meiosis %d) (%d)\n", j, i);
                     abort();
                 }
+                */
             }
         }
         
-        /*
-        CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
-        
-        if(dg.get_likelihood() == LOG_ILLEGAL) {
-            fprintf(stderr, "error: descent graph illegal after %s\n", ((i % 2) == 0) ? "l-sampler" : "m-sampler");
-            abort();
-        }
-        */
         
         p.increment();
         

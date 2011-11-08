@@ -4,14 +4,14 @@
 // r-function is currently being calculated
 
 
-__device__ float rfunction_trans_prob(struct gpu_state* state, int locus, int peelnode, 
+__device__ double rfunction_trans_prob(struct gpu_state* state, int locus, int peelnode, 
                            int parent_trait, int child_trait, int parent) {
     
     int trait = get_trait(child_trait, parent);
     int meiosis = 0;
-    float tmp = 0.5;
+    double tmp = 0.5;
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
-    struct geneticmap* map = GET_MAP(state);
+    //struct geneticmap* map = GET_MAP(state);
     
     switch(parent_trait) {
         case GPU_TRAIT_AA:
@@ -28,14 +28,14 @@ __device__ float rfunction_trans_prob(struct gpu_state* state, int locus, int pe
     
     if(locus != 0) {
         tmp *= (DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, peelnode, locus - 1, parent)) == meiosis ? \
-                MAP_INVERSETHETA(map, locus - 1) : \
-                MAP_THETA(map, locus - 1));
+                INVTHETA_LEFT /* MAP_INVERSETHETA(map, locus - 1) */ : \
+                THETA_LEFT /* MAP_THETA(map, locus - 1) */ );
     }
     
-    if(locus != (MAP_LENGTH(map) - 1)) {
+    if(locus != (map_length - 1) /* (MAP_LENGTH(map) - 1) */ ) {
         tmp *= (DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, peelnode, locus + 1, parent)) == meiosis ? \
-                MAP_INVERSETHETA(map, locus) : \
-                MAP_THETA(map, locus));
+                INVTHETA_RIGHT /* MAP_INVERSETHETA(map, locus) */ : \
+                THETA_RIGHT /* MAP_THETA(map, locus) */ );
     }
     
     return tmp;
@@ -54,34 +54,33 @@ __device__ int sample_hetero_mi(int allele, int trait) {
 // find prob of setting mi to 1
 // normalise + sample
 __device__ int sample_homo_mi(struct gpu_state* state, int personid, int locus, int parent) {
-    float prob_dist[2];
-    float total;
+    double prob_dist[2];
+    //double total;
     int i;
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
-    struct geneticmap* map = GET_MAP(state);
+    //struct geneticmap* map = GET_MAP(state);
     
     prob_dist[0] = 1.0;
     prob_dist[1] = 1.0;
     
     if(locus != 0) {
         i = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, locus - 1, parent));
-        prob_dist[0] *= (i == 0 ? MAP_INVERSETHETA(map, locus - 1) : MAP_THETA(map, locus - 1));
-        prob_dist[1] *= (i == 1 ? MAP_INVERSETHETA(map, locus - 1) : MAP_THETA(map, locus - 1));
+        prob_dist[0] *= (i == 0 ? INVTHETA_LEFT /* MAP_INVERSETHETA(map, locus - 1) */ : THETA_LEFT /* MAP_THETA(map, locus - 1) */ );
+        prob_dist[1] *= (i == 1 ? INVTHETA_LEFT /* MAP_INVERSETHETA(map, locus - 1) */ : THETA_LEFT /* MAP_THETA(map, locus - 1) */ );
     }
     
-    // map length is actually the number of recombination fractions (#markers - 1)
-    if(locus != (MAP_LENGTH(map) - 1)) {
+    if(locus != (map_length - 1) /* (MAP_LENGTH(map) - 1) */ ) {
         i = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, locus + 1, parent));
-        prob_dist[0] *= (i == 0 ? MAP_INVERSETHETA(map, locus) : MAP_THETA(map, locus));
-        prob_dist[1] *= (i == 1 ? MAP_INVERSETHETA(map, locus) : MAP_THETA(map, locus));
+        prob_dist[0] *= (i == 0 ? INVTHETA_RIGHT /* MAP_INVERSETHETA(map, locus) */ : THETA_RIGHT /* MAP_THETA(map, locus) */ );
+        prob_dist[1] *= (i == 1 ? INVTHETA_RIGHT /* MAP_INVERSETHETA(map, locus) */ : THETA_RIGHT /* MAP_THETA(map, locus) */ );
     }
     
-    total = prob_dist[0] + prob_dist[1];
+    //total = prob_dist[0] + prob_dist[1];
     
-    prob_dist[0] /= total;
-    prob_dist[1] /= total;
+    //prob_dist[0] /= total;
+    //prob_dist[1] /= total;
     
-    return (get_random(state) < prob_dist[0]) ? 0 : 1;
+    return (get_random(state) < (prob_dist[0] / (prob_dist[0] + prob_dist[1]))) ? 0 : 1;
 }
 
 // if a parent is heterozygous, then there is one choice of meiosis indicator
@@ -97,7 +96,7 @@ __device__ int sample_mi(struct gpu_state* state, int allele, int trait, int per
             return sample_homo_mi(state, personid, locus, parent);
             
         default:
-            printf("error in sample_mi\n");
+            //printf("error in sample_mi\n");
             break;
             //abort();
     }
@@ -144,59 +143,54 @@ __device__ void sample_meiosis_indicators(struct gpu_state* state, int* assignme
 }
 
 __device__ void rfunction_sample(struct rfunction* rf, struct gpu_state* state, int* assignment) {
-    float prob_dist[NUM_ALLELES];
-    float total = 0.0;
+    double prob_dist[NUM_ALLELES];
+    double total = 0.0;
     float r = get_random(state);
     int peelnode = RFUNCTION_PEELNODE(rf);
-    int i;
-    float tmp;
+    int i, last = 0;
+    //double tmp;
     
     // extract probabilities
     for(i = 0; i < NUM_ALLELES; ++i) {
         assignment[peelnode] = i;
         prob_dist[i] = RFUNCTION_PRESUM_GET(rf, rfunction_presum_index(rf, assignment, state->pedigree_length));
-        total += prob_dist[i];        
+        total += prob_dist[i];
     }
     
     // normalise
+    #pragma unroll
     for(i = 0; i < NUM_ALLELES; ++i) {
         prob_dist[i] /= total;
     }
     
-    /*
-    if((blockIdx.x == 0) && (threadIdx.x == 0)) {
-        printf("node = %d\n", RFUNCTION_PEELNODE(rf));
-        for(i = 0; i < NUM_ALLELES; ++i) {
-            printf(" prob[%d] = %.3f\n", i, prob_dist[i]);
-        }
-        printf("\n");
-    }
-    */
-    
     // sample
     total = 0.0;
+    
     for(i = 0; i < NUM_ALLELES; ++i) {
         total += prob_dist[i];
+        
         if(r < total) {
             assignment[peelnode] = i;
             return;
         }
+        
+        if(prob_dist[i] != 0.0) {
+            last = i;
+        }
     }
     
+    assignment[peelnode] = last; // if r = 1.0
+    
+    
+    /*
     if(isnan(total)) {
         printf("total is nan!\n");
     }
     
     printf("error in rfunction_sample (total = %f, r = %f)\n", total, r);
-    printf("cache: %f %f %f %f\n", prob_dist[0], prob_dist[1], prob_dist[2], prob_dist[3]);
-    
-    printf("retry: ");
-    for(i = 0; i < NUM_ALLELES; ++i) {
-        assignment[peelnode] = i;
-        tmp = RFUNCTION_PRESUM_GET(rf, rfunction_presum_index(rf, assignment, state->pedigree_length));
-        printf("%f ", tmp);
-    }
-    printf("\n");
+    printf("cache: %e %e %e %e\n", prob_dist[0], prob_dist[1], prob_dist[2], prob_dist[3]);
+    printf("used %d\n", last);
+    */
     //abort();
 }
 
@@ -218,10 +212,6 @@ __device__ void rfunction_evaluate_partner_peel(struct rfunction* rf, struct gpu
         rfunction_trait_prob(state, peelnode, peelnode_value, locus) * \
         (rf->prev1 == NULL ? 1.0 : rfunction_get(rf->prev1, assignment, assignment_length)) * \
         (rf->prev2 == NULL ? 1.0 : rfunction_get(rf->prev2, assignment, assignment_length)));
-        
-    if(isnan(RFUNCTION_PRESUM_GET(rf, ind))) {
-        printf("nan! %d\n", __LINE__);
-    }
 }
 
 __device__ void rfunction_evaluate_child_peel(struct rfunction* rf, struct gpu_state* state, int locus, int ind) {
@@ -250,10 +240,6 @@ __device__ void rfunction_evaluate_child_peel(struct rfunction* rf, struct gpu_s
         rfunction_trans_prob(state, locus, peelnode, father_value, peelnode_value, GPU_PATERNAL_ALLELE) * \
         (rf->prev1 == NULL ? 1.0 : rfunction_get(rf->prev1, assignment, assignment_length)) * \
         (rf->prev2 == NULL ? 1.0 : rfunction_get(rf->prev2, assignment, assignment_length)));
-
-    if(isnan(RFUNCTION_PRESUM_GET(rf, ind))) {
-        printf("nan! %d\n", __LINE__);
-    }
 }
 
 __device__ void rfunction_evaluate_parent_peel(struct rfunction* rf, struct gpu_state* state, int locus, int ind) {
@@ -264,7 +250,7 @@ __device__ void rfunction_evaluate_parent_peel(struct rfunction* rf, struct gpu_
     int peelnode;
     int peelnode_value;
     int i;
-    float tmp;
+    double tmp;
     
     //printf("e b%d t%d\n", blockIdx.x, threadIdx.x);
     
@@ -288,10 +274,6 @@ __device__ void rfunction_evaluate_parent_peel(struct rfunction* rf, struct gpu_
     }
     
     RFUNCTION_PRESUM_SET(rf, ind, tmp);
-    
-    if(isnan(RFUNCTION_PRESUM_GET(rf, ind))) {
-        printf("nan! %d\n", __LINE__);
-    }
 }
 
 __device__ void rfunction_sum(struct rfunction* rf, int ind) {
@@ -302,13 +284,9 @@ __device__ void rfunction_sum(struct rfunction* rf, int ind) {
     
     RFUNCTION_SET(rf, ind, 0.0);
     
-    // unroll?
-    for(i = 0; i < 4; ++i) {
+    #pragma unroll
+    for(i = 0; i < NUM_ALLELES; ++i) {
         RFUNCTION_ADD(rf, ind, RFUNCTION_PRESUM_GET(rf, ind + (tmp * i)));
-    }
-    
-    if(isnan(RFUNCTION_GET(rf, ind))) {
-        printf("nan! %d\n", __LINE__);
     }
 }
 
@@ -327,7 +305,7 @@ __device__ void rfunction_evaluate_element(struct rfunction* rf, struct gpu_stat
             rfunction_evaluate_parent_peel(rf, state, locus, ind);
             break;
         default:
-            printf("error in rfunction_evaluate_element\n");
+            //printf("error in rfunction_evaluate_element\n");
             //abort();
             break;
     }
@@ -353,6 +331,24 @@ __global__ void lsampler_kernel(struct gpu_state* state, int offset) {
     int i;
     int locus = (blockIdx.x * 2) + offset;
     int assignment[128];
+    struct geneticmap* map = GET_MAP(state);
+    
+    // populate map cache in shared memory
+    if(threadIdx.x == 0) {
+        if(locus != 0) {
+            map_cache[0] = MAP_THETA(map, locus - 1);
+            map_cache[1] = MAP_INVERSETHETA(map, locus - 1);
+        }
+        
+        if(locus != (map->map_length - 1)) {
+            map_cache[2] = MAP_THETA(map, locus);
+            map_cache[3] = MAP_INVERSETHETA(map, locus);
+        }
+        
+        map_length = map->map_length;
+    }
+    
+    __syncthreads();
     
     // forward peel
     for(i = 0; i < state->functions_per_locus; ++i) {
@@ -374,5 +370,9 @@ __global__ void lsampler_kernel(struct gpu_state* state, int offset) {
 
 void run_gpu_lsampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int offset) {
     lsampler_kernel<<<numblocks, numthreads>>>(state, offset);
+}
+
+void setup_lsampler_kernel() {
+    cudaFuncSetCacheConfig(lsampler_kernel, cudaFuncCachePreferL1);
 }
 

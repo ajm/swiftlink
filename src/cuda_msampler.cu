@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <float.h>
 
 #include "cuda_common.h"
 
@@ -193,11 +192,11 @@ __device__ int legal(struct gpu_state* state, int locus, int* component, int cle
     return 1;
 }
 
-__device__ float component_likelihood(struct gpu_state* state, int locus, int* q, int length) {
+__device__ double component_likelihood(struct gpu_state* state, int locus, int* q, int length) {
     struct geneticmap* map = GET_MAP(state);
-    float minor = MAP_MINOR(map, locus);
-    float major = MAP_MAJOR(map, locus);
-    float tmp = 1.0;
+    double minor = MAP_MINOR(map, locus);
+    double major = MAP_MAJOR(map, locus);
+    double tmp = 1.0;
     int i;    
     
     for(i = 0; i < length; ++i) {
@@ -207,11 +206,11 @@ __device__ float component_likelihood(struct gpu_state* state, int locus, int* q
     return tmp;
 }
 
-__device__ float founderallelegraph_enumerate(struct gpu_state* state, int locus, int* component, int cindex) {
+__device__ double founderallelegraph_enumerate(struct gpu_state* state, int locus, int* component, int cindex) {
     int q[128];
     int qindex = 0;
     int skip = 0;
-    float prob = 0.0;
+    double prob = 0.0;
 /*
     int i;
     // <debug>
@@ -264,7 +263,7 @@ no_more_assignments:
     return prob;
 }
 
-__device__ float founderallelegraph_likelihood(struct gpu_state* state, int locus) {
+__device__ double founderallelegraph_likelihood(struct gpu_state* state, int locus) {
     int q[128];
     int qindex = 0;
     
@@ -277,8 +276,8 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
     int i;
     int tmp;
     
-    float tmp_prob;
-    float prob = 0.0;
+    double tmp_prob;
+    double prob = 0.0;
     
     struct founderallelegraph* fag = GET_FOUNDERALLELEGRAPH(state, locus);
     struct adjacent_node* tmp2;
@@ -329,7 +328,7 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
 }
 
 __device__ int founderallele_sample(struct gpu_state* state, struct founderallelegraph* fag) {
-    float total;
+    double total;
     
     if((fag->prob[0] == _LOG_ZERO) && (fag->prob[1] == _LOG_ZERO)) {
         //abort();
@@ -344,7 +343,7 @@ __device__ int founderallele_sample(struct gpu_state* state, struct founderallel
     
     total = gpu_log_sum(fag->prob[0], fag->prob[1]);
     
-    //return (rand() / float(RAND_MAX)) < (fag->prob[0] / total) ? 0 : 1;
+    //return (rand() / double(RAND_MAX)) < (fag->prob[0] / total) ? 0 : 1;
     return log(get_random(state)) < (fag->prob[0] - total) ? 0 : 1;
 }
 
@@ -364,16 +363,16 @@ __device__ int founderallele_sample2(struct gpu_state* state, float prob0, float
     
     total = gpu_log_sum(prob0, prob1);
     
-    return log(get_random(state)) < (prob0 - total) ? 0 : 1;
+    return logf(get_random(state)) < (prob0 - total) ? 0 : 1;
 }
 
-__device__ float founderallele_run(struct gpu_state* state, int locus, int personid, int allele, int value) {
+__device__ double founderallele_run(struct gpu_state* state, int locus, int personid, int allele, int value) {
     struct founderallelegraph* fag = GET_FOUNDERALLELEGRAPH(state, locus);
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     int i;
     int tmp;
     int populate_legal;
-    float prob = _LOG_ZERO;
+    double prob = _LOG_ZERO;
     
     // save the previous value
     i = DESCENTGRAPH_OFFSET(dg, personid, locus, allele);
@@ -407,17 +406,17 @@ __global__ void msampler_likelihood_kernel(struct gpu_state* state, int meiosis)
     struct founderallelegraph* fag;
     struct geneticmap* map = GET_MAP(state);
     
-    //struct descentgraph* dg = GET_DESCENTGRAPH(state);
-    //int tmp, tmp2, tmp3;
+    struct descentgraph* dg = GET_DESCENTGRAPH(state);
+    int tmp, tmp2, tmp3;
     
     if(locus < map->map_length) {
         fag = GET_FOUNDERALLELEGRAPH(state, locus);
         
-        
+        /*
         fag->prob[0] = founderallele_run(state, locus, personid, allele, 0);
         fag->prob[1] = founderallele_run(state, locus, personid, allele, 1);
+        */
         
-        /*
         if((meiosis == 0) && (allele == 0)) {
             fag->prob[0] = founderallele_run(state, locus, personid, allele, 0);
             fag->prob[1] = founderallele_run(state, locus, personid, allele, 1);
@@ -433,7 +432,7 @@ __global__ void msampler_likelihood_kernel(struct gpu_state* state, int meiosis)
             fag->prob[tmp] = fag->prob[tmp2];
             fag->prob[tmp3] = founderallele_run(state, locus, personid, allele, tmp3);
         }
-        */
+        
     }
 }
 
@@ -447,24 +446,32 @@ __global__ void msampler_sampling_kernel(struct gpu_state* state, int meiosis) {
     __shared__ float sh_theta[1024];
     __shared__ float sh_inversetheta[1024];
     __shared__ float sh_matrix[1024][2];
+    __shared__ int sh_descentgraph[1024][2];
+    
+    
+    map_length = map->map_length;
     
     // we just have one block for now, 512 threads
-    for(i = threadIdx.x; i < map->map_length; i += 512) {
+    for(i = threadIdx.x; i < map_length; i += 512) {
+        sh_descentgraph[i][0] = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, GPU_MATERNAL_ALLELE));
+        sh_descentgraph[i][1] = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, GPU_PATERNAL_ALLELE));
+        
         sh_matrix[i][0] = state->graphs[i].prob[0];
         sh_matrix[i][1] = state->graphs[i].prob[1];
-        if(i < (map->map_length - 1)) {
-            sh_theta[i] = log(MAP_THETA(map, i));
-            sh_inversetheta[i] = log(MAP_INVERSETHETA(map, i));
+        
+        if(i < (map_length - 1)) {
+            sh_theta[i] = logf((float) MAP_THETA(map, i));
+            sh_inversetheta[i] = logf((float) MAP_INVERSETHETA(map, i));
         }
     }
     
-    //__threadfence_block();
     __syncthreads();
     
     
     if(threadIdx.x == 0) {
         // forward
-        for(i = 1; i < map->map_length; ++i) {
+        for(i = 1; i < map_length; ++i) {
+            /*
             for(j = 0; j < 2; ++j) {
                 sh_matrix[i][j] = gpu_log_product(sh_matrix[i][j], \
                                     gpu_log_sum( \
@@ -473,24 +480,49 @@ __global__ void msampler_sampling_kernel(struct gpu_state* state, int meiosis) {
                                     ) \
                                   );
             }
+            */
+            
+            // unroll does not work
+            sh_matrix[i][0] = gpu_log_product(sh_matrix[i][0], \
+                                    gpu_log_sum( \
+                                        gpu_log_product(sh_matrix[i-1][0], sh_theta[i-1]), \
+                                        gpu_log_product(sh_matrix[i-1][1], sh_inversetheta[i-1]) \
+                                    ) \
+                                  );
+            sh_matrix[i][1] = gpu_log_product(sh_matrix[i][1], \
+                                    gpu_log_sum( \
+                                        gpu_log_product(sh_matrix[i-1][1], sh_theta[i-1]), \
+                                        gpu_log_product(sh_matrix[i-1][0], sh_inversetheta[i-1]) \
+                                    ) \
+                                  );
         }
         
         // backward
-        i = map->map_length - 1;
-        DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, allele), founderallele_sample2(state, sh_matrix[i][0], sh_matrix[i][1]));
+        i = map_length - 1;
+        //DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, allele), founderallele_sample2(state, sh_matrix[i][0], sh_matrix[i][1]));
+        sh_descentgraph[i][allele] = founderallele_sample2(state, sh_matrix[i][0], sh_matrix[i][1]);
         
         while(--i >= 0) {
+            #pragma unroll
             for(j = 0; j < 2; ++j) {
-                sh_matrix[i][j] = \
-                    gpu_log_product(sh_matrix[i][j], ((DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, i+1, allele)) != j) ? \
-                    sh_theta[i] : sh_inversetheta[i]));
+                //sh_matrix[i][j] = gpu_log_product(sh_matrix[i][j], ((DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, i+1, allele)) != j) ? sh_theta[i] : sh_inversetheta[i]));
+                sh_matrix[i][j] = gpu_log_product(sh_matrix[i][j], ((sh_descentgraph[i+1][allele] != j) ? sh_theta[i] : sh_inversetheta[i]));
+                    
             }
             
-            DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, allele), founderallele_sample2(state, sh_matrix[i][0], sh_matrix[i][1]));
+            //DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, allele), founderallele_sample2(state, sh_matrix[i][0], sh_matrix[i][1]));
+            sh_descentgraph[i][allele] = founderallele_sample2(state, sh_matrix[i][0], sh_matrix[i][1]);
         }
     }
+    
+    __syncthreads();
+    
+    for(i = threadIdx.x; i < map_length; i += 512) {
+        DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, GPU_MATERNAL_ALLELE), sh_descentgraph[i][0]);
+        DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, GPU_PATERNAL_ALLELE), sh_descentgraph[i][1]);
+    }
 }
-
+/*
 __global__ void msampler_singlethread_kernel(struct gpu_state* state, int meiosis) {
     int locus;
     int personid = (state->founderallele_count / 2) + (meiosis / 2);
@@ -547,9 +579,9 @@ __global__ void msampler_singlethread_kernel(struct gpu_state* state, int meiosi
         }
     }
 }
-
+*/
 void run_gpu_msampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis) {
-    msampler_singlethread_kernel<<<numblocks, numthreads>>>(state, meiosis);
+    //msampler_singlethread_kernel<<<numblocks, numthreads>>>(state, meiosis);
 }
 
 void run_gpu_msampler_likelihood_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis) {
@@ -558,5 +590,10 @@ void run_gpu_msampler_likelihood_kernel(int numblocks, int numthreads, struct gp
 
 void run_gpu_msampler_sampling_kernel(struct gpu_state* state, int meiosis) {
     msampler_sampling_kernel<<<1, 512>>>(state, meiosis);
+}
+
+void setup_msampler_kernel() {
+    cudaFuncSetCacheConfig(msampler_likelihood_kernel, cudaFuncCachePreferL1);
+    cudaFuncSetCacheConfig(msampler_sampling_kernel,   cudaFuncCachePreferShared);
 }
 

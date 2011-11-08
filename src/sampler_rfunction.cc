@@ -129,6 +129,7 @@ void SamplerRfunction::sample(PeelMatrixKey& pmk) {
     double total = 0.0;
     unsigned node = peel.get_peelnode();
     enum phased_trait trait;
+    unsigned int last = 0;
     
     // extract probabilities
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
@@ -159,12 +160,19 @@ void SamplerRfunction::sample(PeelMatrixKey& pmk) {
     
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         total += prob_dist[i];
-        if(r < total) {
+        if(r <= total) {
             pmk.add(node, static_cast<enum phased_trait>(i));
             return;
         }
+        
+        if(prob_dist[i] != 0.0) {
+            last = i;
+        }
     }
     
+    pmk.add(node, static_cast<enum phased_trait>(last));
+    
+    // XXX ??? XXX still abort?
     abort();
 }
 

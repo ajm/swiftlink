@@ -22,7 +22,22 @@ __device__ int gpu_offsets[] = {
     1 << 30
 };
 
+//__device__ double _LOG_ZERO = -DBL_MAX;
 __device__ float _LOG_ZERO = -FLT_MAX;
+
+__shared__ double map_cache[4]; // theta-left, inversetheta-right, theta-right, inversetheta-right XXX
+__shared__ int map_length;
+
+// L-sampler macros
+#define THETA_LEFT      (map_cache[0])
+#define INVTHETA_LEFT   (map_cache[1])
+#define THETA_RIGHT     (map_cache[2])
+#define INVTHETA_RIGHT  (map_cache[3])
+// LOD-score macros
+#define HALF_THETA      (map_cache[0])
+#define HALF_INVTHETA   (map_cache[1])
+#define LOG_THETA       (map_cache[2])
+#define LOG_INVTHETA    (map_cache[3])
 
 // I am going to assume that the length of 'assignment' is to the number of 
 // pedigree members and that everything that is not assigned is -1
@@ -58,9 +73,11 @@ __device__ void rfunction_presum_assignment(struct rfunction* rf, int ind, int* 
     int index = ind;
     int i;
     
+    /*
     for(i = 0; i < length; ++i) {
         assignment[i] = -1;
     }
+    */
     
     for(i = (rf->cutset_length - 1); i > -1; --i) {
         assignment[rf->cutset[i]] = index / gpu_offsets[i];
@@ -72,9 +89,11 @@ __device__ void rfunction_assignment(struct rfunction* rf, int ind, int* assignm
     int index = ind;
     int i;
     
+    /*
     for(i = 0; i < length; ++i) {
         assignment[i] = -1;
     }
+    */
     
     for(i = (rf->cutset_length - 2); i > -1; --i) {
         assignment[rf->cutset[i]] = index / gpu_offsets[i];
@@ -82,7 +101,7 @@ __device__ void rfunction_assignment(struct rfunction* rf, int ind, int* assignm
     }
 }
 
-__device__ float rfunction_get(struct rfunction* rf, int* assignment, int length) {
+__device__ double rfunction_get(struct rfunction* rf, int* assignment, int length) {
     return rf->matrix[rfunction_index(rf, assignment, length)];
 }
 
@@ -98,7 +117,7 @@ __device__ int get_trait(int value, int parent) {
     return -1;
 }
 
-__device__ float rfunction_trait_prob(struct gpu_state* state, int id, int value, int locus) {
+__device__ double rfunction_trait_prob(struct gpu_state* state, int id, int value, int locus) {
     struct person* p = GET_PERSON(state, id);
     
     if(PERSON_ISTYPED(p)) {
@@ -127,10 +146,10 @@ __device__ float gpu_log_sum(float a, float b) {
     if(b == _LOG_ZERO)
         return a;
     
-    return log(exp(b - a) + 1) + a;
+    return logf(expf(b - a) + 1) + a;
 }
 
 __device__ float gpu_log_product(float a, float b) {
-    return ((a == _LOG_ZERO) or (b == _LOG_ZERO)) ? _LOG_ZERO : a + b;
+    return ((a == _LOG_ZERO) || (b == _LOG_ZERO)) ? _LOG_ZERO : a + b;
 }
 

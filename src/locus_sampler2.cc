@@ -182,3 +182,4 @@ void LocusSampler::sequential_imputation(DescentGraph& dg) {
         step(dg, i);
     }
 }
+

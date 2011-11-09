@@ -12,7 +12,7 @@ using namespace std;
 
 #include "cuda_quiet.h"
 #include "cuda_common.h"
-#include "tinymt/tinymt32_host.h"
+//#include "tinymt/tinymt32_host.h"
 
 #include "gpu_wrapper.h"
 
@@ -270,7 +270,7 @@ curandState* GPUWrapper::gpu_init_random_curand() {
     
     return dev_rng_state;
 }
-
+/*
 tinymt32_status_t* GPUWrapper::gpu_init_random_tinymt() {
     uint32_t* params;
     uint32_t* dparams;
@@ -341,7 +341,7 @@ tinymt32_status_t* GPUWrapper::gpu_init_random_tinymt() {
     
     return dev_rng_state;
 }
-
+*/
 void GPUWrapper::init_founderallelegraph() {
 
     int num_founderalleles = ped->num_founders() * 2;
@@ -767,6 +767,9 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
     int odd_count;
     cudaError_t error;
     int num_meioses = 2 * (ped->num_members() - ped->num_founders());
+    //size_t shared_mem = 8 * (2 * ped->num_founders()) * ((2 * ped->num_founders()) + 1) * sizeof(int);
+    size_t shared_mem = 8 * \
+                        ((2 * (2 * ped->num_founders()) * (2 * ped->num_founders())) + (2 * ped->num_founders())) ;
     
     // XXX
     //copy_to_gpu(dg);
@@ -790,6 +793,8 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
     
     
     printf("odd = %d, even = %d\n", odd_count, even_count);
+    
+    printf("requesting %.2f KB (%d bytes) of shared memory per block\n", shared_mem / 1024.0, (int)shared_mem);
     
     CUDA_CALLANDTEST(cudaMemcpy(dev_graph, dg.get_internal_ptr(), dg.get_internal_size(), cudaMemcpyHostToDevice));
     
@@ -839,7 +844,7 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
             for(int j = 0; j < num_meioses; ++j) {
                 //run_gpu_msampler_kernel(1, 1, dev_state, j);
             
-                run_gpu_msampler_likelihood_kernel(msampler_num_blocks(), 256, dev_state, j);
+                run_gpu_msampler_likelihood_kernel(msampler_num_blocks(), 256, dev_state, j, shared_mem);
                 
                 cudaThreadSynchronize();
             

@@ -331,7 +331,9 @@ __global__ void lsampler_kernel(struct gpu_state* state, int offset) {
     int i;
     int locus = (blockIdx.x * 2) + offset;
     int assignment[128];
+    
     struct geneticmap* map = GET_MAP(state);
+    
     
     // populate map cache in shared memory
     if(threadIdx.x == 0) {

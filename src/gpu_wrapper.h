@@ -46,7 +46,7 @@ class GPUWrapper {
     struct rfunction* gpu_init_rfunctions(vector<PeelOperation>& ops);
     struct descentgraph* gpu_init_descentgraph();
     curandState* gpu_init_random_curand();
-    tinymt32_status_t* gpu_init_random_tinymt();
+    //tinymt32_status_t* gpu_init_random_tinymt();
     double* gpu_init_lodscores();
     struct founderallelegraph* gpu_init_founderallelegraph();
     

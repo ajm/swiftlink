@@ -145,8 +145,8 @@ double FounderAlleleGraph3::enumerate(int locus, vector<int>& component) {
         }
         
         while(1) {
-            
-            while((q.size() != 0) and (q.back() == 2)) { // not empty and last value is 2
+            // not empty and last value is 2
+            while((q.size() != 0) and (q.back() == 2)) { 
                 q.pop_back();
             }
             
@@ -176,8 +176,8 @@ double FounderAlleleGraph3::likelihood(int locus) {
     int total = founder_alleles;
     
     double tmp_prob;
-    double prob = 0.0;
-    
+    double prob = 0.0; // perform all in log
+    //double prob = 1.0;
     
     do {
         component.clear();
@@ -211,20 +211,30 @@ double FounderAlleleGraph3::likelihood(int locus) {
         }
             
         tmp_prob = enumerate(locus, component);
+        
+        /*
+        if(tmp_prob == 0.0) {
+            return LOG_ZERO;
+        }
+        */
+        
         tmp_prob = ((tmp_prob == 0.0) ? LOG_ZERO : log(tmp_prob));
-            
         prob = log_product(tmp_prob, prob);
-            
+        
+        //prob *= tmp_prob;
+        
     } while(total != 0);
         
     return prob;
+    //return log(prob);
 }
 
 void FounderAlleleGraph3::assign(int allele1, int allele2, enum unphased_genotype g) {
-    AdjacentNode& tmp = adj_matrix[allele1][num_neighbours[allele1]];
+    int nn = num_neighbours[allele1];
+    AdjacentNode& tmp = adj_matrix[allele1][nn];
     tmp.id = allele2;
     tmp.label = g;
-    num_neighbours[allele1]++;
+    num_neighbours[allele1] = nn + 1;
 }
 
 bool FounderAlleleGraph3::add(int mat_allele, int pat_allele, enum unphased_genotype g) {
@@ -264,8 +274,7 @@ bool FounderAlleleGraph3::populate(DescentGraph& dg, int locus) {
 	// find founder allele assignments, this is only related to the current 
 	// descent graph and not whether people are typed or not
 	for(unsigned i = 0; i < ped->num_members(); ++i) {
-	    //pid = state->fa_sequence[i]; // XXX TODO XXX
-	    pid = 0;
+	    pid = (*sequence)[i];
         p = ped->get_by_index(pid);
 	    
 	    if(p->isfounder()) {
@@ -284,8 +293,7 @@ bool FounderAlleleGraph3::populate(DescentGraph& dg, int locus) {
 	// construct the actual graph from the assignments and the genotype
 	// information
 	for(unsigned i = 0; i < ped->num_members(); ++i) {
-	    //pid = state->fa_sequence[i]; // XXX TODO XXX
-	    pid = 0;
+	    pid = (*sequence)[i];
         p = ped->get_by_index(pid);
 	    
 	    if(p->istyped()) {
@@ -309,3 +317,20 @@ double FounderAlleleGraph3::evaluate(DescentGraph& dg, unsigned locus) {
     
     return populate(dg, locus) ? likelihood(locus) : LOG_ZERO;
 }
+
+string FounderAlleleGraph3::debug_string() { 
+    stringstream ss;
+        
+	for(unsigned int i = 0; i < founder_alleles; ++i) {
+        ss << i << ": ";
+        for(unsigned int j = 0; j < num_neighbours[i]; ++j) {
+            AdjacentNode& tmp = adj_matrix[i][j];
+            ss << "{" << tmp.id << ", " << tmp.label << "} ";
+        }
+        ss << "\n";
+    }
+    //ss << "\n";
+    
+    return ss.str();
+}
+

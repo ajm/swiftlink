@@ -24,29 +24,70 @@ void MeiosisSampler::kill_matrices() {
     delete[] matrix;
 }
 
+void MeiosisSampler::find_founderallelegraph_ordering() {
+    vector<bool> visited(ped->num_members(), false);
+    int total = ped->num_members();
+    
+    // we can start by putting in all founders as there are clearly
+    // no dependencies
+    for(unsigned i = 0; i < ped->num_founders(); ++i) {
+        seq.push_back(i);
+        visited[i] = true;
+        total--;
+    }
+    
+    while(total > 0) {
+        for(unsigned i = ped->num_founders(); i < ped->num_members(); ++i) {
+            if(visited[i])
+                continue;
+        
+            Person* p = ped->get_by_index(i);
+            
+            if(visited[p->get_maternalid()] and visited[p->get_paternalid()]) {
+                seq.push_back(i);
+                visited[i] = true;
+                total--;
+            }
+        }
+    }
+    
+    if(seq.size() != ped->num_members()) {
+        fprintf(stderr, "error: founder allele sequence generation failed\n");
+        abort();
+    }
+}
+
 double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, unsigned locus, enum parentage parent, unsigned value) {
     double tmp_likelihood;
     unsigned tmp = dg.get(person_id, locus, parent);
     
     dg.set(person_id, locus, parent, value);
-    /*
-    f.set_locus(locus);
-    f.reset();
     
-    tmp_likelihood = f.populate(dg) ? f.likelihood() : LOG_ILLEGAL;
-    */
-    
-    fag.reset();
-    if(fag.populate(dg, locus)) {
+    // FounderAlleleGraph
+    f1.reset();
+    if(f1.populate(dg, locus)) {
         //fag.print();
-        if(not fag.likelihood(&tmp_likelihood, locus)) {        
+        if(not f1.likelihood(&tmp_likelihood, locus)) {        
             tmp_likelihood = LOG_ILLEGAL;
         }
     }
     else {
         tmp_likelihood = LOG_ILLEGAL;
     }
-        
+    //f1.print();
+    
+    // FounderAlleleGraph2
+    /*
+    f2.set_locus(locus);
+    f2.reset();
+    
+    tmp_likelihood = f2.populate(dg) ? f2.likelihood() : LOG_ILLEGAL;
+    */
+    
+    // FounderAlleleGraph3
+    //tmp_likelihood = f3.evaluate(dg, locus);
+    //printf("%s\n", f3.debug_string().c_str());
+    
     dg.set(person_id, locus, parent, tmp);
     
     /*
@@ -61,61 +102,7 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
     return tmp_likelihood;
 }
 
-/*
-double MeiosisSampler::initial_likelihood(DescentGraph& dg, unsigned locus) {
-
-    f.set_locus(locus);
-    f.reset();
-    
-    return f.populate(dg) ? f.likelihood() : LOG_ILLEGAL;
-}
-
-void MeiosisSampler::incremental_likelihood(DescentGraph& dg, 
-                                            unsigned person_id, unsigned locus, enum parentage parent, 
-                                            double* meiosis0, double* meiosis1) {
-    
-    int current = dg.get(person_id, locus, parent);
-    double tmp1;
-    double tmp2;
-    double tmp3 = 0.0;
-    
-    fprintf(stderr, "incremental_likelihood start\n");
-    
-    fprintf(stderr, "tmp1\n");
-    tmp1 = initial_likelihood(dg, locus);
-    
-    if(tmp1 == LOG_ILLEGAL) {
-        dg.flip_bit(person_id, locus, parent);
-        fprintf(stderr, "tmp2 (1)\n");
-        tmp2 = initial_likelihood(dg, locus);
-    }
-    else {
-        fprintf(stderr, "tmp2 (2)\n");
-        tmp2 = f.reevaluate(dg, person_id, locus, parent);
-        
-        fprintf(stderr, "tmp3\n");
-        tmp3 = initial_likelihood(dg, locus);
-        
-        fprintf(stderr, "NO INCREMENTAL:\n%s\n", f.debug_string().c_str());
-        
-        if(tmp2 != tmp3) {
-            fprintf(stderr, "reevaluate() = %e, actual = %e, prev = %e (%d --> %d)\n", tmp2, tmp3, tmp1, current, dg.get(person_id, locus, parent));
-            fprintf(stderr, "%s\n", f.debug_string().c_str());
-            abort();
-        }
-    }
-    
-    *meiosis0 = (current == 0) ? tmp1 : tmp2;
-    *meiosis1 = (current == 0) ? tmp2 : tmp1;
-    
-    fprintf(stderr, "incremental_likelihood end (tmp1 = %e, tmp2 = %e tmp3 = %e)\n\n", tmp1, tmp2, tmp3);
-}
-*/
-
 void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
-    //enum parentage p = get_random_meiosis();
-    //double meiosis0, meiosis1;
-    
     // parameter is the founder allele
     unsigned person_id = ped->num_founders() + (parameter / 2);
     enum parentage p = static_cast<enum parentage>(parameter % 2);
@@ -123,31 +110,30 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
     //fprintf(stderr, "%d %s\n", int(person_id), p == MATERNAL ? "M" : "P");
     
     // forwards
-    matrix[0][0] = graph_likelihood(dg, person_id, 0, p, 0);
-    matrix[0][1] = graph_likelihood(dg, person_id, 0, p, 1);
-    //incremental_likelihood(dg, parameter, 0, p, &meiosis0, &meiosis1);
-    //matrix[0][0] = meiosis0;
-    //matrix[0][1] = meiosis1;
+    for(unsigned i = 0; i < map->num_markers(); ++i) {
+        if(parameter == 0) {
+            matrix[i][0] = graph_likelihood(dg, person_id, i, p, 0);
+            matrix[i][1] = graph_likelihood(dg, person_id, i, p, 1);
+        }
+        else {
+            int tmp = dg.get(person_id, i, p);
+            int tmp2 = dg.get(ped->num_founders() + ((parameter - 1) / 2), i, static_cast<enum parentage>((parameter - 1) % 2));
+            matrix[i][tmp] = matrix[i][tmp2];
+            matrix[i][1-tmp] = graph_likelihood(dg, person_id, i, p, 1-tmp);
+        }
+    }
     
     for(unsigned i = 1; i < map->num_markers(); ++i) {
         for(unsigned j = 0; j < 2; ++j) {
             // these are log likelihood, so need to be handled carefully
             matrix[i][j] = log_product( \
-                                       graph_likelihood(dg, person_id, i, p, j), \
+                                       matrix[i][j], /*graph_likelihood(dg, person_id, i, p, j),*/ \
                                        log_sum( \
                                                log_product(matrix[i-1][j],   map->get_theta_log(i-1)), \
                                                log_product(matrix[i-1][1-j], map->get_inversetheta_log(i-1)) \
                                                ) \
                                        );
         }
-        
-        //double theta = map->get_theta(i-1);
-        //double antitheta = map->get_inverse_theta(i-1);
-        
-        //incremental_likelihood(dg, parameter, i, p, &meiosis0, &meiosis1);
-        
-        //matrix[i][0] = log_product(meiosis0, log_sum(log_product(matrix[i-1][0], theta), log_product(matrix[i-1][1], antitheta)));
-        //matrix[i][1] = log_product(meiosis1, log_sum(log_product(matrix[i-1][1], theta), log_product(matrix[i-1][0], antitheta)));
     }
     
     // sample backwards

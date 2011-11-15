@@ -18,8 +18,8 @@ using namespace std;
 void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
     DescentGraph tmp(ped, map);
     double tmp_prob, best_prob = LOG_ILLEGAL;
-    //int iterations = 100;
-    int iterations = 1;
+    int iterations = 100;
+    //int iterations = 1;
     
     LocusSampler lsampler(ped, map, psg);
     
@@ -90,13 +90,13 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     MeiosisSampler msampler(ped, map);
     
     
+    /*
     GPUWrapper gpu(ped, map, psg);
     
     gpu.run(dg, iterations, burnin, 10, peel->get_trait_prob());
     
     exit(0);
-    
-    
+    */
     
     
     Progress p("MCMC: ", iterations);
@@ -123,7 +123,6 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
             for(unsigned j = 0; j < num_meioses; ++j)
                 msampler.step(dg, j);
         }
-        
         
         p.increment();
         

@@ -949,7 +949,7 @@ void GPUWrapper::find_founderallelegraph_ordering(struct gpu_state* state) {
     }
     
     while(total > 0) {
-        for(unsigned i = ped->num_founders(); i < ped->num_members(); ++i) {        
+        for(unsigned i = ped->num_founders(); i < ped->num_members(); ++i) {
             if(visited[i])
                 continue;
         

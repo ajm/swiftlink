@@ -23,7 +23,7 @@ class FounderAlleleGraph3 {
     vector<unsigned int> num_neighbours;
     vector< vector<AdjacentNode> > adj_matrix;
     vector<int> assignment;
-    
+    vector<int>* sequence;
     
     int get_num_neighbours(int node) const {
         return num_neighbours[node];
@@ -47,7 +47,8 @@ class FounderAlleleGraph3 {
         founder_alleles(p->num_founders() * 2),
         num_neighbours(founder_alleles, 0),
         adj_matrix(founder_alleles), 
-        assignment(ped->num_members() * 2) {
+        assignment(ped->num_members() * 2),
+        sequence(NULL) {
         
         for(unsigned i = 0; i < founder_alleles; ++i) {
             adj_matrix[i].resize(founder_alleles);
@@ -60,7 +61,8 @@ class FounderAlleleGraph3 {
         founder_alleles(f.founder_alleles),
         num_neighbours(f.num_neighbours),
         adj_matrix(f.adj_matrix), 
-        assignment(f.assignment) {}
+        assignment(f.assignment),
+        sequence(f.sequence) {}
     
 	~FounderAlleleGraph3() {}
     
@@ -74,14 +76,17 @@ class FounderAlleleGraph3 {
             num_neighbours = rhs.num_neighbours;
             adj_matrix = rhs.adj_matrix;
             assignment = rhs.assignment;
+            sequence = rhs.sequence;
         }
         
         return *this;
     }
     
+    void set_sequence(vector<int>* seq) { sequence = seq; }
+    
     double evaluate(DescentGraph& d, unsigned locus);
     
-    string debug_string() { return ""; }
+    string debug_string();
 };
 
 #endif

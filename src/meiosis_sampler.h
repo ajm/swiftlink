@@ -4,10 +4,12 @@
 using namespace std;
 
 #include <limits>
+#include <vector>
 
 #include "types.h"
 #include "sampler.h"
 #include "logarithms.h"
+#include "founder_allele_graph3.h"
 #include "founder_allele_graph2.h"
 #include "founder_allele_graph.h"
 
@@ -36,7 +38,9 @@ class MeiosisMatrix {
     void normalise() {
     
         if((prob[0] == LOG_ZERO) and (prob[1] == LOG_ZERO)) {
-            fprintf(stderr, "error: both meiosis likelihoods were zero (%s:%d)\n", __FILE__, __LINE__);
+            fprintf(stderr, \
+                "error: both meiosis likelihoods were zero (%s:%d)\n", \
+                __FILE__, __LINE__);
             abort();
         }
     
@@ -63,9 +67,11 @@ class MeiosisMatrix {
 
 class MeiosisSampler : Sampler {
     
-    FounderAlleleGraph2 f;
-    FounderAlleleGraph fag;
+    FounderAlleleGraph  f1;
+    FounderAlleleGraph2 f2;
+    FounderAlleleGraph3 f3;
     MeiosisMatrix* matrix;
+    vector<int> seq;
     
     void init_matrices();
     void copy_matrices(const MeiosisSampler& rhs);
@@ -73,22 +79,30 @@ class MeiosisSampler : Sampler {
     double graph_likelihood(DescentGraph& dg, unsigned person_id, unsigned locus, enum parentage parent, unsigned value);
     double initial_likelihood(DescentGraph& dg, unsigned locus);
     void incremental_likelihood(DescentGraph& dg, unsigned person_id, unsigned locus, enum parentage parent, double* meiosis0, double* meiosis1);
+    void find_founderallelegraph_ordering();
     
  public :
     MeiosisSampler(Pedigree* ped, GeneticMap* map) :
         Sampler(ped, map), 
-        f(ped, map, 0),
-        fag(ped, map),
-        matrix(NULL) {
+        f1(ped, map),
+        f2(ped, map, 0),
+        f3(ped, map),
+        matrix(NULL),
+        seq() {
     
         init_matrices();
+        
+        find_founderallelegraph_ordering();
+        f3.set_sequence(&seq);
     }
     
     MeiosisSampler(const MeiosisSampler& rhs) :
         Sampler(rhs.ped, rhs.map),
-        f(ped, map, 0),
-        fag(rhs.fag),
-        matrix(NULL) {
+        f1(rhs.f1),
+        f2(rhs.f2),
+        f3(rhs.f3),
+        matrix(NULL),
+        seq(rhs.seq) {
         
         init_matrices();
         copy_matrices(rhs);
@@ -103,6 +117,7 @@ class MeiosisSampler : Sampler {
         if(this != &rhs) {
             Sampler::operator=(rhs);
             copy_matrices(rhs);
+            seq = rhs.seq;
         }
         
         return *this;
@@ -112,3 +127,4 @@ class MeiosisSampler : Sampler {
 };
 
 #endif
+

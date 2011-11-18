@@ -139,17 +139,13 @@ struct person {
     int id;
     int father;
     int mother;
-    
-    double prob[4];
-    
-    //int* children;
-    //int children_length;
-
-    int* genotypes;
-    int genotypes_length;
-    
     int isfounder;
     int istyped;
+    
+    int* genotypes;
+    int genotypes_length;
+            
+    float prob[4]; // <--- XXX if this is double, then the sizeof differs between host and device XXX 
 };
 
 struct descentgraph {
@@ -208,6 +204,7 @@ struct descentgraph {
 extern "C" { 
 #endif    
     void run_gpu_print_kernel(struct gpu_state* state);
+    void run_gpu_print_pedigree_kernel(struct person* p, int length);
     
     void run_gpu_lsampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int offset);
     void run_gpu_msampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis);

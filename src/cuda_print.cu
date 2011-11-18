@@ -87,6 +87,7 @@ __device__ void print_everything(struct gpu_state* state) {
     int i;
     
     printf("RFUNCTIONS:\n");
+    
     for(i = 0; i < state->functions_length; ++i) {
         print_rfunction(&state->functions[i]);
     }
@@ -107,9 +108,23 @@ __device__ void print_everything(struct gpu_state* state) {
     printf("\n");
 }
 
+__global__ void print_pedigree(struct person* p, int length) {
+    int i;
+    
+    printf("device: sizeof(struct person) = %d\n", sizeof(struct person));
+    
+    for(i = 0; i < length; ++i) {
+        print_person(&p[i]);
+    }
+}
+
 __global__ void print_kernel(struct gpu_state* state) {
     if(threadIdx.x == 0)
         print_everything(state);
+}
+
+void run_gpu_print_pedigree_kernel(struct person* p, int length) {
+    print_pedigree<<<1, 1>>>(p, length);
 }
 
 void run_gpu_print_kernel(struct gpu_state* state) {

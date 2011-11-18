@@ -1,14 +1,13 @@
 CXX	:= g++
 CC := gcc
 GPUCC := nvcc
-#CXXFLAGS := -g -O3 -Wall -Wextra -pedantic -std=c++98 -pipe -Wno-variadic-macros -Weffc++ -Werror
-#CXXFLAGS := -g -O2 -Wall -Wextra -pedantic -std=c++98 -pipe -Wno-variadic-macros -Weffc++
-CXXFLAGS := -g -O2 -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe #-m32
-CFLAGS := -g -O2 -Wall -pipe #-m32
+CXXFLAGS := -g -O2 -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe -m32
+CFLAGS := -g -O2 -Wall -pipe -m32
+LDFLAGS := -m32
 INCLUDES := -I. -I/usr/local/cuda/include
-LIBS := -L /usr/local/cuda/lib64 -lcudart 
-#LIBS := -L /usr/local/cuda/lib -L /usr/lib32 -lcudart
-GPUFLAGS := -arch=sm_20 -O2 #-m32
+#LIBS := -L /usr/local/cuda/lib64 -lcudart 
+LIBS := -L /usr/local/cuda/lib -L /usr/lib32 -lcudart
+GPUFLAGS := -arch=sm_20 -O2 -m32
 
 OBJECTS	:= \
 	trait.o \
@@ -48,7 +47,7 @@ OBJECTS	:= \
 	cuda_linkage.o
 
 app: $(OBJECTS)
-	$(CXX) -o $@ $(LIBS) $(OBJECTS) #-m32
+	$(CXX) -o $@ $(LIBS) $(OBJECTS) $(LDFLAGS)
 
 %.o: %.cc
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@

@@ -487,7 +487,7 @@ __global__ void msampler_sampling_kernel(struct gpu_state* state, int meiosis) {
     map_length = map->map_length;
     
     // we just have one block for now, 512 threads
-    for(i = threadIdx.x; i < map_length; i += 512) {
+    for(i = threadIdx.x; i < map_length; i += 256) {
         sh_descentgraph[i][0] = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, GPU_MATERNAL_ALLELE));
         sh_descentgraph[i][1] = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, GPU_PATERNAL_ALLELE));
         
@@ -517,7 +517,7 @@ __global__ void msampler_sampling_kernel(struct gpu_state* state, int meiosis) {
             }
             */
             
-            // unroll does not work
+            // pragma unroll does not work
             sh_matrix[i][0] = gpu_log_product(sh_matrix[i][0], \
                                     gpu_log_sum( \
                                         gpu_log_product(sh_matrix[i-1][0], sh_theta[i-1]), \
@@ -552,7 +552,7 @@ __global__ void msampler_sampling_kernel(struct gpu_state* state, int meiosis) {
     
     __syncthreads();
     
-    for(i = threadIdx.x; i < map_length; i += 512) {
+    for(i = threadIdx.x; i < map_length; i += 256) {
         DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, GPU_MATERNAL_ALLELE), sh_descentgraph[i][0]);
         DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, GPU_PATERNAL_ALLELE), sh_descentgraph[i][1]);
     }
@@ -624,7 +624,7 @@ void run_gpu_msampler_likelihood_kernel(int numblocks, int numthreads, struct gp
 }
 
 void run_gpu_msampler_sampling_kernel(struct gpu_state* state, int meiosis) {
-    msampler_sampling_kernel<<<1, 512>>>(state, meiosis);
+    msampler_sampling_kernel<<<1, 256>>>(state, meiosis);
 }
 
 void setup_msampler_kernel() {

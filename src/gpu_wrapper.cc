@@ -241,15 +241,17 @@ curandState* GPUWrapper::gpu_init_random_curand() {
     
     randfile.open ("/dev/urandom", ios::in);
     if(not randfile.is_open()) {
-        fprintf(stderr, "error: could not open /dev/random\n");
+        fprintf(stderr, "error: could not open /dev/urandom\n");
         abort();
     }
+    
+    //printf("sizeof(*host_seeds) = %d\n", sizeof(host_seeds));
     
     for(int i = 0; i < prng_num; ++i) {
         //seeds[i] = random();
         long int data;
         
-        randfile.read((char*)&data, 8);
+        randfile.read((char*)&data, sizeof(data));
         
         host_seeds[i] = data;
     }
@@ -385,7 +387,7 @@ struct founderallelegraph* GPUWrapper::gpu_init_founderallelegraph() {
     
     struct founderallelegraph* dev_fag;
     
-    CUDA_CALLANDTEST(cudaMalloc((void**)&dev_fag, sizeof(struct founderallelegraph) * map->num_markers()));
+    CUDA_CALLANDTEST(cudaMalloc((void**) &dev_fag, sizeof(struct founderallelegraph) * map->num_markers()));
     CUDA_CALLANDTEST(cudaMemcpy(dev_fag, tmp,    sizeof(struct founderallelegraph) * map->num_markers(), cudaMemcpyHostToDevice));
     
     free(tmp);
@@ -570,16 +572,33 @@ struct person* GPUWrapper::gpu_init_pedigree() {
     
     CUDA_CALLANDTEST(cudaMalloc((void**) &dev_ped, sizeof(struct person) * loc_state->pedigree_length));
     
+    /*
+    printf("host: sizeof(struct person) = %d\n", sizeof(struct person));
+    
+    run_gpu_print_pedigree_kernel(dev_ped, loc_state->pedigree_length); // XXX
+    cudaThreadSynchronize();
+    printf("====================\n");
+    */
+    
     for(int i = 0; i < loc_state->pedigree_length; ++i) {
-        struct person* p = &loc_state->pedigree[i];
-        struct person* dev_p = &dev_ped[i];
+        struct person* p = &(loc_state->pedigree[i]);
+        struct person* dev_p = &(dev_ped[i]);
         
         memcpy(&tmp, p, sizeof(struct person));
         
-        CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.genotypes, sizeof(int) * p->genotypes_length));
+        //print_person(&tmp);
+        
+        CUDA_CALLANDTEST(cudaMalloc((void**) &(tmp.genotypes), sizeof(int) * p->genotypes_length));
         CUDA_CALLANDTEST(cudaMemcpy(tmp.genotypes, p->genotypes, sizeof(int) * p->genotypes_length, cudaMemcpyHostToDevice));
+        
         CUDA_CALLANDTEST(cudaMemcpy(dev_p, &tmp, sizeof(struct person), cudaMemcpyHostToDevice));
     }
+    
+    /*
+    printf("====================\n");
+    run_gpu_print_pedigree_kernel(dev_ped, loc_state->pedigree_length); // XXX
+    cudaThreadSynchronize();
+    */
     
     return dev_ped;
 }
@@ -771,6 +790,17 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
     size_t shared_mem = 8 * \
                         ((2 * (2 * ped->num_founders()) * (2 * ped->num_founders())) + (2 * ped->num_founders())) ;
     
+    /*
+    run_gpu_print_kernel(dev_state);
+    cudaThreadSynchronize();
+    error = cudaGetLastError();
+    if(error != cudaSuccess) {
+        printf("CUDA kernel error: %s\n", cudaGetErrorString(error));
+        abort();
+    }
+    exit(0);
+    */
+    
     // XXX
     //copy_to_gpu(dg);
     //run_gpu_msampler_kernel(1, 1, loc_state, 0);
@@ -804,8 +834,8 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
     
     for(unsigned i = 0; i < iterations; ++i) {
         
-        if((random() / double(RAND_MAX)) < 0.5) {
-        //if((i % 2) == 0) {
+        //if((random() / double(RAND_MAX)) < 0.5) {
+        if((i % 2) == 0) {
             //printf("lsampler\n");
             run_gpu_lsampler_kernel(even_count, num_threads_per_block(), dev_state, 0);
             
@@ -971,5 +1001,28 @@ void GPUWrapper::find_founderallelegraph_ordering(struct gpu_state* state) {
     for(unsigned i = 0; i < ped->num_members(); ++i) {
         state->fa_sequence[i] = static_cast<int>(seq[i]);
     }
+}
+
+void GPUWrapper::print_person(struct person* p) {
+    printf( "\tid: %d\n"
+            "\tmother: %d\n"
+            "\tfather: %d\n"
+            "\tfounder: %d\n"
+            "\ttyped: %d\n"
+            "\tprobs: %.2e %.2e %.2e %.2e\n",
+            p->id,
+            p->mother,
+            p->father,
+            p->isfounder,
+            p->istyped,
+            p->prob[0],
+            p->prob[1],
+            p->prob[2],
+            p->prob[3]
+    );
+    
+    //printf("\tgenotypes: ");
+    //print_ints(p->genotypes, p->genotypes_length);
+    printf("\n");
 }
 

@@ -50,6 +50,8 @@ class GPUWrapper {
     double* gpu_init_lodscores();
     struct founderallelegraph* gpu_init_founderallelegraph();
     
+    void print_person(struct person* p);
+    
     void copy_to_gpu(DescentGraph& dg);
     void copy_from_gpu(DescentGraph& dg);
     

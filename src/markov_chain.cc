@@ -55,6 +55,9 @@ void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
 Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     unsigned burnin = iterations * 0.1;
     
+    //iterations = 1020;
+    //burnin = 1000;
+    
     map->set_temperature(temperature);
 
     // create a descent graph
@@ -89,13 +92,13 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     LocusSampler lsampler(ped, map, psg);
     MeiosisSampler msampler(ped, map);
     
-    
+    /*
     GPUWrapper gpu(ped, map, psg);
     
     gpu.run(dg, iterations, burnin, 10, peel->get_trait_prob());
     
     exit(0);
-    
+    */
     
     
     Progress p("MCMC: ", iterations);
@@ -103,6 +106,8 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     lsampler.reset(); // just in case it was used for sequential imputation
     
     unsigned num_meioses = 2 * (ped->num_members() - ped->num_founders());
+    
+    fprintf(stderr, "#meioses = %d\n", num_meioses);
     
     for(unsigned i = 0; i < iterations; ++i) {
         //lsampler.step(dg, locus);

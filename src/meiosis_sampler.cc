@@ -10,6 +10,7 @@ using namespace std;
 #include "meiosis_sampler.h"
 #include "founder_allele_graph2.h"
 #include "founder_allele_graph.h"
+#include "founder_allele_graph4.h"
 
 
 void MeiosisSampler::init_matrices() {
@@ -64,6 +65,7 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
     dg.set(person_id, locus, parent, value);
     
     // FounderAlleleGraph
+    /*
     f1.reset();
     if(f1.populate(dg, locus)) {
         //fag.print();
@@ -74,6 +76,7 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
     else {
         tmp_likelihood = LOG_ILLEGAL;
     }
+    */
     //f1.print();
     
     // FounderAlleleGraph2
@@ -85,8 +88,20 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
     */
     
     // FounderAlleleGraph3
-    //tmp_likelihood = f3.evaluate(dg, locus);
+    tmp_likelihood = f3.evaluate(dg, locus); // XXX
     //printf("%s\n", f3.debug_string().c_str());
+    
+    /*
+    FounderAlleleGraph4 fag4(ped, map, locus);
+    fag4.set_sequence(&seq);
+    double tmp_fag4 = fag4.init_likelihood(dg);
+    tmp_fag4 = tmp_fag4 == 0.0 ? LOG_ILLEGAL : log(tmp_fag4);
+    */
+    //tmp_likelihood = f4.init_likelihood(dg, locus);
+    //tmp_likelihood = tmp_likelihood == 0.0 ? LOG_ILLEGAL : log(tmp_likelihood);
+    
+    double tmp_fag4 = f4.init_likelihood(dg, locus);
+    tmp_fag4 = tmp_fag4 == 0.0 ? LOG_ILLEGAL : log(tmp_fag4);
     
     dg.set(person_id, locus, parent, tmp);
     
@@ -98,6 +113,13 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
         abort();
     }
     */
+    
+    if(tmp_likelihood != tmp_fag4) {
+        fprintf(stderr, "old = %e, new = %e, illegal = %e\n", tmp_likelihood, tmp_fag4, LOG_ILLEGAL);
+        fprintf(stderr, "%s\n", f3.debug_string().c_str());
+        abort();
+    }
+    
     
     return tmp_likelihood;
 }

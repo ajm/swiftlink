@@ -834,8 +834,8 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
     
     for(unsigned i = 0; i < iterations; ++i) {
         
-        //if((random() / double(RAND_MAX)) < 0.5) {
-        if((i % 2) == 0) {
+        if((random() / double(RAND_MAX)) < 0.0) {
+        //if((i % 2) == 0) {
             //printf("lsampler\n");
             run_gpu_lsampler_kernel(even_count, num_threads_per_block(), dev_state, 0);
             

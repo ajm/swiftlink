@@ -28,6 +28,7 @@ OBJECTS	:= \
 	founder_allele_graph.o \
 	founder_allele_graph2.o \
 	founder_allele_graph3.o \
+	founder_allele_graph4.o \
 	elimination.o \
 	peel_matrix.o \
 	rfunction.o \

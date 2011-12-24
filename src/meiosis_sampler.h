@@ -9,6 +9,7 @@ using namespace std;
 #include "types.h"
 #include "sampler.h"
 #include "logarithms.h"
+#include "founder_allele_graph4.h"
 #include "founder_allele_graph3.h"
 #include "founder_allele_graph2.h"
 #include "founder_allele_graph.h"
@@ -70,6 +71,7 @@ class MeiosisSampler : Sampler {
     FounderAlleleGraph  f1;
     FounderAlleleGraph2 f2;
     FounderAlleleGraph3 f3;
+    FounderAlleleGraph4 f4;
     MeiosisMatrix* matrix;
     vector<int> seq;
     
@@ -87,6 +89,7 @@ class MeiosisSampler : Sampler {
         f1(ped, map),
         f2(ped, map, 0),
         f3(ped, map),
+        f4(ped, map, 0),
         matrix(NULL),
         seq() {
     
@@ -94,6 +97,7 @@ class MeiosisSampler : Sampler {
         
         find_founderallelegraph_ordering();
         f3.set_sequence(&seq);
+        f4.set_sequence(&seq);
     }
     
     MeiosisSampler(const MeiosisSampler& rhs) :
@@ -101,6 +105,7 @@ class MeiosisSampler : Sampler {
         f1(rhs.f1),
         f2(rhs.f2),
         f3(rhs.f3),
+        f4(rhs.f4),
         matrix(NULL),
         seq(rhs.seq) {
         

@@ -101,6 +101,15 @@ class Person {
 	unsigned int get_paternalid() const { return paternal_id; }
 	enum sex get_sex() const { return gender; }
 	enum affection get_affection() const { return affection; }
+	
+	unsigned int get_parentid(enum parentage p) const {
+	    switch(p) {
+	        case MATERNAL:
+	            return maternal_id;
+	        case PATERNAL:
+	            return paternal_id;
+	    }
+	}
 
 	enum unphased_genotype get_genotype(unsigned int i) const {
 		if(not istyped()) {

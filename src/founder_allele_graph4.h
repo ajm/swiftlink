@@ -24,7 +24,10 @@ class FounderAlleleGraph4 {
     vector<int> edge_list;
     vector<int> group_membership;
     vector<int> group_fixed; // -1,0 or 1 - ie: -1 unfixed, 0,1 fixed to that index
+    vector<bool> group_active;
+    vector<int> group_size;
     vector<vector<enum unphased_genotype> > allele_assignment;
+    vector<vector<double> > prob;
     
     vector<int>* sequence;
     
@@ -33,6 +36,7 @@ class FounderAlleleGraph4 {
     void combine_components(int component1, int component2, bool flip);
     void propagate_fa_update(Person* p, int old_fa, int new_fa);
     double get_freq(enum unphased_genotype g);
+    double calculate_likelihood();
     
  public :
 	FounderAlleleGraph4(Pedigree* p, GeneticMap* g, int locus) :
@@ -45,7 +49,10 @@ class FounderAlleleGraph4 {
         edge_list(p->num_members() * 2, 0),
         group_membership(founder_alleles, DEFAULT_COMPONENT),
         group_fixed(founder_alleles, -1),
+        group_active(founder_alleles, false),
+        group_size(founder_alleles, 0),
         allele_assignment(2, vector<enum unphased_genotype>(founder_alleles, UNTYPED)),
+        prob(2, vector<double>(founder_alleles, 1.0)),
         sequence(NULL) {}
     
 	FounderAlleleGraph4(const FounderAlleleGraph4& f) :
@@ -58,7 +65,10 @@ class FounderAlleleGraph4 {
         edge_list(f.edge_list),
         group_membership(f.group_membership),
         group_fixed(f.group_fixed),
+        group_active(f.group_active),
+        group_size(f.group_size),
         allele_assignment(f.allele_assignment),
+        prob(f.prob),
         sequence(f.sequence) {}
     
 	~FounderAlleleGraph4() {}
@@ -75,7 +85,10 @@ class FounderAlleleGraph4 {
             edge_list = rhs.edge_list;
             group_membership = rhs.group_membership;
             group_fixed = rhs.group_fixed;
+            group_active = rhs.group_active;
+            group_size = rhs.group_size;
             allele_assignment = rhs.allele_assignment;
+            prob = rhs.prob;
             
             sequence = rhs.sequence;
         }

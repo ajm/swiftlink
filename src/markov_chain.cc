@@ -55,28 +55,14 @@ void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
 Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     unsigned burnin = iterations * 0.1;
     
-    //iterations = 1020;
-    //burnin = 1000;
+    iterations = 1020;
+    burnin = 1000;
     
     map->set_temperature(temperature);
 
     // create a descent graph
     DescentGraph dg(ped, map);
     //dg.random_descentgraph();
-    
-    /*
-    // start at an optimal configuration for east
-    dg.set(14, 0, PATERNAL, 1);
-    dg.set(14, 1, PATERNAL, 1);
-    dg.set(14, 2, PATERNAL, 1);
-    dg.set(14, 3, PATERNAL, 1);
-    dg.set(14, 4, PATERNAL, 1);
-    dg.set(14, 5, PATERNAL, 1);
-    dg.set(14, 6, PATERNAL, 1);
-    dg.set(14, 7, PATERNAL, 1);
-    dg.set(14, 8, PATERNAL, 1);
-    dg.set(14, 9, PATERNAL, 1);
-    */
     
     // build peeling sequence for L-sampler and Peeler
     PeelSequenceGenerator psg(ped);
@@ -118,7 +104,7 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
         //if(person == 0)
         //    person = ped->num_founders();
         
-        if((random() / static_cast<double>(RAND_MAX)) < 0.5) {
+        if((random() / static_cast<double>(RAND_MAX)) < 0.0) {
             for(unsigned j = 0; j < map->num_markers(); ++j)
                 lsampler.step(dg, j);
             //gpu.step(dg);
@@ -134,9 +120,9 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
             continue;
         }
         
-        if((i % 10) == 0) {
+        //if((i % 10) == 0) {
             peel->process(dg);
-        }
+        //}
     }
     
     p.finish();

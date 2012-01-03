@@ -25,39 +25,10 @@ string FounderAlleleGraph4::debug_string() {
 
 
 // -----------------------------------------
-double FounderAlleleGraph4::init_likelihood(DescentGraph& dg, int newlocus) {
+double FounderAlleleGraph4::calculate_likelihood() {
     Person* p;
-    int pid;
-    int parent_allele;
     int tmp;
-    
-    locus = newlocus;
-    major_freq = map->get_major(locus);
-    minor_freq = map->get_minor(locus);
-    
-	// find founder allele assignments, this is only related to the current 
-	// descent graph and not whether people are typed or not
-	for(unsigned i = 0; i < ped->num_members(); ++i) {
-	    pid = (*sequence)[i];
-        p = ped->get_by_index(pid);
-	    
-	    tmp = pid * 2;
-	    
-	    if(p->isfounder()) {
-	        edge_list[tmp] = tmp;
-	        edge_list[tmp + 1] = tmp + 1;
-	    }
-	    else {
-	        parent_allele = dg.get(pid, locus, MATERNAL);
-	        edge_list[tmp] = edge_list[(p->get_maternalid() * 2) + parent_allele];
-	        
-	        parent_allele = dg.get(pid, locus, PATERNAL);
-	        edge_list[tmp + 1] = edge_list[(p->get_paternalid() * 2) + parent_allele];
-	    }
-	}
-	
-	
-	enum unphased_genotype g;
+    enum unphased_genotype g;
     int mat_fa;
     int pat_fa;
     int num_groups;
@@ -71,8 +42,14 @@ double FounderAlleleGraph4::init_likelihood(DescentGraph& dg, int newlocus) {
     group_index = 0;
     group_membership.assign(founder_alleles, DEFAULT_COMPONENT);
     group_fixed.assign(founder_alleles, -1);
-    allele_assignment[0].assign(founder_alleles, UNTYPED);
-    allele_assignment[1].assign(founder_alleles, UNTYPED);
+    group_active.assign(founder_alleles, false);
+    
+    //allele_assignment[0].assign(founder_alleles, UNTYPED);
+    //allele_assignment[1].assign(founder_alleles, UNTYPED);
+    
+    //group_size.assign(founder_alleles, 0);
+    //prob[0].assign(founder_alleles, 1.0);
+    //prob[1].assign(founder_alleles, 1.0);
     
     // calculate likelihood, the founder allele graph is only
     // constrained by typed members of the pedigree
@@ -90,11 +67,13 @@ double FounderAlleleGraph4::init_likelihood(DescentGraph& dg, int newlocus) {
         mat_fa = edge_list[tmp];
         pat_fa = edge_list[++tmp];
         
+        //fprintf(stderr, "l=%d i=%d m=%d p=%d g=%d\n", locus, i, mat_fa, pat_fa, g);
+        
         
         // autozygous
         if(mat_fa == pat_fa) { /* 301 - 347 */
             if(g == HETERO) {
-                //fprintf(stderr, "FAG ILLEGAL: %d\n", __LINE__);
+                //fprintf(stderr, "FAG ILLEGAL: %d (fa=%d hetero)\n", __LINE__, mat_fa);
                 return 0.0;
             }
             
@@ -125,7 +104,11 @@ double FounderAlleleGraph4::init_likelihood(DescentGraph& dg, int newlocus) {
             else {
                 group_membership[mat_fa] = group_index;
                 group_fixed[group_index] = 0;
+                group_active[group_index] = true;
+                group_size[group_index] = 1;
                 allele_assignment[0][mat_fa] = g;
+                //fprintf(stderr, "[%d]: %d = %d\n", __LINE__, mat_fa, g);
+                prob[0][group_index] = (g == HOMOZ_A ? major_freq : minor_freq);
                 ++group_index;
                 ++num_groups;
             }
@@ -145,7 +128,7 @@ double FounderAlleleGraph4::init_likelihood(DescentGraph& dg, int newlocus) {
                         if(fixed1 != -1) {
                             // fixed, check if legit
                             if(not legal(g, allele_assignment[fixed1][mat_fa], allele_assignment[fixed1][pat_fa])) {
-                                //fprintf(stderr, "FAG ILLEGAL: %d\n", __LINE__);
+                                //fprintf(stderr, "FAG ILLEGAL: %d (m=%d [%d] p=%d [%d] g=%d)\n", __LINE__, mat_fa, allele_assignment[fixed1][mat_fa], pat_fa, allele_assignment[fixed1][pat_fa], g);
                                 return 0.0;
                             }
                         }
@@ -154,14 +137,13 @@ double FounderAlleleGraph4::init_likelihood(DescentGraph& dg, int newlocus) {
                             legal0 = legal(g, allele_assignment[0][mat_fa], allele_assignment[0][pat_fa]);
                             legal1 = legal(g, allele_assignment[1][mat_fa], allele_assignment[1][pat_fa]);
                             
-                            if(legal0 and legal1) {
-                                group_fixed[group1] = -1;
-                            }
-                            else {
-                                if(legal0) {
+                            if(legal0) {
+                                if(not legal1) {
                                     group_fixed[group1] = 0;
                                 }
-                                else if(legal1) {
+                            }
+                            else {
+                                if(legal1) {
                                     group_fixed[group1] = 1;
                                 }
                                 else {
@@ -250,6 +232,10 @@ double FounderAlleleGraph4::init_likelihood(DescentGraph& dg, int newlocus) {
                                 // still unfixed, swap assignment in one group
                                 fixed1 = fixed2 = -2;
                             }
+                            else {
+                                // all true, assignments don't need swapping
+                                fixed1 = fixed2 = -1;
+                            }
                         }
                         
                         if(fixed1 != fixed2) {
@@ -274,12 +260,16 @@ double FounderAlleleGraph4::init_likelihood(DescentGraph& dg, int newlocus) {
                 else {
                     if(fixed1 != -1) {
                         enum unphased_genotype tmp = get_other_allele(g, allele_assignment[fixed1][mat_fa]);
+                        
                         if(tmp == UNTYPED) {
                             //fprintf(stderr, "FAG ILLEGAL: %d\n", __LINE__);
                             return 0.0;
                         }
-                        else 
+                        else {
                             allele_assignment[fixed1][pat_fa] = tmp;
+                            //fprintf(stderr, "[%d]: %d = %d (get_other_allele(%d, %d))\n", __LINE__, pat_fa, tmp, g, allele_assignment[fixed1][mat_fa]);
+                            prob[fixed1][group1] *= (tmp == HOMOZ_A ? major_freq : minor_freq);
+                        }
                     }
                     else {
                         enum unphased_genotype tmp0 = get_other_allele(g, allele_assignment[0][mat_fa]);
@@ -288,16 +278,24 @@ double FounderAlleleGraph4::init_likelihood(DescentGraph& dg, int newlocus) {
                         if(tmp0 != UNTYPED) {
                             if(tmp1 != UNTYPED) {
                                 allele_assignment[0][pat_fa] = tmp0;
+                                //fprintf(stderr, "[%d]: %d = %d\n", __LINE__, pat_fa, tmp0);
                                 allele_assignment[1][pat_fa] = tmp1;
+                                //fprintf(stderr, "[%d]: %d = %d\n", __LINE__, mat_fa, tmp1);
+                                prob[0][group1] *= (tmp0 == HOMOZ_A ? major_freq : minor_freq);
+                                prob[1][group1] *= (tmp1 == HOMOZ_A ? major_freq : minor_freq);
                             }
                             else {
                                 allele_assignment[0][pat_fa] = tmp0;
+                                //fprintf(stderr, "[%d]: %d = %d\n", __LINE__, pat_fa, tmp0);
+                                prob[0][group1] *= (tmp0 == HOMOZ_A ? major_freq : minor_freq);
                                 group_fixed[group1] = 0;
                             }
                         }
                         else {
                             if(tmp1 != UNTYPED) {
                                 allele_assignment[1][pat_fa] = tmp1;
+                                //fprintf(stderr, "[%d]: %d = %d\n", __LINE__, pat_fa, tmp1);
+                                prob[1][group1] *= (tmp1 == HOMOZ_A ? major_freq : minor_freq);
                                 group_fixed[group1] = 1;
                             }
                             else {
@@ -305,10 +303,10 @@ double FounderAlleleGraph4::init_likelihood(DescentGraph& dg, int newlocus) {
                                 return 0.0;
                             }
                         }
-                        
                     }
                     
                     group_membership[pat_fa] = group1;
+                    group_size[group1] += 1;
                 }
             }
             else if(group2 != DEFAULT_COMPONENT) { /* 550 - 594 */
@@ -316,12 +314,16 @@ double FounderAlleleGraph4::init_likelihood(DescentGraph& dg, int newlocus) {
                 
                 if(fixed2 != -1) {
                     enum unphased_genotype tmp = get_other_allele(g, allele_assignment[fixed2][pat_fa]);
+                    
                     if(tmp == UNTYPED) {
                         //fprintf(stderr, "FAG ILLEGAL: %d\n", __LINE__);
                         return 0.0;
                     }
-                    else 
+                    else {
                         allele_assignment[fixed2][mat_fa] = tmp;
+                        //fprintf(stderr, "[%d]: %d = %d\n", __LINE__, mat_fa, tmp);
+                        prob[fixed2][group2] *= (tmp == HOMOZ_A ? major_freq : minor_freq);
+                    }
                 }
                 else {
                     enum unphased_genotype tmp0 = get_other_allele(g, allele_assignment[0][pat_fa]);
@@ -330,42 +332,61 @@ double FounderAlleleGraph4::init_likelihood(DescentGraph& dg, int newlocus) {
                     if(tmp0 != UNTYPED) {
                         if(tmp1 != UNTYPED) {
                             allele_assignment[0][mat_fa] = tmp0;
+                            //fprintf(stderr, "[%d]: %d = %d\n", __LINE__, mat_fa, tmp0);
                             allele_assignment[1][mat_fa] = tmp1;
+                            //fprintf(stderr, "[%d]: %d = %d\n", __LINE__, mat_fa, tmp1);
+                            prob[0][group2] *= (tmp0 == HOMOZ_A ? major_freq : minor_freq);
+                            prob[1][group2] *= (tmp1 == HOMOZ_A ? major_freq : minor_freq);
                         }
                         else {
                             allele_assignment[0][mat_fa] = tmp0;
+                            //fprintf(stderr, "[%d]: %d = %d\n", __LINE__, mat_fa, tmp0);
+                            prob[0][group2] *= (tmp0 == HOMOZ_A ? major_freq : minor_freq);
                             group_fixed[group2] = 0;
                         }
                     }
                     else {
                         if(tmp1 != UNTYPED) {
                             allele_assignment[1][mat_fa] = tmp1;
+                            //fprintf(stderr, "[%d]: %d = %d\n", __LINE__, mat_fa, tmp1);
+                            prob[1][group2] *= (tmp1 == HOMOZ_A ? major_freq : minor_freq);
                             group_fixed[group2] = 1;
                         }
                         else {
                             //fprintf(stderr, "FAG ILLEGAL: %d\n", __LINE__);
                             return 0.0;
                         }
-                    }        
+                    }
                 }
                 
-                group_membership[mat_fa] = group2;            
+                group_membership[mat_fa] = group2;
+                group_size[group2] += 1;
             }
             else { /* 596 - 621 */
                 if(g == HETERO) {
                     allele_assignment[0][mat_fa] = allele_assignment[1][pat_fa] = HOMOZ_A;
+                    //fprintf(stderr, "[%d]: %d = %d\n", __LINE__, mat_fa, HOMOZ_A);
+                    //fprintf(stderr, "[%d]: %d = %d\n", __LINE__, pat_fa, HOMOZ_A);
                     allele_assignment[1][mat_fa] = allele_assignment[0][pat_fa] = HOMOZ_B;
+                    //fprintf(stderr, "[%d]: %d = %d\n", __LINE__, mat_fa, HOMOZ_B);
+                    //fprintf(stderr, "[%d]: %d = %d\n", __LINE__, pat_fa, HOMOZ_B);
+                    prob[0][group_index] = \
+                    prob[1][group_index] = major_freq * minor_freq;
                     group_fixed[group_index] = -1;
                 }
                 else {
-                    allele_assignment[0][mat_fa] = g;
-                    allele_assignment[1][pat_fa] = g;
+                    allele_assignment[0][mat_fa] = allele_assignment[0][pat_fa] = g;
+                    //fprintf(stderr, "[%d]: %d = %d\n", __LINE__, mat_fa, g);
+                    //fprintf(stderr, "[%d]: %d = %d\n", __LINE__, pat_fa, g);
+                    prob[0][group_index] = get_freq(g) * get_freq(g);
                     group_fixed[group_index] = 0;
                 }
                 
                 // neither in a group
-                group_membership[mat_fa] = group_index;
+                group_membership[mat_fa] = \
                 group_membership[pat_fa] = group_index;
+                group_size[group_index] = 2;
+                group_active[group_index] = true;
                 ++group_index;
                 ++num_groups;
             }
@@ -373,11 +394,21 @@ double FounderAlleleGraph4::init_likelihood(DescentGraph& dg, int newlocus) {
     }
     
     // calculate likelihood
-    double prob = 1.0; /* 626 - 642 */
+    double ret_prob = 1.0; /* 626 - 642 */
     
-    // XXX TODO
+    for(int i = 0; i < group_index; ++i) {
+        if(group_active[i] and (group_size[i] > 1)) {
+            fixed1 = group_fixed[i];
+            if(fixed1 != -1) {
+                ret_prob *= prob[fixed1][i];
+            }
+            else {
+                ret_prob *= (prob[0][i] + prob[1][i]);
+            }
+        }
+    }
     
-    return prob;
+    return ret_prob;
 }
 
 // should be cached, this is temporary
@@ -408,7 +439,7 @@ enum unphased_genotype FounderAlleleGraph4::get_other_allele(enum unphased_genot
         case HOMOZ_A:
             return a1 == HOMOZ_A ? HOMOZ_A : UNTYPED;
         case HOMOZ_B:
-            return a1 == HOMOZ_A ? UNTYPED : HOMOZ_A;
+            return a1 == HOMOZ_B ? HOMOZ_B : UNTYPED;
         case UNTYPED:
             break;
     }
@@ -432,6 +463,53 @@ void FounderAlleleGraph4::combine_components(int component1, int component2, boo
             }
         }
     }
+    
+    if(flip) {
+        prob[0][component1] *= prob[1][component2];
+        prob[1][component1] *= prob[0][component2];
+    }
+    else {
+        prob[0][component1] *= prob[0][component2];
+        prob[1][component1] *= prob[1][component2];
+    }
+    
+    group_size[component1] += group_size[component2];
+    
+    group_active[component2] = false;
+}
+
+double FounderAlleleGraph4::init_likelihood(DescentGraph& dg, int newlocus) {
+    Person* p;
+    int pid;
+    int parent_allele;
+    int tmp;
+    
+    locus = newlocus;
+    major_freq = map->get_major(locus);
+    minor_freq = map->get_minor(locus);
+    
+	// find founder allele assignments, this is only related to the current 
+	// descent graph and not whether people are typed or not
+	for(unsigned i = 0; i < ped->num_members(); ++i) {
+	    pid = (*sequence)[i];
+        p = ped->get_by_index(pid);
+	    
+	    tmp = pid * 2;
+	    
+	    if(p->isfounder()) {
+	        edge_list[tmp] = tmp;
+	        edge_list[tmp + 1] = tmp + 1;
+	    }
+	    else {
+	        parent_allele = dg.get(pid, locus, MATERNAL);
+	        edge_list[tmp] = edge_list[(p->get_maternalid() * 2) + parent_allele];
+	        
+	        parent_allele = dg.get(pid, locus, PATERNAL);
+	        edge_list[tmp + 1] = edge_list[(p->get_paternalid() * 2) + parent_allele];
+	    }
+	}
+	
+	return calculate_likelihood();
 }
 
 double FounderAlleleGraph4::update_likelihood(unsigned int personid, enum parentage allele) {
@@ -442,7 +520,7 @@ double FounderAlleleGraph4::update_likelihood(unsigned int personid, enum parent
     
     propagate_fa_update(p, old_fa, new_fa);
     
-    return 0.0;
+    return calculate_likelihood();
 }
 
 void FounderAlleleGraph4::propagate_fa_update(Person* p, int old_fa, int new_fa) {

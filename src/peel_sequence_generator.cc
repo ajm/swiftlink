@@ -101,6 +101,7 @@ void PeelSequenceGenerator::build_peel_order() {
         PeelOperation p = get_best_operation(tmp);
 
         find_previous_functions(p);
+        bruteforce_assignments(p);
 
         peelorder.push_back(p);
         
@@ -180,5 +181,27 @@ int PeelSequenceGenerator::find_function_containing(vector<unsigned>& nodes) {
     }
     
     return -1;
+}
+
+void PeelSequenceGenerator::bruteforce_assignments(PeelOperation& op) {
+    int ndim = op.get_cutset_size();
+    int total = pow(4.0, ndim);
+    int offset, index;
+    
+    vector<unsigned int>& cutset = op.get_cutset();
+    
+    vector<vector<int> > assigns(total, vector<int>(ped->num_members(), -1));
+    
+    for(int ind = 0; ind < total; ++ind) {
+        index = ind;
+        
+        for(int i = ndim - 1; i > -1; --i) {
+            offset = 1 << (i * 2);
+            assigns[ind][cutset[i]] = index / offset;
+            index %= offset;
+        }
+    }
+    
+    op.set_index_values(assigns);
 }
 

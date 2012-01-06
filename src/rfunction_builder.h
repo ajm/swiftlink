@@ -19,7 +19,7 @@ class RfunctionBuilder {
     GeneticMap* map;
     vector<T*>& functions;
 
-        
+/*
     void find_previous_functions(const PeelOperation& peel, Rfunction** f1, Rfunction** f2) {
         switch(peel.get_type()) {
             case CHILD_PEEL:
@@ -82,16 +82,17 @@ class RfunctionBuilder {
         
         return static_cast<Rfunction*>(ret);
     }
-    
+*/
+
  public :
     RfunctionBuilder(Pedigree* p, GeneticMap* m, vector<T*>& func) : 
         ped(p), map(m), functions(func) {}
     
     T* createRfunction(const PeelOperation& po) {
-        Rfunction* prev1 = NULL;
-        Rfunction* prev2 = NULL;
+        Rfunction* prev1 = po.get_previous_op1() == -1 ? NULL : functions[po.get_previous_op1()];
+        Rfunction* prev2 = po.get_previous_op2() == -1 ? NULL : functions[po.get_previous_op2()];
         
-        find_previous_functions(po, &prev1, &prev2);
+        //find_previous_functions(po, &prev1, &prev2);
         
         return new T(po, ped, map, prev1, prev2);
     }

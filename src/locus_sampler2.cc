@@ -8,7 +8,7 @@ using namespace std;
 #include "descent_graph.h"
 #include "pedigree.h"
 #include "genetic_map.h"
-#include "rfunction_builder.h"
+//#include "rfunction_builder.h"
 #include "sampler_rfunction.h"
 #include "locus_sampler2.h"
 
@@ -19,10 +19,13 @@ void LocusSampler::init_rfunctions(PeelSequenceGenerator& psg) {
     
     vector<PeelOperation>& ops = psg.get_peel_order();
     
-    RfunctionBuilder<SamplerRfunction> build(ped, map, rfunctions);
+    //RfunctionBuilder<SamplerRfunction> build(ped, map, rfunctions);
     
     for(unsigned i = 0; i < ops.size(); ++i) {
-        rfunctions.push_back(build.createRfunction(ops[i]));
+        Rfunction* prev1 = ops[i].get_previous_op1() == -1 ? NULL : rfunctions[ops[i].get_previous_op1()];
+        Rfunction* prev2 = ops[i].get_previous_op2() == -1 ? NULL : rfunctions[ops[i].get_previous_op2()];
+        
+        rfunctions.push_back(new SamplerRfunction(ops[i], ped, map, prev1, prev2));
     }
 }
 

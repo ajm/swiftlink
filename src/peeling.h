@@ -30,6 +30,8 @@ class PeelOperation {
     int prev1;
     int prev2;
     
+    vector<vector<int> > assignments;
+    
  public :
     PeelOperation(unsigned int peelnode) :  
         type(NULL_PEEL), 
@@ -38,7 +40,8 @@ class PeelOperation {
         peelnode(peelnode), 
         used(false),
         prev1(-1),
-        prev2(-1) {
+        prev2(-1),
+        assignments() {
     
         nuclearset.push_back(peelnode);    
     }
@@ -197,6 +200,14 @@ class PeelOperation {
         ss << " prev = (" << prev1 << ", " << prev2 << ")";
         
         return ss.str();
+    }
+    
+    void set_index_values(vector<vector<int> > assigns) {
+        assignments = assigns;
+    }
+    
+    vector<vector<int> >& get_index_values() {
+        return assignments;
     }
     
     bool operator<(const PeelOperation& p) const {

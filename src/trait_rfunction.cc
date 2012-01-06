@@ -75,12 +75,6 @@ enum phased_trait TraitRfunction::get_phased_trait(enum phased_trait m, enum pha
     return pt;
 }
 
-/*
-double TraitRfunction::get_transmission_probability(enum phased_trait parent) {
-    return 0.5;
-}
-*/
-
 void TraitRfunction::evaluate_child_peel(unsigned int pmatrix_index, 
                                     DescentGraph* dg,
                                     unsigned locus) {
@@ -217,3 +211,4 @@ void TraitRfunction::evaluate_parent_peel(
     
     pmatrix.set(pmatrix_index, total);
 }
+

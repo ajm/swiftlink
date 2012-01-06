@@ -57,13 +57,6 @@ class PeelOperation {
     }
     
     bool in_cutset(unsigned node) const {
-/*        for(unsigned i = 0; i < cutset.size(); ++i) {
-            if(cutset[i] == node) {
-                return true;
-            }
-        }
-        return false;
-        */
         return find(cutset.begin(), cutset.end(), node) != cutset.end();
     }
     

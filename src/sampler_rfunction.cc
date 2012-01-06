@@ -123,18 +123,11 @@ void SamplerRfunction::sample(vector<int>& pmk) {
     // extract probabilities
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         trait = static_cast<enum phased_trait>(i);
-        //pmk.add(node, trait);
         pmk[node] = i;
         
         prob_dist[i] = pmatrix_presum.get(pmk);
         total += prob_dist[i];        
     }
-    
-    /*
-    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
-        fprintf(stderr, "prob_dist[%d] = %e\n", i, prob_dist[i]);
-    }
-    */
     
     // normalise
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
@@ -149,7 +142,6 @@ void SamplerRfunction::sample(vector<int>& pmk) {
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         total += prob_dist[i];
         if(r <= total) {
-            //pmk.add(node, static_cast<enum phased_trait>(i));
             pmk[node] = i;
             return;
         }
@@ -159,9 +151,7 @@ void SamplerRfunction::sample(vector<int>& pmk) {
         }
     }
     
-    //pmk.add(node, static_cast<enum phased_trait>(last));
-    
-    // XXX ??? XXX still abort?
+    // XXX still abort?
     abort();
 }
 
@@ -187,13 +177,10 @@ void SamplerRfunction::evaluate_child_peel(
     mat_trait = static_cast<enum phased_trait>((*indices)[pmatrix_index][kid->get_maternalid()]);
     pat_trait = static_cast<enum phased_trait>((*indices)[pmatrix_index][kid->get_paternalid()]);
     
-    //fprintf(stderr, "-- %d - offset = %d\n", pmatrix_index, offset);
-    
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         kid_trait = static_cast<enum phased_trait>(i);
         presum_index = pmatrix_index + (offset * i);
         
-        //fprintf(stderr, "indices[%d][%d]\n", pmatrix_index, i);
         (*indices)[pmatrix_index][kid_id] = i;
         
         tmp = get_trait_probability(kid_id, kid_trait, locus);
@@ -208,7 +195,6 @@ void SamplerRfunction::evaluate_child_peel(
         tmp *= ((previous_rfunction1 != NULL) ? previous_rfunction1->get((*indices)[pmatrix_index]) : 1.0) * \
                ((previous_rfunction2 != NULL) ? previous_rfunction2->get((*indices)[pmatrix_index]) : 1.0);
         
-        //fprintf(stderr, "%d = %e (%d)\n", presum_index, tmp, pmatrix_index);
         pmatrix_presum.set(presum_index, tmp);
         
         total += tmp;

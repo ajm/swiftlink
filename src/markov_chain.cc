@@ -18,8 +18,8 @@ using namespace std;
 void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
     DescentGraph tmp(ped, map);
     double tmp_prob, best_prob = LOG_ILLEGAL;
-    //int iterations = 100;
-    int iterations = 1;
+    int iterations = 100;
+    //int iterations = 1;
     
     LocusSampler lsampler(ped, map, psg);
     
@@ -55,8 +55,8 @@ void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
 Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     unsigned burnin = iterations * 0.1;
     
-    iterations = 1020;
-    burnin = 1000;
+    //iterations = 1020;
+    //burnin = 1000;
     
     map->set_temperature(temperature);
 
@@ -96,14 +96,6 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     fprintf(stderr, "#meioses = %d\n", num_meioses);
     
     for(unsigned i = 0; i < iterations; ++i) {
-        //lsampler.step(dg, locus);
-        //locus = (locus + 1) % map->num_markers();
-        
-        //msampler.step(dg, person);
-        //person = (person + 1) % ped->num_members();
-        //if(person == 0)
-        //    person = ped->num_founders();
-        
         if((random() / static_cast<double>(RAND_MAX)) < 1.0) {
             for(unsigned j = 0; j < map->num_markers(); ++j)
                 lsampler.step(dg, j);
@@ -120,9 +112,9 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
             continue;
         }
         
-        //if((i % 10) == 0) {
+        if((i % 10) == 0) {
             peel->process(dg);
-        //}
+        }
     }
     
     p.finish();

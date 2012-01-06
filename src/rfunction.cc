@@ -140,21 +140,12 @@ void Rfunction::evaluate_element(
 }
 
 bool Rfunction::legal_genotype(unsigned personid, unsigned locus, enum phased_trait g) {
-
-    //return true;
-
     Person* p = ped->get_by_index(personid);
     
     return p->legal_genotype(locus, g);
 }
 
 void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
-    //PeelMatrixKey k(ped->num_members());
-    //vector<unsigned> q;
-    //unsigned ndim = peel.get_cutset_size();
-    //unsigned tmp;
-    //bool skip = false;
-    
     pmatrix.reset();
     pmatrix_presum.reset();
     
@@ -171,18 +162,8 @@ void Rfunction::evaluate(DescentGraph* dg, unsigned locus, double offset) {
         antitheta2 = map->get_inversetheta(locus-1);
     }
     
-    /*
-    // nothing in the cutset to be enumerated
-    if(peel.get_type() == LAST_PEEL) {
-        evaluate_partner_peel(k, locus);
-        return;
-    }
-    */
-    
     for(unsigned int i = 0; i < size; ++i) {
-        //fprintf(stderr, "%d\n", i);
         evaluate_element(i, dg, locus);
     }
-    //fprintf(stderr, "====\n");
 }
 

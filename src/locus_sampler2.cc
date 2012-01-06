@@ -8,18 +8,12 @@ using namespace std;
 #include "descent_graph.h"
 #include "pedigree.h"
 #include "genetic_map.h"
-//#include "rfunction_builder.h"
 #include "sampler_rfunction.h"
 #include "locus_sampler2.h"
 
 
 void LocusSampler::init_rfunctions(PeelSequenceGenerator& psg) {
-    //PeelSequenceGenerator psg(ped);
-    //psg.build_peel_order();
-    
     vector<PeelOperation>& ops = psg.get_peel_order();
-    
-    //RfunctionBuilder<SamplerRfunction> build(ped, map, rfunctions);
     
     for(unsigned i = 0; i < ops.size(); ++i) {
         Rfunction* prev1 = ops[i].get_previous_op1() == -1 ? NULL : rfunctions[ops[i].get_previous_op1()];
@@ -147,14 +141,6 @@ void LocusSampler::step(DescentGraph& dg, unsigned parameter) {
     }
     
     sample_meiosis_indicators(pmk, dg, locus);
-    
-    /*
-    // XXX comment out when I know everything is cool
-    if(dg.get_likelihood() == LOG_ZERO) {
-        fprintf(stderr, "Error: descent graph produced by L-sampler is illegal! (%d)\n", int(locus));
-        abort();
-    }
-    */
 }
 
 void LocusSampler::reset() {
@@ -168,8 +154,6 @@ void LocusSampler::set_all(bool left, bool right) {
 
 void LocusSampler::sequential_imputation(DescentGraph& dg) {
     unsigned starting_locus = get_random_locus();
-    
-    //fprintf(stderr, "sequential imputation: %d\n", int(starting_locus));
     
     set_all(true, true);
     step(dg, starting_locus);

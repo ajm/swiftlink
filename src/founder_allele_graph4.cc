@@ -17,15 +17,23 @@ using namespace std;
 
 string FounderAlleleGraph4::debug_string() { 
     stringstream ss;
-        
-    // ???
+    Person* p;
+    int tmp, pid;
+    
+    for(unsigned int i = 0; i < ped->num_members(); ++i) {
+	    pid = (*sequence)[i];
+        p = ped->get_by_index(pid);
+	    tmp = pid * 2;
+	    
+	    ss << pid << "\t(" << edge_list[tmp] << ", " << edge_list[tmp + 1] << ")\n";
+	}
     
     return ss.str();
 }
 
 
 // -----------------------------------------
-double FounderAlleleGraph4::calculate_likelihood() {
+double FounderAlleleGraph4::likelihood() {
     Person* p;
     int tmp;
     enum unphased_genotype g;
@@ -478,16 +486,17 @@ void FounderAlleleGraph4::combine_components(int component1, int component2, boo
     group_active[component2] = false;
 }
 
-double FounderAlleleGraph4::init_likelihood(DescentGraph& dg, int newlocus) {
+//double FounderAlleleGraph4::init_likelihood(DescentGraph& dg, int newlocus) {
+void FounderAlleleGraph4::reset(DescentGraph& dg) {
     Person* p;
     int pid;
     int parent_allele;
     int tmp;
-    
+    /*
     locus = newlocus;
     major_freq = map->get_major(locus);
     minor_freq = map->get_minor(locus);
-    
+    */
 	// find founder allele assignments, this is only related to the current 
 	// descent graph and not whether people are typed or not
 	for(unsigned i = 0; i < ped->num_members(); ++i) {
@@ -508,32 +517,72 @@ double FounderAlleleGraph4::init_likelihood(DescentGraph& dg, int newlocus) {
 	        edge_list[tmp + 1] = edge_list[(p->get_paternalid() * 2) + parent_allele];
 	    }
 	}
-	
-	return calculate_likelihood();
+	/*
+	fprintf(stderr, "--------------\n");
+	fprintf(stderr, "%s\n", debug_string().c_str());
+	fprintf(stderr, "--------------\n");
+	//return calculate_likelihood();
+    */
 }
-
-double FounderAlleleGraph4::update_likelihood(unsigned int personid, enum parentage allele) {
+/*
+double FounderAlleleGraph4::likelihood(unsigned int personid, enum parentage allele) {
     Person* p = ped->get_by_index(personid);
     int old_fa = edge_list[(personid * 2) + allele];
     int tmp = p->get_parentid(allele) * 2;
     int new_fa = ((edge_list[tmp] == old_fa) ? edge_list[tmp + 1] : edge_list[tmp]);
     
-    propagate_fa_update(p, old_fa, new_fa);
+    if(old_fa == new_fa)
+        return calculate_likelihood();
     
-    return calculate_likelihood();
+    fprintf(stderr, "%s\n", debug_string().c_str());
+    
+    propagate_fa_update(p, allele, old_fa, new_fa);
+    
+    fprintf(stderr, "%s\n", debug_string().c_str());
+    
+    double ret = calculate_likelihood();
+    
+    propagate_fa_update(p, allele, new_fa, old_fa);
+    
+    fprintf(stderr, "%s==============\n\n\n", debug_string().c_str());
+    
+    return ret;
+}
+*/
+void FounderAlleleGraph4::flip(unsigned int personid, enum parentage allele) {
+    Person* p = ped->get_by_index(personid);
+    int old_fa = edge_list[(personid * 2) + allele];
+    int tmp = p->get_parentid(allele) * 2;
+    int new_fa = ((edge_list[tmp] == old_fa) ? edge_list[tmp + 1] : edge_list[tmp]);
+    /*
+    locus = newlocus;
+    major_freq = map->get_major(locus);
+    minor_freq = map->get_minor(locus);
+    */
+    if(old_fa == new_fa)
+        return;
+    
+    propagate_fa_update(p, allele, old_fa, new_fa);
+    
+    //double ret = calculate_likelihood();
+    
+    //propagate_fa_update(p, new_fa, old_fa);
+    
+    //return ret;
 }
 
-void FounderAlleleGraph4::propagate_fa_update(Person* p, int old_fa, int new_fa) {
+void FounderAlleleGraph4::propagate_fa_update(Person* p, enum parentage allele, int old_fa, int new_fa) {
     int tmp = p->get_internalid() * 2;
     
-    if((edge_list[tmp] != old_fa) and (edge_list[++tmp] != old_fa)) {
+    if(edge_list[tmp + allele] != old_fa)
         return;
-    }
+    
+    enum parentage newallele = p->isfemale() ? MATERNAL : PATERNAL;
     
     for(unsigned i = 0; i < p->num_children(); ++i) {
-        propagate_fa_update(p->get_child(i), old_fa, new_fa);
+        propagate_fa_update(p->get_child(i), newallele, old_fa, new_fa);
     }
     
-    edge_list[tmp] = new_fa;
+    edge_list[tmp + allele] = new_fa;
 }
 

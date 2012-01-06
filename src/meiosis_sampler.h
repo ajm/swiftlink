@@ -68,65 +68,66 @@ class MeiosisMatrix {
 
 class MeiosisSampler : Sampler {
     
-    FounderAlleleGraph  f1;
-    FounderAlleleGraph2 f2;
     FounderAlleleGraph3 f3;
-    FounderAlleleGraph4 f4;
-    MeiosisMatrix* matrix;
+    //FounderAlleleGraph4 f4;
+    vector<FounderAlleleGraph4> f4;
+    vector<double> matrix; // have this double the length
     vector<int> seq;
     
+    /*
     void init_matrices();
     void copy_matrices(const MeiosisSampler& rhs);
     void kill_matrices();
+    */
+    
     double graph_likelihood(DescentGraph& dg, unsigned person_id, unsigned locus, enum parentage parent, unsigned value);
     double initial_likelihood(DescentGraph& dg, unsigned locus);
     void incremental_likelihood(DescentGraph& dg, unsigned person_id, unsigned locus, enum parentage parent, double* meiosis0, double* meiosis1);
     void find_founderallelegraph_ordering();
     
+    void normalise(int locus);
+    unsigned sample(int locus);
+    
  public :
     MeiosisSampler(Pedigree* ped, GeneticMap* map) :
-        Sampler(ped, map), 
-        f1(ped, map),
-        f2(ped, map, 0),
+        Sampler(ped, map),
         f3(ped, map),
-        f4(ped, map, 0),
-        matrix(NULL),
+        f4(map->num_markers(), FounderAlleleGraph4(ped, map)),
+        matrix(map->num_markers() * 2),
         seq() {
     
-        init_matrices();
-        
         find_founderallelegraph_ordering();
+        
         f3.set_sequence(&seq);
-        f4.set_sequence(&seq);
+        
+        for(unsigned int i = 0; i < map->num_markers(); ++i) {
+            f4[i].set_sequence(&seq);
+            f4[i].set_locus(i);
+        }
     }
     
     MeiosisSampler(const MeiosisSampler& rhs) :
         Sampler(rhs.ped, rhs.map),
-        f1(rhs.f1),
-        f2(rhs.f2),
         f3(rhs.f3),
         f4(rhs.f4),
-        matrix(NULL),
-        seq(rhs.seq) {
-        
-        init_matrices();
-        copy_matrices(rhs);
-    }
+        matrix(rhs.matrix),
+        seq(rhs.seq) {}
     
-    virtual ~MeiosisSampler() {
-        kill_matrices();
-    }
+    virtual ~MeiosisSampler() {}
     
     MeiosisSampler& operator=(const MeiosisSampler& rhs) {
         
         if(this != &rhs) {
             Sampler::operator=(rhs);
-            copy_matrices(rhs);
+            f4 = rhs.f4;
+            matrix = rhs.matrix;
             seq = rhs.seq;
         }
         
         return *this;
     }
+    
+    void reset(DescentGraph& dg);
     
     virtual void step(DescentGraph& dg, unsigned parameter);
 };

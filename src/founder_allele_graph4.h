@@ -34,15 +34,14 @@ class FounderAlleleGraph4 {
     bool legal(enum unphased_genotype obs, enum unphased_genotype a1, enum unphased_genotype a2);
     enum unphased_genotype get_other_allele(enum unphased_genotype obs, enum unphased_genotype a1);
     void combine_components(int component1, int component2, bool flip);
-    void propagate_fa_update(Person* p, int old_fa, int new_fa);
+    void propagate_fa_update(Person* p, enum parentage allele, int old_fa, int new_fa);
     double get_freq(enum unphased_genotype g);
-    double calculate_likelihood();
     
  public :
-	FounderAlleleGraph4(Pedigree* p, GeneticMap* g, int locus) :
+	FounderAlleleGraph4(Pedigree* p, GeneticMap* g) :
         ped(p),
         map(g),
-        locus(locus),
+        locus(0),
         founder_alleles(p->num_founders() * 2),
         major_freq(g->get_major(locus)),
         minor_freq(g->get_minor(locus)),
@@ -97,10 +96,15 @@ class FounderAlleleGraph4 {
     }
     
     void set_sequence(vector<int>* seq) { sequence = seq; }
+    void set_locus(int newlocus) {
+        locus = newlocus;
+        major_freq = map->get_major(locus);
+        minor_freq = map->get_minor(locus);
+    }
     
-    double init_likelihood(DescentGraph& d, int locus);
-    double update_likelihood(unsigned int personid, enum parentage p); // need DescentGraph as well?
-    
+    void reset(DescentGraph& dg);
+    double likelihood();
+    void flip(unsigned int personid, enum parentage p);
     
     string debug_string();
 };

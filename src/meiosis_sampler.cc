@@ -12,7 +12,7 @@ using namespace std;
 #include "founder_allele_graph.h"
 #include "founder_allele_graph4.h"
 
-
+/*
 void MeiosisSampler::init_matrices() {
     matrix = new MeiosisMatrix[map->num_markers()];
 }
@@ -23,6 +23,12 @@ void MeiosisSampler::copy_matrices(const MeiosisSampler& rhs) {
 
 void MeiosisSampler::kill_matrices() {
     delete[] matrix;
+}
+*/
+void MeiosisSampler::reset(DescentGraph& dg) {
+    for(unsigned i = 0; i < map->num_markers(); ++i) {
+        f4[i].reset(dg);
+    }
 }
 
 void MeiosisSampler::find_founderallelegraph_ordering() {
@@ -59,78 +65,114 @@ void MeiosisSampler::find_founderallelegraph_ordering() {
 }
 
 double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, unsigned locus, enum parentage parent, unsigned value) {
-    //double tmp_likelihood;
+    //double lik3, lik4, loglik4;
+    double lik4;
     unsigned tmp = dg.get(person_id, locus, parent);
+    bool flip;
     
+    flip = tmp != value;
+    
+    /*
     dg.set(person_id, locus, parent, value);
-        
-    // FounderAlleleGraph3
-    //tmp_likelihood = f3.evaluate(dg, locus); // XXX
-    //printf("%s\n", f3.debug_string().c_str());
     
-    double tmp_fag4 = f4.init_likelihood(dg, locus);
-    tmp_fag4 = tmp_fag4 == 0.0 ? LOG_ILLEGAL : log(tmp_fag4);
+    lik3 = f3.evaluate(dg, locus);
     
     dg.set(person_id, locus, parent, tmp);
+    */
+    
+    if(flip)
+        f4[locus].flip(person_id, parent);
+    
+    lik4 = f4[locus].likelihood();
+    //loglik4 = lik4 == 0.0 ? LOG_ILLEGAL : log(lik4);
+    
+    if(flip)
+        f4[locus].flip(person_id, parent);
+    
+    
+    //fprintf(stderr, "old = %e, new = %e\n", lik3, loglik4);
+    
+    //fprintf(stderr, "p=%d l=%d a=%d\n", person_id, locus, parent);
+    //fprintf(stderr, "old = %e, new = %e, illegal = %e\n", lik3, loglik4, LOG_ILLEGAL);
     /*
-    if(tmp_likelihood != tmp_fag4) {
-        fprintf(stderr, "old = %e, new = %e, illegal = %e\n", tmp_likelihood, tmp_fag4, LOG_ILLEGAL);
+    if(lik3 != loglik4) {
+        fprintf(stderr, "old = %e, new = %e, illegal = %e\n", lik3, loglik4, LOG_ILLEGAL);
         fprintf(stderr, "%s\n", f3.debug_string().c_str());
+        //f4[locus].reset(dg);
         abort();
     }
+    else {
+        fprintf(stderr, "fine\n");
+    }
     */
-    return tmp_fag4; //tmp_likelihood;
+    
+    return lik4;
 }
 
 void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
     // parameter is the founder allele
     unsigned person_id = ped->num_founders() + (parameter / 2);
     enum parentage p = static_cast<enum parentage>(parameter % 2);
+    int num_markers = static_cast<int>(map->num_markers());
+    int index;
+    int i, j;
+    int tmp, tmp2;
     
     //fprintf(stderr, "%d %s\n", int(person_id), p == MATERNAL ? "M" : "P");
     
     // forwards
-    for(unsigned i = 0; i < map->num_markers(); ++i) {
+    for(i = 0; i < num_markers; ++i) {
+        index = i * 2;
+        
         if(parameter == 0) {
-            matrix[i][0] = graph_likelihood(dg, person_id, i, p, 0);
-            matrix[i][1] = graph_likelihood(dg, person_id, i, p, 1);
+            matrix[index + 0] = graph_likelihood(dg, person_id, i, p, 0);
+            matrix[index + 1] = graph_likelihood(dg, person_id, i, p, 1);
         }
         else {
-            int tmp = dg.get(person_id, i, p);
-            int tmp2 = dg.get(ped->num_founders() + ((parameter - 1) / 2), i, static_cast<enum parentage>((parameter - 1) % 2));
-            matrix[i][tmp] = matrix[i][tmp2];
-            matrix[i][1-tmp] = graph_likelihood(dg, person_id, i, p, 1-tmp);
+            tmp = dg.get(person_id, i, p);
+            tmp2 = dg.get(ped->num_founders() + ((parameter - 1) / 2), i, static_cast<enum parentage>((parameter - 1) % 2));
+            
+            matrix[index + tmp] = matrix[index + tmp2];
+            matrix[index + (1-tmp)] = graph_likelihood(dg, person_id, i, p, 1-tmp);
         }
     }
     
-    for(unsigned i = 1; i < map->num_markers(); ++i) {
-        for(unsigned j = 0; j < 2; ++j) {
-            // these are log likelihood, so need to be handled carefully
-            matrix[i][j] = log_product( \
-                                       matrix[i][j], /*graph_likelihood(dg, person_id, i, p, j),*/ \
-                                       log_sum( \
-                                               log_product(matrix[i-1][j],   map->get_theta_log(i-1)), \
-                                               log_product(matrix[i-1][1-j], map->get_inversetheta_log(i-1)) \
-                                               ) \
-                                       );
+    for(i = 1; i < num_markers; ++i) {
+        for(j = 0; j < 2; ++j) {
+            matrix[(i * 2) + j] *= \
+                                ( \
+                                    (matrix[((i-1) * 2) + j]     * map->get_theta(i-1)) + \
+                                    (matrix[((i-1) * 2) + (1-j)] * map->get_inversetheta(i-1)) \
+                                );
         }
     }
     
     // sample backwards
     // change descent graph in place
-    int i = map->num_markers() - 1;
-    matrix[i].normalise();
-    //matrix[i].print();
-    dg.set(person_id, i, p, matrix[i].sample());
+    i = num_markers - 1;
+    normalise(i);
+    tmp = sample(i);
+    tmp2 = dg.get(person_id, i, p);
+    
+    if(tmp != tmp2) {
+        dg.set(person_id, i, p, tmp);
+        f4[i].flip(person_id, p);
+    }
     
     while(--i >= 0) {
-        for(int j = 0; j < 2; ++j) {
-            matrix[i][j] = log_product(matrix[i][j], ((dg.get(person_id, i+1, p) != j) ? map->get_theta_log(i) : map->get_inversetheta_log(i)));
+        index = i * 2;
+        for(j = 0; j < 2; ++j) {
+            matrix[index + j] *= ((dg.get(person_id, i+1, p) != j) ? map->get_theta(i) : map->get_inversetheta(i));
         }
         
-        matrix[i].normalise();
-        //matrix[i].print();
-        dg.set(person_id, i, p, matrix[i].sample());
+        normalise(i);
+        tmp = sample(i);
+        tmp2 = dg.get(person_id, i, p);
+        
+        if(tmp2 != tmp) {
+            dg.set(person_id, i, p, tmp);
+            f4[i].flip(person_id, p);
+        }
     }
     
     /*
@@ -140,5 +182,16 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
         abort();
     }
     */
+}
+
+void MeiosisSampler::normalise(int locus) {
+    int tmp = locus * 2;
+    
+    matrix[tmp] = matrix[tmp] / (matrix[tmp] + matrix[tmp+1]);
+    matrix[tmp+1] = 1.0 - matrix[tmp];
+}
+
+unsigned MeiosisSampler::sample(int locus) {
+    return ((random() / static_cast<double>(RAND_MAX)) < matrix[locus * 2]) ? 0 : 1;
 }
 

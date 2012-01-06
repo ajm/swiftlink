@@ -12,11 +12,9 @@ using namespace std;
 
 #include "trait.h"
 
-
+/*
 class PeelMatrixKey {
-
-    //map<unsigned int, enum phased_trait> key;
-    //vector<enum phased_trait> key;
+    
     unsigned int num_keys;
     enum phased_trait* key;
     
@@ -29,11 +27,7 @@ class PeelMatrixKey {
         for(unsigned i = 0; i < num_keys; ++i)
             key[i] = TRAIT_UU;
     }
-/*    
-    PeelMatrixKey(vector<unsigned int>& cutset, vector<unsigned int>& assignments) : key() {
-        reassign(cutset, assignments);
-    }
-*/
+    
     ~PeelMatrixKey() {
         delete[] key;
     }
@@ -72,39 +66,13 @@ class PeelMatrixKey {
     void add(unsigned int k, enum phased_trait value) {
         key[k] = value;
     }
-/*
-    void remove(unsigned int k) {
-        key.erase(k);
-    }
-*/
+
     inline enum phased_trait get(unsigned int i) {
         return key[i];
     }
-/*    
-    // ensure this key can address everything for everything in the
-    // vector 'keys'
-    bool check_keys(vector<unsigned int>& keys) {
-        
-        if(keys.size() != key.size()) {
-            return false;
-        }
 
-        for(unsigned int i = 0; i < keys.size(); ++i) {
-            if(key.count(keys[i]) == 0) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-*/
     void print() {
-/*        map<unsigned int, enum phased_trait>::iterator it;
         
-        for(it = key.begin(); it != key.end(); it++) {
-            printf("%d=%d ", (*it).first, (*it).second);
-        }
-*/
     }
     
     void raw_print() {
@@ -113,30 +81,16 @@ class PeelMatrixKey {
         printf("\n");
     }
 };
-
+*/
 class PeelMatrix {
 
-    //vector<unsigned int> keys;
-    //vector<unsigned int> offsets;
     unsigned int num_keys;
     unsigned int* keys;
-    unsigned int* offsets;
+    //unsigned int* offsets;
     unsigned int number_of_dimensions;
     unsigned int values_per_dimension;
     unsigned int size;
     double* data;
-    
-    //unsigned int generate_index(PeelMatrixKey& pmk) const;
-    inline unsigned int generate_index(PeelMatrixKey& pmk) const {
-        unsigned int index = 0;
-
-        for(unsigned int i = 0; i < num_keys; ++i) {
-            //index += (offsets[i] * pmk.get(keys[i]));
-            index |= (pmk.get(keys[i]) << (i * 2));
-        }
-        
-        return index;
-    }
     
     void init_offsets();
     
@@ -145,42 +99,40 @@ class PeelMatrix {
     PeelMatrix(const PeelMatrix& rhs);
     PeelMatrix& operator=(const PeelMatrix& rhs);
     ~PeelMatrix();
-
-    /*
-    bool key_intersection(
-            PeelMatrix* pm, 
-            vector<unsigned int>& missing, 
-            vector<unsigned int>& additional
-        );
-    */
+    
     
     void set_keys(vector<unsigned int>& k);
-    //bool is_legal(PeelMatrixKey& pmk);
-    
-    //double get(PeelMatrixKey& pmk) const;
-    //void set(PeelMatrixKey& pmk, double value);
-    //void add(PeelMatrixKey& pmk, double value);
-    double get_result();
 
+    double get_result();
     double sum();
     void normalise();
     
-    //void generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments);
-    //void print();
-    //void print_keys();
+    unsigned int generate_index(vector<int>& index) const {
+        unsigned int tmp = 0;
     
-    inline double get(PeelMatrixKey& pmk) const {
+        for(unsigned int i = 0; i < num_keys; ++i) {
+            tmp += (index[keys[i]] * (1 << (2 * i)));
+        }
+        
+        return tmp;
+    }
+    
+    double get(vector<int>& pmk) const {
         return data[generate_index(pmk)];
     }
     
-    inline void set(PeelMatrixKey& pmk, double value) {
-        if(value != 0.0)
-            data[generate_index(pmk)] = value;
+    double get(unsigned int pmk) const {
+        return data[pmk];
     }
     
-    inline void add(PeelMatrixKey& pmk, double value) {
-        if(value != 0.0)
-            data[generate_index(pmk)] += value;
+    void set(unsigned int pmk, double value) {
+        //if(value != 0.0)
+            data[pmk] = value;
+    }
+    
+    void add(unsigned int pmk, double value) {
+        //if(value != 0.0)
+            data[pmk] += value;
     }
     
     void reset();

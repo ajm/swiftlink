@@ -28,7 +28,7 @@ class LocusSampler : Sampler {
     unsigned sample_homo_mi(DescentGraph& dg, unsigned personid, unsigned locus, enum parentage parent);
     unsigned sample_hetero_mi(enum trait allele, enum phased_trait trait);
     
-    void sample_meiosis_indicators(PeelMatrixKey& pmk, DescentGraph& dg, unsigned locus);
+    void sample_meiosis_indicators(vector<int>& pmk, DescentGraph& dg, unsigned locus);
     
     void set_all(bool left, bool right);
 

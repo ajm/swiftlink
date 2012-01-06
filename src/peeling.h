@@ -206,8 +206,8 @@ class PeelOperation {
         assignments = assigns;
     }
     
-    vector<vector<int> >& get_index_values() {
-        return assignments;
+    vector<vector<int> >* get_index_values() {
+        return &assignments;
     }
     
     bool operator<(const PeelOperation& p) const {

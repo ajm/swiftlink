@@ -15,8 +15,8 @@ class SamplerRfunction : public Rfunction {
                                         enum phased_trait parent_trait, enum phased_trait kid_trait, 
                                         enum parentage parent);
                                          
-    void evaluate_child_peel(PeelMatrixKey& pmatrix_index, DescentGraph* dg, unsigned locus);
-    void evaluate_parent_peel(PeelMatrixKey& pmatrix_index, DescentGraph* dg, unsigned locus);
+    void evaluate_child_peel(unsigned int pmatrix_index, DescentGraph* dg, unsigned locus);
+    void evaluate_parent_peel(unsigned int pmatrix_index, DescentGraph* dg, unsigned locus);
 
  public :
     SamplerRfunction(PeelOperation po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2);
@@ -24,7 +24,7 @@ class SamplerRfunction : public Rfunction {
     SamplerRfunction(const SamplerRfunction& rhs);
     SamplerRfunction& operator=(const SamplerRfunction& rhs);
 
-    void sample(PeelMatrixKey& pmk);
+    void sample(vector<int>& pmk);
     
     void set_ignore(bool left, bool right) {
         ignore_left = left;

@@ -10,21 +10,11 @@ using namespace std;
 #include "trait.h"
 #include "peel_matrix.h"
 
-/*
-unsigned int PeelMatrix::generate_index(PeelMatrixKey& pmk) const {
-    unsigned int index = 0;
 
-    for(unsigned int i = 0; i < num_keys; ++i) {
-        index += (offsets[i] * pmk.get(keys[i]));
-    }
-    
-    return index;
-}
-*/
 PeelMatrix::PeelMatrix(unsigned int num_dim, unsigned int val_dim) :
     num_keys(0),
     keys(NULL),
-    offsets(NULL),
+    /*offsets(NULL),*/
     number_of_dimensions(num_dim),
     values_per_dimension(val_dim),
     size((unsigned int) pow(static_cast<double>(values_per_dimension), static_cast<double>(number_of_dimensions))),
@@ -32,9 +22,6 @@ PeelMatrix::PeelMatrix(unsigned int num_dim, unsigned int val_dim) :
     
     data = new double[size];
     reset();
-    //for(unsigned i = 0; i < size; ++i) {
-    //    data[i] = 0.0;
-    //}
 }
 
 void PeelMatrix::reset() {
@@ -46,7 +33,7 @@ void PeelMatrix::reset() {
 PeelMatrix::PeelMatrix(const PeelMatrix& rhs) :
     num_keys(rhs.num_keys),
     keys(NULL),
-    offsets(NULL),
+    /*offsets(NULL),*/
     number_of_dimensions(rhs.number_of_dimensions),
     values_per_dimension(rhs.values_per_dimension),
     size(rhs.size),
@@ -58,8 +45,8 @@ PeelMatrix::PeelMatrix(const PeelMatrix& rhs) :
     keys = new unsigned int[num_keys];
     copy(rhs.keys, rhs.keys + num_keys, keys);
     
-    offsets = new unsigned int[num_keys];
-    copy(rhs.offsets, rhs.offsets + num_keys, offsets);
+    //offsets = new unsigned int[num_keys];
+    //copy(rhs.offsets, rhs.offsets + num_keys, offsets);
 }
 
 PeelMatrix& PeelMatrix::operator=(const PeelMatrix& rhs) {
@@ -81,13 +68,13 @@ PeelMatrix& PeelMatrix::operator=(const PeelMatrix& rhs) {
             delete[] keys;
             keys = new unsigned int[rhs.num_keys];
         
-            delete[] offsets;
-            offsets = new unsigned int[rhs.num_keys];
+            //delete[] offsets;
+            //offsets = new unsigned int[rhs.num_keys];
         }
                 
         num_keys = rhs.num_keys;
         copy(rhs.keys,    rhs.keys    + num_keys, keys);
-        copy(rhs.offsets, rhs.offsets + num_keys, offsets);
+        //copy(rhs.offsets, rhs.offsets + num_keys, offsets);
     }
 
     return *this;
@@ -96,7 +83,7 @@ PeelMatrix& PeelMatrix::operator=(const PeelMatrix& rhs) {
 PeelMatrix::~PeelMatrix() {
     delete[] data;
     delete[] keys;
-    delete[] offsets;
+    //delete[] offsets;
 }
 
 void PeelMatrix::set_keys(vector<unsigned int>& k) {
@@ -105,10 +92,10 @@ void PeelMatrix::set_keys(vector<unsigned int>& k) {
     num_keys = k.size();
     keys = new unsigned int[num_keys];
     copy(k.begin(), k.end(), keys);
-    sort(keys, keys + num_keys);
-    init_offsets();
+    //sort(keys, keys + num_keys);
+    //init_offsets();
 }
-
+/*
 void PeelMatrix::init_offsets() {
     offsets = new unsigned int[num_keys];
     
@@ -116,25 +103,6 @@ void PeelMatrix::init_offsets() {
         //offsets[i] = (unsigned int) pow(static_cast<double>(values_per_dimension), static_cast<double>(i));
         offsets[i] = i * 2;
     }
-}
-
-/*
-bool PeelMatrix::is_legal(PeelMatrixKey& pmk) {
-    return pmk.check_keys(keys);
-}
-*/
-/*
-double PeelMatrix::get(PeelMatrixKey& pmk) const {
-    return data[generate_index(pmk)];
-}
-
-void PeelMatrix::set(PeelMatrixKey& pmk, double value) {
-    if(value != 0.0)
-        data[generate_index(pmk)] = value;
-}
-
-void PeelMatrix::add(PeelMatrixKey& pmk, double value) {
-    data[generate_index(pmk)] += value;
 }
 */
 double PeelMatrix::get_result() {
@@ -167,55 +135,4 @@ void PeelMatrix::normalise() {
         data[i] /= matrix_sum;
     }
 }
-
-/*
-// XXX stolen from Rfunction
-void PeelMatrix::generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments) {
-    pmatrix_index.reassign(keys, assignments);
-}
-
-void PeelMatrix::print_keys() {
-    for(unsigned i = 0; i < keys.size(); ++i)
-        printf("%d ", int(keys[i]));
-    printf("\n");
-}
-    
-void PeelMatrix::print() {
-    PeelMatrixKey k;
-    vector<unsigned int> q;
-    unsigned int ndim = keys.size();
-    unsigned int tmp;
-    unsigned int i;
-    
-    // initialise to the first element of matrix
-    for(i = 0; i < ndim; ++i) {
-        q.push_back(0);
-    }
-    
-    // enumerate all elements in ndim-dimenstional matrix
-    while(not q.empty()) {
-            
-        if(q.size() == ndim) {
-            generate_key(k, q);
-            
-            k.print();
-            printf(" (offset = %d)\t", generate_index(k));
-            printf(" := %e\n", get(k));
-            //printf(" := %.4f\n", get(k));
-        }
-            
-        tmp = q.back() + 1;
-        q.pop_back();
-        
-        if(tmp < 4) {
-            q.push_back(tmp);
-            tmp = ndim - q.size();
-            // fill out rest with zeroes
-            for(i = 0; i < tmp; ++i) {
-                q.push_back(0);
-            }
-        }
-    }
-}
-*/
 

@@ -12,8 +12,8 @@ class TraitRfunction : public Rfunction {
     bool affected_trait(enum phased_trait pt, int allele);
     enum phased_trait get_phased_trait(enum phased_trait m, enum phased_trait p, int maternal_allele, int paternal_allele);
     
-    void evaluate_child_peel(PeelMatrixKey& pmatrix_index, DescentGraph* dg, unsigned locus);
-    void evaluate_parent_peel(PeelMatrixKey& pmatrix_index, DescentGraph* dg, unsigned locus);
+    void evaluate_child_peel(unsigned int pmatrix_index, DescentGraph* dg, unsigned locus);
+    void evaluate_parent_peel(unsigned int pmatrix_index, DescentGraph* dg, unsigned locus);
     
  public :
     TraitRfunction(PeelOperation po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2);

@@ -80,15 +80,7 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
                                      enum parentage parent) {
     
     enum trait t = get_trait(kid_trait, parent);
-    /*enum trait t;
-    switch(parent) {
-        case MATERNAL:
-            t = (((kid_trait == TRAIT_UU) or (kid_trait == TRAIT_UA)) ? TRAIT_U : TRAIT_A);
-        
-        case PATERNAL:
-            t = (((kid_trait == TRAIT_UU) or (kid_trait == TRAIT_AU)) ? TRAIT_U : TRAIT_A);
-    }
-    */
+    
     // deal with homozygotes first
     if(parent_trait == TRAIT_AA) {
         //return (t == TRAIT_A) ? 0.5 : 0.0;
@@ -109,22 +101,19 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
         p = (t == TRAIT_A) ? 0 : 1;
     }
     
-    //double tmp = 1.0;
     double tmp = 0.5; // XXX <--- transmission prob
     if((locus != 0) and (not ignore_left)) {
-        //tmp *= ((dg->get(person_id, locus-1, parent) == p) ? map->get_inversetheta(locus-1) : map->get_theta(locus-1));
         tmp *= ((dg->get(person_id, locus-1, parent) == p) ? antitheta2 : theta2);
     }
     
     if((locus != (map->num_markers() - 1)) and (not ignore_right)) {
-        //tmp *= ((dg->get(person_id, locus+1, parent) == p) ? map->get_inversetheta(locus) : map->get_theta(locus));
         tmp *= ((dg->get(person_id, locus+1, parent) == p) ? antitheta : theta);
     }
     
     return tmp;
 }
 
-void SamplerRfunction::sample(PeelMatrixKey& pmk) {
+void SamplerRfunction::sample(vector<int>& pmk) {
     double prob_dist[NUM_ALLELES];
     double total = 0.0;
     unsigned node = peel.get_peelnode();
@@ -134,11 +123,18 @@ void SamplerRfunction::sample(PeelMatrixKey& pmk) {
     // extract probabilities
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         trait = static_cast<enum phased_trait>(i);
-        pmk.add(node, trait);
+        //pmk.add(node, trait);
+        pmk[node] = i;
         
         prob_dist[i] = pmatrix_presum.get(pmk);
         total += prob_dist[i];        
     }
+    
+    /*
+    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+        fprintf(stderr, "prob_dist[%d] = %e\n", i, prob_dist[i]);
+    }
+    */
     
     // normalise
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
@@ -149,19 +145,12 @@ void SamplerRfunction::sample(PeelMatrixKey& pmk) {
     double r = random() / static_cast<double>(RAND_MAX);
     total = 0.0;
     
-    /*
-    printf("node = %u\n", node);
-    //printf("random = %f\n", r);
-    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
-        printf(" prob[%d] = %.3f\n", i, prob_dist[i]);
-    }
-    printf("\n");
-    */
     
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         total += prob_dist[i];
         if(r <= total) {
-            pmk.add(node, static_cast<enum phased_trait>(i));
+            //pmk.add(node, static_cast<enum phased_trait>(i));
+            pmk[node] = i;
             return;
         }
         
@@ -170,32 +159,43 @@ void SamplerRfunction::sample(PeelMatrixKey& pmk) {
         }
     }
     
-    pmk.add(node, static_cast<enum phased_trait>(last));
+    //pmk.add(node, static_cast<enum phased_trait>(last));
     
     // XXX ??? XXX still abort?
     abort();
 }
 
 void SamplerRfunction::evaluate_child_peel(
-                    PeelMatrixKey& pmatrix_index, 
+                    unsigned int pmatrix_index, 
                     DescentGraph* dg,
                     unsigned locus) {
     
     double tmp;
     double total = 0.0;
     
+    unsigned int offset = 1 << (2 * peel.get_cutset_size());
+    unsigned int presum_index;
+    
     enum phased_trait kid_trait;
     
     unsigned kid_id = peel.get_peelnode();
     Person* kid = ped->get_by_index(kid_id);
     
-    enum phased_trait mat_trait = pmatrix_index.get(kid->get_maternalid());
-    enum phased_trait pat_trait = pmatrix_index.get(kid->get_paternalid());
+    enum phased_trait mat_trait;
+    enum phased_trait pat_trait;
+    
+    mat_trait = static_cast<enum phased_trait>((*indices)[pmatrix_index][kid->get_maternalid()]);
+    pat_trait = static_cast<enum phased_trait>((*indices)[pmatrix_index][kid->get_paternalid()]);
+    
+    //fprintf(stderr, "-- %d - offset = %d\n", pmatrix_index, offset);
     
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         kid_trait = static_cast<enum phased_trait>(i);
-        pmatrix_index.add(kid_id, kid_trait);
-                
+        presum_index = pmatrix_index + (offset * i);
+        
+        //fprintf(stderr, "indices[%d][%d]\n", pmatrix_index, i);
+        (*indices)[pmatrix_index][kid_id] = i;
+        
         tmp = get_trait_probability(kid_id, kid_trait, locus);
         if(tmp == 0.0)
             continue;
@@ -205,25 +205,28 @@ void SamplerRfunction::evaluate_child_peel(
         if(tmp == 0.0)
             continue;
         
-        tmp *= ((previous_rfunction1 != NULL) ? previous_rfunction1->get(pmatrix_index) : 1.0) * \
-               ((previous_rfunction2 != NULL) ? previous_rfunction2->get(pmatrix_index) : 1.0);
+        tmp *= ((previous_rfunction1 != NULL) ? previous_rfunction1->get((*indices)[pmatrix_index]) : 1.0) * \
+               ((previous_rfunction2 != NULL) ? previous_rfunction2->get((*indices)[pmatrix_index]) : 1.0);
         
-        pmatrix_presum.set(pmatrix_index, tmp);
+        //fprintf(stderr, "%d = %e (%d)\n", presum_index, tmp, pmatrix_index);
+        pmatrix_presum.set(presum_index, tmp);
         
         total += tmp;
     }
     
-    //summation(pmatrix_index, kid_id);
     pmatrix.set(pmatrix_index, total);
 }
 
 void SamplerRfunction::evaluate_parent_peel(
-                                          PeelMatrixKey& pmatrix_index, 
+                                          unsigned int pmatrix_index, 
                                           DescentGraph* dg,
                                           unsigned locus) {
     
     unsigned parent_id = peel.get_peelnode();
     unsigned child_node = peel.get_cutnode(0);
+    
+    unsigned int offset = 1 << (2 * peel.get_cutset_size());
+    unsigned int presum_index;
     
     // find a child of parent_id
     for(unsigned i = 0; i < peel.get_cutset_size(); ++i) {
@@ -244,19 +247,21 @@ void SamplerRfunction::evaluate_parent_peel(
     double total = 0.0;
     double child_prob;
     
-    other_trait = pmatrix_index.get(other_parent_id);
+    other_trait = static_cast<enum phased_trait>((*indices)[pmatrix_index][other_parent_id]);
     
     
     for(unsigned a = 0; a < NUM_ALLELES; ++a) {
         parent_trait = static_cast<enum phased_trait>(a);
-        pmatrix_index.add(parent_id, parent_trait);
+        presum_index = pmatrix_index + (offset * a);
+        
+        (*indices)[pmatrix_index][parent_id] = a;
         
         tmp = get_trait_probability(parent_id, parent_trait, locus);
         if(tmp == 0.0)
             continue;
         
-        tmp *= ((previous_rfunction1 != NULL) ? previous_rfunction1->get(pmatrix_index) : 1.0) * \
-               ((previous_rfunction2 != NULL) ? previous_rfunction2->get(pmatrix_index) : 1.0);
+        tmp *= ((previous_rfunction1 != NULL) ? previous_rfunction1->get((*indices)[pmatrix_index]) : 1.0) * \
+               ((previous_rfunction2 != NULL) ? previous_rfunction2->get((*indices)[pmatrix_index]) : 1.0);
         if(tmp == 0.0)
             continue;
         
@@ -268,7 +273,7 @@ void SamplerRfunction::evaluate_parent_peel(
             if(not child->is_parent(parent_id))
                 continue;
             
-            child_trait = pmatrix_index.get(child->get_internalid());
+            child_trait = static_cast<enum phased_trait>((*indices)[pmatrix_index][child->get_internalid()]); // pmatrix_index.get(child->get_internalid());
             
             child_prob *= (get_recombination_probability(dg, locus, child->get_internalid(), parent_trait, child_trait, ismother ? MATERNAL : PATERNAL) *  \
                            get_recombination_probability(dg, locus, child->get_internalid(), other_trait,  child_trait, ismother ? PATERNAL : MATERNAL));
@@ -279,12 +284,11 @@ void SamplerRfunction::evaluate_parent_peel(
         
         tmp *= child_prob;
         
-        pmatrix_presum.set(pmatrix_index, tmp);
+        pmatrix_presum.set(presum_index, tmp);
         
         total += tmp;
     }
     
-    //summation(pmatrix_index, parent_id);
     pmatrix.set(pmatrix_index, total);
 }
 

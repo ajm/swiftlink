@@ -105,7 +105,7 @@ unsigned LocusSampler::sample_mi(DescentGraph& dg, \
 // sample meiosis indicators
 // if a parent is heterozygous, then there is one choice of meiosis indicator
 // if a parent is homozygous, then sample based on meiosis indicators to immediate left and right
-void LocusSampler::sample_meiosis_indicators(PeelMatrixKey& pmk, DescentGraph& dg, unsigned locus) {
+void LocusSampler::sample_meiosis_indicators(vector<int>& pmk, DescentGraph& dg, unsigned locus) {
     for(unsigned i = 0; i < ped->num_members(); ++i) {
         Person* p = ped->get_by_index(i);
         
@@ -113,10 +113,10 @@ void LocusSampler::sample_meiosis_indicators(PeelMatrixKey& pmk, DescentGraph& d
             continue;
         }
         
-        enum phased_trait mat_trait = pmk.get(p->get_maternalid());
-        enum phased_trait pat_trait = pmk.get(p->get_paternalid());
+        enum phased_trait mat_trait = static_cast<enum phased_trait>(pmk[p->get_maternalid()]);
+        enum phased_trait pat_trait = static_cast<enum phased_trait>(pmk[p->get_paternalid()]);
         
-        enum phased_trait trait = pmk.get(i);
+        enum phased_trait trait = static_cast<enum phased_trait>(pmk[i]);
         enum trait mat_allele = ((trait == TRAIT_UU) or (trait == TRAIT_UA)) ? TRAIT_U : TRAIT_A;
         enum trait pat_allele = ((trait == TRAIT_UU) or (trait == TRAIT_AU)) ? TRAIT_U : TRAIT_A;
         
@@ -137,7 +137,8 @@ void LocusSampler::step(DescentGraph& dg, unsigned parameter) {
         rf->evaluate(&dg, locus, 0.0);
     }
     
-    PeelMatrixKey pmk(ped->num_members());
+    //PeelMatrixKey pmk(ped->num_members());
+    vector<int> pmk(ped->num_members(), -1);
     
     // reverse peel, sampling ordered genotypes
     for(int i = static_cast<int>(rfunctions.size()) - 1; i >= 0; --i) {

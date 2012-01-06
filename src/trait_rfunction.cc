@@ -81,12 +81,15 @@ double TraitRfunction::get_transmission_probability(enum phased_trait parent) {
 }
 */
 
-void TraitRfunction::evaluate_child_peel(PeelMatrixKey& pmatrix_index, 
+void TraitRfunction::evaluate_child_peel(unsigned int pmatrix_index, 
                                     DescentGraph* dg,
                                     unsigned locus) {
     
     double tmp;
     double total = 0.0;
+    
+    unsigned int offset = 1 << (2 * peel.get_cutset_size());
+    unsigned int presum_index;
     
     enum phased_trait kid_trait;
     enum phased_trait mat_trait;
@@ -95,8 +98,8 @@ void TraitRfunction::evaluate_child_peel(PeelMatrixKey& pmatrix_index,
     unsigned kid_id = peel.get_peelnode();
     Person* kid = ped->get_by_index(kid_id);
     
-    mat_trait = pmatrix_index.get(kid->get_maternalid());
-    pat_trait = pmatrix_index.get(kid->get_paternalid());
+    mat_trait = static_cast<enum phased_trait>((*indices)[pmatrix_index][kid->get_maternalid()]);
+    pat_trait = static_cast<enum phased_trait>((*indices)[pmatrix_index][kid->get_paternalid()]);
     
     // iterate over all descent graphs to determine child trait 
     // based on parents' traits
@@ -104,8 +107,9 @@ void TraitRfunction::evaluate_child_peel(PeelMatrixKey& pmatrix_index,
         for(int j = 0; j < 2; ++j) {    // paternal
             
             kid_trait = get_phased_trait(mat_trait, pat_trait, i, j);
+            presum_index = pmatrix_index + (offset * static_cast<int>(kid_trait));
             
-            pmatrix_index.add(kid_id, kid_trait);
+            (*indices)[pmatrix_index][kid_id] = static_cast<int>(kid_trait);
             
             tmp = 0.25 * get_trait_probability(kid_id, kid_trait, locus);
             if(tmp == 0.0)
@@ -115,28 +119,30 @@ void TraitRfunction::evaluate_child_peel(PeelMatrixKey& pmatrix_index,
             if(tmp == 0.0)
                 continue;
             
-            tmp *= (previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0) * \
-                   (previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0);
+            tmp *= (previous_rfunction1 != NULL ? previous_rfunction1->get((*indices)[pmatrix_index]) : 1.0) * \
+                   (previous_rfunction2 != NULL ? previous_rfunction2->get((*indices)[pmatrix_index]) : 1.0);
             
-            pmatrix_presum.add(pmatrix_index, tmp);
+            pmatrix_presum.add(presum_index, tmp);
             
             total += tmp;
         }
     }
     
-    //summation(pmatrix_index, kid_id);
     pmatrix.set(pmatrix_index, total);
 }
 
 // TODO XXX this is a mess
 //
 void TraitRfunction::evaluate_parent_peel(
-                                     PeelMatrixKey& pmatrix_index, 
+                                     unsigned int pmatrix_index, 
                                      DescentGraph* dg,
                                      unsigned locus) {
     
     unsigned parent_id = peel.get_peelnode();
     unsigned child_node = peel.get_cutnode(0);
+    
+    unsigned int offset = 1 << (2 * peel.get_cutset_size());
+    unsigned int presum_index;
     
     // find a child of parent_id
     for(unsigned i = 0; i < peel.get_cutset_size(); ++i) {
@@ -157,19 +163,21 @@ void TraitRfunction::evaluate_parent_peel(
     double tmp;
     double total = 0.0;
     
-    other_trait = pmatrix_index.get(other_parent_id);
+    other_trait = static_cast<enum phased_trait>((*indices)[pmatrix_index][other_parent_id]);
     
     
     for(unsigned a = 0; a < NUM_ALLELES; ++a) {
         parent_trait = static_cast<enum phased_trait>(a);
-        pmatrix_index.add(parent_id, parent_trait);
+        presum_index = pmatrix_index + (offset * a);
+        
+        (*indices)[pmatrix_index][parent_id] = a;
         
         tmp = get_trait_probability(parent_id, parent_trait, locus);
         if(tmp == 0.0)
             continue;
         
-        tmp *= (previous_rfunction1 != NULL ? previous_rfunction1->get(pmatrix_index) : 1.0) * \
-               (previous_rfunction2 != NULL ? previous_rfunction2->get(pmatrix_index) : 1.0);
+        tmp *= (previous_rfunction1 != NULL ? previous_rfunction1->get((*indices)[pmatrix_index]) : 1.0) * \
+               (previous_rfunction2 != NULL ? previous_rfunction2->get((*indices)[pmatrix_index]) : 1.0);
         if(tmp == 0)
             continue;
         
@@ -190,7 +198,7 @@ void TraitRfunction::evaluate_parent_peel(
                                                    i, 
                                                    j);
                     
-                    if(pivot_trait != pmatrix_index.get(child->get_internalid()))
+                    if(pivot_trait != static_cast<enum phased_trait>((*indices)[pmatrix_index][child->get_internalid()]))
                         continue;
                     
                     child_tmp += (!dg ? 0.25 : 0.25 * get_recombination_probability(dg, locus, child->get_internalid(), i, j));
@@ -202,11 +210,10 @@ void TraitRfunction::evaluate_parent_peel(
         
         tmp *= child_prob;
         
-        pmatrix_presum.set(pmatrix_index, tmp);
+        pmatrix_presum.set(presum_index, tmp);
         
         total += tmp;
     }
     
-    //summation(pmatrix_index, parent_id);
     pmatrix.set(pmatrix_index, total);
 }

@@ -34,6 +34,8 @@ class Rfunction {
     double antitheta;
     double theta2;
     double antitheta2;
+    vector<vector<int> >* indices;
+    unsigned int size;
         
     //enum trait get_trait(enum phased_trait p, enum parentage parent);
     inline enum trait get_trait(enum phased_trait p, enum parentage parent) {
@@ -48,27 +50,23 @@ class Rfunction {
         }
         abort();
     }
-    
-    void get_traits(enum phased_trait p, enum trait& mat, enum trait& pat);
-    void summation(PeelMatrixKey& pmatrix_index, unsigned personid);
         
  private :
     bool legal_genotype(unsigned personid, unsigned locus, enum phased_trait g);   
-    void generate_key(PeelMatrixKey& pmatrix_index, vector<unsigned int>& assignments);
     virtual double get_trait_probability(unsigned person_id, enum phased_trait pt, unsigned locus)=0;
     virtual void evaluate_child_peel(
-                    PeelMatrixKey& pmatrix_index, 
+                    unsigned int pmatrix_index, 
                     DescentGraph* dg, 
                     unsigned locus)=0;
     virtual void evaluate_parent_peel(
-                    PeelMatrixKey& pmatrix_index, 
+                    unsigned int pmatrix_index, 
                     DescentGraph* dg,
-                    unsigned locus)=0;
+                    unsigned int locus)=0;
     void evaluate_partner_peel(
-                    PeelMatrixKey& pmatrix_index, 
-                    unsigned locus);
+                    unsigned int pmatrix_index, 
+                    unsigned int locus);
     void evaluate_element(
-                    PeelMatrixKey& pmatrix_index, 
+                    unsigned int pmatrix_index, 
                     DescentGraph* dg, 
                     unsigned int locus_index);
 
@@ -78,18 +76,11 @@ class Rfunction {
     Rfunction& operator=(const Rfunction& rhs);
     virtual ~Rfunction() {}
     
-    //PeelMatrix* get_matrix() { return &pmatrix; }
-    double get(PeelMatrixKey& pmk) { return pmatrix.get(pmk); }
+    double get(vector<int>& index) {
+        return pmatrix.get(index);
+    }
     
-    void evaluate(DescentGraph* dg, unsigned locus, double offset);
-
-    //void print() { pmatrix_presum.print(); }
-    //void print_keys() { pmatrix.print_keys(); }
-    
-    bool is_used();
-    void set_used();
-    bool contains_node(unsigned node);
-    bool contains_cutnodes(vector<unsigned>& nodes);    
+    void evaluate(DescentGraph* dg, unsigned locus, double offset);   
 };
 
 #endif

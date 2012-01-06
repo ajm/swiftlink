@@ -32,8 +32,8 @@ OBJECTS	:= \
 	elimination.o \
 	peel_matrix.o \
 	rfunction.o \
-	trait_rfunction.o \
 	sampler_rfunction.o \
+	trait_rfunction.o \
 	peeler.o \
 	lod_calculator.o \
 	markov_chain.o \

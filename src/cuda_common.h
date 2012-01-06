@@ -126,7 +126,7 @@ struct rfunction {
     // eg: presum_matrix[(x,y,z)] and matrix[(x,y,z) / z]?
     
     double* presum_matrix;
-    int presum_length;          // 4 ** (cutset_length - 1)
+    int presum_length;          // 4 ** (cutset_length + 1)
     
     double* matrix;
     int matrix_length;          // 4 ** cutset_length

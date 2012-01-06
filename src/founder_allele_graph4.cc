@@ -31,8 +31,6 @@ string FounderAlleleGraph4::debug_string() {
     return ss.str();
 }
 
-
-// -----------------------------------------
 double FounderAlleleGraph4::likelihood() {
     Person* p;
     int tmp;
@@ -52,13 +50,6 @@ double FounderAlleleGraph4::likelihood() {
     group_fixed.assign(founder_alleles, -1);
     group_active.assign(founder_alleles, false);
     
-    //allele_assignment[0].assign(founder_alleles, UNTYPED);
-    //allele_assignment[1].assign(founder_alleles, UNTYPED);
-    
-    //group_size.assign(founder_alleles, 0);
-    //prob[0].assign(founder_alleles, 1.0);
-    //prob[1].assign(founder_alleles, 1.0);
-    
     // calculate likelihood, the founder allele graph is only
     // constrained by typed members of the pedigree
     for(unsigned i = 0; i < ped->num_members(); ++i) {
@@ -76,7 +67,6 @@ double FounderAlleleGraph4::likelihood() {
         pat_fa = edge_list[++tmp];
         
         //fprintf(stderr, "l=%d i=%d m=%d p=%d g=%d\n", locus, i, mat_fa, pat_fa, g);
-        
         
         // autozygous
         if(mat_fa == pat_fa) { /* 301 - 347 */
@@ -486,17 +476,12 @@ void FounderAlleleGraph4::combine_components(int component1, int component2, boo
     group_active[component2] = false;
 }
 
-//double FounderAlleleGraph4::init_likelihood(DescentGraph& dg, int newlocus) {
 void FounderAlleleGraph4::reset(DescentGraph& dg) {
     Person* p;
     int pid;
     int parent_allele;
     int tmp;
-    /*
-    locus = newlocus;
-    major_freq = map->get_major(locus);
-    minor_freq = map->get_minor(locus);
-    */
+    
 	// find founder allele assignments, this is only related to the current 
 	// descent graph and not whether people are typed or not
 	for(unsigned i = 0; i < ped->num_members(); ++i) {
@@ -517,58 +502,18 @@ void FounderAlleleGraph4::reset(DescentGraph& dg) {
 	        edge_list[tmp + 1] = edge_list[(p->get_paternalid() * 2) + parent_allele];
 	    }
 	}
-	/*
-	fprintf(stderr, "--------------\n");
-	fprintf(stderr, "%s\n", debug_string().c_str());
-	fprintf(stderr, "--------------\n");
-	//return calculate_likelihood();
-    */
 }
-/*
-double FounderAlleleGraph4::likelihood(unsigned int personid, enum parentage allele) {
-    Person* p = ped->get_by_index(personid);
-    int old_fa = edge_list[(personid * 2) + allele];
-    int tmp = p->get_parentid(allele) * 2;
-    int new_fa = ((edge_list[tmp] == old_fa) ? edge_list[tmp + 1] : edge_list[tmp]);
-    
-    if(old_fa == new_fa)
-        return calculate_likelihood();
-    
-    fprintf(stderr, "%s\n", debug_string().c_str());
-    
-    propagate_fa_update(p, allele, old_fa, new_fa);
-    
-    fprintf(stderr, "%s\n", debug_string().c_str());
-    
-    double ret = calculate_likelihood();
-    
-    propagate_fa_update(p, allele, new_fa, old_fa);
-    
-    fprintf(stderr, "%s==============\n\n\n", debug_string().c_str());
-    
-    return ret;
-}
-*/
+
 void FounderAlleleGraph4::flip(unsigned int personid, enum parentage allele) {
     Person* p = ped->get_by_index(personid);
     int old_fa = edge_list[(personid * 2) + allele];
     int tmp = p->get_parentid(allele) * 2;
     int new_fa = ((edge_list[tmp] == old_fa) ? edge_list[tmp + 1] : edge_list[tmp]);
-    /*
-    locus = newlocus;
-    major_freq = map->get_major(locus);
-    minor_freq = map->get_minor(locus);
-    */
+    
     if(old_fa == new_fa)
         return;
     
     propagate_fa_update(p, allele, old_fa, new_fa);
-    
-    //double ret = calculate_likelihood();
-    
-    //propagate_fa_update(p, new_fa, old_fa);
-    
-    //return ret;
 }
 
 void FounderAlleleGraph4::propagate_fa_update(Person* p, enum parentage allele, int old_fa, int new_fa) {

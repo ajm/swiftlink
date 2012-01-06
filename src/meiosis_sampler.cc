@@ -8,23 +8,9 @@ using namespace std;
 #include "genetic_map.h"
 #include "descent_graph.h"
 #include "meiosis_sampler.h"
-#include "founder_allele_graph2.h"
-#include "founder_allele_graph.h"
 #include "founder_allele_graph4.h"
 
-/*
-void MeiosisSampler::init_matrices() {
-    matrix = new MeiosisMatrix[map->num_markers()];
-}
 
-void MeiosisSampler::copy_matrices(const MeiosisSampler& rhs) {
-    copy(rhs.matrix, rhs.matrix + map->num_markers(), matrix);
-}
-
-void MeiosisSampler::kill_matrices() {
-    delete[] matrix;
-}
-*/
 void MeiosisSampler::reset(DescentGraph& dg) {
     for(unsigned i = 0; i < map->num_markers(); ++i) {
         f4[i].reset(dg);
@@ -65,46 +51,17 @@ void MeiosisSampler::find_founderallelegraph_ordering() {
 }
 
 double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, unsigned locus, enum parentage parent, unsigned value) {
-    //double lik3, lik4, loglik4;
     double lik4;
     unsigned tmp = dg.get(person_id, locus, parent);
-    bool flip;
-    
-    flip = tmp != value;
-    
-    /*
-    dg.set(person_id, locus, parent, value);
-    
-    lik3 = f3.evaluate(dg, locus);
-    
-    dg.set(person_id, locus, parent, tmp);
-    */
+    bool flip = tmp != value;
     
     if(flip)
         f4[locus].flip(person_id, parent);
     
     lik4 = f4[locus].likelihood();
-    //loglik4 = lik4 == 0.0 ? LOG_ILLEGAL : log(lik4);
     
     if(flip)
         f4[locus].flip(person_id, parent);
-    
-    
-    //fprintf(stderr, "old = %e, new = %e\n", lik3, loglik4);
-    
-    //fprintf(stderr, "p=%d l=%d a=%d\n", person_id, locus, parent);
-    //fprintf(stderr, "old = %e, new = %e, illegal = %e\n", lik3, loglik4, LOG_ILLEGAL);
-    /*
-    if(lik3 != loglik4) {
-        fprintf(stderr, "old = %e, new = %e, illegal = %e\n", lik3, loglik4, LOG_ILLEGAL);
-        fprintf(stderr, "%s\n", f3.debug_string().c_str());
-        //f4[locus].reset(dg);
-        abort();
-    }
-    else {
-        fprintf(stderr, "fine\n");
-    }
-    */
     
     return lik4;
 }
@@ -117,8 +74,6 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
     int index;
     int i, j;
     int tmp, tmp2;
-    
-    //fprintf(stderr, "%d %s\n", int(person_id), p == MATERNAL ? "M" : "P");
     
     // forwards
     for(i = 0; i < num_markers; ++i) {
@@ -174,14 +129,6 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
             f4[i].flip(person_id, p);
         }
     }
-    
-    /*
-    // XXX comment out when I know everything is cool
-    if(not dg.likelihood()) {
-        fprintf(stderr, "Error: descent graph produced by M-sampler is illegal!\n");
-        abort();
-    }
-    */
 }
 
 void MeiosisSampler::normalise(int locus) {

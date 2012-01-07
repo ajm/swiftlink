@@ -9,7 +9,7 @@ using namespace std;
 #include "peel_matrix.h"
 
 
-SamplerRfunction::SamplerRfunction(PeelOperation po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2) : 
+SamplerRfunction::SamplerRfunction(PeelOperation* po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2) : 
     Rfunction(po, p, m, prev1, prev2), 
     ignore_left(false), 
     ignore_right(false) {}
@@ -30,7 +30,7 @@ SamplerRfunction& SamplerRfunction::operator=(const SamplerRfunction& rhs) {
     return *this;
 }
     
-double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_trait pt, unsigned locus) {
+double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_trait pt) {
     Person* p = ped->get_by_index(person_id);
     
     if(p->istyped()) {
@@ -73,7 +73,6 @@ double SamplerRfunction::get_transmission_probability(enum phased_trait parent_t
 }
 
 double SamplerRfunction::get_recombination_probability(DescentGraph* dg, 
-                                     unsigned locus, 
                                      unsigned person_id, 
                                      enum phased_trait parent_trait, 
                                      enum phased_trait kid_trait, 
@@ -116,7 +115,7 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
 void SamplerRfunction::sample(vector<int>& pmk) {
     double prob_dist[NUM_ALLELES];
     double total = 0.0;
-    unsigned node = peel.get_peelnode();
+    unsigned node = peel->get_peelnode();
     enum phased_trait trait;
     unsigned int last = 0;
     
@@ -128,7 +127,11 @@ void SamplerRfunction::sample(vector<int>& pmk) {
         prob_dist[i] = pmatrix_presum.get(pmk);
         total += prob_dist[i];        
     }
-    
+    /*
+    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+        fprintf(stderr, "prob_dist[%d] = %e\n", i, prob_dist[i]);
+    }
+    */
     // normalise
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         prob_dist[i] /= total;
@@ -155,20 +158,17 @@ void SamplerRfunction::sample(vector<int>& pmk) {
     abort();
 }
 
-void SamplerRfunction::evaluate_child_peel(
-                    unsigned int pmatrix_index, 
-                    DescentGraph* dg,
-                    unsigned locus) {
+void SamplerRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGraph* dg) {
     
     double tmp;
     double total = 0.0;
     
-    unsigned int offset = 1 << (2 * peel.get_cutset_size());
+    unsigned int offset = 1 << (2 * peel->get_cutset_size());
     unsigned int presum_index;
     
     enum phased_trait kid_trait;
     
-    unsigned kid_id = peel.get_peelnode();
+    unsigned kid_id = peel->get_peelnode();
     Person* kid = ped->get_by_index(kid_id);
     
     enum phased_trait mat_trait;
@@ -183,12 +183,12 @@ void SamplerRfunction::evaluate_child_peel(
         
         (*indices)[pmatrix_index][kid_id] = i;
         
-        tmp = get_trait_probability(kid_id, kid_trait, locus);
+        tmp = get_trait_probability(kid_id, kid_trait);
         if(tmp == 0.0)
             continue;
         
-        tmp *= (get_recombination_probability(dg, locus, kid_id, mat_trait, kid_trait, MATERNAL) * \
-                get_recombination_probability(dg, locus, kid_id, pat_trait, kid_trait, PATERNAL));
+        tmp *= (get_recombination_probability(dg, kid_id, mat_trait, kid_trait, MATERNAL) * \
+                get_recombination_probability(dg, kid_id, pat_trait, kid_trait, PATERNAL));
         if(tmp == 0.0)
             continue;
         
@@ -203,22 +203,19 @@ void SamplerRfunction::evaluate_child_peel(
     pmatrix.set(pmatrix_index, total);
 }
 
-void SamplerRfunction::evaluate_parent_peel(
-                                          unsigned int pmatrix_index, 
-                                          DescentGraph* dg,
-                                          unsigned locus) {
+void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentGraph* dg) {
     
-    unsigned parent_id = peel.get_peelnode();
-    unsigned child_node = peel.get_cutnode(0);
+    unsigned parent_id = peel->get_peelnode();
+    unsigned child_node = peel->get_cutnode(0);
     
-    unsigned int offset = 1 << (2 * peel.get_cutset_size());
+    unsigned int offset = 1 << (2 * peel->get_cutset_size());
     unsigned int presum_index;
     
     // find a child of parent_id
-    for(unsigned i = 0; i < peel.get_cutset_size(); ++i) {
-        Person* ptmp = ped->get_by_index(peel.get_cutnode(i));
+    for(unsigned i = 0; i < peel->get_cutset_size(); ++i) {
+        Person* ptmp = ped->get_by_index(peel->get_cutnode(i));
         if(ptmp->is_parent(parent_id)) {
-            child_node = peel.get_cutnode(i);
+            child_node = peel->get_cutnode(i);
             break;
         }
     }
@@ -242,7 +239,7 @@ void SamplerRfunction::evaluate_parent_peel(
         
         (*indices)[pmatrix_index][parent_id] = a;
         
-        tmp = get_trait_probability(parent_id, parent_trait, locus);
+        tmp = get_trait_probability(parent_id, parent_trait);
         if(tmp == 0.0)
             continue;
         
@@ -253,16 +250,16 @@ void SamplerRfunction::evaluate_parent_peel(
         
         child_prob = 1.0;
         
-        for(unsigned c = 0; c < peel.get_cutset_size(); ++c) {
-            Person* child = ped->get_by_index(peel.get_cutnode(c));
+        for(unsigned c = 0; c < peel->get_cutset_size(); ++c) {
+            Person* child = ped->get_by_index(peel->get_cutnode(c));
             
             if(not child->is_parent(parent_id))
                 continue;
             
             child_trait = static_cast<enum phased_trait>((*indices)[pmatrix_index][child->get_internalid()]); // pmatrix_index.get(child->get_internalid());
             
-            child_prob *= (get_recombination_probability(dg, locus, child->get_internalid(), parent_trait, child_trait, ismother ? MATERNAL : PATERNAL) *  \
-                           get_recombination_probability(dg, locus, child->get_internalid(), other_trait,  child_trait, ismother ? PATERNAL : MATERNAL));
+            child_prob *= (get_recombination_probability(dg, child->get_internalid(), parent_trait, child_trait, ismother ? MATERNAL : PATERNAL) *  \
+                           get_recombination_probability(dg, child->get_internalid(), other_trait,  child_trait, ismother ? PATERNAL : MATERNAL));
                             
             if(child_prob == 0.0)
                 break;

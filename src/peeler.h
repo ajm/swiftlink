@@ -19,14 +19,14 @@ class Peeler {
     
     Pedigree* ped;
     GeneticMap* map;
-    vector<TraitRfunction*> rfunctions;
+    vector<TraitRfunction> rfunctions;
     LodCalculator lod;
     double trait_prob;
     
     
     double calc_trait_prob();
-    void copy_rfunctions(const Peeler& rhs);
-    void kill_rfunctions();
+    //void copy_rfunctions(const Peeler& rhs);
+    //void kill_rfunctions();
     
  public :
     Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator& psg);

@@ -8,6 +8,7 @@ using namespace std;
 #include "types.h"
 #include "peel_matrix.h"
 #include "peeling.h"
+#include "genetic_map.h"
 
 
 #define NUM_ALLELES 4
@@ -15,7 +16,6 @@ using namespace std;
 class Pedigree;
 class Person;
 class DescentGraph;
-class GeneticMap;
 
 
 class Rfunction {
@@ -26,10 +26,10 @@ class Rfunction {
     double offset;
     PeelMatrix pmatrix;
     PeelMatrix pmatrix_presum;
-    PeelOperation peel;
+    PeelOperation* peel;
     Rfunction* previous_rfunction1;
     Rfunction* previous_rfunction2;
-    bool function_used;
+    unsigned int locus;
     double theta;
     double antitheta;
     double theta2;
@@ -52,26 +52,15 @@ class Rfunction {
     }
         
  private :
-    bool legal_genotype(unsigned personid, unsigned locus, enum phased_trait g);   
-    virtual double get_trait_probability(unsigned person_id, enum phased_trait pt, unsigned locus)=0;
-    virtual void evaluate_child_peel(
-                    unsigned int pmatrix_index, 
-                    DescentGraph* dg, 
-                    unsigned locus)=0;
-    virtual void evaluate_parent_peel(
-                    unsigned int pmatrix_index, 
-                    DescentGraph* dg,
-                    unsigned int locus)=0;
-    void evaluate_partner_peel(
-                    unsigned int pmatrix_index, 
-                    unsigned int locus);
-    void evaluate_element(
-                    unsigned int pmatrix_index, 
-                    DescentGraph* dg, 
-                    unsigned int locus_index);
+    bool legal_genotype(unsigned personid, enum phased_trait g);   
+    virtual double get_trait_probability(unsigned person_id, enum phased_trait pt)=0;
+    virtual void evaluate_child_peel(unsigned int pmatrix_index, DescentGraph* dg)=0;
+    virtual void evaluate_parent_peel(unsigned int pmatrix_index, DescentGraph* dg)=0;
+    void evaluate_partner_peel(unsigned int pmatrix_index);
+    void evaluate_element(unsigned int pmatrix_index, DescentGraph* dg);
 
  public :
-    Rfunction(PeelOperation po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2);
+    Rfunction(PeelOperation* po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2);
     Rfunction(const Rfunction& r);
     Rfunction& operator=(const Rfunction& rhs);
     virtual ~Rfunction() {}
@@ -80,7 +69,21 @@ class Rfunction {
         return pmatrix.get(index);
     }
     
-    void evaluate(DescentGraph* dg, unsigned locus, double offset);   
+    void evaluate(DescentGraph* dg, double offset);
+    
+    void set_locus(unsigned int locus) {
+        this->locus = locus;
+    
+        if(locus != (map->num_markers() - 1)) {
+            theta = map->get_theta(locus);
+            antitheta = map->get_inversetheta(locus);
+        }
+    
+        if(locus != 0) {
+            theta2 = map->get_theta(locus-1);
+            antitheta2 = map->get_inversetheta(locus-1);
+        }
+    }
 };
 
 #endif

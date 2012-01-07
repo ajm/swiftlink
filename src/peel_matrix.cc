@@ -65,7 +65,7 @@ PeelMatrix& PeelMatrix::operator=(const PeelMatrix& rhs) {
         }
                 
         num_keys = rhs.num_keys;
-        copy(rhs.keys,    rhs.keys    + num_keys, keys);
+        copy(rhs.keys, rhs.keys + num_keys, keys);
     }
 
     return *this;

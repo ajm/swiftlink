@@ -11,7 +11,6 @@ using namespace std;
 #include "pedigree.h"
 #include "descent_graph.h"
 #include "trait_rfunction.h"
-#include "rfunction_builder.h"
 
 
 Peeler::Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator& psg) : 
@@ -22,11 +21,14 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator& psg) :
     trait_prob(0.0) {
     
     vector<PeelOperation>& ops = psg.get_peel_order();
-        
-    RfunctionBuilder<TraitRfunction> build(ped, map, rfunctions);
+    
+    rfunctions.reserve(ops.size()); // need to do this otherwise pointers may not work later...
     
     for(unsigned i = 0; i < ops.size(); ++i) {
-        rfunctions.push_back(build.createRfunction(ops[i]));
+        Rfunction* prev1 = ops[i].get_previous_op1() == -1 ? NULL : &rfunctions[ops[i].get_previous_op1()];
+        Rfunction* prev2 = ops[i].get_previous_op2() == -1 ? NULL : &rfunctions[ops[i].get_previous_op2()];
+        
+        rfunctions.push_back(TraitRfunction(&(ops[i]), ped, map, prev1, prev2));
     }
     
     trait_prob = calc_trait_prob();
@@ -40,11 +42,11 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator& psg) :
 Peeler::Peeler(const Peeler& rhs) :
     ped(rhs.ped),
     map(rhs.map),
-    rfunctions(),
+    rfunctions(rhs.rfunctions),
     lod(rhs.lod),
     trait_prob(rhs.trait_prob) {
 
-    copy_rfunctions(rhs);
+    //copy_rfunctions(rhs);
 }
 
 Peeler& Peeler::operator=(const Peeler& rhs) {
@@ -52,33 +54,18 @@ Peeler& Peeler::operator=(const Peeler& rhs) {
     if(&rhs != this) {
         ped = rhs.ped;
         map = rhs.map;
+        rfunctions = rhs.rfunctions;
         lod = rhs.lod;
         trait_prob = rhs.trait_prob;
 
-        kill_rfunctions();
-        copy_rfunctions(rhs);
+        //kill_rfunctions();
+        //copy_rfunctions(rhs);
     }
     
     return *this;
 }
 
-Peeler::~Peeler() {
-    kill_rfunctions();
-}
-
-void Peeler::copy_rfunctions(const Peeler& rhs) {
-    rfunctions.clear();
-    for(unsigned i = 0; i < rhs.rfunctions.size(); ++i) {
-        TraitRfunction* rf = new TraitRfunction(*(rhs.rfunctions[i]));
-        rfunctions.push_back(rf);
-    }
-}
-
-void Peeler::kill_rfunctions() {
-    for(unsigned i = 0; i < rfunctions.size(); ++i) {
-        delete rfunctions[i];
-    }
-}
+Peeler::~Peeler() {}
 
 double Peeler::get_trait_prob() {
     return trait_prob;
@@ -102,15 +89,19 @@ void Peeler::process(DescentGraph& dg) {
 double Peeler::peel(DescentGraph* dg, unsigned locus) {
 
     for(unsigned i = 0; i < rfunctions.size(); ++i) {
-        TraitRfunction* rf = rfunctions[i];
-        rf->evaluate(dg, locus, 0.5); // TODO XXX <---- 0.5 is not actually used yet...
+        //TraitRfunction* rf = rfunctions[i];
+        //rf->evaluate(dg, 0.5); // TODO XXX <---- 0.5 is not actually used yet, always assumed to be 0.5
+        
+        rfunctions[i].set_locus(locus);
+        rfunctions[i].evaluate(dg, 0.5);
     }
     
-    TraitRfunction* rf = rfunctions.back();
+    TraitRfunction& rf = rfunctions.back();
     
-    return log(rf->get_result());
+    return log(rf.get_result());
 }
 
 double Peeler::get(unsigned locus) {
     return lod.get(locus);
 }
+

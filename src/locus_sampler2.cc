@@ -15,26 +15,13 @@ using namespace std;
 void LocusSampler::init_rfunctions(PeelSequenceGenerator& psg) {
     vector<PeelOperation>& ops = psg.get_peel_order();
     
-    for(unsigned i = 0; i < ops.size(); ++i) {
-        Rfunction* prev1 = ops[i].get_previous_op1() == -1 ? NULL : rfunctions[ops[i].get_previous_op1()];
-        Rfunction* prev2 = ops[i].get_previous_op2() == -1 ? NULL : rfunctions[ops[i].get_previous_op2()];
-        
-        rfunctions.push_back(new SamplerRfunction(ops[i], ped, map, prev1, prev2));
-    }
-}
-
-void LocusSampler::copy_rfunctions(const LocusSampler& rhs) {
-    rfunctions.clear();
+    rfunctions.reserve(ops.size()); // need to do this otherwise pointers may not work later...
     
-    for(unsigned i = 0; i < rhs.rfunctions.size(); ++i) {
-        SamplerRfunction* rf = new SamplerRfunction(*(rhs.rfunctions[i]));
-        rfunctions.push_back(rf);
-    }
-}
-
-void LocusSampler::kill_rfunctions() {
-    for(unsigned i = 0; i < rfunctions.size(); ++i) {
-        delete rfunctions[i];
+    for(unsigned i = 0; i < ops.size(); ++i) {
+        Rfunction* prev1 = ops[i].get_previous_op1() == -1 ? NULL : &(rfunctions[ops[i].get_previous_op1()]);
+        Rfunction* prev2 = ops[i].get_previous_op2() == -1 ? NULL : &(rfunctions[ops[i].get_previous_op2()]);
+        
+        rfunctions.push_back(SamplerRfunction(&(ops[i]), ped, map, prev1, prev2));
     }
 }
 
@@ -50,7 +37,7 @@ unsigned LocusSampler::sample_hetero_mi(enum trait allele, enum phased_trait tra
 // find prob of setting mi to 0
 // find prob of setting mi to 1
 // normalise + sample
-unsigned LocusSampler::sample_homo_mi(DescentGraph& dg, unsigned personid, unsigned locus, enum parentage parent) {
+unsigned LocusSampler::sample_homo_mi(DescentGraph& dg, unsigned personid, enum parentage parent) {
     double prob_dist[2];
     double total;
     
@@ -80,7 +67,7 @@ unsigned LocusSampler::sample_homo_mi(DescentGraph& dg, unsigned personid, unsig
 // if a parent is homozygous, then sample based on meiosis indicators to immediate left and right    
 unsigned LocusSampler::sample_mi(DescentGraph& dg, \
                                  enum trait allele, enum phased_trait trait, \
-                                 unsigned personid, unsigned locus, \
+                                 unsigned personid, \
                                  enum parentage parent) {
     switch(trait) {
         case TRAIT_UA:
@@ -89,7 +76,7 @@ unsigned LocusSampler::sample_mi(DescentGraph& dg, \
             
         case TRAIT_UU:
         case TRAIT_AA:
-            return sample_homo_mi(dg, personid, locus, parent);
+            return sample_homo_mi(dg, personid, parent);
             
         default:
             abort();
@@ -99,7 +86,7 @@ unsigned LocusSampler::sample_mi(DescentGraph& dg, \
 // sample meiosis indicators
 // if a parent is heterozygous, then there is one choice of meiosis indicator
 // if a parent is homozygous, then sample based on meiosis indicators to immediate left and right
-void LocusSampler::sample_meiosis_indicators(vector<int>& pmk, DescentGraph& dg, unsigned locus) {
+void LocusSampler::sample_meiosis_indicators(vector<int>& pmk, DescentGraph& dg) {
     for(unsigned i = 0; i < ped->num_members(); ++i) {
         Person* p = ped->get_by_index(i);
         
@@ -114,8 +101,8 @@ void LocusSampler::sample_meiosis_indicators(vector<int>& pmk, DescentGraph& dg,
         enum trait mat_allele = ((trait == TRAIT_UU) or (trait == TRAIT_UA)) ? TRAIT_U : TRAIT_A;
         enum trait pat_allele = ((trait == TRAIT_UU) or (trait == TRAIT_AU)) ? TRAIT_U : TRAIT_A;
         
-        unsigned mat_mi = sample_mi(dg, mat_allele, mat_trait, i, locus, MATERNAL);
-        unsigned pat_mi = sample_mi(dg, pat_allele, pat_trait, i, locus, PATERNAL);
+        unsigned mat_mi = sample_mi(dg, mat_allele, mat_trait, i, MATERNAL);
+        unsigned pat_mi = sample_mi(dg, pat_allele, pat_trait, i, PATERNAL);
         
         dg.set(i, locus, MATERNAL, mat_mi);
         dg.set(i, locus, PATERNAL, pat_mi);        
@@ -123,12 +110,14 @@ void LocusSampler::sample_meiosis_indicators(vector<int>& pmk, DescentGraph& dg,
 }
 
 void LocusSampler::step(DescentGraph& dg, unsigned parameter) {
-    unsigned locus = parameter;
+    //unsigned locus = parameter;
         
     // forward peel
     for(unsigned i = 0; i < rfunctions.size(); ++i) {
-        SamplerRfunction* rf = rfunctions[i];
-        rf->evaluate(&dg, locus, 0.0);
+        //SamplerRfunction* rf = rfunctions[i];
+        //rf->evaluate(&dg, /*locus, */0.0);
+        
+        rfunctions[i].evaluate(&dg, 0.0);
     }
     
     //PeelMatrixKey pmk(ped->num_members());
@@ -136,11 +125,13 @@ void LocusSampler::step(DescentGraph& dg, unsigned parameter) {
     
     // reverse peel, sampling ordered genotypes
     for(int i = static_cast<int>(rfunctions.size()) - 1; i >= 0; --i) {
-        SamplerRfunction* rf = rfunctions[i];
-        rf->sample(pmk);
+        //SamplerRfunction* rf = rfunctions[i];
+        //rf->sample(pmk);
+        
+        rfunctions[i].sample(pmk);
     }
     
-    sample_meiosis_indicators(pmk, dg, locus);
+    sample_meiosis_indicators(pmk, dg);
 }
 
 void LocusSampler::reset() {
@@ -149,25 +140,31 @@ void LocusSampler::reset() {
 
 void LocusSampler::set_all(bool left, bool right) {
     for(unsigned i = 0; i < rfunctions.size(); ++i)
-        rfunctions[i]->set_ignore(left, right);
+        rfunctions[i].set_ignore(left, right);
 }
 
 void LocusSampler::sequential_imputation(DescentGraph& dg) {
-    unsigned starting_locus = get_random_locus();
+    unsigned int starting_locus = get_random_locus();
+    unsigned int tmp = locus;
     
     set_all(true, true);
+    set_locus(starting_locus);
     step(dg, starting_locus);
     
     // iterate left through the markers
     set_all(true, false);
     for(int i = (starting_locus - 1); i >= 0; --i) {
+        set_locus(i);
         step(dg, i);
     }
     
     // iterate right through the markers
     set_all(false, true);
     for(int i = (starting_locus + 1); i < int(map->num_markers()); ++i) {
+        set_locus(i);
         step(dg, i);
     }
+    
+    set_locus(tmp);
 }
 

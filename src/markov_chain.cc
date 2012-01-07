@@ -62,7 +62,6 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
 
     // create a descent graph
     DescentGraph dg(ped, map);
-    //dg.random_descentgraph();
     
     // build peeling sequence for L-sampler and Peeler
     PeelSequenceGenerator psg(ped);
@@ -75,7 +74,14 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     Peeler* peel = new Peeler(ped, map, psg);
     
     // create samplers
-    LocusSampler lsampler(ped, map, psg);
+    vector<LocusSampler*> lsamplers;
+    for(unsigned int i = 0; i < map->num_markers(); ++i) {
+        LocusSampler* tmp = new LocusSampler(ped, map, psg);
+        tmp->set_locus(i);
+        
+        lsamplers.push_back(tmp);
+    }
+    
     MeiosisSampler msampler(ped, map);
     
     /*
@@ -89,7 +95,6 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     
     Progress p("MCMC: ", iterations);
     
-    lsampler.reset(); // just in case it was used for sequential imputation
     
     unsigned num_meioses = 2 * (ped->num_members() - ped->num_founders());
     
@@ -97,13 +102,23 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     
     for(unsigned i = 0; i < iterations; ++i) {
         if((random() / static_cast<double>(RAND_MAX)) < 1.0) {
-            for(unsigned j = 0; j < map->num_markers(); ++j)
-                lsampler.step(dg, j);
+            /*
+            for(unsigned int j = 0; j < map->num_markers(); j += 2) {
+                lsamplers[j]->step(dg, j);
+            }
+            for(unsigned int j = 1; j < map->num_markers(); j += 2) {
+                lsamplers[j]->step(dg, j);
+            }
+            */
+            for(unsigned int j = 0; j < map->num_markers(); ++j) {
+                lsamplers[j]->step(dg, j);
+            }
         }
         else {
             msampler.reset(dg);
-            for(unsigned j = 0; j < num_meioses; ++j)
+            for(unsigned int j = 0; j < num_meioses; ++j) {
                 msampler.step(dg, j);
+            }
         }
         
         p.increment();
@@ -118,6 +133,9 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     }
     
     p.finish();
+
+    for(unsigned i = 0; i < lsamplers.size(); ++i)
+        delete lsamplers[i];
     
     return peel;
 }

@@ -45,6 +45,16 @@ class PeelOperation {
     
         nuclearset.push_back(peelnode);    
     }
+    
+    PeelOperation(const PeelOperation& rhs) :
+        type(rhs.type),
+        cutset(rhs.cutset),
+        nuclearset(rhs.nuclearset),
+        peelnode(rhs.peelnode),
+        used(rhs.used),
+        prev1(rhs.prev1),
+        prev2(rhs.prev2),
+        assignments(rhs.assignments) {}
         
     ~PeelOperation() {}
     

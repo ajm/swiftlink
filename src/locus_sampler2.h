@@ -8,27 +8,25 @@ using namespace std;
 #include "descent_graph.h"
 #include "trait.h"
 #include "sampler.h"
+#include "sampler_rfunction.h"
 
 
 class Pedigree;
 class GeneticMap;
-class SamplerRfunction;
 class PeelSequenceGenerator;
 
 
 class LocusSampler : Sampler {
     
-    vector<SamplerRfunction*> rfunctions;
+    vector<SamplerRfunction> rfunctions;
+    unsigned int locus;
     
-    void init_rfunctions(PeelSequenceGenerator& psg);
-    void copy_rfunctions(const LocusSampler& rhs);
-    void kill_rfunctions();
-    
-    unsigned sample_mi(DescentGraph& dg, enum trait allele, enum phased_trait trait, unsigned personid, unsigned locus, enum parentage parent);
-    unsigned sample_homo_mi(DescentGraph& dg, unsigned personid, unsigned locus, enum parentage parent);
+    void init_rfunctions(PeelSequenceGenerator& psg);    
+    unsigned sample_mi(DescentGraph& dg, enum trait allele, enum phased_trait trait, unsigned personid, enum parentage parent);
+    unsigned sample_homo_mi(DescentGraph& dg, unsigned personid, enum parentage parent);
     unsigned sample_hetero_mi(enum trait allele, enum phased_trait trait);
     
-    void sample_meiosis_indicators(vector<int>& pmk, DescentGraph& dg, unsigned locus);
+    void sample_meiosis_indicators(vector<int>& pmk, DescentGraph& dg);
     
     void set_all(bool left, bool right);
 
@@ -36,29 +34,25 @@ class LocusSampler : Sampler {
  public :
     LocusSampler(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator& psg) :
         Sampler(ped, map), 
-        rfunctions() {
+        rfunctions(),
+        locus(0) {
         
         init_rfunctions(psg);
     }
     
-    ~LocusSampler() {
-        kill_rfunctions();
-    }
+    ~LocusSampler() {}
     
     LocusSampler(const LocusSampler& rhs) : 
         Sampler(rhs.ped, rhs.map),
-        rfunctions() {
-        
-        copy_rfunctions(rhs);
-    }
+        rfunctions(rhs.rfunctions),
+        locus(rhs.locus) {}
     
     LocusSampler& operator=(const LocusSampler& rhs) {
         
         if(this != &rhs) {
             Sampler::operator=(rhs);
-            
-            kill_rfunctions();
-            copy_rfunctions(rhs);
+            rfunctions = rhs.rfunctions;
+            locus = rhs.locus;
         }
         
         return *this;        
@@ -67,6 +61,15 @@ class LocusSampler : Sampler {
     virtual void step(DescentGraph& dg, unsigned parameter);
     void sequential_imputation(DescentGraph& dg);
     void reset();
+    
+    void set_locus(unsigned int locus) {
+    
+        this->locus = locus;
+    
+        for(unsigned int i = 0; i < rfunctions.size(); ++i) {
+            rfunctions[i].set_locus(locus);
+        }
+    }
 };
 
 #endif

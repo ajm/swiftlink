@@ -4,6 +4,7 @@
 #include <vector>
 #include "rfunction.h"
 
+
 class TraitRfunction : public Rfunction {
     
     double get_recombination_probability(DescentGraph* dg, unsigned person_id, int maternal_allele, int paternal_allele);
@@ -15,10 +16,22 @@ class TraitRfunction : public Rfunction {
     void evaluate_parent_peel(unsigned int pmatrix_index, DescentGraph* dg);
     
  public :
-    TraitRfunction(PeelOperation* po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2);
+    TraitRfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, Rfunction* prev1, Rfunction* prev2) : 
+        Rfunction(p, m, locus, po, prev1, prev2) {}
+    
+    TraitRfunction(const TraitRfunction& rhs) :
+        Rfunction(rhs) {}
+    
     virtual ~TraitRfunction() {}
-    TraitRfunction(const TraitRfunction& rhs);
-    TraitRfunction& operator=(const TraitRfunction& rhs);
+    
+    TraitRfunction& operator=(const TraitRfunction& rhs) {
+        
+        if(&rhs != this) {
+            Rfunction::operator=(rhs);
+        }
+        
+        return *this;
+    }
     
     double get_result() { 
         return pmatrix.get_result();

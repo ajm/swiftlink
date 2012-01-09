@@ -13,7 +13,7 @@ using namespace std;
 #include "genetic_map.h"
 
 
-Rfunction::Rfunction(PeelOperation* po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2) : 
+Rfunction::Rfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, Rfunction* prev1, Rfunction* prev2) : 
     map(m),
     ped(p),
     offset(0.0),
@@ -22,13 +22,13 @@ Rfunction::Rfunction(PeelOperation* po, Pedigree* p, GeneticMap* m, Rfunction* p
     peel(po), 
     previous_rfunction1(prev1),
     previous_rfunction2(prev2),
-    locus(0),
+    locus(locus),
     theta(0.0),
     antitheta(0.0),
     theta2(0.0),
     antitheta2(0.0),
     indices(peel->get_index_values()),
-    size(pow(4.0, peel->get_cutset_size())) {
+    size(pow((double)NUM_ALLELES, (int)peel->get_cutset_size())) {
     
     pmatrix.set_keys(peel->get_cutset());
           
@@ -37,6 +37,17 @@ Rfunction::Rfunction(PeelOperation* po, Pedigree* p, GeneticMap* m, Rfunction* p
     tmp.push_back(peel->get_peelnode());
     
     pmatrix_presum.set_keys(tmp);
+    
+    
+    if(locus != (map->num_markers() - 1)) {
+        theta = map->get_theta(locus);
+        antitheta = map->get_inversetheta(locus);
+    }
+    
+    if(locus != 0) {
+        theta2 = map->get_theta(locus-1);
+        antitheta2 = map->get_inversetheta(locus-1);
+    }        
 }
 
 Rfunction::Rfunction(const Rfunction& r) :

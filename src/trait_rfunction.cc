@@ -8,21 +8,6 @@ using namespace std;
 #include "peeling.h"
 
 
-TraitRfunction::TraitRfunction(PeelOperation* po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2) : 
-    Rfunction(po, p, m, prev1, prev2) {}
-
-TraitRfunction::TraitRfunction(const TraitRfunction& rhs) :
-    Rfunction(rhs) {}
-    
-TraitRfunction& TraitRfunction::operator=(const TraitRfunction& rhs) {
-    
-    if(&rhs != this) {
-        Rfunction::operator=(rhs);
-    }
-    
-    return *this;
-}
-
 double TraitRfunction::get_recombination_probability(DescentGraph* dg, unsigned person_id, 
                                                      int maternal_allele, int paternal_allele) {
     double tmp = 1.0;    

@@ -21,7 +21,7 @@ void LocusSampler::init_rfunctions(PeelSequenceGenerator& psg) {
         Rfunction* prev1 = ops[i].get_previous_op1() == -1 ? NULL : &(rfunctions[ops[i].get_previous_op1()]);
         Rfunction* prev2 = ops[i].get_previous_op2() == -1 ? NULL : &(rfunctions[ops[i].get_previous_op2()]);
         
-        rfunctions.push_back(SamplerRfunction(&(ops[i]), ped, map, prev1, prev2));
+        rfunctions.push_back(SamplerRfunction(ped, map, locus, &(ops[i]), prev1, prev2));
     }
 }
 

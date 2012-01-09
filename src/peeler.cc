@@ -28,7 +28,7 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator& psg) :
         Rfunction* prev1 = ops[i].get_previous_op1() == -1 ? NULL : &rfunctions[ops[i].get_previous_op1()];
         Rfunction* prev2 = ops[i].get_previous_op2() == -1 ? NULL : &rfunctions[ops[i].get_previous_op2()];
         
-        rfunctions.push_back(TraitRfunction(&(ops[i]), ped, map, prev1, prev2));
+        rfunctions.push_back(TraitRfunction(ped, map, 0, &(ops[i]), prev1, prev2));
     }
     
     trait_prob = calc_trait_prob();

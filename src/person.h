@@ -83,7 +83,6 @@ class Person {
     void add_mate(Person* p);
     
     
-    
  public :
 	Person(const string name, const string father_name, const string mother_name, 
 			enum sex s, enum affection a, Pedigree* pedigree, const DiseaseModel& dm);
@@ -109,6 +108,7 @@ class Person {
 	        case PATERNAL:
 	            return paternal_id;
 	    }
+        abort();
 	}
 
 	enum unphased_genotype get_genotype(unsigned int i) const {

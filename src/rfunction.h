@@ -60,7 +60,7 @@ class Rfunction {
     void evaluate_element(unsigned int pmatrix_index, DescentGraph* dg);
 
  public :
-    Rfunction(PeelOperation* po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2);
+    Rfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, Rfunction* prev1, Rfunction* prev2);
     Rfunction(const Rfunction& r);
     Rfunction& operator=(const Rfunction& rhs);
     virtual ~Rfunction() {}

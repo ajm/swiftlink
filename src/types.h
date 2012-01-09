@@ -8,20 +8,21 @@
 const unsigned int UNKNOWN_PARENT = ~0u;
 const unsigned int UNKNOWN_ID = UNKNOWN_PARENT;
 const unsigned int DEBUG_FP_PRECISION = 3;
+const double DBL_RAND_MAX = static_cast<double>(RAND_MAX);
 
 enum parentage { 
-	MATERNAL,
-	PATERNAL
+    MATERNAL,
+    PATERNAL
 };
 
 enum sex {
-	UNSEXED,
+    UNSEXED,
     MALE,
     FEMALE
 };
 
 enum affection {
-	UNKNOWN_AFFECTION,
+    UNKNOWN_AFFECTION,
     UNAFFECTED,
     AFFECTED
 };
@@ -34,9 +35,9 @@ enum simple_disease_model {
 // used in a few places following nomenclature of
 // Corman, Leiserson, Rivest & Stein 2nd Ed. depth-first search
 enum {
-	WHITE,
-	GREY,
-	BLACK
+    WHITE,
+    GREY,
+    BLACK
 };
 
 typedef int meiosis_indicator_t;
@@ -45,5 +46,10 @@ typedef enum parentage allele_t;
 string gender_str(enum sex s);
 string affection_str(enum affection a);
 string parent_str(enum parentage p);
+
+typedef uint32_t u32;
+typedef uint16_t u16;
+typedef uint8_t u8;
+
 
 #endif

@@ -8,7 +8,7 @@ using namespace std;
 #include "genetic_map.h"
 #include "pedigree.h"
 #include "peel_sequence_generator.h"
-#include "gpu_wrapper.h"
+//#include "gpu_wrapper.h"
 
 bool TestProgram::run() {
 
@@ -17,8 +17,11 @@ bool TestProgram::run() {
     PeelSequenceGenerator psg(ped);
     psg.build_peel_order();
 
-    GPUWrapper gpu(ped, &map, psg);
-
+    //GPUWrapper gpu(ped, &map, psg);
+    
+    fprintf(stderr, "test program not used at the moment...\n");
+    abort();
+    
     return true;
 }
 

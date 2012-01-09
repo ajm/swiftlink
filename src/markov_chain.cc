@@ -12,7 +12,7 @@ using namespace std;
 #include "descent_graph.h"
 #include "linkage_writer.h"
 #include "progress.h"
-#include "gpu_wrapper.h"
+//#include "gpu_wrapper.h"
 
 
 void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
@@ -21,7 +21,7 @@ void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
     int iterations = 100;
     //int iterations = 1;
     
-    LocusSampler lsampler(ped, map, psg);
+    LocusSampler lsampler(ped, map, psg, 0);
     
     tmp.random_descentgraph();
     if((tmp_prob = tmp.get_likelihood()) == LOG_ZERO) {
@@ -29,7 +29,7 @@ void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
         abort();
     }
     
-    fprintf(stderr, "random = %e\n", tmp_prob);
+    fprintf(stderr, "initial random likelihood = %e\n", tmp_prob);
     
     do {
         lsampler.sequential_imputation(tmp);
@@ -76,9 +76,7 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     // create samplers
     vector<LocusSampler*> lsamplers;
     for(unsigned int i = 0; i < map->num_markers(); ++i) {
-        LocusSampler* tmp = new LocusSampler(ped, map, psg);
-        tmp->set_locus(i);
-        
+        LocusSampler* tmp = new LocusSampler(ped, map, psg, i);
         lsamplers.push_back(tmp);
     }
     
@@ -97,11 +95,9 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     
     
     unsigned num_meioses = 2 * (ped->num_members() - ped->num_founders());
-    
-    fprintf(stderr, "#meioses = %d\n", num_meioses);
-    
-    for(unsigned i = 0; i < iterations; ++i) {
-        if((random() / static_cast<double>(RAND_MAX)) < 1.0) {
+        
+    for(unsigned int i = 0; i < iterations; ++i) {
+        if((random() / DBL_RAND_MAX) < 0.5) {
             /*
             for(unsigned int j = 0; j < map->num_markers(); j += 2) {
                 lsamplers[j]->step(dg, j);
@@ -133,10 +129,12 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     }
     
     p.finish();
-
-    for(unsigned i = 0; i < lsamplers.size(); ++i)
+    
+    
+    // dump lsamplers
+    for(unsigned i = 0; i < lsamplers.size(); ++i) {
         delete lsamplers[i];
+    }
     
     return peel;
 }
-

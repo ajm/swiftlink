@@ -9,27 +9,6 @@ using namespace std;
 #include "peel_matrix.h"
 
 
-SamplerRfunction::SamplerRfunction(PeelOperation* po, Pedigree* p, GeneticMap* m, Rfunction* prev1, Rfunction* prev2) : 
-    Rfunction(po, p, m, prev1, prev2), 
-    ignore_left(false), 
-    ignore_right(false) {}
-
-SamplerRfunction::SamplerRfunction(const SamplerRfunction& rhs) :
-    Rfunction(rhs), 
-    ignore_left(rhs.ignore_left), 
-    ignore_right(rhs.ignore_right) {}
-
-SamplerRfunction& SamplerRfunction::operator=(const SamplerRfunction& rhs) {
-    
-    if(&rhs != this) {
-        Rfunction::operator=(rhs);
-        ignore_left = rhs.ignore_left;
-        ignore_right = rhs.ignore_right;
-    }
-    
-    return *this;
-}
-    
 double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_trait pt) {
     Person* p = ped->get_by_index(person_id);
     
@@ -127,11 +106,7 @@ void SamplerRfunction::sample(vector<int>& pmk) {
         prob_dist[i] = pmatrix_presum.get(pmk);
         total += prob_dist[i];        
     }
-    /*
-    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
-        fprintf(stderr, "prob_dist[%d] = %e\n", i, prob_dist[i]);
-    }
-    */
+    
     // normalise
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         prob_dist[i] /= total;
@@ -233,11 +208,11 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
     other_trait = static_cast<enum phased_trait>((*indices)[pmatrix_index][other_parent_id]);
     
     
-    for(unsigned a = 0; a < NUM_ALLELES; ++a) {
-        parent_trait = static_cast<enum phased_trait>(a);
-        presum_index = pmatrix_index + (offset * a);
+    for(unsigned int i = 0; i < NUM_ALLELES; ++i) {
+        parent_trait = static_cast<enum phased_trait>(i);
+        presum_index = pmatrix_index + (offset * i);
         
-        (*indices)[pmatrix_index][parent_id] = a;
+        (*indices)[pmatrix_index][parent_id] = i;
         
         tmp = get_trait_probability(parent_id, parent_trait);
         if(tmp == 0.0)
@@ -250,13 +225,13 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
         
         child_prob = 1.0;
         
-        for(unsigned c = 0; c < peel->get_cutset_size(); ++c) {
+        for(unsigned int c = 0; c < peel->get_cutset_size(); ++c) {
             Person* child = ped->get_by_index(peel->get_cutnode(c));
             
             if(not child->is_parent(parent_id))
                 continue;
             
-            child_trait = static_cast<enum phased_trait>((*indices)[pmatrix_index][child->get_internalid()]); // pmatrix_index.get(child->get_internalid());
+            child_trait = static_cast<enum phased_trait>((*indices)[pmatrix_index][child->get_internalid()]);
             
             child_prob *= (get_recombination_probability(dg, child->get_internalid(), parent_trait, child_trait, ismother ? MATERNAL : PATERNAL) *  \
                            get_recombination_probability(dg, child->get_internalid(), other_trait,  child_trait, ismother ? PATERNAL : MATERNAL));
@@ -274,4 +249,3 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
     
     pmatrix.set(pmatrix_index, total);
 }
-

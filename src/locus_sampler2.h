@@ -32,10 +32,10 @@ class LocusSampler : Sampler {
 
     
  public :
-    LocusSampler(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator& psg) :
+    LocusSampler(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator& psg, unsigned int locus) :
         Sampler(ped, map), 
         rfunctions(),
-        locus(0) {
+        locus(locus) {
         
         init_rfunctions(psg);
     }

@@ -19,15 +19,17 @@ bool LinkageProgram::run() {
     vector<Peeler*> peelers;
     Peeler* tmp;
     
+    /*
     if(verbose) {
-        //fprintf(stderr, "%s\n", dm.debug_string().c_str());
-        //fprintf(stderr, "%s\n", map.debug_string().c_str());
+        fprintf(stderr, "%s\n", dm.debug_string().c_str());
+        fprintf(stderr, "%s\n", map.debug_string().c_str());
     }
-
+    */
+    
     // TODO XXX need to know how to do this properly, 
     // look up better random numbers for simulations etc
     srandom(time(NULL));
-
+    
     for(unsigned int i = 0; i < pedigrees.size(); ++i) {
         if(verbose) {
             fprintf(stderr, "%s\n", pedigrees[i].debug_string().c_str());
@@ -38,6 +40,7 @@ bool LinkageProgram::run() {
         if((tmp = run_pedigree(pedigrees[i])) == NULL) {
             fprintf(stderr, "error: pedigree '%s' failed\n", pedigrees[i].get_id().c_str());
             free_peelers(peelers);
+            
             return false;
         }
         
@@ -47,11 +50,12 @@ bool LinkageProgram::run() {
     LinkageWriter lw(&map, output_filename, verbose);
     if(not lw.write(peelers)) {
         fprintf(stderr, "error: could not write output file '%s'\n", output_filename.c_str());
+        
         return false;
     }
     
     free_peelers(peelers);
-
+    
     return true;
 }
 
@@ -67,7 +71,7 @@ Peeler* LinkageProgram::run_pedigree(Pedigree& p) {
 }
 
 void LinkageProgram::free_peelers(vector<Peeler*>& p) {
-    for(unsigned i = 0; i < p.size(); ++i)
+    for(unsigned i = 0; i < p.size(); ++i) {
         delete p[i];
+    }
 }
-

@@ -16,8 +16,8 @@ using namespace std;
 
 
 bool LinkageProgram::run() {
-    vector<Peeler*> peelers;
-    Peeler* tmp;
+    vector<double*> lod_scores;
+    double* tmp;
     
     /*
     if(verbose) {
@@ -39,27 +39,27 @@ bool LinkageProgram::run() {
         // abort() at the slightest hint of a problem
         if((tmp = run_pedigree(pedigrees[i])) == NULL) {
             fprintf(stderr, "error: pedigree '%s' failed\n", pedigrees[i].get_id().c_str());
-            free_peelers(peelers);
+            free_lodscores(lod_scores);
             
             return false;
         }
         
-        peelers.push_back(tmp);
+        lod_scores.push_back(tmp);
     }
     
     LinkageWriter lw(&map, output_filename, verbose);
-    if(not lw.write(peelers)) {
+    if(not lw.write(lod_scores)) {
         fprintf(stderr, "error: could not write output file '%s'\n", output_filename.c_str());
         
         return false;
     }
     
-    free_peelers(peelers);
+    free_lodscores(lod_scores);
     
     return true;
 }
 
-Peeler* LinkageProgram::run_pedigree(Pedigree& p) {
+double* LinkageProgram::run_pedigree(Pedigree& p) {
     
     if(verbose) {
         fprintf(stderr, "processing pedigree %s\n", p.get_id().c_str());
@@ -70,8 +70,8 @@ Peeler* LinkageProgram::run_pedigree(Pedigree& p) {
     return chain.run(iterations, 0.0);
 }
 
-void LinkageProgram::free_peelers(vector<Peeler*>& p) {
-    for(unsigned i = 0; i < p.size(); ++i) {
-        delete p[i];
+void LinkageProgram::free_lodscores(vector<double*>& x) {
+    for(unsigned i = 0; i < x.size(); ++i) {
+        delete x[i];
     }
 }

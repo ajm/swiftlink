@@ -7,7 +7,6 @@ using namespace std;
 
 #include "peeling.h"
 #include "trait_rfunction.h"
-#include "lod_calculator.h"
 #include "peel_sequence_generator.h"
 
 
@@ -20,26 +19,24 @@ class Peeler {
     Pedigree* ped;
     GeneticMap* map;
     vector<TraitRfunction> rfunctions;
-    LodCalculator lod;
     double trait_prob;
-    
+    double lod_score;
+    bool initialised;
+    unsigned int locus;
+    unsigned int count;
     
     double calc_trait_prob();
-    //void copy_rfunctions(const Peeler& rhs);
-    //void kill_rfunctions();
     
  public :
-    Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator& psg);
+    Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator& psg, unsigned int locus);
     Peeler(const Peeler& rhs);
     ~Peeler();
     
     Peeler& operator=(const Peeler& rhs);
     
-    double peel(DescentGraph* dg, unsigned locus);
     double get_trait_prob();
-    void process(DescentGraph& dg);
-    double get(unsigned locus);
+    void process(DescentGraph* dg);
+    double get();
 };
 
 #endif
-

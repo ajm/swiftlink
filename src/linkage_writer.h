@@ -37,7 +37,7 @@ class LinkageWriter {
         return *this;
     }
 
-	bool write(vector<Peeler*>& peelers);
+	bool write(vector<double*>& lod_scores);
 };
 
 #endif

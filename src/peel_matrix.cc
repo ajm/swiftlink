@@ -106,6 +106,7 @@ void PeelMatrix::normalise() {
     
     if(matrix_sum == 0.0) {
         fprintf(stderr, "error: %s:%d, zero sum in normalise\n", __func__, __LINE__);
+        abort();
     }
     
     for(unsigned i = 0; i < size; ++i) {

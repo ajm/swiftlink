@@ -52,7 +52,7 @@ void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
     fprintf(stderr, "starting point likelihood = %e\n", best_prob);
 }
 
-Peeler* MarkovChain::run(unsigned iterations, double temperature) {
+double* MarkovChain::run(unsigned iterations, double temperature) {
     unsigned burnin = iterations * 0.1;
     
     //iterations = 1020;
@@ -69,9 +69,12 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
     
     initialise(dg, psg);
     
-    // create an object to perform LOD scoring
-    // allocate on the heap so we can return it
-    Peeler* peel = new Peeler(ped, map, psg);
+    // lod scorers
+    vector<Peeler*> peelers;
+    for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
+        Peeler* tmp = new Peeler(ped, map, psg, i);
+        peelers.push_back(tmp);
+    }
     
     // create samplers
     vector<LocusSampler*> lsamplers;
@@ -98,17 +101,21 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
         
     for(unsigned int i = 0; i < iterations; ++i) {
         if((random() / DBL_RAND_MAX) < 0.5) {
-            /*
+            #pragma omp parallel for
             for(unsigned int j = 0; j < map->num_markers(); j += 2) {
                 lsamplers[j]->step(dg, j);
             }
+            
+            #pragma omp parallel for
             for(unsigned int j = 1; j < map->num_markers(); j += 2) {
                 lsamplers[j]->step(dg, j);
             }
-            */
+            
+            /*
             for(unsigned int j = 0; j < map->num_markers(); ++j) {
                 lsamplers[j]->step(dg, j);
             }
+            */
         }
         else {
             msampler.reset(dg);
@@ -124,7 +131,10 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
         }
         
         if((i % 10) == 0) {
-            peel->process(dg);
+            #pragma omp parallel for
+            for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
+                peelers[i]->process(&dg);
+            }
         }
     }
     
@@ -136,5 +146,11 @@ Peeler* MarkovChain::run(unsigned iterations, double temperature) {
         delete lsamplers[i];
     }
     
-    return peel;
+    double* lod_scores = new double[map->num_markers() - 1];
+    for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
+        lod_scores[i] = peelers[i]->get();
+        delete peelers[i];
+    }
+    
+    return lod_scores;
 }

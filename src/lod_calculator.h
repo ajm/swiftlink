@@ -15,7 +15,7 @@ class LodCalculator {
     GeneticMap* map;
     double* lod_scores;
     vector<bool> initialised; // XXX <-- I don't like this, but log(0.0) is -inf :-S
-    unsigned count;
+    unsigned int count;
     double trait_prob;
         
  public :

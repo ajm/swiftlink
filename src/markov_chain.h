@@ -36,7 +36,7 @@ class MarkovChain {
         return *this;
     }
     
-    Peeler* run(unsigned iterations, double temperature);
+    double* run(unsigned iterations, double temperature);
 };
 
 #endif

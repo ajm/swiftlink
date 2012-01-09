@@ -10,7 +10,7 @@ using namespace std;
 #include "peeler.h"
 
 
-bool LinkageWriter::write(vector<Peeler*>& peelers) {
+bool LinkageWriter::write(vector<double*>& lod_scores) {
     fstream f;
     	
 	f.open(filename.c_str(), fstream::out | fstream::trunc);
@@ -20,10 +20,10 @@ bool LinkageWriter::write(vector<Peeler*>& peelers) {
 		return false;
 	}
 	
-	for(unsigned i = 0; i < (map->num_markers() - 1); ++i) {
-        double tmp = peelers[0]->get(i);
-        for(unsigned j = 1; j < peelers.size(); ++j) {
-            tmp += peelers[j]->get(i);
+	for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
+        double tmp = lod_scores[0][i];
+        for(unsigned int j = 1; j < lod_scores.size(); ++j) {
+            tmp += lod_scores[j][i];
         }
         
         stringstream ss;
@@ -32,9 +32,9 @@ bool LinkageWriter::write(vector<Peeler*>& peelers) {
 	    ss << map->get_name(i) << "\t" << tmp;
         
         // more than one family
-        if(peelers.size() > 1) {
-            for(unsigned j = 0; j < peelers.size(); ++j) {
-                ss << "\t" << peelers[j]->get(i);
+        if(lod_scores.size() > 1) {
+            for(unsigned int j = 0; j < lod_scores.size(); ++j) {
+                ss << "\t" << lod_scores[j][i];
             }
         }
         

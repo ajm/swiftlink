@@ -35,17 +35,16 @@ class Rfunction {
     double theta2;
     double antitheta2;
     vector<vector<int> >* indices;
-    unsigned int offset;
+    unsigned int index_offset;
     unsigned int size;
-        
-    //enum trait get_trait(enum phased_trait p, enum parentage parent);
+    unsigned int peel_id;
+    
     inline enum trait get_trait(enum phased_trait p, enum parentage parent) {
         switch(parent) {
             case MATERNAL:
                 return (((p == TRAIT_UU) or (p == TRAIT_UA)) ? TRAIT_U : TRAIT_A);    
             case PATERNAL:
                 return (((p == TRAIT_UU) or (p == TRAIT_AU)) ? TRAIT_U : TRAIT_A);
-        
             default:
                 break;
         }
@@ -88,4 +87,3 @@ class Rfunction {
 };
 
 #endif
-

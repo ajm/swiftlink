@@ -12,8 +12,8 @@ class LinkageProgram : public Program {
     string output_filename;
     unsigned int iterations;
     
-    Peeler* run_pedigree(Pedigree& p);
-    void free_peelers(vector<Peeler*>& p);
+    double* run_pedigree(Pedigree& p);
+    void free_lodscores(vector<double*>& p);
 
  public :
     LinkageProgram(char* ped, char* map, char* dat, char* outputfile, unsigned int iterations, bool verbose) : 

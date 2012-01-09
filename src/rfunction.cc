@@ -28,8 +28,9 @@ Rfunction::Rfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperati
     theta2(0.0),
     antitheta2(0.0),
     indices(peel->get_index_values()),
-    offset(1 << (2 * peel->get_cutset_size())),
-    size(pow((double)NUM_ALLELES, (int)peel->get_cutset_size())) {
+    index_offset(1 << (2 * peel->get_cutset_size())),
+    size(pow((double)NUM_ALLELES, (int)peel->get_cutset_size())),
+    peel_id(peel->get_peelnode()) {
     
     pmatrix.set_keys(peel->get_cutset());
           
@@ -66,8 +67,9 @@ Rfunction::Rfunction(const Rfunction& r) :
     theta2(r.theta2),
     antitheta2(r.antitheta2),
     indices(r.indices),
-    offset(r.offset),
-    size(r.size) {}
+    index_offset(r.index_offset),
+    size(r.size),
+    peel_id(r.peel_id) {}
     
 Rfunction& Rfunction::operator=(const Rfunction& rhs) {
 
@@ -86,8 +88,9 @@ Rfunction& Rfunction::operator=(const Rfunction& rhs) {
         theta2 = rhs.theta2;
         antitheta2 = rhs.antitheta2;
         indices = rhs.indices;
-        offset = rhs.offset;
+        index_offset = rhs.index_offset;
         size = rhs.size;
+        peel_id = rhs.peel_id;
     }
     
     return *this;
@@ -101,15 +104,15 @@ void Rfunction::evaluate_partner_peel(unsigned int pmatrix_index) {
     unsigned int presum_index;
     
     enum phased_trait partner_trait;
-    unsigned partner_id = peel->get_peelnode();
-        
+    
+    
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         partner_trait = static_cast<enum phased_trait>(i);        
-        presum_index = pmatrix_index + (offset * i);
+        presum_index = pmatrix_index + (index_offset * i);
         
-        (*indices)[pmatrix_index][partner_id] = i;
+        (*indices)[pmatrix_index][peel_id] = i;
         
-        tmp = get_trait_probability(partner_id, partner_trait);
+        tmp = get_trait_probability(peel_id, partner_trait);
         
         if(tmp == 0.0)
             continue;
@@ -166,4 +169,3 @@ void Rfunction::evaluate(DescentGraph* dg, double offset) {
         evaluate_element(i, dg);
     }
 }
-

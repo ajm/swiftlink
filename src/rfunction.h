@@ -35,6 +35,7 @@ class Rfunction {
     double theta2;
     double antitheta2;
     vector<vector<int> >* indices;
+    unsigned int offset;
     unsigned int size;
         
     //enum trait get_trait(enum phased_trait p, enum parentage parent);

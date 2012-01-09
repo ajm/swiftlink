@@ -138,7 +138,6 @@ void SamplerRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGr
     double tmp;
     double total = 0.0;
     
-    unsigned int offset = 1 << (2 * peel->get_cutset_size());
     unsigned int presum_index;
     
     enum phased_trait kid_trait;
@@ -183,7 +182,6 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
     unsigned parent_id = peel->get_peelnode();
     unsigned child_node = peel->get_cutnode(0);
     
-    unsigned int offset = 1 << (2 * peel->get_cutset_size());
     unsigned int presum_index;
     
     // find a child of parent_id

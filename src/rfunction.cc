@@ -28,6 +28,7 @@ Rfunction::Rfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperati
     theta2(0.0),
     antitheta2(0.0),
     indices(peel->get_index_values()),
+    offset(1 << (2 * peel->get_cutset_size())),
     size(pow((double)NUM_ALLELES, (int)peel->get_cutset_size())) {
     
     pmatrix.set_keys(peel->get_cutset());
@@ -65,6 +66,7 @@ Rfunction::Rfunction(const Rfunction& r) :
     theta2(r.theta2),
     antitheta2(r.antitheta2),
     indices(r.indices),
+    offset(r.offset),
     size(r.size) {}
     
 Rfunction& Rfunction::operator=(const Rfunction& rhs) {
@@ -84,6 +86,8 @@ Rfunction& Rfunction::operator=(const Rfunction& rhs) {
         theta2 = rhs.theta2;
         antitheta2 = rhs.antitheta2;
         indices = rhs.indices;
+        offset = rhs.offset;
+        size = rhs.size;
     }
     
     return *this;
@@ -94,7 +98,6 @@ void Rfunction::evaluate_partner_peel(unsigned int pmatrix_index) {
     double tmp = 0.0;
     double total = 0.0;
     
-    unsigned int offset = 1 << (2 * peel->get_cutset_size());
     unsigned int presum_index;
     
     enum phased_trait partner_trait;

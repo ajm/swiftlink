@@ -107,6 +107,11 @@ void SamplerRfunction::sample(vector<int>& pmk) {
         total += prob_dist[i];        
     }
     
+    if(total == 0.0) {
+        fprintf(stderr, "error: probabilities sum to zero\n");
+        abort();
+    }
+    
     // normalise
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         prob_dist[i] /= total;

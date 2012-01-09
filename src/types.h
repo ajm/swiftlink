@@ -1,6 +1,8 @@
 #ifndef LKG_TYPES_H_
 #define LKG_TYPES_H_
 
+#include <cstdlib>
+
 #include "genotype.h"
 #include "trait.h"
 
@@ -47,9 +49,6 @@ string gender_str(enum sex s);
 string affection_str(enum affection a);
 string parent_str(enum parentage p);
 
-typedef uint32_t u32;
-typedef uint16_t u16;
-typedef uint8_t u8;
-
 
 #endif
+

@@ -18,8 +18,8 @@ using namespace std;
 void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
     DescentGraph tmp(ped, map);
     double tmp_prob, best_prob = LOG_ILLEGAL;
-    int iterations = 100;
-    //int iterations = 1;
+    //int iterations = 100;
+    int iterations = 1;
     
     LocusSampler lsampler(ped, map, psg, 0);
     
@@ -55,8 +55,8 @@ void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
 double* MarkovChain::run(unsigned iterations, double temperature) {
     unsigned burnin = iterations * 0.1;
     
-    //iterations = 1020;
-    //burnin = 1000;
+    //iterations = 1000;
+    //burnin = 0;
     
     map->set_temperature(temperature);
 
@@ -101,6 +101,7 @@ double* MarkovChain::run(unsigned iterations, double temperature) {
         
     for(unsigned int i = 0; i < iterations; ++i) {
         if((random() / DBL_RAND_MAX) < 0.5) {
+            /*
             #pragma omp parallel for
             for(unsigned int j = 0; j < map->num_markers(); j += 2) {
                 lsamplers[j]->step(dg, j);
@@ -110,12 +111,12 @@ double* MarkovChain::run(unsigned iterations, double temperature) {
             for(unsigned int j = 1; j < map->num_markers(); j += 2) {
                 lsamplers[j]->step(dg, j);
             }
+            */
             
-            /*
             for(unsigned int j = 0; j < map->num_markers(); ++j) {
                 lsamplers[j]->step(dg, j);
             }
-            */
+            
         }
         else {
             msampler.reset(dg);
@@ -131,7 +132,7 @@ double* MarkovChain::run(unsigned iterations, double temperature) {
         }
         
         if((i % 10) == 0) {
-            #pragma omp parallel for
+            //#pragma omp parallel for
             for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
                 peelers[i]->process(&dg);
             }

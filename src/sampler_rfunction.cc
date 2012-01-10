@@ -151,14 +151,14 @@ void SamplerRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGr
     double total = 0.0;
     
     
-    mat_trait = static_cast<enum phased_trait>((*indices)[pmatrix_index][kid->get_maternalid()]);
-    pat_trait = static_cast<enum phased_trait>((*indices)[pmatrix_index][kid->get_paternalid()]);
+    mat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][kid->get_maternalid()]);
+    pat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][kid->get_paternalid()]);
     
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         kid_trait = static_cast<enum phased_trait>(i);
         presum_index = pmatrix_index + (index_offset * i);
         
-        (*indices)[pmatrix_index][peel_id] = i;
+        indices[pmatrix_index][peel_id] = i;
         
         tmp = get_trait_probability(peel_id, kid_trait);
         if(tmp == 0.0)
@@ -169,8 +169,8 @@ void SamplerRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGr
         if(tmp == 0.0)
             continue;
         
-        tmp *= ((previous_rfunction1 != NULL) ? previous_rfunction1->get((*indices)[pmatrix_index]) : 1.0) * \
-               ((previous_rfunction2 != NULL) ? previous_rfunction2->get((*indices)[pmatrix_index]) : 1.0);
+        tmp *= ((previous_rfunction1 != NULL) ? previous_rfunction1->get(indices[pmatrix_index]) : 1.0) * \
+               ((previous_rfunction2 != NULL) ? previous_rfunction2->get(indices[pmatrix_index]) : 1.0);
         
         pmatrix_presum.set(presum_index, tmp);
         
@@ -196,14 +196,14 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
         parent_trait = static_cast<enum phased_trait>(i);
         presum_index = pmatrix_index + (index_offset * i);
         
-        (*indices)[pmatrix_index][peel_id] = i;
+        indices[pmatrix_index][peel_id] = i;
         
         tmp = get_trait_probability(peel_id, parent_trait);
         if(tmp == 0.0)
             continue;
         
-        tmp *= ((previous_rfunction1 != NULL ? previous_rfunction1->get((*indices)[pmatrix_index]) : 1.0) * \
-                (previous_rfunction2 != NULL ? previous_rfunction2->get((*indices)[pmatrix_index]) : 1.0));
+        tmp *= ((previous_rfunction1 != NULL ? previous_rfunction1->get(indices[pmatrix_index]) : 1.0) * \
+                (previous_rfunction2 != NULL ? previous_rfunction2->get(indices[pmatrix_index]) : 1.0));
         if(tmp == 0.0)
             continue;
         
@@ -216,8 +216,8 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
             if(not child->is_parent(peel_id))
                 continue;
             
-            child_trait = static_cast<enum phased_trait>((*indices)[pmatrix_index][child_id]);
-            other_trait = static_cast<enum phased_trait>((*indices)[pmatrix_index][child->get_maternalid() == peel_id ? child->get_paternalid() : child->get_maternalid()]);
+            child_trait = static_cast<enum phased_trait>(indices[pmatrix_index][child_id]);
+            other_trait = static_cast<enum phased_trait>(indices[pmatrix_index][child->get_maternalid() == peel_id ? child->get_paternalid() : child->get_maternalid()]);
             
             if(child->get_maternalid() == peel_id) {
                 child_prob *= (get_recombination_probability(dg, child_id, parent_trait, child_trait, MATERNAL) *  \

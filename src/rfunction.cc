@@ -110,15 +110,15 @@ void Rfunction::evaluate_partner_peel(unsigned int pmatrix_index) {
         partner_trait = static_cast<enum phased_trait>(i);        
         presum_index = pmatrix_index + (index_offset * i);
         
-        (*indices)[pmatrix_index][peel_id] = i;
+        indices[pmatrix_index][peel_id] = i;
         
         tmp = get_trait_probability(peel_id, partner_trait);
         
         if(tmp == 0.0)
             continue;
         
-        tmp *= (previous_rfunction1 == NULL ? 1.0 : previous_rfunction1->get((*indices)[pmatrix_index])) * \
-               (previous_rfunction2 == NULL ? 1.0 : previous_rfunction2->get((*indices)[pmatrix_index]));
+        tmp *= (previous_rfunction1 == NULL ? 1.0 : previous_rfunction1->get(indices[pmatrix_index])) * \
+               (previous_rfunction2 == NULL ? 1.0 : previous_rfunction2->get(indices[pmatrix_index]));
         
         pmatrix_presum.set(presum_index, tmp);
         

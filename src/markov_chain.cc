@@ -52,6 +52,51 @@ void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
     fprintf(stderr, "starting point likelihood = %e\n", best_prob);
 }
 
+void MarkovChain::parallel_initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
+    double best_prob = LOG_ILLEGAL;
+    int iterations = 100;
+    
+    vector<LocusSampler*> lsamplers;
+    vector<DescentGraph*> graphs;
+    vector<double> likelihoods(iterations, 0.0);
+    for(int i = 0; i < iterations; ++i) {
+        LocusSampler* tmp = new LocusSampler(ped, map, psg, 0);
+        lsamplers.push_back(tmp);
+        
+        DescentGraph* tmp_dg = new DescentGraph(ped, map);
+        graphs.push_back(tmp_dg);
+    }
+    
+    #pragma omp parallel for
+    for(int i = 0; i < iterations; ++i) {
+        lsamplers[i]->sequential_imputation(*(graphs[i]));
+        likelihoods[i] = graphs[i]->get_likelihood();
+    }
+    
+    int index = 0;
+    for(int i = 0; i < iterations; ++i) {
+        if(likelihoods[i] == LOG_ZERO) {
+            fprintf(stderr, "error: sequential imputation produced an invalid descent graph\n");
+            fprintf(stderr, "%s\n", graphs[i]->debug_string().c_str());
+            abort();
+        }
+        
+        if(likelihoods[i] > best_prob) {
+            best_prob = likelihoods[i];
+            index = i;
+        }
+    }
+    
+    dg = *graphs[index];
+    
+    fprintf(stderr, "starting point likelihood = %e\n", best_prob);
+    
+    for(int i = 0; i < iterations; ++i) {
+        delete lsamplers[i];
+        delete graphs[i];
+    }
+}
+
 double* MarkovChain::run(unsigned iterations, double temperature) {
     unsigned burnin = iterations * 0.1;
     
@@ -67,7 +112,8 @@ double* MarkovChain::run(unsigned iterations, double temperature) {
     PeelSequenceGenerator psg(ped);
     psg.build_peel_order();
     
-    initialise(dg, psg);
+    //initialise(dg, psg);
+    parallel_initialise(dg, psg);
     
     // lod scorers
     vector<Peeler*> peelers;
@@ -101,22 +147,22 @@ double* MarkovChain::run(unsigned iterations, double temperature) {
         
     for(unsigned int i = 0; i < iterations; ++i) {
         if((random() / DBL_RAND_MAX) < 0.5) {
+            
+            #pragma omp parallel for
+            for(int j = 0; j < int(map->num_markers()); j += 2) {
+                lsamplers[j]->step(dg, j);
+            }
+            
+            #pragma omp parallel for
+            for(int j = 1; j < int(map->num_markers()); j += 2) {
+                lsamplers[j]->step(dg, j);
+            }
+            
             /*
-            #pragma omp parallel for
-            for(unsigned int j = 0; j < map->num_markers(); j += 2) {
-                lsamplers[j]->step(dg, j);
-            }
-            
-            #pragma omp parallel for
-            for(unsigned int j = 1; j < map->num_markers(); j += 2) {
-                lsamplers[j]->step(dg, j);
-            }
-            */
-            
             for(unsigned int j = 0; j < map->num_markers(); ++j) {
                 lsamplers[j]->step(dg, j);
             }
-            
+            */
         }
         else {
             msampler.reset(dg);
@@ -132,8 +178,8 @@ double* MarkovChain::run(unsigned iterations, double temperature) {
         }
         
         if((i % 10) == 0) {
-            //#pragma omp parallel for
-            for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
+            #pragma omp parallel for
+            for(int i = 0; i < int(map->num_markers() - 1); ++i) {
                 peelers[i]->process(&dg);
             }
         }

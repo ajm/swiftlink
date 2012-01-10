@@ -34,7 +34,7 @@ class Rfunction {
     double antitheta;
     double theta2;
     double antitheta2;
-    vector<vector<int> >* indices;
+    vector<vector<int> > indices;
     unsigned int index_offset;
     unsigned int size;
     unsigned int peel_id;

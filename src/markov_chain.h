@@ -16,6 +16,7 @@ class MarkovChain {
     GeneticMap* map;
     
     void initialise(DescentGraph& dg, PeelSequenceGenerator& psg);
+    void parallel_initialise(DescentGraph& dg, PeelSequenceGenerator& psg);
     
  public :
     MarkovChain(Pedigree* ped, GeneticMap* map) :

@@ -55,6 +55,22 @@ class PeelOperation {
         prev1(rhs.prev1),
         prev2(rhs.prev2),
         assignments(rhs.assignments) {}
+    
+    PeelOperation& operator=(const PeelOperation& rhs) {
+        
+        if(&rhs != this) {
+            type = rhs.type;
+            cutset = rhs.cutset;
+            nuclearset = rhs.nuclearset;
+            peelnode = rhs.peelnode;
+            used = rhs.used;
+            prev1 = rhs.prev1;
+            prev2 = rhs.prev2;
+            assignments = rhs.assignments;
+        }
+        
+        return *this;
+    }
         
     ~PeelOperation() {}
     
@@ -209,8 +225,10 @@ class PeelOperation {
         assignments = assigns;
     }
     
-    vector<vector<int> >* get_index_values() {
-        return &assignments;
+    // i know this is returned-by-value, it is to get rid of some concurrency problems
+    // at the expense of memory
+    vector<vector<int> > get_index_values() {
+        return assignments;
     }
     
     bool operator<(const PeelOperation& p) const {

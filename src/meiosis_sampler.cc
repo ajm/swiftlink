@@ -76,6 +76,7 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
     int tmp, tmp2;
     
     // forwards
+    #pragma omp parallel for
     for(i = 0; i < num_markers; ++i) {
         index = i * 2;
         

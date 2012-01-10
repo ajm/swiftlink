@@ -100,8 +100,8 @@ void MarkovChain::parallel_initialise(DescentGraph& dg, PeelSequenceGenerator& p
 double* MarkovChain::run(unsigned iterations, double temperature) {
     unsigned burnin = iterations * 0.1;
     
-    //iterations = 1000;
-    //burnin = 0;
+    //iterations = 1020;
+    //burnin = 1000;
     
     map->set_temperature(temperature);
 

@@ -335,14 +335,8 @@ __global__ void lodscoreprint_kernel(struct gpu_state* state) {
     struct geneticmap* map = GET_MAP(state);
     
     for(i = 0; i < (map->map_length - 1); ++i) {
-        // XXX
-        //printf("%d\n\t%.3f\n", i, state->lodscores[i]);
-        // XXX
+        printf("%d\n\t%.3f\n", i, state->lodscores[i]);
     }
-    
-    // XXX
-    //printf("%d\n", map->map_length - 1);
-    // XXX
 }
 
 void run_gpu_lodscore_kernel(int numblocks, int numthreads, struct gpu_state* state) {

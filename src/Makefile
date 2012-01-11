@@ -1,14 +1,14 @@
 CXX	:= g++
 CC := gcc
 GPUCC := nvcc
-CXXFLAGS := -g -O2 -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe #-fopenmp #-m32
+CXXFLAGS := -g -O2 -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe #-m32 #-fopenmp #-m32
 CFLAGS := -g -O2 -Wall -pipe #-m32
-#LDFLAGS := -m32
+LDFLAGS := #-m32
 INCLUDES := -I. -I/usr/local/cuda/include
-#LIBS := -L /usr/local/cuda/lib64 -lcudart 
+LIBS := -L /usr/local/cuda/lib64 -lcudart 
 #LIBS := -L /usr/local/cuda/lib -L /usr/lib32 -lcudart
 #LIBS := -lgomp
-GPUFLAGS := -arch=sm_20 -O2 -m32
+GPUFLAGS := -arch=sm_20 -O2 #-m32
 
 OBJECTS	:= \
 	trait.o \
@@ -44,9 +44,9 @@ OBJECTS	:= \
 	program.o \
 	progress.o \
 	main.o \
-	test_program.o
-#	gpu_wrapper.o \
-#	cuda_linkage.o
+	test_program.o \
+	gpu_wrapper.o \
+	cuda_linkage.o
 
 app: $(OBJECTS)
 	$(CXX) -o $@ $(LIBS) $(OBJECTS) $(LDFLAGS)

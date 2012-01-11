@@ -786,9 +786,8 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
     int odd_count;
     cudaError_t error;
     int num_meioses = 2 * (ped->num_members() - ped->num_founders());
-    //size_t shared_mem = 8 * (2 * ped->num_founders()) * ((2 * ped->num_founders()) + 1) * sizeof(int);
-    size_t shared_mem = 8 * \
-                        ((2 * (2 * ped->num_founders()) * (2 * ped->num_founders())) + (2 * ped->num_founders())) ;
+    //size_t shared_mem = 8 * ((2 * (2 * ped->num_founders()) * (2 * ped->num_founders())) + (2 * ped->num_founders())) ;
+    size_t shared_mem = 8 * 16 * (2 * ped->num_founders());
     
     /*
     run_gpu_print_kernel(dev_state);
@@ -834,7 +833,7 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
     
     for(unsigned i = 0; i < iterations; ++i) {
         
-        if((random() / double(RAND_MAX)) < 0.0) {
+        if((random() / double(RAND_MAX)) < 0.5) {
         //if((i % 2) == 0) {
             //printf("lsampler\n");
             run_gpu_lsampler_kernel(even_count, num_threads_per_block(), dev_state, 0);
@@ -859,14 +858,14 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
                 abort();
             }
             
-            /*
+            
             CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
             
             if(dg.get_likelihood() == LOG_ILLEGAL) {
                 fprintf(stderr, "error: descent graph illegal after l-sampler (%d)\n", i);
                 abort();
             }
-            */
+            
             //---
         }
         else {
@@ -896,14 +895,14 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
                     abort();
                 }
                 
-                /*
+                
                 CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
                 
                 if(dg.get_likelihood() == LOG_ILLEGAL) {
                     fprintf(stderr, "error: descent graph illegal after m-sampler (meiosis %d) (%d)\n", j, i);
                     abort();
                 }
-                */
+                
             }
         }
         

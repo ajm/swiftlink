@@ -10,8 +10,8 @@
 #include "tinymt/tinymt32_host.h"
 
 #define NUM_THREADS 128
-
 #define NUM_ALLELES 4
+#define GPU_DEFAULT_COMPONENT -1
 
 enum {
     GPU_TRAIT_A,

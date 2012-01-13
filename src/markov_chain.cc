@@ -134,9 +134,7 @@ double* MarkovChain::run(unsigned iterations, double temperature) {
     
     GPUWrapper gpu(ped, map, psg);
     
-    gpu.run(dg, iterations, burnin, 10, peelers[0]->get_trait_prob());
-    
-    exit(0);
+    return gpu.run(dg, iterations, burnin, 10, peelers[0]->get_trait_prob());
     
     //exit(0);
     

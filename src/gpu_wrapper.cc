@@ -32,8 +32,6 @@ using namespace std;
     }\
 } while(0)
 
-#define fp_type double
-
 
 /*
  * TODO
@@ -720,6 +718,8 @@ fp_type* GPUWrapper::gpu_init_lodscores() {
     
     cudaThreadSynchronize();
     
+    dev_lodscores = tmp;
+    
     return tmp;
 }
 
@@ -780,7 +780,7 @@ void GPUWrapper::step(DescentGraph& dg) {
     */
 }
 
-void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int burnin, unsigned int scoring_period, double trait_likelihood) {
+double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int burnin, unsigned int scoring_period, double trait_likelihood) {
     int count = 0;
     int even_count;
     int odd_count;
@@ -800,29 +800,14 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
     exit(0);
     */
     
-    // XXX
-    //copy_to_gpu(dg);
-    //run_gpu_msampler_kernel(1, 1, loc_state, 0);
-    //abort();
-    // XXX
-    
-    
     odd_count  = map->num_markers() / 2;
     even_count = odd_count + ((map->num_markers() % 2) != 0 ? 1 : 0);
-    
-    /*
-    run_gpu_print_kernel(dev_state);
-    cudaThreadSynchronize();
-    exit(0);
-    */
     
     setup_lsampler_kernel();
     setup_lodscore_kernel();
     setup_msampler_kernel();
     
-    
-    printf("odd = %d, even = %d\n", odd_count, even_count);
-    
+        
     printf("requesting %.2f KB (%d bytes) of shared memory per block\n", shared_mem / 1024.0, (int)shared_mem);
     
     CUDA_CALLANDTEST(cudaMemcpy(dev_graph, dg.get_internal_ptr(), dg.get_internal_size(), cudaMemcpyHostToDevice));
@@ -836,73 +821,58 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
         if((random() / double(RAND_MAX)) < 0.5) {
         //if((i % 2) == 0) {
             //printf("lsampler\n");
-            run_gpu_lsampler_kernel(even_count, num_threads_per_block(), dev_state, 0);
-            
+            run_gpu_lsampler_kernel(even_count, num_threads_per_block(), dev_state, 0);            
             cudaThreadSynchronize();
-            
             error = cudaGetLastError();
             if(error != cudaSuccess) {
                 printf("CUDA kernel error: %s\n", cudaGetErrorString(error));
                 abort();
             }
             
-            //---
             
             run_gpu_lsampler_kernel(odd_count, num_threads_per_block(), dev_state, 1);
-            
             cudaThreadSynchronize();
-            
             error = cudaGetLastError();
             if(error != cudaSuccess) {
                 printf("CUDA kernel error: %s\n", cudaGetErrorString(error));
                 abort();
             }
             
-            
+            // test legality of descent graph
             CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
             
             if(dg.get_likelihood() == LOG_ILLEGAL) {
                 fprintf(stderr, "error: descent graph illegal after l-sampler (%d)\n", i);
                 abort();
             }
-            
-            //---
         }
         else {
             //printf("msampler\n");
             for(int j = 0; j < num_meioses; ++j) {
-                //run_gpu_msampler_kernel(1, 1, dev_state, j);
-            
                 run_gpu_msampler_likelihood_kernel(msampler_num_blocks(), 256, dev_state, j, shared_mem);
-                
                 cudaThreadSynchronize();
-            
                 error = cudaGetLastError();
                 if(error != cudaSuccess) {
                     printf("CUDA kernel error: %s\n", cudaGetErrorString(error));
                     abort();
                 }
                 
-                //abort();
                 
                 run_gpu_msampler_sampling_kernel(dev_state, j);
-            
                 cudaThreadSynchronize();
-            
                 error = cudaGetLastError();
                 if(error != cudaSuccess) {
                     printf("CUDA kernel error: %s\n", cudaGetErrorString(error));
                     abort();
                 }
                 
-                
+                // test legality of descent graph
                 CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
                 
                 if(dg.get_likelihood() == LOG_ILLEGAL) {
                     fprintf(stderr, "error: descent graph illegal after m-sampler (meiosis %d) (%d)\n", j, i);
                     abort();
                 }
-                
             }
         }
         
@@ -933,10 +903,18 @@ void GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int bur
     run_gpu_lodscorenormalise_kernel(map->num_markers() - 1, dev_state, count, trait_likelihood);
     cudaThreadSynchronize();
     
-    run_gpu_lodscoreprint_kernel(dev_state);
-    cudaThreadSynchronize();
+    //run_gpu_lodscoreprint_kernel(dev_state);
+    //cudaThreadSynchronize();
+    //printf("count = %d, P(T) = %.3f\n", count, trait_likelihood / log(10));
     
-    printf("count = %d, P(T) = %.3f\n", count, trait_likelihood / log(10));
+    
+    
+    
+    double* data = new double[map->num_markers() - 1];
+    
+    CUDA_CALLANDTEST(cudaMemcpy(data, dev_lodscores, (map->num_markers() - 1) * sizeof(float), cudaMemcpyDeviceToHost));
+    
+    return data;
     
     //CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
 }

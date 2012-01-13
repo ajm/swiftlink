@@ -9,6 +9,9 @@
 #include "peel_sequence_generator.h"
 #include "gpu_rfunction.h"
 
+
+#define fp_type double
+
 class Pedigree;
 class GeneticMap;
 class PeelSequenceGenerator;
@@ -22,6 +25,7 @@ class GPUWrapper {
     struct gpu_state* loc_state;
     struct gpu_state* dev_state;
     int* dev_graph;
+    fp_type* dev_lodscores;
     
     size_t calculate_memory_requirements(vector<PeelOperation>& ops);
     unsigned num_samplers();
@@ -66,7 +70,8 @@ class GPUWrapper {
         map(map),
         loc_state(NULL),
         dev_state(NULL),
-        dev_graph(NULL) {
+        dev_graph(NULL),
+        dev_lodscores(NULL) {
         
         vector<PeelOperation>& ops = psg.get_peel_order();
         
@@ -82,7 +87,8 @@ class GPUWrapper {
         map(rhs.map),
         loc_state(rhs.loc_state),
         dev_state(rhs.dev_state),
-        dev_graph(rhs.dev_graph) {}
+        dev_graph(rhs.dev_graph),
+        dev_lodscores(rhs.dev_lodscores) {}
     
     ~GPUWrapper() {
         kill_everything();
@@ -98,13 +104,14 @@ class GPUWrapper {
             loc_state = rhs.loc_state; // XXX this could be a problem, but I don't keep PeelSequenceGenerator obj
             dev_state = rhs.dev_state;
             dev_graph = rhs.dev_graph;
+            dev_lodscores = rhs.dev_lodscores;
         }
         
         return *this;
     }
     
     void step(DescentGraph& dg);
-    void run(DescentGraph& dg, unsigned int iterations, unsigned int burnin, unsigned int scoring_period, double trait_likelihood);
+    double* run(DescentGraph& dg, unsigned int iterations, unsigned int burnin, unsigned int scoring_period, double trait_likelihood);
 };
 
 #endif

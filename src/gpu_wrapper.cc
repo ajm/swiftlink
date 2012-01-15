@@ -787,7 +787,9 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
     cudaError_t error;
     int num_meioses = 2 * (ped->num_members() - ped->num_founders());
     //size_t shared_mem = 8 * ((2 * (2 * ped->num_founders()) * (2 * ped->num_founders())) + (2 * ped->num_founders())) ;
-    size_t shared_mem = 8 * 16 * (2 * ped->num_founders());
+    size_t shared_mem = (14 * (2 * ped->num_founders())) + (2 * ped->num_members());
+    shared_mem += (shared_mem % 4);
+    shared_mem *= 8;
     
     /*
     run_gpu_print_kernel(dev_state);
@@ -825,7 +827,7 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
             cudaThreadSynchronize();
             error = cudaGetLastError();
             if(error != cudaSuccess) {
-                printf("CUDA kernel error: %s\n", cudaGetErrorString(error));
+                printf("CUDA kernel error (%s:%d): %s\n", __FILE__, __LINE__, cudaGetErrorString(error));
                 abort();
             }
             
@@ -834,7 +836,7 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
             cudaThreadSynchronize();
             error = cudaGetLastError();
             if(error != cudaSuccess) {
-                printf("CUDA kernel error: %s\n", cudaGetErrorString(error));
+                printf("CUDA kernel error (%s:%d): %s\n", __FILE__, __LINE__, cudaGetErrorString(error));
                 abort();
             }
             
@@ -853,7 +855,7 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
                 cudaThreadSynchronize();
                 error = cudaGetLastError();
                 if(error != cudaSuccess) {
-                    printf("CUDA kernel error: %s\n", cudaGetErrorString(error));
+                    printf("CUDA kernel error (%s:%d): %s\n", __FILE__, __LINE__, cudaGetErrorString(error));
                     abort();
                 }
                 
@@ -862,7 +864,7 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
                 cudaThreadSynchronize();
                 error = cudaGetLastError();
                 if(error != cudaSuccess) {
-                    printf("CUDA kernel error: %s\n", cudaGetErrorString(error));
+                    printf("CUDA kernel error (%s:%d): %s\n", __FILE__, __LINE__, cudaGetErrorString(error));
                     abort();
                 }
                 
@@ -891,7 +893,7 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
             
             cudaError_t error = cudaGetLastError();
             if(error != cudaSuccess) {
-                printf("CUDA kernel error: %s\n", cudaGetErrorString(error));
+                printf("CUDA kernel error (%s:%d): %s\n", __FILE__, __LINE__, cudaGetErrorString(error));
                 abort();
             }
         }
@@ -912,7 +914,7 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
     
     double* data = new double[map->num_markers() - 1];
     
-    CUDA_CALLANDTEST(cudaMemcpy(data, dev_lodscores, (map->num_markers() - 1) * sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_CALLANDTEST(cudaMemcpy(data, dev_lodscores, (map->num_markers() - 1) * sizeof(double), cudaMemcpyDeviceToHost));
     
     return data;
     

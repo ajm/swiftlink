@@ -10,9 +10,9 @@ __device__ int legal(int obs, int a1, int a2) {
         case GPU_GENOTYPE_AB:
             return a1 != a2;
         case GPU_GENOTYPE_AA:
-            return (a1 == GPU_GENOTYPE_AA) and (a2 == GPU_GENOTYPE_AA);
+            return (a1 == GPU_GENOTYPE_AA) && (a2 == GPU_GENOTYPE_AA);
         case GPU_GENOTYPE_BB:
-            return (a1 == GPU_GENOTYPE_BB) and (a2 == GPU_GENOTYPE_BB);
+            return (a1 == GPU_GENOTYPE_BB) && (a2 == GPU_GENOTYPE_BB);
         case GPU_GENOTYPE_UNTYPED:
             break;
     }
@@ -44,7 +44,7 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
 	struct descentgraph* dg = GET_DESCENTGRAPH(state);
 	struct geneticmap* map = GET_MAP(state);
 	int g;
-	int i;
+	int i, j;
 	int pid;
 	int parent_allele;
 	int mat_fa, pat_fa;
@@ -54,15 +54,28 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
 	float minor_freq = MAP_MINOR(map, locus);
 	float major_freq = 1.0 - minor_freq;
 	
-    int tmp = (locus % 8) * 16 * state->founderallele_count;
+    //int tmp = (locus % 8) * 16 * state->founderallele_count;
+    int tmp = (14 * state->founderallele_count) + (2 * state->pedigree_length);
+    tmp += (tmp % 4);
+    tmp *= (locus % 8);
     
+    /*
      int8_t* group_membership   = ( int8_t*) &extern_pool[tmp];
-     int8_t* group_fixed        = ( int8_t*) &extern_pool[tmp + state->founderallele_count];
+     int8_t* group_fixed        = ( int8_t*) &extern_pool[tmp +      state->founderallele_count];
     uint8_t* group_active       = (uint8_t*) &extern_pool[tmp + (2 * state->founderallele_count)];
     uint8_t* group_size         = (uint8_t*) &extern_pool[tmp + (3 * state->founderallele_count)];
-    uint8_t* edge_list          = (uint8_t*) &extern_pool[tmp + (4 * state->founderallele_count)];
-    uint8_t* allele_assignment  = (uint8_t*) &extern_pool[tmp + (6 * state->founderallele_count)];
-    float*   prob               = ( float* ) &extern_pool[tmp + (8 * state->founderallele_count)];
+    uint8_t* allele_assignment  = (uint8_t*) &extern_pool[tmp + (4 * state->founderallele_count)];
+    float*   prob               = ( float* ) &extern_pool[tmp + (6 * state->founderallele_count)];
+    uint8_t* edge_list          = (uint8_t*) &extern_pool[tmp + (14 * state->founderallele_count)];
+    */
+    float*   prob               = ( float* ) &extern_pool[tmp];
+    uint8_t* allele_assignment  = (uint8_t*) &prob[2 * state->founderallele_count];
+    uint8_t* edge_list          = (uint8_t*) &allele_assignment[2 * state->founderallele_count];
+     int8_t* group_membership   = ( int8_t*) &edge_list[2 * state->pedigree_length];
+     int8_t* group_fixed        = ( int8_t*) &group_membership[state->founderallele_count];
+    uint8_t* group_active       = (uint8_t*) &group_fixed[state->founderallele_count];
+    uint8_t* group_size         = (uint8_t*) &group_active[state->founderallele_count];
+    
     
     int num_groups = 0;
     int group_index = 0;
@@ -74,10 +87,16 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
     int offset = state->founderallele_count;
     
     
+    //printf("\nlocus = %d\n\n", locus);
+    //printf("\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n\n", group_membership, group_fixed, group_active, group_size, edge_list, allele_assignment, prob);
+    
+    
     for(i = 0; i < state->founderallele_count; ++i) {
         group_membership[i] = GPU_DEFAULT_COMPONENT;
         group_fixed[i] = -1;
         group_active[i] = 0;
+        //allele_assignment[ind(0, i)] = 9;
+        //allele_assignment[ind(1, i)] = 9;
     }
     
 	// find founder allele assignments, this is only related to the current 
@@ -97,13 +116,15 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
 	        parent_allele = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, pid, locus, GPU_PATERNAL_ALLELE));
 	        edge_list[(pid * 2) + 1] = edge_list[ (PERSON_FATHER(p) * 2) + parent_allele ];
 	    }
+	    
+	    //printf("* %d (%d - %d) %d\n", pid, edge_list[pid * 2], edge_list[(pid * 2) + 1], PERSON_GENOTYPE(p, locus));
 	}
 	
     // calculate likelihood, the founder allele graph is only
     // constrained by typed members of the pedigree
     for(i = 0; i < state->pedigree_length; ++i) {
         p = GET_PERSON(state, i);
-        if(not PERSON_ISTYPED(p))
+        if(! PERSON_ISTYPED(p))
             continue;
         
         g = PERSON_GENOTYPE(p, locus);
@@ -114,10 +135,43 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
         tmp = i * 2;
         mat_fa = edge_list[tmp];
         pat_fa = edge_list[++tmp];
-                
+        
+        /*
+        printf("group_membership: ");
+        for(j = 0; j < state->founderallele_count; ++j) {
+            printf("%d ", group_membership[j]);
+        }
+        printf("\n");
+        
+        printf("group_active: ");
+        for(j = 0; j < state->founderallele_count; ++j) {
+            printf("%d ", group_active[j]);
+        }
+        printf("\n");
+        
+        printf("group_fixed: ");
+        for(j = 0; j < state->founderallele_count; ++j) {
+            printf("%d ", group_fixed[j]);
+        }
+        printf("\n");
+        
+        printf("allele_assignment: ");
+        for(j = 0; j < state->founderallele_count; ++j) {
+            printf("%d ", allele_assignment[ind(0,j)]);
+        }
+        printf("\n");
+        
+        printf("allele_assignment: ");
+        for(j = 0; j < state->founderallele_count; ++j) {
+            printf("%d ", allele_assignment[ind(1,j)]);
+        }
+        printf("\n\n");
+        */
+        
         // autozygous
         if(mat_fa == pat_fa) {
             if(g == GPU_GENOTYPE_AB) {
+                //printf("zp %s:%d\n", __FILE__, __LINE__);
                 return 0.0;
             }
             
@@ -128,6 +182,7 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                 fixed1 = group_fixed[group1];
                 if(fixed1 != -1) {
                     if(g != allele_assignment[ind(fixed1, mat_fa)]) {
+                        //printf("zp %s:%d\n", __FILE__, __LINE__);
                         return 0.0;
                     }
                 }
@@ -139,6 +194,7 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                         group_fixed[group1] = 1;
                     }
                     else {
+                        //printf("zp %s:%d\n", __FILE__, __LINE__);
                         return 0.0;
                     }
                 }
@@ -169,7 +225,8 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                     if(group1 == group2) {
                         if(fixed1 != -1) {
                             // fixed, check if legit
-                            if(not legal(g, allele_assignment[ind(fixed1, mat_fa)], allele_assignment[ind(fixed1, pat_fa)])) {
+                            if(! legal(g, allele_assignment[ind(fixed1, mat_fa)], allele_assignment[ind(fixed1, pat_fa)])) {
+                                //printf("zp %s:%d\n", __FILE__, __LINE__);
                                 return 0.0;
                             }
                         }
@@ -179,7 +236,7 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                             legal1 = legal(g, allele_assignment[ind(1, mat_fa)], allele_assignment[ind(1, pat_fa)]);
                             
                             if(legal0) {
-                                if(not legal1) {
+                                if(! legal1) {
                                     group_fixed[group1] = 0;
                                 }
                             }
@@ -188,6 +245,14 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                                     group_fixed[group1] = 1;
                                 }
                                 else {
+                                    /*
+                                    printf("zp %s:%d %d [%d:%d:%d:%d:%d]\n", \
+                                        __FILE__, __LINE__, i, g, \
+                                        allele_assignment[ind(0, mat_fa)], \
+                                        allele_assignment[ind(0, pat_fa)], \
+                                        allele_assignment[ind(1, mat_fa)], \
+                                        allele_assignment[ind(1, pat_fa)]);
+                                    */
                                     return 0.0;
                                 }
                             }
@@ -200,7 +265,8 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                         if(fixed1 != -1) {
                             if(fixed2 != -1) {
                                 // fixed, check if legit
-                                if(not legal(g, allele_assignment[ind(fixed1, mat_fa)], allele_assignment[ind(fixed2, pat_fa)])) {
+                                if(! legal(g, allele_assignment[ind(fixed1, mat_fa)], allele_assignment[ind(fixed2, pat_fa)])) {
+                                    //printf("zp %s:%d\n", __FILE__, __LINE__);
                                     return 0.0;
                                 }
                             }
@@ -214,6 +280,7 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                                 else if(legal1)
                                     fixed2 = 1;
                                 else {
+                                    //printf("zp %s:%d\n", __FILE__, __LINE__);
                                     return 0.0;
                                 }
                             }
@@ -228,6 +295,7 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                             else if(legal1)
                                 fixed1 = 1;
                             else {
+                                //printf("zp %s:%d\n", __FILE__, __LINE__);
                                 return 0.0;
                             }
                         }
@@ -238,33 +306,41 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                             legal2 = legal(g, allele_assignment[ind(0, mat_fa)], allele_assignment[ind(1, pat_fa)]);
                             legal3 = legal(g, allele_assignment[ind(1, mat_fa)], allele_assignment[ind(1, pat_fa)]);
                             
-                            if(not (legal0 or legal1 or legal2 or legal3)) {
+                            /*
+                            printf("legal0 = %d: %d, %d, %d\n", legal0, g, allele_assignment[ind(0, mat_fa)], allele_assignment[ind(0, pat_fa)]);
+                            printf("legal1 = %d: %d, %d, %d\n", legal1, g, allele_assignment[ind(1, mat_fa)], allele_assignment[ind(0, pat_fa)]);
+                            printf("legal2 = %d: %d, %d, %d\n", legal2, g, allele_assignment[ind(0, mat_fa)], allele_assignment[ind(1, pat_fa)]);
+                            printf("legal3 = %d: %d, %d, %d\n", legal3, g, allele_assignment[ind(1, mat_fa)], allele_assignment[ind(1, pat_fa)]);
+                            */
+                            
+                            if(! (legal0 || legal1 || legal2 || legal3)) {
+                                //printf("zp %s:%d\n", __FILE__, __LINE__);
                                 return 0.0;
                             }
                             
-                            if(legal0 and not(legal1 or legal2 or legal3)) {
+                            if(legal0 && !(legal1 || legal2 || legal3)) {
                                 // fixed, allele 0, no swap
                                 fixed1 = fixed2 = 0;
                             }
-                            else if(legal1 and not(legal0 or legal2 or legal3)) {
+                            else if(legal1 && !(legal0 || legal2 || legal3)) {
                                 // fixed, swap assignment in one group
                                 fixed1 = 1;
                                 fixed2 = 0;
                             }
-                            else if(legal2 and not(legal0 or legal1 or legal3)) {
+                            else if(legal2 && !(legal0 || legal1 || legal3)) {
                                 // fixed, swap assignment in one group
                                 fixed1 = 0;
                                 fixed2 = 1;
                             }
-                            else if(legal3 and not(legal0 or legal1 or legal2)) {
+                            else if(legal3 && !(legal0 || legal1 || legal2)) {
                                 // fixed, allele 1, no swap
                                 fixed1 = fixed2 = 1;
                             }
-                            else if(legal0 and legal3 and not (legal1 or legal2)){
+                            else if(legal0 && legal3 && !(legal1 || legal2)){
                                 // still unfixed, assignments don't need swapping
                                 fixed1 = fixed2 = -1;
                             }
-                            else if(legal1 and legal2 and not (legal0 or legal3)){
+                            else if(legal1 && legal2 && !(legal0 || legal3)){
                                 // still unfixed, swap assignment in one group
                                 fixed1 = fixed2 = -2;
                             }
@@ -295,14 +371,14 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                         }
                         
                         // begin combine component code
-                        for(i = 0; i < state->founderallele_count; ++i) {
-                            if(group_membership[i] == group2) {
-                                group_membership[i] = group1;
+                        for(j = 0; j < state->founderallele_count; ++j) {
+                            if(group_membership[j] == group2) {
+                                group_membership[j] = group1;
                                 
                                 if(flip) {
-                                    tmp = allele_assignment[ind(0, i)];
-                                    allele_assignment[ind(0, i)] = allele_assignment[ind(1, i)];
-                                    allele_assignment[ind(1, i)] = tmp;
+                                    tmp = allele_assignment[ind(0, j)];
+                                    allele_assignment[ind(0, j)] = allele_assignment[ind(1, j)];
+                                    allele_assignment[ind(1, j)] = tmp;
                                 }
                             }
                         }
@@ -315,7 +391,10 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                             prob[ind(0, group1)] *= prob[ind(0, group2)];
                             prob[ind(1, group1)] *= prob[ind(1, group2)];
                         }
-    
+                        
+                        //printf("combine i=%d flip=%d (%d, %d, %d, %d)\n", i, flip, legal0, legal1, legal2, legal3);
+                        //printf("group1 = %d\ngroup2 = %d\n", group1, group2);
+                        
                         group_size[group1] += group_size[group2];
                         group_active[group2] = 0; // false
                         // end combine component code
@@ -328,6 +407,7 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                         int tmp = get_other_allele(g, allele_assignment[ind(fixed1, mat_fa)]);
                         
                         if(tmp == GPU_GENOTYPE_UNTYPED) {
+                            //printf("zp %s:%d\n", __FILE__, __LINE__);
                             return 0.0;
                         }
                         else {
@@ -359,6 +439,7 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                                 group_fixed[group1] = 1;
                             }
                             else {
+                                //printf("zp %s:%d\n", __FILE__, __LINE__);
                                 return 0.0;
                             }
                         }
@@ -376,6 +457,7 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                     int tmp = get_other_allele(g, allele_assignment[ind(fixed2, pat_fa)]);
                     
                     if(tmp == GPU_GENOTYPE_UNTYPED) {
+                        //printf("zp %s:%d\n", __FILE__, __LINE__);
                         return 0.0;
                     }
                     else {
@@ -407,6 +489,7 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                             group_fixed[group2] = 1;
                         }
                         else {
+                            //printf("zp %s:%d\n", __FILE__, __LINE__);
                             return 0.0;
                         }
                     }
@@ -425,13 +508,12 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                 }
                 else {
                     allele_assignment[ind(0, mat_fa)] = allele_assignment[ind(0, pat_fa)] = g;
-                    prob[ind(0, group_index)] = g == pow(GPU_GENOTYPE_AA ? major_freq : minor_freq, 2);
+                    prob[ind(0, group_index)] = pow(g == GPU_GENOTYPE_AA ? major_freq : minor_freq, 2);
                     group_fixed[group_index] = 0;
                 }
                 
                 // neither in a group
-                group_membership[mat_fa] = \
-                group_membership[pat_fa] = group_index;
+                group_membership[mat_fa] = group_membership[pat_fa] = group_index;
                 group_size[group_index] = 2;
                 group_active[group_index] = 1; // true
                 ++group_index;
@@ -483,14 +565,15 @@ __device__ double founderallele_run(struct gpu_state* state, int locus, int pers
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     int i, tmp;
     double prob = _LOG_ZERO;
-        
+    
     // save the previous value
     i = DESCENTGRAPH_OFFSET(dg, personid, locus, allele);
     tmp = DESCENTGRAPH_GET(dg, i);
     DESCENTGRAPH_SET(dg, i, value);
     
     prob = founderallelegraph_likelihood(state, locus);
-    prob = prob == 0.0 ? _LOG_ZERO : logf(prob);
+    //printf("prob = %e\n", prob);
+    prob = (prob == 0.0 ? _LOG_ZERO : logf(prob));
     
     // restore previous value
     i = DESCENTGRAPH_OFFSET(dg, personid, locus, allele);
@@ -509,7 +592,11 @@ __global__ void msampler_likelihood_kernel(struct gpu_state* state, int meiosis)
     
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     int tmp, tmp2, tmp3;
+    //int i ;
     
+    //if(threadIdx.x == 0) {
+    //for(i = 0; i < map->map_length; ++i) {
+    //    locus = i;
     if(locus < map->map_length) {
         fag = GET_FOUNDERALLELEGRAPH(state, locus);
         
@@ -533,8 +620,9 @@ __global__ void msampler_likelihood_kernel(struct gpu_state* state, int meiosis)
             fag->prob[tmp] = fag->prob[tmp2];
             fag->prob[tmp3] = founderallele_run(state, locus, personid, allele, tmp3);
         }
-        
     }
+    //}
+    //}
 }
 
 __global__ void msampler_sampling_kernel(struct gpu_state* state, int meiosis) {

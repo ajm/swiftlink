@@ -72,6 +72,6 @@ double* LinkageProgram::run_pedigree(Pedigree& p) {
 
 void LinkageProgram::free_lodscores(vector<double*>& x) {
     for(unsigned i = 0; i < x.size(); ++i) {
-        delete x[i];
+        delete[] x[i];
     }
 }

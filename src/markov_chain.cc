@@ -67,10 +67,13 @@ void MarkovChain::parallel_initialise(DescentGraph& dg, PeelSequenceGenerator& p
         graphs.push_back(tmp_dg);
     }
     
+    Progress p("Sequential Imputation: ", iterations);
+    
     #pragma omp parallel for
     for(int i = 0; i < iterations; ++i) {
         lsamplers[i]->sequential_imputation(*(graphs[i]));
         likelihoods[i] = graphs[i]->get_likelihood();
+        p.increment();
     }
     
     int index = 0;
@@ -86,6 +89,8 @@ void MarkovChain::parallel_initialise(DescentGraph& dg, PeelSequenceGenerator& p
             index = i;
         }
     }
+    
+    p.finish();
     
     dg = *graphs[index];
     
@@ -133,8 +138,8 @@ double* MarkovChain::run(unsigned iterations, double temperature) {
     
     
     GPUWrapper gpu(ped, map, psg);
-    
     return gpu.run(dg, iterations, burnin, 10, peelers[0]->get_trait_prob());
+    
     
     //exit(0);
     

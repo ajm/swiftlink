@@ -93,8 +93,13 @@ void Peeler::process(DescentGraph* dg) {
     TraitRfunction& rf = rfunctions.back();
     double prob = log(rf.get_result()) - dg->get_recombination_prob(locus, false) - dg->get_marker_transmission();
     
+    //printf("CPU peel %d %f\n", locus, log(rf.get_result()));
+    //printf("CPU prob %f (%f, %f, %f)\n", prob, log(rf.get_result()), dg->get_recombination_prob(locus, false), dg->get_marker_transmission());
+    
     lod_score = initialised ? log_sum(prob, lod_score) : prob, initialised = true;
     ++count;
+    
+    //printf("CPU fin %f\n", lod_score);
 }
 
 double Peeler::get() {

@@ -277,9 +277,10 @@ __device__ double descentgraph_recombination_prob(struct gpu_state* state, int l
 __device__ void lodscore_add(struct gpu_state* state, double likelihood) {
     double recomb = descentgraph_recombination_prob(state, blockIdx.x);
     
-    //printf("l = %.4f, r = %.4f\n", likelihood, recomb);
+    state->lodscores[blockIdx.x] = gpu_log_sum_dbl(state->lodscores[blockIdx.x], likelihood - recomb - state->dg->transmission_prob);
     
-    state->lodscores[blockIdx.x] = gpu_log_sum(state->lodscores[blockIdx.x], likelihood - recomb - state->dg->transmission_prob);
+    //printf("GPU prob %f (%f, %f, %f)\n", likelihood - recomb - state->dg->transmission_prob, likelihood, recomb, state->dg->transmission_prob);
+    //printf("GPU fin  %f\n", state->lodscores[blockIdx.x]);
 }
 
 // number of blocks is number of loci - 1
@@ -311,20 +312,19 @@ __global__ void lodscore_kernel(struct gpu_state* state) {
     // get result from last rfunction
     // calculate a lod score
     if(threadIdx.x == 0) {
+        //printf("GPU peel %d %f\n", locus, log(RFUNCTION_GET(rf, 0)));
         lodscore_add(state, log(RFUNCTION_GET(rf, 0)));
     }
 }
 
 __global__ void lodscoreinit_kernel(double* lodscores) {
     if(threadIdx.x == 0) {
-        lodscores[blockIdx.x] = _LOG_ZERO;
-        //printf("[init] %d %.3f\n", blockIdx.x, lodscores[blockIdx.x]);
+        lodscores[blockIdx.x] = DBL_LOG_ZERO;
     }
 }
 
 __global__ void lodscorenormalise_kernel(struct gpu_state* state, int count, double trait_likelihood) {
     if(threadIdx.x == 0) {
-        //printf("%.4f\n", state->lodscores[blockIdx.x]);
         double tmp = (state->lodscores[blockIdx.x] - log((double)count) - trait_likelihood) / log(10.0);
         state->lodscores[blockIdx.x] = tmp;
     }

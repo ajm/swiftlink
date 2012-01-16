@@ -22,7 +22,7 @@ __device__ int gpu_offsets[] = {
     1 << 30
 };
 
-//__device__ double _LOG_ZERO = -DBL_MAX;
+__device__ double DBL_LOG_ZERO = -DBL_MAX;
 __device__ float _LOG_ZERO = -FLT_MAX;
 
 __shared__ double map_cache[4]; // theta-left, inversetheta-right, theta-right, inversetheta-right XXX
@@ -140,6 +140,20 @@ __device__ double rfunction_trait_prob(struct gpu_state* state, int id, int valu
     return MAP_PROB(GET_MAP(state), locus, value);
 }
 
+__device__ double gpu_log_sum_dbl(double a, double b) {
+    if(a == DBL_LOG_ZERO)
+        return b;
+    
+    if(b == DBL_LOG_ZERO)
+        return a;
+    
+    return log(exp(b - a) + 1) + a;
+}
+
+__device__ double gpu_log_product_dbl(double a, double b) {
+    return ((a == DBL_LOG_ZERO) || (b == DBL_LOG_ZERO)) ? DBL_LOG_ZERO : a + b;
+}
+
 __device__ float gpu_log_sum(float a, float b) {
     if(a == _LOG_ZERO)
         return b;
@@ -153,4 +167,5 @@ __device__ float gpu_log_sum(float a, float b) {
 __device__ float gpu_log_product(float a, float b) {
     return ((a == _LOG_ZERO) || (b == _LOG_ZERO)) ? _LOG_ZERO : a + b;
 }
+
 

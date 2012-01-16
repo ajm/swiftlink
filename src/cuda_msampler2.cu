@@ -692,11 +692,10 @@ __global__ void msampler_sampling_kernel(struct gpu_state* state, int meiosis) {
         sh_descentgraph[i][allele] = founderallele_sample2(state, sh_matrix[i][0], sh_matrix[i][1]);
         
         while(--i >= 0) {
-            #pragma unroll
+            //#pragma unroll
             for(j = 0; j < 2; ++j) {
                 //sh_matrix[i][j] = gpu_log_product(sh_matrix[i][j], ((DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, i+1, allele)) != j) ? sh_theta[i] : sh_inversetheta[i]));
                 sh_matrix[i][j] = gpu_log_product(sh_matrix[i][j], ((sh_descentgraph[i+1][allele] != j) ? sh_theta[i] : sh_inversetheta[i]));
-                    
             }
             
             //DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, i, allele), founderallele_sample2(state, sh_matrix[i][0], sh_matrix[i][1]));
@@ -724,3 +723,4 @@ void setup_msampler_kernel() {
     cudaFuncSetCacheConfig(msampler_likelihood_kernel, cudaFuncCachePreferShared);
     cudaFuncSetCacheConfig(msampler_sampling_kernel,   cudaFuncCachePreferShared);
 }
+

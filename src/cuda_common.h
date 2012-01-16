@@ -145,13 +145,17 @@ struct person {
     int* genotypes;
     int genotypes_length;
             
-    float prob[4]; // <--- XXX if this is double, then the sizeof differs between host and device XXX 
+    float prob[4];  // <--- XXX if this is double, then the sizeof differs between host and device XXX
+                    //  this is probably due to the genotypes pointer which is different on different
+                    //  architectures and maybe the compiler is trying to add some padding as things
+                    //  might been to be word aligned in different situations
 };
 
 struct descentgraph {
     int* graph;
     int graph_length;
     int subgraph_length;
+    int* padding;
     double transmission_prob;
 };
 

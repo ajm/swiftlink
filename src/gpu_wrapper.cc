@@ -23,8 +23,11 @@ using namespace std;
 #include "descent_graph.h"
 #include "progress.h"
 
+#include "peeler.h"
+#include <vector>
 
-#define CUDA_CALLANDTEST(x) do {\
+#define CUDA_CALLANDTEST(x) \
+do {\
     if((x) != cudaSuccess) {\
         fprintf(stderr, "error: %s (%s:%d %s())\n", cudaGetErrorString(cudaGetLastError()), __FILE__, __LINE__, __func__);\
         cudaDeviceReset();\
@@ -809,13 +812,19 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
     setup_lodscore_kernel();
     setup_msampler_kernel();
     
+    
+    vector<Peeler*> peelers;
+    for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
+        Peeler* tmp = new Peeler(ped, map, psg, i);
+        peelers.push_back(tmp);
+    }
+    
         
     printf("requesting %.2f KB (%d bytes) of shared memory per block\n", shared_mem / 1024.0, (int)shared_mem);
     
     CUDA_CALLANDTEST(cudaMemcpy(dev_graph, dg.get_internal_ptr(), dg.get_internal_size(), cudaMemcpyHostToDevice));
     
     Progress p("CUDA MCMC: ", iterations);
-    
     
     
     for(unsigned i = 0; i < iterations; ++i) {
@@ -885,6 +894,12 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
             continue;
         
         if((i % scoring_period) == 0) {
+            
+            for(int i = 0; i < int(map->num_markers() - 1); ++i) {
+                peelers[i]->process(&dg);
+            }
+            
+            
             run_gpu_lodscore_kernel(lodscore_num_blocks(), num_threads_per_block(), dev_state);
             
             count++;
@@ -905,10 +920,21 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
     run_gpu_lodscorenormalise_kernel(map->num_markers() - 1, dev_state, count, trait_likelihood);
     cudaThreadSynchronize();
     
+    
     //run_gpu_lodscoreprint_kernel(dev_state);
     //cudaThreadSynchronize();
     //printf("count = %d, P(T) = %.3f\n", count, trait_likelihood / log(10));
     
+    
+    
+    //double* lod_scores = new double[map->num_markers() - 1];
+    for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
+        //lod_scores[i] = peelers[i]->get();
+        printf("rs%d\t%f\n", i+1, peelers[i]->get());
+        delete peelers[i];
+    }
+    
+    //return lod_scores;
     
     
     
@@ -917,8 +943,6 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
     CUDA_CALLANDTEST(cudaMemcpy(data, dev_lodscores, (map->num_markers() - 1) * sizeof(double), cudaMemcpyDeviceToHost));
     
     return data;
-    
-    //CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
 }
 
 void GPUWrapper::select_best_gpu() {

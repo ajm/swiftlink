@@ -21,6 +21,7 @@ class GPUWrapper {
     
     Pedigree* ped;
     GeneticMap* map;
+    PeelSequenceGenerator& psg;
     
     struct gpu_state* loc_state;
     struct gpu_state* dev_state;
@@ -68,6 +69,7 @@ class GPUWrapper {
     GPUWrapper(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator& psg) :
         ped(ped),
         map(map),
+        psg(psg),
         loc_state(NULL),
         dev_state(NULL),
         dev_graph(NULL),
@@ -85,6 +87,7 @@ class GPUWrapper {
     GPUWrapper(const GPUWrapper& rhs) :
         ped(rhs.ped),
         map(rhs.map),
+        psg(rhs.psg),
         loc_state(rhs.loc_state),
         dev_state(rhs.dev_state),
         dev_graph(rhs.dev_graph),
@@ -101,6 +104,7 @@ class GPUWrapper {
         if(&rhs != this) {
             ped = rhs.ped;
             map = rhs.map;
+            psg = rhs.psg;
             loc_state = rhs.loc_state; // XXX this could be a problem, but I don't keep PeelSequenceGenerator obj
             dev_state = rhs.dev_state;
             dev_graph = rhs.dev_graph;

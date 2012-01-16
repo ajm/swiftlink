@@ -105,8 +105,8 @@ void MarkovChain::parallel_initialise(DescentGraph& dg, PeelSequenceGenerator& p
 double* MarkovChain::run(unsigned iterations, double temperature) {
     unsigned burnin = iterations * 0.1;
     
-    //iterations = 1020;
-    //burnin = 1000;
+    iterations = 1020;
+    burnin = 1000;
     
     map->set_temperature(temperature);
 
@@ -117,8 +117,8 @@ double* MarkovChain::run(unsigned iterations, double temperature) {
     PeelSequenceGenerator psg(ped);
     psg.build_peel_order();
     
-    //initialise(dg, psg);
-    parallel_initialise(dg, psg);
+    initialise(dg, psg);
+    //parallel_initialise(dg, psg);
     
     // lod scorers
     vector<Peeler*> peelers;

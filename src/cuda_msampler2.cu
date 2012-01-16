@@ -54,21 +54,13 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
 	float minor_freq = MAP_MINOR(map, locus);
 	float major_freq = 1.0 - minor_freq;
 	
-    //int tmp = (locus % 8) * 16 * state->founderallele_count;
-    int tmp = (14 * state->founderallele_count) + (2 * state->pedigree_length);
-    tmp += (tmp % 4);
-    tmp *= (locus % 8);
+    int tmp0, tmp1;
+    tmp0 = (14 * state->founderallele_count) + (2 * state->pedigree_length);
+    tmp0 += (tmp0 % 4);
+    tmp0 *= (locus % 8);
     
-    /*
-     int8_t* group_membership   = ( int8_t*) &extern_pool[tmp];
-     int8_t* group_fixed        = ( int8_t*) &extern_pool[tmp +      state->founderallele_count];
-    uint8_t* group_active       = (uint8_t*) &extern_pool[tmp + (2 * state->founderallele_count)];
-    uint8_t* group_size         = (uint8_t*) &extern_pool[tmp + (3 * state->founderallele_count)];
-    uint8_t* allele_assignment  = (uint8_t*) &extern_pool[tmp + (4 * state->founderallele_count)];
-    float*   prob               = ( float* ) &extern_pool[tmp + (6 * state->founderallele_count)];
-    uint8_t* edge_list          = (uint8_t*) &extern_pool[tmp + (14 * state->founderallele_count)];
-    */
-    float*   prob               = ( float* ) &extern_pool[tmp];
+    
+    float*   prob               = ( float* ) &extern_pool[tmp0];
     uint8_t* allele_assignment  = (uint8_t*) &prob[2 * state->founderallele_count];
     uint8_t* edge_list          = (uint8_t*) &allele_assignment[2 * state->founderallele_count];
      int8_t* group_membership   = ( int8_t*) &edge_list[2 * state->pedigree_length];
@@ -132,9 +124,9 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
         if(g == GPU_GENOTYPE_UNTYPED)
             continue;
         
-        tmp = i * 2;
-        mat_fa = edge_list[tmp];
-        pat_fa = edge_list[++tmp];
+        tmp0 = i * 2;
+        mat_fa = edge_list[tmp0];
+        pat_fa = edge_list[++tmp0];
         
         /*
         printf("group_membership: ");
@@ -351,7 +343,6 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                         }
                         
                         int flip = 1;
-                        int tmp;
                         
                         if(fixed1 != fixed2) {
                             // XXX for now, always keep group1
@@ -376,9 +367,9 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                                 group_membership[j] = group1;
                                 
                                 if(flip) {
-                                    tmp = allele_assignment[ind(0, j)];
+                                    tmp0 = allele_assignment[ind(0, j)];
                                     allele_assignment[ind(0, j)] = allele_assignment[ind(1, j)];
-                                    allele_assignment[ind(1, j)] = tmp;
+                                    allele_assignment[ind(1, j)] = tmp0;
                                 }
                             }
                         }
@@ -404,20 +395,20 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                 }
                 else {
                     if(fixed1 != -1) {
-                        int tmp = get_other_allele(g, allele_assignment[ind(fixed1, mat_fa)]);
+                        tmp0 = get_other_allele(g, allele_assignment[ind(fixed1, mat_fa)]);
                         
-                        if(tmp == GPU_GENOTYPE_UNTYPED) {
+                        if(tmp0 == GPU_GENOTYPE_UNTYPED) {
                             //printf("zp %s:%d\n", __FILE__, __LINE__);
                             return 0.0;
                         }
                         else {
-                            allele_assignment[ind(fixed1, pat_fa)] = tmp;
-                            prob[ind(fixed1, group1)] *= (tmp == GPU_GENOTYPE_AA ? major_freq : minor_freq);
+                            allele_assignment[ind(fixed1, pat_fa)] = tmp0;
+                            prob[ind(fixed1, group1)] *= (tmp0 == GPU_GENOTYPE_AA ? major_freq : minor_freq);
                         }
                     }
                     else {
-                        int tmp0 = get_other_allele(g, allele_assignment[ind(0, mat_fa)]);
-                        int tmp1 = get_other_allele(g, allele_assignment[ind(1, mat_fa)]);
+                        tmp0 = get_other_allele(g, allele_assignment[ind(0, mat_fa)]);
+                        tmp1 = get_other_allele(g, allele_assignment[ind(1, mat_fa)]);
                         
                         if(tmp0 != GPU_GENOTYPE_UNTYPED) {
                             if(tmp1 != GPU_GENOTYPE_UNTYPED) {
@@ -454,20 +445,20 @@ __device__ float founderallelegraph_likelihood(struct gpu_state* state, int locu
                 fixed2 = group_fixed[group2];
                 
                 if(fixed2 != -1) {
-                    int tmp = get_other_allele(g, allele_assignment[ind(fixed2, pat_fa)]);
+                    tmp0 = get_other_allele(g, allele_assignment[ind(fixed2, pat_fa)]);
                     
-                    if(tmp == GPU_GENOTYPE_UNTYPED) {
+                    if(tmp0 == GPU_GENOTYPE_UNTYPED) {
                         //printf("zp %s:%d\n", __FILE__, __LINE__);
                         return 0.0;
                     }
                     else {
-                        allele_assignment[ind(fixed2, mat_fa)] = tmp;
-                        prob[ind(fixed2, group2)] *= (tmp == GPU_GENOTYPE_AA ? major_freq : minor_freq);
+                        allele_assignment[ind(fixed2, mat_fa)] = tmp0;
+                        prob[ind(fixed2, group2)] *= (tmp0 == GPU_GENOTYPE_AA ? major_freq : minor_freq);
                     }
                 }
                 else {
-                    int tmp0 = get_other_allele(g, allele_assignment[ind(0, pat_fa)]);
-                    int tmp1 = get_other_allele(g, allele_assignment[ind(1, pat_fa)]);
+                    tmp0 = get_other_allele(g, allele_assignment[ind(0, pat_fa)]);
+                    tmp1 = get_other_allele(g, allele_assignment[ind(1, pat_fa)]);
                     
                     if(tmp0 != GPU_GENOTYPE_UNTYPED) {
                         if(tmp1 != GPU_GENOTYPE_UNTYPED) {

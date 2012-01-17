@@ -783,6 +783,10 @@ void GPUWrapper::step(DescentGraph& dg) {
     */
 }
 
+int GPUWrapper::windowed_msampler_blocks(int window_length) {
+    return (map->num_markers() / window_length) + ((map->num_markers() % window_length) == 0 ? 0 : 1);
+}
+
 double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int burnin, unsigned int scoring_period, double trait_likelihood) {
     int count = 0;
     int even_count;
@@ -793,6 +797,10 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
     size_t shared_mem = (14 * (2 * ped->num_founders())) + (2 * ped->num_members());
     shared_mem += (shared_mem % 4);
     shared_mem *= 8;
+    
+    //int msampler_blocks = (map->num_markers() / 10) + ((map->num_markers() % 10) == 0 ? 0 : 1);
+    int window_index = 0;
+    int window_length[] = {11, 13, 17};
     
     /*
     run_gpu_print_kernel(dev_state);
@@ -812,13 +820,13 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
     setup_lodscore_kernel();
     setup_msampler_kernel();
     
-    
+    /*
     vector<Peeler*> peelers;
     for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
         Peeler* tmp = new Peeler(ped, map, psg, i);
         peelers.push_back(tmp);
     }
-    
+    */
         
     printf("requesting %.2f KB (%d bytes) of shared memory per block\n", shared_mem / 1024.0, (int)shared_mem);
     
@@ -829,7 +837,7 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
     
     for(unsigned i = 0; i < iterations; ++i) {
         
-        if((random() / double(RAND_MAX)) < 0.5) {
+        if((random() / double(RAND_MAX)) < 0.0) {
         //if((i % 2) == 0) {
             //printf("lsampler\n");
             run_gpu_lsampler_kernel(even_count, num_threads_per_block(), dev_state, 0);            
@@ -840,7 +848,6 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
                 abort();
             }
             
-            
             run_gpu_lsampler_kernel(odd_count, num_threads_per_block(), dev_state, 1);
             cudaThreadSynchronize();
             error = cudaGetLastError();
@@ -849,6 +856,7 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
                 abort();
             }
             
+            /*
             // test legality of descent graph
             CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
             
@@ -856,6 +864,7 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
                 fprintf(stderr, "error: descent graph illegal after l-sampler (%d)\n", i);
                 abort();
             }
+            */
         }
         else {
             //printf("msampler\n");
@@ -868,8 +877,8 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
                     abort();
                 }
                 
-                
-                run_gpu_msampler_sampling_kernel(dev_state, j);
+                //run_gpu_msampler_sampling_kernel(dev_state, j);
+                run_gpu_msampler_window_sampling_kernel(windowed_msampler_blocks(window_length[window_index]), 32, dev_state, j, window_length[window_index]);
                 cudaThreadSynchronize();
                 error = cudaGetLastError();
                 if(error != cudaSuccess) {
@@ -877,6 +886,9 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
                     abort();
                 }
                 
+                window_index = (window_index + 1) % 3;
+                
+                /*
                 // test legality of descent graph
                 CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
                 
@@ -884,6 +896,7 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
                     fprintf(stderr, "error: descent graph illegal after m-sampler (meiosis %d) (%d)\n", j, i);
                     abort();
                 }
+                */
             }
         }
         
@@ -894,11 +907,11 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
             continue;
         
         if((i % scoring_period) == 0) {
-            
+            /*
             for(int i = 0; i < int(map->num_markers() - 1); ++i) {
                 peelers[i]->process(&dg);
             }
-            
+            */
             
             run_gpu_lodscore_kernel(lodscore_num_blocks(), num_threads_per_block(), dev_state);
             
@@ -926,16 +939,15 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
     //printf("count = %d, P(T) = %.3f\n", count, trait_likelihood / log(10));
     
     
-    
+    /*
     //double* lod_scores = new double[map->num_markers() - 1];
     for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
         //lod_scores[i] = peelers[i]->get();
         printf("rs%d\t%f\n", i+1, peelers[i]->get());
         delete peelers[i];
     }
-    
     //return lod_scores;
-    
+    */
     
     
     double* data = new double[map->num_markers() - 1];

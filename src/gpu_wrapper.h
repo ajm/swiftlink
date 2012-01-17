@@ -35,6 +35,7 @@ class GPUWrapper {
     int lsampler_num_blocks();
     int msampler_num_blocks();
     int lodscore_num_blocks();
+    int windowed_msampler_blocks(int window_length);
     int convert_type(enum peeloperation type);
     void find_founderallelegraph_ordering(struct gpu_state* state);
     

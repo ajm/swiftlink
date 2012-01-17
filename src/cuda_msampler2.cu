@@ -702,12 +702,98 @@ __global__ void msampler_sampling_kernel(struct gpu_state* state, int meiosis) {
     }
 }
 
+__global__ void msampler_window_sampling_kernel(struct gpu_state* state, int meiosis, int window_length) {
+    int starting_locus = blockIdx.x * window_length;
+    int current_locus;
+    int personid = (state->founderallele_count / 2) + (meiosis / 2);
+    int allele = meiosis % 2;
+    struct geneticmap* map = GET_MAP(state);
+    struct descentgraph* dg = GET_DESCENTGRAPH(state);
+    int i, j;
+    
+    // these are all 20 because shared mem needs to be 
+    // declared with a constant
+    __shared__ float sh_theta[20];
+    __shared__ float sh_inversetheta[20];
+    __shared__ float sh_matrix[20][2];
+    __shared__ int sh_descentgraph[20][2];
+    
+    
+    map_length = map->map_length;
+    
+    current_locus = starting_locus + threadIdx.x;
+    
+    if((threadIdx.x < window_length) && (current_locus < map_length)) {
+        
+        sh_descentgraph[threadIdx.x][0] = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, current_locus, GPU_MATERNAL_ALLELE));
+        sh_descentgraph[threadIdx.x][1] = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, current_locus, GPU_PATERNAL_ALLELE));
+        
+        sh_matrix[threadIdx.x][0] = state->graphs[current_locus].prob[0];
+        sh_matrix[threadIdx.x][1] = state->graphs[current_locus].prob[1];
+        
+        if(current_locus < (map_length - 1)) {
+            sh_theta[threadIdx.x]        = logf((float) MAP_THETA(       map, current_locus));
+            sh_inversetheta[threadIdx.x] = logf((float) MAP_INVERSETHETA(map, current_locus));
+        }
+    }
+    
+    __syncthreads();
+    
+    
+    if(threadIdx.x == 0) {
+        
+        // forward
+        for(i = 1; i < window_length; ++i) {
+            if((starting_locus + i) >= map_length)
+                break;
+            
+            sh_matrix[i][0] = gpu_log_product(sh_matrix[i][0], \
+                                    gpu_log_sum( \
+                                        gpu_log_product(sh_matrix[i-1][0], sh_theta[i-1]), \
+                                        gpu_log_product(sh_matrix[i-1][1], sh_inversetheta[i-1]) \
+                                    ) \
+                                  );
+            sh_matrix[i][1] = gpu_log_product(sh_matrix[i][1], \
+                                    gpu_log_sum( \
+                                        gpu_log_product(sh_matrix[i-1][1], sh_theta[i-1]), \
+                                        gpu_log_product(sh_matrix[i-1][0], sh_inversetheta[i-1]) \
+                                    ) \
+                                  );
+        }
+        
+        // backward
+        i = 9; //map_length - 1;
+        sh_descentgraph[i][allele] = founderallele_sample2(state, sh_matrix[i][0], sh_matrix[i][1]);
+        
+        while(--i >= 0) {
+            for(j = 0; j < 2; ++j) {
+                sh_matrix[i][j] = gpu_log_product(sh_matrix[i][j], ((sh_descentgraph[i+1][allele] != j) ? sh_theta[i] : sh_inversetheta[i]));
+            }
+            
+            sh_descentgraph[i][allele] = founderallele_sample2(state, sh_matrix[i][0], sh_matrix[i][1]);
+        }
+    }
+    
+    __syncthreads();
+    
+    
+    current_locus = starting_locus + threadIdx.x;
+    if((threadIdx.x < window_length) && (current_locus < map_length)) {
+        DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, current_locus, GPU_MATERNAL_ALLELE), sh_descentgraph[threadIdx.x][0]);
+        DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, current_locus, GPU_PATERNAL_ALLELE), sh_descentgraph[threadIdx.x][1]);
+    }
+}
+
 void run_gpu_msampler_likelihood_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis, size_t shared) {
     msampler_likelihood_kernel<<<numblocks, numthreads, shared>>>(state, meiosis);
 }
 
 void run_gpu_msampler_sampling_kernel(struct gpu_state* state, int meiosis) {
     msampler_sampling_kernel<<<1, 256>>>(state, meiosis);
+}
+
+void run_gpu_msampler_window_sampling_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis, int window_length) {
+    msampler_window_sampling_kernel<<<numblocks, numthreads>>>(state, meiosis, window_length);
 }
 
 void setup_msampler_kernel() {

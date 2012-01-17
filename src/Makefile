@@ -6,7 +6,7 @@ CFLAGS := -g -O2 -Wall -pipe -m32
 LDFLAGS := -m32
 INCLUDES := -I. -I/usr/local/cuda/include
 #LIBS := -L /usr/local/cuda/lib64 -lcudart 
-LIBS := -L /usr/local/cuda/lib -L /usr/lib32 -lcudart
+LIBS := -L /usr/local/cuda/lib -L /usr/lib32 -lcudart #-lgomp
 #LIBS := -lgomp
 GPUFLAGS := -arch=sm_20 -O2 -m32
 

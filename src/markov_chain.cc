@@ -18,8 +18,8 @@ using namespace std;
 void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
     DescentGraph tmp(ped, map);
     double tmp_prob, best_prob = LOG_ILLEGAL;
-    //int iterations = 100;
-    int iterations = 1;
+    int iterations = 1000;
+    //int iterations = 1;
     
     LocusSampler lsampler(ped, map, psg, 0);
     
@@ -31,6 +31,8 @@ void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
     
     fprintf(stderr, "initial random likelihood = %e\n", tmp_prob);
     
+    Progress p("Sequential Imputation: ", iterations);
+    
     do {
         lsampler.sequential_imputation(tmp);
     
@@ -40,6 +42,8 @@ void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
             abort();
         }
         
+        p.increment();
+        
         //fprintf(stderr, "sequential imputation = %e\n", tmp_prob);
         
         if(tmp_prob > best_prob) {
@@ -48,6 +52,8 @@ void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
         }
         
     } while(--iterations > 0);
+    
+    p.finish();
     
     fprintf(stderr, "starting point likelihood = %e\n", best_prob);
 }
@@ -105,8 +111,10 @@ void MarkovChain::parallel_initialise(DescentGraph& dg, PeelSequenceGenerator& p
 double* MarkovChain::run(unsigned iterations, double temperature) {
     unsigned burnin = iterations * 0.1;
     
+    /*
     iterations = 1020;
     burnin = 1000;
+    */
     
     map->set_temperature(temperature);
 
@@ -149,8 +157,8 @@ double* MarkovChain::run(unsigned iterations, double temperature) {
     unsigned num_meioses = 2 * (ped->num_members() - ped->num_founders());
         
     for(unsigned int i = 0; i < iterations; ++i) {
-        if((random() / DBL_RAND_MAX) < 0.0) {
-            
+        if((random() / DBL_RAND_MAX) < 0.5) {
+            /*
             #pragma omp parallel for
             for(int j = 0; j < int(map->num_markers()); j += 2) {
                 lsamplers[j]->step(dg, j);
@@ -160,12 +168,12 @@ double* MarkovChain::run(unsigned iterations, double temperature) {
             for(int j = 1; j < int(map->num_markers()); j += 2) {
                 lsamplers[j]->step(dg, j);
             }
+            */
             
-            /*
             for(unsigned int j = 0; j < map->num_markers(); ++j) {
                 lsamplers[j]->step(dg, j);
             }
-            */
+            
         }
         else {
             msampler.reset(dg);
@@ -204,3 +212,4 @@ double* MarkovChain::run(unsigned iterations, double temperature) {
     
     return lod_scores;
 }
+

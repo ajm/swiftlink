@@ -25,7 +25,7 @@ Person::Person(const string name, const string father_name, const string mother_
     	internal_id(UNKNOWN_ID),
     	maternal_id(UNKNOWN_ID),
     	paternal_id(UNKNOWN_ID),
-    	typed(true),
+    	typed(false),
     	ped(pedigree),
     	genotypes(),
     	children(),
@@ -110,17 +110,6 @@ bool Person::mendelian_errors() const {
 	}
     
 	return false;
-}
-
-void Person::set_typed() {
-    for(unsigned int i = 0; i < genotypes.size(); ++i) {
-        if(get_genotype(i) != UNTYPED) {
-            typed = true;
-            return;
-        }
-    }
-    
-    typed = false;
 }
 
 void Person::add_mate(Person* p) {
@@ -414,8 +403,15 @@ string Person::debug_string() {
         << "\tfather: " << father << "(" << paternal_id << ")" << "\n" \
         << "\tmother: " << mother << "(" << maternal_id << ")" << "\n" \
         << "\tgender: " << gender_str(gender) << "\n" \
-        << "\taffection: " << affection_str(affection) << "\n" \
-        << "\tnumber of markers: " << genotypes.size() << "\n";
+        << "\taffection: " << affection_str(affection) << "\n";
+        
+    //ss  << "\ttyped: " << typed << "\n";
+    
+    if(typed)
+        ss << "\ttyped: yes\n";
+    else
+        ss << "\ttyped: no\n";
+        //<< "\tnumber of markers: " << genotypes.size() << "\n";
     
     ss << "\tchildren:";
     for(unsigned i = 0; i < children.size(); ++i)
@@ -427,11 +423,14 @@ string Person::debug_string() {
         ss << mates[i]->get_internalid() << " ";
     ss << "\n";
     
+    /*
     ss << "\tprobabilities:" << "\n" \
        << "\t\tTRAIT_AA = " << fixed << disease_prob[TRAIT_AA] << "\n" \
        << "\t\tTRAIT_AU = " << fixed << disease_prob[TRAIT_AU] << "\n" \
        << "\t\tTRAIT_UA = " << fixed << disease_prob[TRAIT_UA] << "\n" \
        << "\t\tTRAIT_UU = " << fixed << disease_prob[TRAIT_UU] << "\n";
+    */
     
     return ss.str(); 
 }
+

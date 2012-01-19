@@ -134,6 +134,10 @@ class Person {
 	void set_paternalid(unsigned int id) { paternal_id = id; }
     
 	void add_genotype(enum unphased_genotype g) {
+	    if(g != UNTYPED) {
+	        typed = true;
+	    }
+	    
 		genotypes.push_back(g);
 	}
 	
@@ -174,7 +178,6 @@ class Person {
     // pedigree construction / validation
 	bool mendelian_errors() const ;
 	void fill_in_relationships();
-    void set_typed();
     
 	// so I can sort, I don't care for a specific (strong) ordering, 
 	// I just want all the founders first

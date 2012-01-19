@@ -17,7 +17,7 @@ void LocusSampler::init_rfunctions(PeelSequenceGenerator& psg) {
     
     rfunctions.reserve(ops.size()); // need to do this otherwise pointers may not work later...
     
-    for(unsigned i = 0; i < ops.size(); ++i) {
+    for(unsigned int i = 0; i < ops.size(); ++i) {
         Rfunction* prev1 = ops[i].get_previous_op1() == -1 ? NULL : &(rfunctions[ops[i].get_previous_op1()]);
         Rfunction* prev2 = ops[i].get_previous_op2() == -1 ? NULL : &(rfunctions[ops[i].get_previous_op2()]);
         
@@ -110,24 +110,16 @@ void LocusSampler::sample_meiosis_indicators(vector<int>& pmk, DescentGraph& dg)
 }
 
 void LocusSampler::step(DescentGraph& dg, unsigned parameter) {
-    //unsigned locus = parameter;
         
     // forward peel
-    for(unsigned i = 0; i < rfunctions.size(); ++i) {
-        //SamplerRfunction* rf = rfunctions[i];
-        //rf->evaluate(&dg, /*locus, */0.0);
-        
+    for(unsigned int i = 0; i < rfunctions.size(); ++i) {
         rfunctions[i].evaluate(&dg, 0.0);
     }
     
-    //PeelMatrixKey pmk(ped->num_members());
     vector<int> pmk(ped->num_members(), -1);
     
     // reverse peel, sampling ordered genotypes
     for(int i = static_cast<int>(rfunctions.size()) - 1; i >= 0; --i) {
-        //SamplerRfunction* rf = rfunctions[i];
-        //rf->sample(pmk);
-        
         rfunctions[i].sample(pmk);
     }
     

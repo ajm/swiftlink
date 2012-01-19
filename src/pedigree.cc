@@ -72,7 +72,6 @@ bool Pedigree::sanity_check() {
     _reorder_family();
 	_rename_parent_ids();
 	_fill_in_relationships();
-    _set_typed_flags();
 	
     if((components = _count_components()) != 1) {
         fprintf(stderr, "error: %s, family %s is actually composed of %d distinct families\n", 
@@ -205,12 +204,6 @@ bool Pedigree::_mendelian_errors() const {
 void Pedigree::_fill_in_relationships() {
 	for(unsigned int i = 0; i < members.size(); ++i) {
 		members[i].fill_in_relationships();
-	}
-}
-
-void Pedigree::_set_typed_flags() {
-    for(unsigned int i = 0; i < members.size(); ++i) {
-		members[i].set_typed();
 	}
 }
 

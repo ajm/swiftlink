@@ -157,7 +157,7 @@ double* MarkovChain::run(unsigned iterations, double temperature) {
     unsigned num_meioses = 2 * (ped->num_members() - ped->num_founders());
         
     for(unsigned int i = 0; i < iterations; ++i) {
-        if((random() / DBL_RAND_MAX) < 0.5) {
+        if(get_random() < 0.5) {
             /*
             #pragma omp parallel for
             for(int j = 0; j < int(map->num_markers()); j += 2) {

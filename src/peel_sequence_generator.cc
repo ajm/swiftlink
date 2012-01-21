@@ -9,10 +9,11 @@ using namespace std;
 #include "peeling.h"
 #include "peel_sequence_generator.h"
 #include "person.h"
+#include "random.h"
 
 
 PeelOperation PeelSequenceGenerator::get_random_operation(vector<PeelOperation>& v) {
-    return v[random() % v.size()];
+    return v[get_random(v.size())];
 }
 
 // XXX add any heuristics related to peel operation selection here

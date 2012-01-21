@@ -8,6 +8,7 @@ using namespace std;
 #include "person.h"
 #include "descent_graph.h"
 #include "genotype.h"
+#include "random.h"
 
 
 void GenotypeElimination::_init() {
@@ -228,7 +229,7 @@ void GenotypeElimination::_random_eliminate(int** ds, unsigned locus) {
 	}
 	
 	// get random person
-	tmp = queue[random() % qindex];
+	tmp = queue[get_random(qindex)];
 	
 	// find all possible genotypes for tmp
 	qindex = 0;
@@ -239,7 +240,7 @@ void GenotypeElimination::_random_eliminate(int** ds, unsigned locus) {
         }
 	}
 	
-	tmp2 = queue[random() % qindex];
+	tmp2 = queue[get_random(qindex)];
 	
 	ds[locus][tmp] = tmp2;
 }

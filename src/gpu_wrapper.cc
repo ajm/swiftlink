@@ -249,7 +249,7 @@ curandState* GPUWrapper::gpu_init_random_curand() {
     //printf("sizeof(*host_seeds) = %d\n", sizeof(host_seeds));
     
     for(int i = 0; i < prng_num; ++i) {
-        //seeds[i] = random();
+        //seeds[i] = get_random();
         long int data;
         
         randfile.read((char*)&data, sizeof(data));
@@ -310,7 +310,7 @@ tinymt32_status_t* GPUWrapper::gpu_init_random_tinymt() {
     }
     
     for(int i = 0; i < prng_num; ++i) {
-        //seeds[i] = random();
+        //seeds[i] = get_random();
         uint32_t data;
         
         randfile.read((char*)&data, 4);
@@ -837,7 +837,7 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
     
     for(unsigned i = 0; i < iterations; ++i) {
         
-        if((random() / double(RAND_MAX)) < 0.5) {
+        if(get_random() < 0.5) {
         //if((i % 2) == 0) {
             //printf("lsampler\n");
             run_gpu_lsampler_kernel(even_count, num_threads_per_block(), dev_state, 0);            

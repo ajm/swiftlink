@@ -9,6 +9,7 @@ using namespace std;
 #include "descent_graph.h"
 #include "pedigree.h"
 #include "genetic_map.h"
+#include "random.h"
 
 
 class Sampler {
@@ -16,7 +17,7 @@ class Sampler {
  protected :
     Pedigree* ped;
     GeneticMap* map;
-    
+    /*
     double get_random() {
         return random() / static_cast<double>(RAND_MAX);
     }
@@ -24,13 +25,13 @@ class Sampler {
     unsigned get_random(unsigned i) {
     	return random() % i;
     }
-
+    */
     unsigned get_random_locus() {
 	    return get_random(map->num_markers());
     }
     
     unsigned get_random_nonfounder() {
-        return get_random(ped->num_members()) + ped->num_founders();
+        return get_random(ped->num_members() - ped->num_founders()) + ped->num_founders();
     }
     
     enum parentage get_random_meiosis() {

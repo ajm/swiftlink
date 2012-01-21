@@ -13,6 +13,7 @@ using namespace std;
 #include "genetic_map.h"
 #include "pedigree.h"
 #include "peeler.h"
+#include "random.h"
 
 
 bool LinkageProgram::run() {
@@ -28,7 +29,7 @@ bool LinkageProgram::run() {
     
     // TODO XXX need to know how to do this properly, 
     // look up better random numbers for simulations etc
-    srandom(time(NULL));
+    seed_random(time(NULL));
     
     for(unsigned int i = 0; i < pedigrees.size(); ++i) {
         if(verbose) {

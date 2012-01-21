@@ -7,6 +7,7 @@ using namespace std;
 #include "genetic_map.h"
 #include "peeling.h"
 #include "peel_matrix.h"
+#include "random.h"
 
 
 double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_trait pt) {
@@ -117,7 +118,7 @@ void SamplerRfunction::sample(vector<int>& pmk) {
     }
     
     // sample
-    double r = random() / static_cast<double>(RAND_MAX);
+    double r = get_random();
     total = 0.0;
     
     

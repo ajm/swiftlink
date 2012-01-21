@@ -140,6 +140,6 @@ void MeiosisSampler::normalise(int locus) {
 }
 
 unsigned MeiosisSampler::sample(int locus) {
-    return ((random() / static_cast<double>(RAND_MAX)) < matrix[locus * 2]) ? 0 : 1;
+    return (get_random() < matrix[locus * 2]) ? 0 : 1;
 }
 

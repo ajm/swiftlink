@@ -30,9 +30,8 @@ double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_t
         }
     }
     
-    // these need to be properly normalised for each marker in the map, right?
     if(not p->isfounder())
-        return 0.25;
+              return 0.25;
         
     return map->get_prob(locus, pt);
 }

@@ -12,7 +12,7 @@ using namespace std;
 #include "descent_graph.h"
 #include "linkage_writer.h"
 #include "progress.h"
-#include "gpu_wrapper.h"
+//#include "gpu_wrapper.h"
 
 
 void MarkovChain::initialise(DescentGraph& dg, PeelSequenceGenerator& psg) {
@@ -144,10 +144,10 @@ double* MarkovChain::run(unsigned iterations, double temperature) {
     
     MeiosisSampler msampler(ped, map);
     
-    
+    /*
     GPUWrapper gpu(ped, map, psg);
     return gpu.run(dg, iterations, burnin, 10, peelers[0]->get_trait_prob());
-    
+    */
     
     //exit(0);
     

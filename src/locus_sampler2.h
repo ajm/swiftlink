@@ -21,7 +21,7 @@ class LocusSampler : Sampler {
     vector<SamplerRfunction> rfunctions;
     unsigned int locus;
     
-    void init_rfunctions(PeelSequenceGenerator& psg);    
+    void init_rfunctions(PeelSequenceGenerator* psg);    
     unsigned sample_mi(DescentGraph& dg, enum trait allele, enum phased_trait trait, unsigned personid, enum parentage parent);
     unsigned sample_homo_mi(DescentGraph& dg, unsigned personid, enum parentage parent);
     unsigned sample_hetero_mi(enum trait allele, enum phased_trait trait);
@@ -32,7 +32,7 @@ class LocusSampler : Sampler {
 
     
  public :
-    LocusSampler(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator& psg, unsigned int locus) :
+    LocusSampler(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator* psg, unsigned int locus) :
         Sampler(ped, map), 
         rfunctions(),
         locus(locus) {

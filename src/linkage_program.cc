@@ -14,6 +14,7 @@ using namespace std;
 #include "pedigree.h"
 #include "peeler.h"
 #include "random.h"
+#include "sequential_imputation.h"
 
 
 bool LinkageProgram::run() {
@@ -65,10 +66,17 @@ double* LinkageProgram::run_pedigree(Pedigree& p) {
     if(verbose) {
         fprintf(stderr, "processing pedigree %s\n", p.get_id().c_str());
     }
-
-    MarkovChain chain(&p, &map);
     
-    return chain.run(iterations, 0.0);
+    DescentGraph dg(&p, &map);
+    
+    PeelSequenceGenerator psg(&p);
+    psg.build_peel_order();
+    
+    SequentialImputation si(&p, &map, &psg);
+    si.run(dg, options.si_iterations);
+
+    MarkovChain chain(&p, &map, &psg, options);
+    return chain.run(dg);
 }
 
 void LinkageProgram::free_lodscores(vector<double*>& x) {
@@ -76,3 +84,4 @@ void LinkageProgram::free_lodscores(vector<double*>& x) {
         delete[] x[i];
     }
 }
+

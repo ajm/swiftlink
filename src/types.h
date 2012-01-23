@@ -50,5 +50,16 @@ string affection_str(enum affection a);
 string parent_str(enum parentage p);
 
 
+struct mcmc_options {
+    int burnin;
+    int iterations;
+    int si_iterations;
+    int scoring_period;
+    
+    double lsampler_prob;
+    double temperature;
+};
+
+
 #endif
 

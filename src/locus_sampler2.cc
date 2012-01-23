@@ -12,8 +12,8 @@ using namespace std;
 #include "locus_sampler2.h"
 
 
-void LocusSampler::init_rfunctions(PeelSequenceGenerator& psg) {
-    vector<PeelOperation>& ops = psg.get_peel_order();
+void LocusSampler::init_rfunctions(PeelSequenceGenerator* psg) {
+    vector<PeelOperation>& ops = psg->get_peel_order();
     
     rfunctions.reserve(ops.size()); // need to do this otherwise pointers may not work later...
     

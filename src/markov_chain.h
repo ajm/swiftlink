@@ -3,9 +3,10 @@
 
 using namespace std;
 
+#include "types.h"
+#include "genetic_map.h"
+
 class Pedigree;
-class GeneticMap;
-class Peeler;
 class PeelSequenceGenerator;
 class DescentGraph;
 
@@ -14,30 +15,42 @@ class MarkovChain {
     
     Pedigree* ped;
     GeneticMap* map;
+    PeelSequenceGenerator* psg;
+    struct mcmc_options options;
     
     void initialise(DescentGraph& dg, PeelSequenceGenerator& psg);
     void parallel_initialise(DescentGraph& dg, PeelSequenceGenerator& psg);
     
  public :
-    MarkovChain(Pedigree* ped, GeneticMap* map) :
-        ped(ped), map(map) {}
+    MarkovChain(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator* psg, struct mcmc_options options) :
+        ped(ped), 
+        map(map), 
+        psg(psg),
+        options(options) {
+    
+        map->set_temperature(options.temperature);    
+    }
     
     ~MarkovChain() {}
     
     MarkovChain(const MarkovChain& rhs) :
-        ped(rhs.ped), map(map) {}
+        ped(rhs.ped), 
+        map(rhs.map),
+        psg(rhs.psg), 
+        options(rhs.options) {}
     
     MarkovChain& operator=(const MarkovChain& rhs) {
-        
         if(this != &rhs) {
             ped = rhs.ped;
             map = rhs.map;
+            psg = rhs.psg;
+            options = rhs.options;
         }
-        
         return *this;
     }
     
-    double* run(unsigned iterations, double temperature);
+    double* run(DescentGraph& dg);
 };
 
 #endif
+

@@ -28,7 +28,7 @@ class Peeler {
     double calc_trait_prob();
     
  public :
-    Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator& psg, unsigned int locus);
+    Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator* psg, unsigned int locus);
     Peeler(const Peeler& rhs);
     ~Peeler();
     

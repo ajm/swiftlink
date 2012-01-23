@@ -38,6 +38,7 @@ OBJECTS	:= \
 	peeler.o \
 	lod_calculator.o \
 	markov_chain.o \
+	sequential_imputation.o \
 	locus_sampler2.o \
 	meiosis_sampler.o \
 	linkage_program.o \

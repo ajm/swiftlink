@@ -29,15 +29,12 @@ char* mapfile = NULL;
 char* pedfile = NULL;
 char* datfile = NULL;
 char* outfile = DEFAULT_RESULTS_FILENAME;
-int mcmc_iterations = DEFAULT_MCMC_ITERATIONS;
-int burnin_iterations = DEFAULT_BURNIN_ITERATIONS;
-int sequential_imputation_iterations = DEFAULT_SEQUENTIALIMPUTATION_ITERATIONS;
-int scoring_period = DEFAULT_SCORING_PERIOD;
+struct mcmc_options options;
+
 bool verbose = false;
 //enum analysistype analysis = LINKAGE;
 int thread_count = DEFAULT_THREAD_COUNT;
 bool use_gpu = false;
-double lsampler_prob = DEFAULT_LSAMPLER_PROB;
 
 
 
@@ -161,22 +158,34 @@ void _handle_args(int argc, char **argv) {
                 break;
                 
             case 'i':
-                if(not str2int(mcmc_iterations, optarg)) {
+                if(not str2int(options.iterations, optarg)) {
                     fprintf(stderr, "%s: option '-i' requires an int as an argument ('%s' given)\n", argv[0], optarg);
+                    exit(EXIT_FAILURE);
+                }
+                if(options.iterations <= 0) {
+                    fprintf(stderr, "%s: mcmc iterations must be positive (%d given)\n", argv[0], options.iterations);
                     exit(EXIT_FAILURE);
                 }
                 break;
                 
             case 'b':
-                if(not str2int(burnin_iterations, optarg)) {
+                if(not str2int(options.burnin, optarg)) {
                     fprintf(stderr, "%s: option '-b' requires an int as an argument ('%s' given)\n", argv[0], optarg);
+                    exit(EXIT_FAILURE);
+                }
+                if(options.burnin < 0) {
+                    fprintf(stderr, "%s: mcmc burnin must be positive (%d given)\n", argv[0], options.burnin);
                     exit(EXIT_FAILURE);
                 }
                 break;
                 
             case 's':
-                if(not str2int(sequential_imputation_iterations, optarg)) {
+                if(not str2int(options.si_iterations, optarg)) {
                     fprintf(stderr, "%s: option '-s' requires an int as an argument ('%s' given)\n", argv[0], optarg);
+                    exit(EXIT_FAILURE);
+                }
+                if(options.si_iterations < 0) {
+                    fprintf(stderr, "%s: number of sequential imputation runs must be positive (%d given)\n", argv[0], options.si_iterations);
                     exit(EXIT_FAILURE);
                 }
                 break;
@@ -186,19 +195,21 @@ void _handle_args(int argc, char **argv) {
                     fprintf(stderr, "%s: option '-n' requires an int as an argument ('%s' given)\n", argv[0], optarg);
                     exit(EXIT_FAILURE);
                 }
+                if(thread_count < 1) {
+                    fprintf(stderr, "%s: thread count must be at least one (%d given)\n", argv[0], thread_count);
+                    exit(EXIT_FAILURE);
+                }
                 break;
                 
             case 'l':
-                if(not str2float(lsampler_prob, optarg)) {
+                if(not str2float(options.lsampler_prob, optarg)) {
                     fprintf(stderr, "%s: option '-l' requires a float (>=0, <= 1) as an argument ('%s' given)\n", argv[0], optarg);
                     exit(EXIT_FAILURE);
                 }
-                
-                if((lsampler_prob < 0.0) or (lsampler_prob > 1.0)) {
-                    fprintf(stderr, "%s: option '-l' requires an argument >= 0 and <= 1 (%.3f given)\n", argv[0], lsampler_prob);
+                if((options.lsampler_prob < 0.0) or (options.lsampler_prob > 1.0)) {
+                    fprintf(stderr, "%s: option '-l' requires an argument >= 0 and <= 1 (%.3f given)\n", argv[0], options.lsampler_prob);
                     exit(EXIT_FAILURE);
                 }
-                
                 break;
                 
             case 'g':
@@ -256,8 +267,17 @@ void _handle_args(int argc, char **argv) {
 	}
 }
 
+void _set_defaults() {
+    options.iterations      = DEFAULT_MCMC_ITERATIONS;
+    options.burnin          = DEFAULT_BURNIN_ITERATIONS;
+    options.si_iterations   = DEFAULT_SEQUENTIALIMPUTATION_RUNS;
+    options.scoring_period  = DEFAULT_SCORING_PERIOD;
+    options.lsampler_prob   = DEFAULT_LSAMPLER_PROB;
+    options.temperature     = 0.0;
+}
+
 int linkage_analysis() {
-    LinkageProgram lp(pedfile, mapfile, datfile, outfile, mcmc_iterations, verbose);
+    LinkageProgram lp(pedfile, mapfile, datfile, outfile, options, verbose);
     
     return lp.run() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
@@ -281,6 +301,8 @@ int testing_mode() {
 }
 
 int main(int argc, char **argv) {
+    _set_defaults();
+    
 	_handle_args(argc, argv);
 	
 	return linkage_analysis();

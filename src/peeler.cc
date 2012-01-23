@@ -13,7 +13,7 @@ using namespace std;
 #include "trait_rfunction.h"
 
 
-Peeler::Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator& psg, unsigned int locus) : 
+Peeler::Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator* psg, unsigned int locus) : 
     ped(p), 
     map(g), 
     rfunctions(),
@@ -23,7 +23,7 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator& psg, unsigned 
     locus(locus),
     count(0) {
     
-    vector<PeelOperation>& ops = psg.get_peel_order();
+    vector<PeelOperation>& ops = psg->get_peel_order();
     
     rfunctions.reserve(ops.size()); // need to do this otherwise pointers may not work later...
     
@@ -37,7 +37,7 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator& psg, unsigned 
     trait_prob = calc_trait_prob();
     
     printf("P(T) = %e\n", trait_prob / log(10));
-    printf("PEEL SEQUENCE SCORE (lower is better) : %d\n", int(psg.score_peel_sequence()));    
+    printf("PEEL SEQUENCE SCORE (lower is better) : %d\n", int(psg->score_peel_sequence()));    
 }
 
 Peeler::Peeler(const Peeler& rhs) :

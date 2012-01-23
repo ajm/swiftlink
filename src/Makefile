@@ -24,11 +24,7 @@ OBJECTS	:= \
 	linkage_parser.o \
 	map_parser.o \
 	linkage_writer.o \
-	haplotype_writer.o \
 	peel_sequence_generator.o \
-	founder_allele_graph.o \
-	founder_allele_graph2.o \
-	founder_allele_graph3.o \
 	founder_allele_graph4.o \
 	elimination.o \
 	peel_matrix.o \
@@ -36,7 +32,6 @@ OBJECTS	:= \
 	sampler_rfunction.o \
 	trait_rfunction.o \
 	peeler.o \
-	lod_calculator.o \
 	markov_chain.o \
 	sequential_imputation.o \
 	locus_sampler2.o \
@@ -45,7 +40,6 @@ OBJECTS	:= \
 	program.o \
 	progress.o \
 	main.o \
-	test_program.o \
 	gpu_markov_chain.o \
 	cuda_linkage.o
 

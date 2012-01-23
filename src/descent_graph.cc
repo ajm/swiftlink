@@ -10,9 +10,8 @@ using namespace std;
 #include "descent_graph.h"
 #include "pedigree.h"
 #include "genetic_map.h"
-#include "founder_allele_graph.h"
 #include "elimination.h"
-#include "founder_allele_graph2.h"
+#include "founder_allele_graph4.h"
 
 
 DescentGraph::DescentGraph(Pedigree* ped, GeneticMap* map) : 
@@ -22,13 +21,16 @@ DescentGraph::DescentGraph(Pedigree* ped, GeneticMap* map) :
     prob(0.0), 
     marker_transmission(log(0.5) * (2 * (ped->num_members() - ped->num_founders()))), 
     graph_size(2 * ped->num_members()),
-    recombinations(-1) {
+    recombinations(-1),
+    seq() {
     
     data = new int[graph_size * map->num_markers()];
     
     for(unsigned i = 0; i < (graph_size * map->num_markers()); ++i) {
         data[i] = 0;
-    }    
+    }
+    
+    find_founderallelegraph_ordering();
 }
 
 DescentGraph::DescentGraph(const DescentGraph& d) : 
@@ -38,7 +40,8 @@ DescentGraph::DescentGraph(const DescentGraph& d) :
     prob(d.prob), 
 	marker_transmission(d.marker_transmission),
     graph_size(d.graph_size),
-    recombinations(d.recombinations) {
+    recombinations(d.recombinations),
+    seq(d.seq) {
 
     unsigned int data_length = graph_size * map->num_markers();
     
@@ -143,12 +146,12 @@ double DescentGraph::get_likelihood() {
     prob = log_product(_transmission_prob(), _sum_prior_prob());
     return prob;
 }
-
+/*
 double DescentGraph::get_haplotype_likelihood() {
     prob = log_product(_transmission_prob(), _best_prior_prob());
     return prob;
 }
-
+*/
 double DescentGraph::_transmission_prob() {
     return marker_transmission + _recombination_prob();
 }
@@ -196,48 +199,17 @@ double DescentGraph::get_recombination_prob(unsigned locus, bool count_crossover
 }
 
 double DescentGraph::_sum_prior_prob() {
-    /*
     double tmp_prob;
 	double return_prob = 0.0;
-	FounderAlleleGraph fag(ped, map);
+    FounderAlleleGraph4 f(ped, map);
     
-	for(unsigned i = 0; i < map->num_markers(); ++i) {
-		fag.reset();
-        
-        if(not fag.populate(*this, i)) {
-            fprintf(stderr, "error: could not populate locus %d\n", int(i));
-            fag.print();
-            return LOG_ZERO;
-        }
-		
-		if(not fag.likelihood(&tmp_prob, i)) {
-            fprintf(stderr, "error: could not likelihood locus %d\n", int(i));
-			fag.print();
-            return LOG_ZERO;
-        }
-        		
-		return_prob += tmp_prob;
-    }
-    
-    return return_prob;
-    */
-    
-    
-    double tmp_prob;
-	double return_prob = 0.0;
-    FounderAlleleGraph2 f(ped, map, 0);
+    f.set_sequence(&seq);
     
     for(unsigned i = 0; i < map->num_markers(); ++i) {
         f.set_locus(i);
-        f.reset();
+        f.reset(*this);
         
-        if(not f.populate(*this)) {
-            fprintf(stderr, "error: could not populate locus %d\n", int(i));
-            fprintf(stderr, "%s\n", f.debug_string().c_str());
-            return LOG_ZERO;
-        }
-		
-		if((tmp_prob = f.likelihood()) == LOG_ZERO) {
+        if((tmp_prob = f.likelihood()) == LOG_ZERO) {
             fprintf(stderr, "error: could not likelihood locus %d\n", int(i));
             fprintf(stderr, "%s\n", f.debug_string().c_str());
 			return LOG_ZERO;
@@ -250,6 +222,7 @@ double DescentGraph::_sum_prior_prob() {
     
 }
 
+/*
 double DescentGraph::_best_prior_prob() {
     double tmp_prob;
 	double return_prob = 0.0;
@@ -271,6 +244,7 @@ double DescentGraph::_best_prior_prob() {
 	
 	return return_prob;
 }
+*/
 
 string DescentGraph::debug_string() {
     stringstream ss;
@@ -290,3 +264,37 @@ string DescentGraph::debug_string() {
     
     return ss.str();
 }
+
+void DescentGraph::find_founderallelegraph_ordering() {
+    vector<bool> visited(ped->num_members(), false);
+    int total = ped->num_members();
+    
+    // we can start by putting in all founders as there are clearly
+    // no dependencies
+    for(unsigned i = 0; i < ped->num_founders(); ++i) {
+        seq.push_back(i);
+        visited[i] = true;
+        total--;
+    }
+    
+    while(total > 0) {
+        for(unsigned i = ped->num_founders(); i < ped->num_members(); ++i) {
+            if(visited[i])
+                continue;
+        
+            Person* p = ped->get_by_index(i);
+            
+            if(visited[p->get_maternalid()] and visited[p->get_paternalid()]) {
+                seq.push_back(i);
+                visited[i] = true;
+                total--;
+            }
+        }
+    }
+    
+    if(seq.size() != ped->num_members()) {
+        fprintf(stderr, "error: founder allele sequence generation failed\n");
+        abort();
+    }
+}
+

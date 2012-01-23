@@ -11,7 +11,6 @@ using namespace std;
 #include "genetic_map.h"
 
 class Pedigree;
-//class GeneticMap;
 
 class DescentGraph {
 
@@ -24,6 +23,8 @@ class DescentGraph {
 								// for indexing data
 	int recombinations;
 	
+	vector<int> seq;
+	
     
 	double _transmission_prob();
 	double _recombination_prob();
@@ -34,6 +35,7 @@ class DescentGraph {
 	    return (graph_size * locus) + (person_id * 2) + p;
     }
 	int _founder_allele(unsigned person_id, enum parentage p) const;
+	void find_founderallelegraph_ordering();
 
  public :
 	DescentGraph(Pedigree* ped, GeneticMap* map);

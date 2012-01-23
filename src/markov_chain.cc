@@ -16,7 +16,6 @@ using namespace std;
 
 
 double* MarkovChain::run(DescentGraph& dg) {
-    
     // lod scorers
     vector<Peeler*> peelers;
     for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
@@ -33,12 +32,6 @@ double* MarkovChain::run(DescentGraph& dg) {
     
     MeiosisSampler msampler(ped, map);
     
-    /*
-    GPUWrapper gpu(ped, map, psg);
-    return gpu.run(dg, iterations, burnin, 10, peelers[0]->get_trait_prob());
-    */
-    
-    //exit(0);
     
     Progress p("MCMC: ", options.iterations);
     
@@ -47,7 +40,6 @@ double* MarkovChain::run(DescentGraph& dg) {
         
     for(int i = 0; i < options.iterations; ++i) {
         if(get_random() < options.lsampler_prob) {
-            /*
             #pragma omp parallel for
             for(int j = 0; j < int(map->num_markers()); j += 2) {
                 lsamplers[j]->step(dg, j);
@@ -57,12 +49,12 @@ double* MarkovChain::run(DescentGraph& dg) {
             for(int j = 1; j < int(map->num_markers()); j += 2) {
                 lsamplers[j]->step(dg, j);
             }
-            */
             
+            /*
             for(unsigned int j = 0; j < map->num_markers(); ++j) {
                 lsamplers[j]->step(dg, j);
             }
-            
+            */
         }
         else {
             msampler.reset(dg);

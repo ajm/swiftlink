@@ -279,6 +279,8 @@ void _set_defaults() {
 int linkage_analysis() {
     LinkageProgram lp(pedfile, mapfile, datfile, outfile, options, verbose);
     
+    lp.set_usegpu(use_gpu);
+    
     return lp.run() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 

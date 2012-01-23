@@ -13,7 +13,6 @@ using namespace std;
 #include "linkage_writer.h"
 #include "progress.h"
 #include "types.h"
-//#include "gpu_wrapper.h"
 
 
 double* MarkovChain::run(DescentGraph& dg) {

@@ -15,6 +15,7 @@ using namespace std;
 #include "peeler.h"
 #include "random.h"
 #include "sequential_imputation.h"
+#include "gpu_markov_chain.h"
 
 
 bool LinkageProgram::run() {
@@ -75,8 +76,16 @@ double* LinkageProgram::run_pedigree(Pedigree& p) {
     SequentialImputation si(&p, &map, &psg);
     si.run(dg, options.si_iterations);
 
-    MarkovChain chain(&p, &map, &psg, options);
-    return chain.run(dg);
+    if(not use_gpu) {
+        MarkovChain chain(&p, &map, &psg, options);
+        return chain.run(dg);
+    }
+    else {
+        GPUMarkovChain chain(&p, &map, &psg, options);
+        return chain.run(dg);
+    }
+    
+    abort();
 }
 
 void LinkageProgram::free_lodscores(vector<double*>& x) {

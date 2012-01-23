@@ -7,7 +7,8 @@
 
 #include "peeling.h"
 #include "peel_sequence_generator.h"
-#include "gpu_rfunction.h"
+//#include "gpu_rfunction.h"
+#include "types.h"
 
 
 #define fp_type double
@@ -17,11 +18,12 @@ class GeneticMap;
 class PeelSequenceGenerator;
 class DescentGraph;
 
-class GPUWrapper {
+class GPUMarkovChain {
     
     Pedigree* ped;
     GeneticMap* map;
-    PeelSequenceGenerator& psg;
+    PeelSequenceGenerator* psg;
+    struct mcmc_options options;
     
     struct gpu_state* loc_state;
     struct gpu_state* dev_state;
@@ -67,16 +69,17 @@ class GPUWrapper {
     
     
  public :
-    GPUWrapper(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator& psg) :
+    GPUMarkovChain(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator* psg, struct mcmc_options options) :
         ped(ped),
         map(map),
         psg(psg),
+        options(options),
         loc_state(NULL),
         dev_state(NULL),
         dev_graph(NULL),
         dev_lodscores(NULL) {
         
-        vector<PeelOperation>& ops = psg.get_peel_order();
+        vector<PeelOperation>& ops = psg->get_peel_order();
         
         init(ops);
         gpu_init(ops);
@@ -85,38 +88,37 @@ class GPUWrapper {
         //run_gpu_print_kernel(dev_state);
     }
         
-    GPUWrapper(const GPUWrapper& rhs) :
+    GPUMarkovChain(const GPUMarkovChain& rhs) :
         ped(rhs.ped),
         map(rhs.map),
         psg(rhs.psg),
+        options(rhs.options),
         loc_state(rhs.loc_state),
         dev_state(rhs.dev_state),
         dev_graph(rhs.dev_graph),
         dev_lodscores(rhs.dev_lodscores) {}
     
-    ~GPUWrapper() {
+    ~GPUMarkovChain() {
         kill_everything();
         
         cudaDeviceReset();
     }
     
-    GPUWrapper& operator=(const GPUWrapper& rhs) {
-        
+    GPUMarkovChain& operator=(const GPUMarkovChain& rhs) {
         if(&rhs != this) {
             ped = rhs.ped;
             map = rhs.map;
             psg = rhs.psg;
+            options = rhs.options;
             loc_state = rhs.loc_state; // XXX this could be a problem, but I don't keep PeelSequenceGenerator obj
             dev_state = rhs.dev_state;
             dev_graph = rhs.dev_graph;
             dev_lodscores = rhs.dev_lodscores;
         }
-        
         return *this;
     }
     
-    void step(DescentGraph& dg);
-    double* run(DescentGraph& dg, unsigned int iterations, unsigned int burnin, unsigned int scoring_period, double trait_likelihood);
+    double* run(DescentGraph& dg);
 };
 
 #endif

@@ -14,7 +14,7 @@ using namespace std;
 #include "cuda_common.h"
 //#include "tinymt/tinymt32_host.h"
 
-#include "gpu_wrapper.h"
+#include "gpu_markov_chain.h"
 
 #include "peeling.h"
 #include "pedigree.h"
@@ -22,6 +22,7 @@ using namespace std;
 #include "genetic_map.h"
 #include "descent_graph.h"
 #include "progress.h"
+#include "random.h"
 
 #include "peeler.h"
 #include <vector>
@@ -51,7 +52,7 @@ do {\
  * do the rest once they are finished (would be amazingly cool as MCMCMC
  * would become easier to implement)
  */
-size_t GPUWrapper::calculate_memory_requirements(vector<PeelOperation>& ops) {
+size_t GPUMarkovChain::calculate_memory_requirements(vector<PeelOperation>& ops) {
     size_t mem_per_sampler;
     size_t mem_pedigree;
     size_t mem_map;
@@ -91,33 +92,33 @@ size_t GPUWrapper::calculate_memory_requirements(vector<PeelOperation>& ops) {
     return (num_samplers() * mem_per_sampler) + mem_pedigree + mem_map + mem_rand + mem_fag + sizeof(struct gpu_state) + (sizeof(int) * ped->num_members());
 }
 
-unsigned GPUWrapper::num_samplers() {
+unsigned GPUMarkovChain::num_samplers() {
     return map->num_markers();
 }
 
-int GPUWrapper::num_threads_per_block() {
+int GPUMarkovChain::num_threads_per_block() {
     return NUM_THREADS;
 }
 
-int GPUWrapper::lsampler_num_blocks() {
+int GPUMarkovChain::lsampler_num_blocks() {
     return (map->num_markers() / 2) + ((map->num_markers() % 2) == 0 ? 0 : 1);
 }
 
-int GPUWrapper::num_blocks() {
+int GPUMarkovChain::num_blocks() {
     return lsampler_num_blocks();
 }
 
-int GPUWrapper::msampler_num_blocks() {
+int GPUMarkovChain::msampler_num_blocks() {
     return (map->num_markers() / 8) + ((map->num_markers() % 8) == 0 ? 0 : 1);
     // 8 because I will use 256 threads
     // 256 (threads) / 32 (threads per warp) = 8
 }
 
-int GPUWrapper::lodscore_num_blocks() {
+int GPUMarkovChain::lodscore_num_blocks() {
     return map->num_markers() - 1;
 }
 
-int GPUWrapper::convert_type(enum peeloperation type) {
+int GPUMarkovChain::convert_type(enum peeloperation type) {
     
     switch(type) {
         case CHILD_PEEL:
@@ -134,7 +135,7 @@ int GPUWrapper::convert_type(enum peeloperation type) {
     abort();
 }
 
-void GPUWrapper::kill_everything() {
+void GPUMarkovChain::kill_everything() {
     // rfunctions
     for(int i = 0; i < loc_state->functions_length; ++i) {
         struct rfunction* rf = &(loc_state->functions[i]);
@@ -169,7 +170,7 @@ void GPUWrapper::kill_everything() {
     free(loc_state);
 }
 
-void GPUWrapper::init(vector<PeelOperation>& ops) {
+void GPUMarkovChain::init(vector<PeelOperation>& ops) {
     
     size_t mem_needed = calculate_memory_requirements(ops);
     /*
@@ -197,7 +198,7 @@ void GPUWrapper::init(vector<PeelOperation>& ops) {
     init_founderallelegraph();
 }
 
-void GPUWrapper::gpu_init(vector<PeelOperation>& ops) {
+void GPUMarkovChain::gpu_init(vector<PeelOperation>& ops) {
     select_best_gpu();
     
     struct gpu_state tmp;
@@ -227,7 +228,7 @@ void GPUWrapper::gpu_init(vector<PeelOperation>& ops) {
     CUDA_CALLANDTEST(cudaMemcpy(dev_state, &tmp, sizeof(struct gpu_state), cudaMemcpyHostToDevice));
 }
 
-curandState* GPUWrapper::gpu_init_random_curand() {
+curandState* GPUMarkovChain::gpu_init_random_curand() {
     long int* host_seeds;
     long int* dev_seeds;
     curandState* dev_rng_state;
@@ -274,7 +275,7 @@ curandState* GPUWrapper::gpu_init_random_curand() {
     return dev_rng_state;
 }
 /*
-tinymt32_status_t* GPUWrapper::gpu_init_random_tinymt() {
+tinymt32_status_t* GPUMarkovChain::gpu_init_random_tinymt() {
     uint32_t* params;
     uint32_t* dparams;
     uint32_t* seeds;
@@ -345,7 +346,7 @@ tinymt32_status_t* GPUWrapper::gpu_init_random_tinymt() {
     return dev_rng_state;
 }
 */
-void GPUWrapper::init_founderallelegraph() {
+void GPUMarkovChain::init_founderallelegraph() {
 
     int num_founderalleles = ped->num_founders() * 2;
     
@@ -371,7 +372,7 @@ void GPUWrapper::init_founderallelegraph() {
     find_founderallelegraph_ordering(loc_state);
 }
 
-struct founderallelegraph* GPUWrapper::gpu_init_founderallelegraph() {
+struct founderallelegraph* GPUMarkovChain::gpu_init_founderallelegraph() {
     
     int num_founderalleles = ped->num_founders() * 2;
     
@@ -396,7 +397,7 @@ struct founderallelegraph* GPUWrapper::gpu_init_founderallelegraph() {
     return dev_fag;
 }
 
-void GPUWrapper::init_descentgraph() {
+void GPUMarkovChain::init_descentgraph() {
     
     loc_state->dg = (struct descentgraph*) malloc(sizeof(struct descentgraph));
     if(!(loc_state->dg)) {
@@ -415,7 +416,7 @@ void GPUWrapper::init_descentgraph() {
     }
 }
 
-struct descentgraph* GPUWrapper::gpu_init_descentgraph() {
+struct descentgraph* GPUMarkovChain::gpu_init_descentgraph() {
 
     struct descentgraph tmp;
     struct descentgraph* dev_dg;
@@ -435,7 +436,7 @@ struct descentgraph* GPUWrapper::gpu_init_descentgraph() {
     return dev_dg;
 }
 
-void GPUWrapper::init_map() {
+void GPUMarkovChain::init_map() {
     
     loc_state->map = (struct geneticmap*) malloc(sizeof(struct geneticmap));
     if(!(loc_state->map)) {
@@ -498,7 +499,7 @@ void GPUWrapper::init_map() {
     }
 }
 
-struct geneticmap* GPUWrapper::gpu_init_map() {
+struct geneticmap* GPUMarkovChain::gpu_init_map() {
     
     struct geneticmap tmp;
     struct geneticmap* dev_map;
@@ -525,7 +526,7 @@ struct geneticmap* GPUWrapper::gpu_init_map() {
     return dev_map;
 }
 
-void GPUWrapper::init_pedigree() {
+void GPUMarkovChain::init_pedigree() {
 
     loc_state->pedigree_length = ped->num_members();
     loc_state->pedigree = (struct person*) malloc(ped->num_members() * sizeof(struct person));
@@ -566,7 +567,7 @@ void GPUWrapper::init_pedigree() {
     }
 }
 
-struct person* GPUWrapper::gpu_init_pedigree() {
+struct person* GPUMarkovChain::gpu_init_pedigree() {
     
     struct person tmp;
     struct person* dev_ped;
@@ -604,7 +605,7 @@ struct person* GPUWrapper::gpu_init_pedigree() {
     return dev_ped;
 }
 
-void GPUWrapper::init_rfunctions(vector<PeelOperation>& ops) {
+void GPUMarkovChain::init_rfunctions(vector<PeelOperation>& ops) {
     
     // need to allocate a shed-load of r-functions
     loc_state->functions_length = num_samplers() * ops.size();
@@ -677,7 +678,7 @@ void GPUWrapper::init_rfunctions(vector<PeelOperation>& ops) {
     
 }
 
-struct rfunction* GPUWrapper::gpu_init_rfunctions(vector<PeelOperation>& ops) {
+struct rfunction* GPUMarkovChain::gpu_init_rfunctions(vector<PeelOperation>& ops) {
     
     struct rfunction tmp;
     struct rfunction* dev_rfunc;
@@ -712,7 +713,7 @@ struct rfunction* GPUWrapper::gpu_init_rfunctions(vector<PeelOperation>& ops) {
     return dev_rfunc;
 }
 
-fp_type* GPUWrapper::gpu_init_lodscores() {
+fp_type* GPUMarkovChain::gpu_init_lodscores() {
     fp_type* tmp;
     
     CUDA_CALLANDTEST(cudaMalloc((void**)&tmp, sizeof(fp_type) * (map->num_markers() - 1)));
@@ -726,68 +727,23 @@ fp_type* GPUWrapper::gpu_init_lodscores() {
     return tmp;
 }
 
-void GPUWrapper::copy_to_gpu(DescentGraph& dg) {
+void GPUMarkovChain::copy_to_gpu(DescentGraph& dg) {
     for(unsigned i = 0; i < unsigned(loc_state->dg->graph_length); ++i) {
         loc_state->dg->graph[i] = dg.get_bit(i);
     }
 }
 
-void GPUWrapper::copy_from_gpu(DescentGraph& dg) {
+void GPUMarkovChain::copy_from_gpu(DescentGraph& dg) {
     for(unsigned i = 0; i < unsigned(loc_state->dg->graph_length); ++i) {
         dg.set_bit(i, loc_state->dg->graph[i]);
     }
 }
 
-void GPUWrapper::step(DescentGraph& dg) {
-    /*
-    cudaEvent_t start, stop;
-    double time;
-    
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
-    */
-    
-    CUDA_CALLANDTEST(cudaMemcpy(dev_graph, dg.get_internal_ptr(), dg.get_internal_size(), cudaMemcpyHostToDevice));
-    
-    /*
-    cudaEventRecord(start, 0);
-    */
-    
-    //run_gpu_lsampler_kernel(num_blocks(), num_threads_per_block(), dev_state);
-    
-    cudaThreadSynchronize();
-    
-    /*
-    cudaEventRecord(stop, 0);
-    cudaEventSynchronize(stop);
-    */
-    
-    cudaError_t error = cudaGetLastError();
-    if(error != cudaSuccess) {
-        printf("CUDA kernel error: %s\n", cudaGetErrorString(error));
-        abort();
-    }
-    
-    CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
-    
-    //printf("%s\n", dg.debug_string().c_str());
-    
-    /*
-    cudaEventElapsedTime(&time, start, stop);
-    cudaEventDestroy(start);
-    cudaEventDestroy(stop);
-    
-    printf("kernel took %.2fms\n", time);
-    
-    abort();
-    */
-}
-
-int GPUWrapper::windowed_msampler_blocks(int window_length) {
+int GPUMarkovChain::windowed_msampler_blocks(int window_length) {
     return (map->num_markers() / window_length) + ((map->num_markers() % window_length) == 0 ? 0 : 1);
 }
 
-double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int burnin, unsigned int scoring_period, double trait_likelihood) {
+double* GPUMarkovChain::run(DescentGraph& dg) {
     int count = 0;
     int even_count;
     int odd_count;
@@ -801,6 +757,9 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
     //int msampler_blocks = (map->num_markers() / 10) + ((map->num_markers() % 10) == 0 ? 0 : 1);
     int window_index = 0;
     int window_length[] = {11, 13, 17};
+    
+    Peeler peel(ped, map, psg, 0);
+    double trait_likelihood = peel.get_trait_prob();
     
     /*
     run_gpu_print_kernel(dev_state);
@@ -832,12 +791,12 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
     
     CUDA_CALLANDTEST(cudaMemcpy(dev_graph, dg.get_internal_ptr(), dg.get_internal_size(), cudaMemcpyHostToDevice));
     
-    Progress p("CUDA MCMC: ", iterations);
+    Progress p("CUDA MCMC: ", options.iterations);
     
     
-    for(unsigned i = 0; i < iterations; ++i) {
+    for(int i = 0; i < options.iterations; ++i) {
         
-        if(get_random() < 0.5) {
+        if(get_random() < options.lsampler_prob) {
         //if((i % 2) == 0) {
             //printf("lsampler\n");
             run_gpu_lsampler_kernel(even_count, num_threads_per_block(), dev_state, 0);            
@@ -903,10 +862,10 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
         
         p.increment();
         
-        if(i < burnin)
+        if(i < options.burnin)
             continue;
         
-        if((i % scoring_period) == 0) {
+        if((i % options.scoring_period) == 0) {
             /*
             for(int i = 0; i < int(map->num_markers() - 1); ++i) {
                 peelers[i]->process(&dg);
@@ -957,7 +916,7 @@ double* GPUWrapper::run(DescentGraph& dg, unsigned int iterations, unsigned int 
     return data;
 }
 
-void GPUWrapper::select_best_gpu() {
+void GPUMarkovChain::select_best_gpu() {
     int num_devices;
     int i;
 
@@ -980,7 +939,7 @@ void GPUWrapper::select_best_gpu() {
     }
 }
 
-void GPUWrapper::find_founderallelegraph_ordering(struct gpu_state* state) {
+void GPUMarkovChain::find_founderallelegraph_ordering(struct gpu_state* state) {
     vector<unsigned> seq;
     vector<bool> visited(ped->num_members(), false);
     int total = ped->num_members();
@@ -1018,7 +977,7 @@ void GPUWrapper::find_founderallelegraph_ordering(struct gpu_state* state) {
     }
 }
 
-void GPUWrapper::print_person(struct person* p) {
+void GPUMarkovChain::print_person(struct person* p) {
     printf( "\tid: %d\n"
             "\tmother: %d\n"
             "\tfather: %d\n"

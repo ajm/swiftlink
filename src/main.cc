@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <getopt.h>
 
+#include <omp.h>
+
 #include "types.h"
 #include "defaults.h"
 #include "linkage_program.h"
@@ -276,6 +278,10 @@ void _set_defaults() {
     options.temperature     = 0.0;
 }
 
+void _set_runtime_parameters() {
+    omp_set_num_threads(thread_count);
+}
+
 int linkage_analysis() {
     LinkageProgram lp(pedfile, mapfile, datfile, outfile, options, verbose);
     
@@ -306,6 +312,9 @@ int main(int argc, char **argv) {
     _set_defaults();
     
 	_handle_args(argc, argv);
+	
+	_set_runtime_parameters();
+	
 	
 	return linkage_analysis();
     

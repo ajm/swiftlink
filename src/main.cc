@@ -9,6 +9,7 @@
 #include <cerrno>
 #include <climits>
 #include <unistd.h>
+#include <getopt.h>
 
 #include "types.h"
 #include "defaults.h"
@@ -16,54 +17,59 @@
 //#include "test_program.h"
 //#include "haplotype_program.h"
 
-
+/*
 enum analysistype {
     LINKAGE,
     HAPLOTYPE,
     TESTING
 };
+*/
 
 char* mapfile = NULL;
 char* pedfile = NULL;
 char* datfile = NULL;
 char* outfile = DEFAULT_RESULTS_FILENAME;
-int iterations = DEFAULT_MCMC_ITERATIONS;
+int mcmc_iterations = DEFAULT_MCMC_ITERATIONS;
+int burnin_iterations = DEFAULT_BURNIN_ITERATIONS;
+int sequential_imputation_iterations = DEFAULT_SEQUENTIALIMPUTATION_ITERATIONS;
+int scoring_period = DEFAULT_SCORING_PERIOD;
 bool verbose = false;
-enum analysistype analysis = LINKAGE;
+//enum analysistype analysis = LINKAGE;
+int thread_count = DEFAULT_THREAD_COUNT;
+bool use_gpu = false;
+double lsampler_prob = DEFAULT_LSAMPLER_PROB;
+
 
 
 void _usage(char *prog) {
 	fprintf(stderr,
-			"Usage: %s [-hv] -p pedigreefile -m mapfile -d datfile\n"
-			"\t-p <pedigree file>\n"
-			"\t-m <map file>\n"
-			"\t-d <data file>\n"
-            "\t-o <output file>\n"
-			"\t-a <linkage|haplotype> (default: linkage)\n"
-            "\t-i <iterations>\n"
-			"\t-v verbose\n"
-			"\t-h print usage information\n"
-			"\n", 
-			prog);
+"Usage: %s [OPTION] -p pedfile -m mapfile -d datfile\n"
+"\n"
+"Input files:\n"
+"  -p pedfile, --pedigree=pedfile\n"
+"  -m mapfile, --map=mapfile\n"
+"  -d datfile, --dat=datfile\n"
+"\n"
+"Output files:\n"
+"  -o outfile, --output=outfile\n"
+"\n"
+"MCMC options:\n"
+"  -i NUM,     --iterations=NUM\n"
+"  -b NUM,     --burnin=NUM\n"
+"  -s NUM,     --sequentialimputation=NUM\n"
+"  -l FLOAT,   --lsamplerprobability=FLOAT\n"
+"\n"
+"Runtime options:\n"
+"  -n NUM, --cores=NUM\n"
+"  -g, --gpu\n"
+"\n"
+"Misc:\n"
+"  -v, --verbose\n"
+"  -h, --help\n"
+"\n", prog);
 }
 
-void _meow(void) {
-	fprintf(stderr,
-			" __________\n"
-			"|          |\n"
-			"|   meow   |\n"
-			"|____   ___|\n"
-			"      \\| _\n"
-			"         \\`.|\\\n"
-			"         /  ' `\n"
-			"         )/' _/\n"
-			"         `-'\"\n"
-			);
-	
-	exit(EXIT_SUCCESS);
-}
-
-bool str2int(int &i, char *s) {
+bool str2int(int &i, char* s) {
     char* end;
     long l;
     errno = 0;
@@ -83,14 +89,56 @@ bool str2int(int &i, char *s) {
     return true;
 }
 
+bool str2float(double &i, char *s) {
+    char* end;
+    double d;
+    errno = 0;
+    
+    d = strtod(s, &end);
+    
+    // overflow
+    if((errno = ERANGE) and (d == HUGE_VAL)) {
+        return false;
+    }
+    
+    // underflow
+    if((errno = ERANGE) and (d == 0.0)) {
+        return false;
+    }
+        
+    if ((*s == '\0') or (*end != '\0')) {
+        return false;
+    }
+    
+    i = d;
+    return true;
+}
 
 void _handle_args(int argc, char **argv) {
 	extern char *optarg;
     extern int optopt;
 	int ch;
-	int bad = 0;
-		
-	while ((ch = getopt(argc, argv, ":p:d:m:o:i:a:vhc")) != -1) {
+	
+	static struct option long_options[] = 
+	    {
+	        {"verbose",             no_argument,        0,      'v'},
+	        {"help",                no_argument,        0,      'h'},
+	        {"iterations",          required_argument,  0,      'i'},
+	        {"burnin",              required_argument,  0,      'b'},
+	        {"sequentialimputation",required_argument,  0,      's'},
+	        {"lsamplerprobability", required_argument,  0,      'l'},
+	        {"gpu",                 no_argument,        0,      'g'},
+	        {"cores",               required_argument,  0,      'n'},
+	        {"pedigree",            required_argument,  0,      'p'},
+	        {"map",                 required_argument,  0,      'm'},
+	        {"dat",                 required_argument,  0,      'd'},
+	        {"output",              required_argument,  0,      'o'},
+	        {0, 0, 0, 0}
+	    };
+    
+    int option_index = 0;
+    
+	while ((ch = getopt_long(argc, argv, ":p:d:m:o:i:b:s:l:n:vhcg", long_options, &option_index)) != -1) {
 		switch (ch) {
 			case 'p':
 				pedfile = optarg;
@@ -113,19 +161,51 @@ void _handle_args(int argc, char **argv) {
                 break;
                 
             case 'i':
-                if(not str2int(iterations, optarg)) {
-                    fprintf(stderr, "%s: option '-%c' requires an int as an argument (%s given)\n", argv[0], optopt, optarg);
+                if(not str2int(mcmc_iterations, optarg)) {
+                    fprintf(stderr, "%s: option '-i' requires an int as an argument ('%s' given)\n", argv[0], optarg);
                     exit(EXIT_FAILURE);
                 }
                 break;
-            /*    
+                
             case 'b':
-                if(not str2int(burnin, optarg)) {
-                    fprintf(stderr, "%s: option '-%c' requires an int as an argument (%s given)\n", argv[0], optopt, optarg);
+                if(not str2int(burnin_iterations, optarg)) {
+                    fprintf(stderr, "%s: option '-b' requires an int as an argument ('%s' given)\n", argv[0], optarg);
                     exit(EXIT_FAILURE);
                 }
                 break;
-            */
+                
+            case 's':
+                if(not str2int(sequential_imputation_iterations, optarg)) {
+                    fprintf(stderr, "%s: option '-s' requires an int as an argument ('%s' given)\n", argv[0], optarg);
+                    exit(EXIT_FAILURE);
+                }
+                break;
+                
+            case 'n':
+                if(not str2int(thread_count, optarg)) {
+                    fprintf(stderr, "%s: option '-n' requires an int as an argument ('%s' given)\n", argv[0], optarg);
+                    exit(EXIT_FAILURE);
+                }
+                break;
+                
+            case 'l':
+                if(not str2float(lsampler_prob, optarg)) {
+                    fprintf(stderr, "%s: option '-l' requires a float (>=0, <= 1) as an argument ('%s' given)\n", argv[0], optarg);
+                    exit(EXIT_FAILURE);
+                }
+                
+                if((lsampler_prob < 0.0) or (lsampler_prob > 1.0)) {
+                    fprintf(stderr, "%s: option '-l' requires an argument >= 0 and <= 1 (%.3f given)\n", argv[0], lsampler_prob);
+                    exit(EXIT_FAILURE);
+                }
+                
+                break;
+                
+            case 'g':
+                use_gpu = true;
+                break;
+            
+            /*
 		    case 'a':
 		        if(strcmp(optarg, "linkage") == 0) {
 		            analysis = LINKAGE;
@@ -143,13 +223,10 @@ void _handle_args(int argc, char **argv) {
 		            exit(EXIT_FAILURE);
 		        }
 		        break;
-		        
+		    */
 			case 'h':
 				_usage(argv[0]);
 				exit(EXIT_SUCCESS);
-				
-			case 'c':
-				_meow();
 				
             case ':':
                 fprintf(stderr, "%s: option '-%c' requires an argument\n", 
@@ -164,27 +241,23 @@ void _handle_args(int argc, char **argv) {
 		}
 	}
 	
-	if(mapfile == NULL) {
-		fprintf(stderr, "error: you must specify a map file\n");
-		bad = 1;
+	if((mapfile == NULL) or (pedfile == NULL) or (datfile == NULL)) {
+	    fprintf(stderr, 
+	    "\n"
+	    "-----------------------------------------------------------\n"
+	    "|                                                         |\n"
+	    "|  error: at a minimum you must specify a pedigree file,  |\n"
+	    "|         a map file and a linkage format dat file        |\n"
+	    "|                                                         |\n"
+	    "-----------------------------------------------------------\n"
+	    "\n");
+        _usage(argv[0]);
+        exit(EXIT_FAILURE);
 	}
-	
-	if(pedfile == NULL) {
-		fprintf(stderr, "error: you must specify a pedigree file\n");
-		bad = 1;
-	}
-	
-	if(datfile == NULL) {
-		fprintf(stderr, "error: you must specify a data file\n");
-		bad = 1;
-	}
-	
-	if(bad)
-		exit(EXIT_FAILURE);
 }
 
 int linkage_analysis() {
-    LinkageProgram lp(pedfile, mapfile, datfile, outfile, iterations, verbose);
+    LinkageProgram lp(pedfile, mapfile, datfile, outfile, mcmc_iterations, verbose);
     
     return lp.run() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
@@ -202,14 +275,17 @@ int haplotype_analysis() {
 }
 
 int testing_mode() {
-    //TestProgram tp(pedfile, mapfile, datfile, outfile, iterations, verbose);
+    //TestProgram tp(pedfile, mapfile, datfile, outfile, mcmc_iterations, verbose);
     //return tp.run() ? EXIT_SUCCESS : EXIT_FAILURE;
     return EXIT_FAILURE;
 }
 
 int main(int argc, char **argv) {
 	_handle_args(argc, argv);
+	
+	return linkage_analysis();
     
+    /*
     switch(analysis) {
         case LINKAGE :
             return linkage_analysis();
@@ -225,4 +301,5 @@ int main(int argc, char **argv) {
     }
 
 	return EXIT_FAILURE;
+	*/
 }

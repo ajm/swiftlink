@@ -307,7 +307,8 @@ __device__ void rfunction_evaluate_element(struct rfunction* rf, struct gpu_stat
         default:
             //printf("error in rfunction_evaluate_element\n");
             //abort();
-            break;
+            __trap();
+            //break;
     }
 }
 
@@ -325,6 +326,20 @@ __device__ void rfunction_evaluate(struct rfunction* rf, struct gpu_state* state
     }
     
     __syncthreads();
+    
+    /*
+    if(threadIdx.x < rf->presum_length) {
+        rfunction_evaluate_element(rf, state, locus, threadIdx.x);
+    }
+    
+    __syncthreads();
+    
+    if(threadIdx.x < rf->matrix_length) {
+        rfunction_sum(rf, threadIdx.x);
+    }
+    
+    __syncthreads();
+    */
 }
 
 __global__ void lsampler_kernel(struct gpu_state* state, int offset) {
@@ -370,8 +385,77 @@ __global__ void lsampler_kernel(struct gpu_state* state, int offset) {
     __syncthreads();
 }
 
+__global__ void lsampler_onepeel_kernel(struct gpu_state* state, int offset, int function_offset) {
+    //int i;
+    int locus = (blockIdx.x * 2) + offset;
+    //int assignment[128];
+    
+    struct geneticmap* map = GET_MAP(state);
+    
+    
+    // populate map cache in shared memory
+    if(threadIdx.x == 0) {
+        if(locus != 0) {
+            map_cache[0] = MAP_THETA(map, locus - 1);
+            map_cache[1] = MAP_INVERSETHETA(map, locus - 1);
+        }
+        
+        if(locus != (map->map_length - 1)) {
+            map_cache[2] = MAP_THETA(map, locus);
+            map_cache[3] = MAP_INVERSETHETA(map, locus);
+        }
+        
+        map_length = map->map_length;
+    }
+    
+    __syncthreads();
+    
+    // forward peel
+    //for(i = 0; i < state->functions_per_locus; ++i) {
+        rfunction_evaluate(GET_RFUNCTION(state, function_offset, locus), state, locus);
+    //}
+}    
+
+__global__ void lsampler_sample_kernel(struct gpu_state* state, int offset) {
+    int i;
+    int locus = (blockIdx.x * 2) + offset;
+    int assignment[128];
+    struct geneticmap* map = GET_MAP(state);
+
+    // reverse peel, sampling ordered genotypes
+    if(threadIdx.x == 0) {
+        if(locus != 0) {
+            map_cache[0] = MAP_THETA(map, locus - 1);
+            map_cache[1] = MAP_INVERSETHETA(map, locus - 1);
+        }
+        
+        if(locus != (map->map_length - 1)) {
+            map_cache[2] = MAP_THETA(map, locus);
+            map_cache[3] = MAP_INVERSETHETA(map, locus);
+        }
+        
+        map_length = map->map_length;
+        
+        for(i = state->functions_per_locus - 1; i >= 0; --i) {
+            rfunction_sample(GET_RFUNCTION(state, i, locus), state, assignment);
+        }
+        
+        sample_meiosis_indicators(state, assignment, locus);
+    }
+    
+    __syncthreads();
+}
+
 void run_gpu_lsampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int offset) {
     lsampler_kernel<<<numblocks, numthreads>>>(state, offset);
+}
+
+void run_gpu_lsampler_onepeel_kernel(int numblocks, int numthreads, struct gpu_state* state, int offset, int function_index) {
+    lsampler_onepeel_kernel<<<numblocks, numthreads>>>(state, offset, function_index);
+}
+
+void run_gpu_lsampler_sample_kernel(int numblocks, int numthreads, struct gpu_state* state, int offset) {
+    lsampler_sample_kernel<<<numblocks, numthreads>>>(state, offset);
 }
 
 void setup_lsampler_kernel() {

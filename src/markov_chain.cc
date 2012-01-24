@@ -33,12 +33,12 @@ double* MarkovChain::run(DescentGraph& dg) {
     MeiosisSampler msampler(ped, map);
     
     
-    Progress p("MCMC: ", options.iterations);
+    Progress p("MCMC: ", options.iterations + options.burnin);
     
     
     unsigned num_meioses = 2 * (ped->num_members() - ped->num_founders());
         
-    for(int i = 0; i < options.iterations; ++i) {
+    for(int i = 0; i < (options.iterations + options.burnin); ++i) {
         if(get_random() < options.lsampler_prob) {
             #pragma omp parallel for
             for(int j = 0; j < int(map->num_markers()); j += 2) {

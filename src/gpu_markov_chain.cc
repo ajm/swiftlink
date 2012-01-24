@@ -786,19 +786,22 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
         peelers.push_back(tmp);
     }
     */
+    
+    //vector<PeelOperation>& ops = psg->get_peel_order();
+    
         
     printf("requesting %.2f KB (%d bytes) of shared memory per block\n", shared_mem / 1024.0, (int)shared_mem);
     
     CUDA_CALLANDTEST(cudaMemcpy(dev_graph, dg.get_internal_ptr(), dg.get_internal_size(), cudaMemcpyHostToDevice));
     
-    Progress p("CUDA MCMC: ", options.iterations);
+    Progress p("CUDA MCMC: ", options.iterations + options.burnin);
     
     
-    for(int i = 0; i < options.iterations; ++i) {
+    for(int i = 0; i < (options.iterations + options.burnin); ++i) {
         
         if(get_random() < options.lsampler_prob) {
         //if((i % 2) == 0) {
-            //printf("lsampler\n");
+            
             run_gpu_lsampler_kernel(even_count, num_threads_per_block(), dev_state, 0);            
             cudaThreadSynchronize();
             error = cudaGetLastError();
@@ -816,6 +819,49 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
             }
             
             /*
+            for(unsigned int j = 0; j < ops.size(); ++j) {
+                int num_threads = static_cast<int>(pow(4.0, ops[j].get_cutset_size() + 1));
+                
+                run_gpu_lsampler_onepeel_kernel(even_count, num_threads, dev_state, 0, j);            
+                cudaThreadSynchronize();
+                error = cudaGetLastError();
+                if(error != cudaSuccess) {
+                    printf("CUDA kernel error (%s:%d): %s\n", __FILE__, __LINE__, cudaGetErrorString(error));
+                    abort();
+                }
+            }
+            
+            run_gpu_lsampler_sample_kernel(even_count, 32, dev_state, 0);
+            cudaThreadSynchronize();
+            error = cudaGetLastError();
+            if(error != cudaSuccess) {
+                printf("CUDA kernel error (%s:%d): %s\n", __FILE__, __LINE__, cudaGetErrorString(error));
+                abort();
+            }
+            
+            
+            for(unsigned int j = 0; j < ops.size(); ++j) {
+                int num_threads = static_cast<int>(pow(4.0, ops[j].get_cutset_size() + 1));
+                
+                run_gpu_lsampler_onepeel_kernel(odd_count, num_threads, dev_state, 1, j);            
+                cudaThreadSynchronize();
+                error = cudaGetLastError();
+                if(error != cudaSuccess) {
+                    printf("CUDA kernel error (%s:%d): %s\n", __FILE__, __LINE__, cudaGetErrorString(error));
+                    abort();
+                }
+            }
+            
+            run_gpu_lsampler_sample_kernel(odd_count, 32, dev_state, 1);
+            cudaThreadSynchronize();
+            error = cudaGetLastError();
+            if(error != cudaSuccess) {
+                printf("CUDA kernel error (%s:%d): %s\n", __FILE__, __LINE__, cudaGetErrorString(error));
+                abort();
+            }
+            */
+            
+            /*
             // test legality of descent graph
             CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
             
@@ -826,7 +872,6 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
             */
         }
         else {
-            //printf("msampler\n");
             for(int j = 0; j < num_meioses; ++j) {
                 run_gpu_msampler_likelihood_kernel(msampler_num_blocks(), 256, dev_state, j, shared_mem);
                 cudaThreadSynchronize();

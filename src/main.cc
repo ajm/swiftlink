@@ -56,10 +56,11 @@ void _usage(char *prog) {
 "  -i NUM,     --iterations=NUM\n"
 "  -b NUM,     --burnin=NUM\n"
 "  -s NUM,     --sequentialimputation=NUM\n"
+"  -x NUM,     --scoringperiod=NUM\n"
 "  -l FLOAT,   --lsamplerprobability=FLOAT\n"
 "\n"
 "Runtime options:\n"
-"  -n NUM, --cores=NUM\n"
+"  -c NUM, --cores=NUM\n"
 "  -g, --gpu\n"
 "\n"
 "Misc:\n"
@@ -126,8 +127,9 @@ void _handle_args(int argc, char **argv) {
 	        {"burnin",              required_argument,  0,      'b'},
 	        {"sequentialimputation",required_argument,  0,      's'},
 	        {"lsamplerprobability", required_argument,  0,      'l'},
+	        {"scoringperiod",       required_argument,  0,      'x'},
 	        {"gpu",                 no_argument,        0,      'g'},
-	        {"cores",               required_argument,  0,      'n'},
+	        {"cores",               required_argument,  0,      'c'},
 	        {"pedigree",            required_argument,  0,      'p'},
 	        {"map",                 required_argument,  0,      'm'},
 	        {"dat",                 required_argument,  0,      'd'},
@@ -137,7 +139,7 @@ void _handle_args(int argc, char **argv) {
     
     int option_index = 0;
     
-	while ((ch = getopt_long(argc, argv, ":p:d:m:o:i:b:s:l:n:vhcg", long_options, &option_index)) != -1) {
+	while ((ch = getopt_long(argc, argv, ":p:d:m:o:i:b:s:l:c:x:vhcg", long_options, &option_index)) != -1) {
 		switch (ch) {
 			case 'p':
 				pedfile = optarg;
@@ -192,9 +194,20 @@ void _handle_args(int argc, char **argv) {
                 }
                 break;
                 
-            case 'n':
+            case 'x':
+                if(not str2int(options.scoring_period, optarg)) {
+                    fprintf(stderr, "%s: option '-x' requires an int as an argument ('%s' given)\n", argv[0], optarg);
+                    exit(EXIT_FAILURE);
+                }
+                if(options.scoring_period <= 0) {
+                    fprintf(stderr, "%s: number of sequential imputation runs must be greater than 0 (%d given)\n", argv[0], options.scoring_period);
+                    exit(EXIT_FAILURE);
+                }
+                break;
+                
+            case 'c':
                 if(not str2int(thread_count, optarg)) {
-                    fprintf(stderr, "%s: option '-n' requires an int as an argument ('%s' given)\n", argv[0], optarg);
+                    fprintf(stderr, "%s: option '-c' requires an int as an argument ('%s' given)\n", argv[0], optarg);
                     exit(EXIT_FAILURE);
                 }
                 if(thread_count < 1) {

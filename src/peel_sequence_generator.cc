@@ -279,7 +279,7 @@ int PeelSequenceGenerator::calculate_cost(vector<int>& seq) {
         
         ps.set_peeled(seq[i]);
         
-        cost += pow(4.0, p.get_cutset_size());
+        cost += pow(4.0, int(p.get_cutset_size()));
         
         //printf("%d %d\n", seq[i], p->get_cutset_size(ps));
     }

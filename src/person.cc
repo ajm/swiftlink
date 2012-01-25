@@ -236,6 +236,20 @@ bool Person::ripe_above_singular_mate(PeelingState& ps) {
     return p->ripe_above(ps);
 }
 
+bool Person::singular_unpeeled_mate(PeelingState& ps) {
+    Person* p = NULL;
+    int count = 0;
+    
+    for(unsigned i = 0; i < mates.size(); ++i) {
+        if(not ps.is_peeled(mates[i]->get_internalid())) {
+            p = mates[i];
+            count++;
+        }
+    }
+    
+    return count == 1;
+}
+
 unsigned Person::get_unpeeled_mate(PeelingState& ps) {
     
     for(unsigned i = 0; i < mates.size(); ++i) {
@@ -261,8 +275,9 @@ unsigned Person::get_unpeeled_mate(PeelingState& ps) {
  */
 
 bool Person::ripe_to_peel_down(PeelingState& ps) {
-    return ripe_above(ps) and \
-        ripe_above_singular_mate(ps);// and (count_unpeeled(children, ps) == 1);
+    //return ripe_above(ps) and ripe_above_singular_mate(ps);// and (count_unpeeled(children, ps) == 1);
+        
+    return ripe_above(ps) and singular_unpeeled_mate(ps);
 }
 
 PeelOperation Person::peel_operation(PeelingState& state) {
@@ -349,18 +364,8 @@ void Person::get_cutset(PeelOperation& operation, PeelingState& state) {
     
     visited[internal_id] = GREY;
     q.push(internal_id);
-
-/*    
-    // XXX this assumes that we are generating a simple peeling 
-    // sequence on an arbitrary graph...
-    for(unsigned int i = 0; i < ped->num_members(); ++i) {
-        if(state.is_peeled(i)) {
-            visited[i] = GREY;
-            q.push(i);
-            break;
-        }
-    }
-*/
+    
+    
     while(not q.empty()) {
 		tmp = q.front();
 		q.pop();
@@ -388,14 +393,55 @@ void Person::get_cutset(PeelOperation& operation, PeelingState& state) {
     state.toggle_peel_operation(operation);
 }
 
+int Person::get_cutset_size(PeelingState& state) {
+    queue<unsigned int> q;
+    vector<unsigned int> n;
+    vector<int> visited(ped->num_members(), WHITE);
+    unsigned int tmp, tmp2;
+    Person* p;
+    vector<int> cutset;
+    
+    visited[internal_id] = GREY;
+    q.push(internal_id);
+    
+    while(not q.empty()) {
+		tmp = q.front();
+		q.pop();
+		
+        p = ped->get_by_index(tmp);
+        p->neighbours(n, state);
+
+        for(unsigned int i = 0; i < n.size(); ++i) {
+            tmp2 = n[i];
+
+            if(not state.is_peeled(tmp2)) {
+                if(find(cutset.begin(), cutset.end(), tmp2) == cutset.end()) {
+                    cutset.push_back(tmp2);
+                }
+                
+                continue;
+            }
+
+            if(visited[tmp2] == WHITE) {
+                visited[tmp2] = GREY;
+                q.push(tmp2);
+            }
+        }
+        
+        visited[tmp] = BLACK;
+    }
+    
+    return cutset.size();
+}
+
 //--- end peeling related ---
 
 string Person::debug_string() {
     stringstream ss;
     
-    ss << "1\t" << internal_id + 1 << "\t" << paternal_id + 1 << "\t" << maternal_id + 1 << "\t" << gender << "\t" << affection;
+    //ss << "1\t" << internal_id + 1 << "\t" << paternal_id + 1 << "\t" << maternal_id + 1 << "\t" << gender << "\t" << affection;
     
-    return ss.str(); 
+    //return ss.str(); 
     
     ss.precision(DEBUG_FP_PRECISION);
     

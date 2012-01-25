@@ -259,6 +259,11 @@ class PeelingState {
         toggle_peeled(operation.get_peelnode());
     }
     
+    void reset() {
+        for(unsigned i = 0; i < peeled.size(); ++i)
+            peeled[i] = false;
+    }
+    
     string debug_string() {
         stringstream ss;
         

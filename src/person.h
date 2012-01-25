@@ -79,8 +79,9 @@ class Person {
     bool ripe_to_peel_up(PeelingState& ps);
     
     void neighbours(vector<unsigned int>& nodes, PeelingState& ps);
-    void get_cutset(PeelOperation& operation, PeelingState& state);
+    //void get_cutset(PeelOperation& operation, PeelingState& state);
     void add_mate(Person* p);
+    bool singular_unpeeled_mate(PeelingState& ps);
     
     
  public :
@@ -192,6 +193,8 @@ class Person {
     }
     
     PeelOperation peel_operation(PeelingState& state);
+    void get_cutset(PeelOperation& operation, PeelingState& state);
+    int get_cutset_size(PeelingState& state);
     
     string debug_string();
 };

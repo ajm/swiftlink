@@ -221,7 +221,7 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
             
             if(child->get_maternalid() == peel_id) {
                 child_prob *= (get_recombination_probability(dg, child_id, parent_trait, child_trait, MATERNAL) *  \
-                               get_recombination_probability(dg, child_id, other_trait, child_trait, PATERNAL));
+                               get_recombination_probability(dg, child_id, other_trait,  child_trait, PATERNAL));
             }
             else {
                 child_prob *= (get_recombination_probability(dg, child_id, parent_trait, child_trait, PATERNAL) *  \
@@ -241,3 +241,4 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
     
     pmatrix.set(pmatrix_index, total);
 }
+

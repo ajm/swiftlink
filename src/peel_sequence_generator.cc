@@ -113,8 +113,7 @@ void PeelSequenceGenerator::build_peel_order() {
     }
     
     
-    
-    
+    // use greedy solution as input to random down hill search
     vector<int> current;
     for(unsigned i = 0; i < peelorder.size(); ++i) {
         current.push_back(peelorder[i].get_peelnode());
@@ -127,7 +126,7 @@ void PeelSequenceGenerator::build_peel_order() {
     
     swap0 = swap1 = 0;
     
-    for(unsigned int i = 0; i < 1000000; ++i) {
+    for(unsigned int i = 0; i < 100000; ++i) {
         
         do {
             swap0 = get_random(current.size());
@@ -170,8 +169,6 @@ void PeelSequenceGenerator::build_peel_order() {
     for(unsigned int i = 0; i < peelorder.size(); ++i) {
         bruteforce_assignments(peelorder[i]);  
     }
-    
-    //exit(-1);
 }
 
 vector<PeelOperation>& PeelSequenceGenerator::get_peel_order() {
@@ -283,62 +280,6 @@ int PeelSequenceGenerator::calculate_cost(vector<int>& seq) {
         ps.set_peeled(seq[i]);
         
         cost += pow(4.0, p.get_cutset_size());
-        
-        //printf("%d %d\n", seq[i], p->get_cutset_size(ps));
-    }
-    
-    return cost;
-}
-
-int PeelSequenceGenerator::max_cost(vector<int>& seq, int s1, int s2) {
-    PeelingState ps(ped);
-    int cost = 0;
-    int new_cost;
-    unsigned min = s1 < s2 ? s1 : s2;
-    unsigned max = s1 < s2 ? s2 : s1;
-    
-    for(unsigned i = min; i < (max + 1); ++i) {
-        Person* per = ped->get_by_index(seq[i]);
-        PeelOperation p = per->peel_operation(ps);
-        
-        if(p.get_type() == NULL_PEEL) {
-            return -1;
-        }
-        
-        ps.set_peeled(seq[i]);
-        
-        new_cost = p.get_cutset_size();
-        
-        if(cost < new_cost) {
-            cost = new_cost;
-        }
-        
-        //printf("%d %d\n", seq[i], p->get_cutset_size(ps));
-    }
-    
-    return cost;
-}
-
-int PeelSequenceGenerator::max_cost(vector<int>& seq) {
-    PeelingState ps(ped);
-    int cost = 0;
-    int new_cost;
-    
-    for(unsigned i = 0; i < seq.size(); ++i) {
-        Person* per = ped->get_by_index(seq[i]);
-        PeelOperation p = per->peel_operation(ps);
-        
-        if(p.get_type() == NULL_PEEL) {
-            return -1;
-        }
-        
-        ps.set_peeled(seq[i]);
-        
-        new_cost = p.get_cutset_size();
-        
-        if(cost < new_cost) {
-            cost = new_cost;
-        }
         
         //printf("%d %d\n", seq[i], p->get_cutset_size(ps));
     }

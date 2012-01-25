@@ -169,3 +169,4 @@ void Rfunction::evaluate(DescentGraph* dg, double offset) {
         evaluate_element(i, dg);
     }
 }
+

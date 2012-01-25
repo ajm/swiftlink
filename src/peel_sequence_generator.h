@@ -38,8 +38,6 @@ class PeelSequenceGenerator {
     void all_possible_peels(int& unpeeled);
 
     int calculate_cost(vector<int>& seq);
-    int max_cost(vector<int>& seq, int s1, int s2);
-    int max_cost(vector<int>& seq);
     void rebuild_peel_order(vector<int>& seq);
 
   public :

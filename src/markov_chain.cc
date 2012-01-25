@@ -71,8 +71,8 @@ double* MarkovChain::run(DescentGraph& dg) {
         
         if((i % options.scoring_period) == 0) {
             #pragma omp parallel for
-            for(int i = 0; i < int(map->num_markers() - 1); ++i) {
-                peelers[i]->process(&dg);
+            for(int j = 0; j < int(map->num_markers() - 1); ++j) {
+                peelers[j]->process(&dg);
             }
         }
     }

@@ -71,14 +71,13 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
     unsigned person_id = ped->num_founders() + (parameter / 2);
     enum parentage p = static_cast<enum parentage>(parameter % 2);
     int num_markers = static_cast<int>(map->num_markers());
-    int index;
     int i, j;
     int tmp, tmp2;
     
     // forwards
     #pragma omp parallel for
     for(i = 0; i < num_markers; ++i) {
-        index = i * 2;
+        int index = i * 2;
         
         if(parameter == 0) {
             matrix[index + 0] = graph_likelihood(dg, person_id, i, p, 0);
@@ -116,7 +115,7 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
     }
     
     while(--i >= 0) {
-        index = i * 2;
+        int index = i * 2;
         for(j = 0; j < 2; ++j) {
             matrix[index + j] *= ((dg.get(person_id, i+1, p) != j) ? map->get_theta(i) : map->get_inversetheta(i));
         }

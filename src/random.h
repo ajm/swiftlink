@@ -1,19 +1,18 @@
-using namespace std;
-
-#include <cstdlib>
-
-#include "types.h"
+#ifndef LKG_RANDOM_H_
+#define LKG_RANDOM_H_
 
 
-inline void seed_random(unsigned int seed) {
-    srandom(seed);
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+    void seed_random(unsigned int seed);
+    void destroy_random();
+    double get_random();
+    int get_random_int(int limit);
+
+#ifdef __cplusplus
 }
+#endif
 
-inline double get_random() {
-    return random() / DBL_RAND_MAX;
-}
-
-inline int get_random(int limit) {
-    return get_random() * limit;
-}
-
+#endif

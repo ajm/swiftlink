@@ -13,7 +13,7 @@ using namespace std;
 
 
 PeelOperation PeelSequenceGenerator::get_random_operation(vector<PeelOperation>& v) {
-    return v[get_random(v.size())];
+    return v[get_random_int(v.size())];
 }
 
 // XXX add any heuristics related to peel operation selection here
@@ -129,8 +129,8 @@ void PeelSequenceGenerator::build_peel_order() {
     for(unsigned int i = 0; i < 100000; ++i) {
         
         do {
-            swap0 = get_random(current.size());
-            swap1 = get_random(current.size());
+            swap0 = get_random_int(current.size());
+            swap1 = get_random_int(current.size());
         
         } while(swap0 == swap1);
         

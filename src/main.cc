@@ -257,7 +257,7 @@ void _handle_args(int argc, char **argv) {
             case ':':
                 fprintf(stderr, "%s: option '-%c' requires an argument\n", 
                         argv[0], optopt);
-                break;
+                exit(EXIT_FAILURE);
                 
 			case '?':
 			default:

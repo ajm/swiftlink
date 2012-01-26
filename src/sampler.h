@@ -27,15 +27,15 @@ class Sampler {
     }
     */
     unsigned get_random_locus() {
-	    return get_random(map->num_markers());
+	    return get_random_int(map->num_markers());
     }
     
     unsigned get_random_nonfounder() {
-        return get_random(ped->num_members() - ped->num_founders()) + ped->num_founders();
+        return get_random_int(ped->num_members() - ped->num_founders()) + ped->num_founders();
     }
     
     enum parentage get_random_meiosis() {
-        return static_cast<enum parentage>(get_random(2));
+        return static_cast<enum parentage>(get_random_int(2));
     }
 
  public :

@@ -229,7 +229,7 @@ void GenotypeElimination::_random_eliminate(int** ds, unsigned locus) {
 	}
 	
 	// get random person
-	tmp = queue[get_random(qindex)];
+	tmp = queue[get_random_int(qindex)];
 	
 	// find all possible genotypes for tmp
 	qindex = 0;
@@ -240,7 +240,7 @@ void GenotypeElimination::_random_eliminate(int** ds, unsigned locus) {
         }
 	}
 	
-	tmp2 = queue[get_random(qindex)];
+	tmp2 = queue[get_random_int(qindex)];
 	
 	ds[locus][tmp] = tmp2;
 }

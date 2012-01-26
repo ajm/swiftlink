@@ -292,6 +292,7 @@ void _set_defaults() {
 }
 
 void _set_runtime_parameters() {
+    printf("setting %d threads\n", thread_count);
     omp_set_num_threads(thread_count);
 }
 

@@ -33,7 +33,8 @@ void seed_random(unsigned int seed) {
         free_mt_struct_array(mtss, mtss_count);
     }
     
-    mtss_count = omp_get_num_threads();
+    mtss_count = omp_get_max_threads() - 1;
+    printf("omp_get_num_threads() = %d\n", mtss_count + 1);
     
     // taken from new_example3.c, dcmt 0.6.1
     mtss = get_mt_parameters_st(32, 521, 0, mtss_count, 4172, &mtss_count);
@@ -67,3 +68,4 @@ void destroy_random() {
     free_mt_struct_array(mtss, mtss_count);
     mtss_count = 0;
 }
+

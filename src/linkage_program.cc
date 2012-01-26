@@ -15,7 +15,7 @@ using namespace std;
 #include "peeler.h"
 #include "random.h"
 #include "sequential_imputation.h"
-//#include "gpu_markov_chain.h"
+#include "gpu_markov_chain.h"
 
 
 bool LinkageProgram::run() {
@@ -81,9 +81,11 @@ double* LinkageProgram::run_pedigree(Pedigree& p) {
         return chain.run(dg);
     }
     else {
-        //GPUMarkovChain chain(&p, &map, &psg, options);
-        //return chain.run(dg);
+        GPUMarkovChain chain(&p, &map, &psg, options);
+        return chain.run(dg);
     }
+    
+    fprintf(stderr, "error: nothing was run (%s:%d)\n", __FILE__, __LINE__);
     
     abort();
 }

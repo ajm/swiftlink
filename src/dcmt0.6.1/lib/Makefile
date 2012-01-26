@@ -1,9 +1,9 @@
 CC = gcc
-CFLAGS = -Wall -Wmissing-prototypes -O3 -std=c99 -I../include -m32
+CFLAGS = -Wall -Wmissing-prototypes -O2 -std=c99 -I../include -m32
 OBJS = check32.o prescr.o mt19937.o eqdeg.o seive.o genmtrand.o init.o
 
 lib : $(OBJS)
-	ar -crus libdcmt.a $(OBJS)
+	ar -cvq libdcmt.a $(OBJS)
 
 init.o : dci.h init.c
 	$(CC) $(CFLAGS) -c init.c

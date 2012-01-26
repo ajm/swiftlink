@@ -40,6 +40,21 @@ double* MarkovChain::run(DescentGraph& dg) {
         
     for(int i = 0; i < (options.iterations + options.burnin); ++i) {
         if(get_random() < options.lsampler_prob) {
+            /*
+            for(unsigned int j = 0; j < map->num_markers(); ++j) {
+                lsamplers[j]->step(dg, j);
+            }
+            */
+            int batches = 10;
+            
+            for(int j = 0; j < batches; ++j) {
+                #pragma omp parallel for
+                for(int k = j; k < int(map->num_markers()); k += batches) {
+                    lsamplers[k]->step(dg, k);
+                }
+            }
+            
+            /*
             #pragma omp parallel for
             for(int j = 0; j < int(map->num_markers()); j += 2) {
                 lsamplers[j]->step(dg, j);
@@ -47,11 +62,6 @@ double* MarkovChain::run(DescentGraph& dg) {
             
             #pragma omp parallel for
             for(int j = 1; j < int(map->num_markers()); j += 2) {
-                lsamplers[j]->step(dg, j);
-            }
-            
-            /*
-            for(unsigned int j = 0; j < map->num_markers(); ++j) {
                 lsamplers[j]->step(dg, j);
             }
             */

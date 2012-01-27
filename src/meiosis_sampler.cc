@@ -63,7 +63,7 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
     if(flip)
         f4[locus].flip(person_id, parent);
     
-    return lik4;
+    return lik4 == 0 ? LOG_ZERO : log(lik4);
 }
 
 void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
@@ -94,18 +94,26 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
     
     for(i = 1; i < num_markers; ++i) {
         for(j = 0; j < 2; ++j) {
+            /*
             matrix[(i * 2) + j] *= \
                                 ( \
                                     (matrix[((i-1) * 2) + j]     * map->get_theta(i-1)) + \
                                     (matrix[((i-1) * 2) + (1-j)] * map->get_inversetheta(i-1)) \
                                 );
+            */
+            matrix[(i * 2) + j] = log_product( \
+                                       matrix[(i * 2) + j], \
+                                       log_sum( \
+                                               log_product(matrix[((i-1) * 2) + j],     map->get_theta_log(i-1)), \
+                                               log_product(matrix[((i-1) * 2) + (1-j)], map->get_inversetheta_log(i-1)) \
+                                               ) \
+                                       );
         }
     }
     
     // sample backwards
     // change descent graph in place
     i = num_markers - 1;
-    normalise(i);
     tmp = sample(i);
     tmp2 = dg.get(person_id, i, p);
     
@@ -117,10 +125,12 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
     while(--i >= 0) {
         int index = i * 2;
         for(j = 0; j < 2; ++j) {
+            /*
             matrix[index + j] *= ((dg.get(person_id, i+1, p) != j) ? map->get_theta(i) : map->get_inversetheta(i));
+            */
+            matrix[index + j] = log_product(matrix[index + j], ((dg.get(person_id, i+1, p) != j) ? map->get_theta_log(i) : map->get_inversetheta_log(i)));
         }
         
-        normalise(i);
         tmp = sample(i);
         tmp2 = dg.get(person_id, i, p);
         
@@ -131,14 +141,22 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
     }
 }
 
-void MeiosisSampler::normalise(int locus) {
-    int tmp = locus * 2;
-    
-    matrix[tmp] = matrix[tmp] / (matrix[tmp] + matrix[tmp+1]);
-    matrix[tmp+1] = 1.0 - matrix[tmp];
-}
-
 unsigned MeiosisSampler::sample(int locus) {
-    return (get_random() < matrix[locus * 2]) ? 0 : 1;
+    int index = locus * 2;
+    
+    if((matrix[index] == LOG_ZERO) and (matrix[index + 1] == LOG_ZERO)) {
+        fprintf(stderr, "error: m-sampler probability distribution sums to zero\n");
+        abort();
+    }
+    
+    if(matrix[index] == LOG_ZERO) {
+        return 1;
+    }
+        
+    if(matrix[index+1] == LOG_ZERO) {
+        return 0;
+    }
+    
+    return (log(get_random()) < (matrix[index] - log_sum(matrix[index], matrix[index + 1]))) ? 0 : 1;
 }
 

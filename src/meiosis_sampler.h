@@ -28,7 +28,6 @@ class MeiosisSampler : Sampler {
     void incremental_likelihood(DescentGraph& dg, unsigned person_id, unsigned locus, enum parentage parent, double* meiosis0, double* meiosis1);
     void find_founderallelegraph_ordering();
     
-    void normalise(int locus);
     unsigned sample(int locus);
     
  public :

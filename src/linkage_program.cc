@@ -69,6 +69,7 @@ double* LinkageProgram::run_pedigree(Pedigree& p) {
     }
     
     DescentGraph dg(&p, &map);
+    //dg.random_descentgraph();
     
     PeelSequenceGenerator psg(&p);
     psg.build_peel_order();
@@ -86,7 +87,6 @@ double* LinkageProgram::run_pedigree(Pedigree& p) {
     }
     
     fprintf(stderr, "error: nothing was run (%s:%d)\n", __FILE__, __LINE__);
-    
     abort();
 }
 

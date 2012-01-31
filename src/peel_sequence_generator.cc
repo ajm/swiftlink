@@ -112,7 +112,7 @@ void PeelSequenceGenerator::build_peel_order() {
         printf("%s\n", p.debug_string().c_str());
     }
     
-    
+    /*
     // use greedy solution as input to random down hill search
     vector<int> current;
     for(unsigned i = 0; i < peelorder.size(); ++i) {
@@ -165,7 +165,7 @@ void PeelSequenceGenerator::build_peel_order() {
     rebuild_peel_order(current);
     
     //exit(-1);
-    
+    */
     for(unsigned int i = 0; i < peelorder.size(); ++i) {
         bruteforce_assignments(peelorder[i]);  
     }

@@ -87,6 +87,6 @@ double GeneticMap::get_theta_log(unsigned int i) const {
 }
 
 double GeneticMap::get_inversetheta_log(unsigned int i) const {
-    return log1p(-thetas[i]);
+    return log(inversethetas[i]);
 }
 

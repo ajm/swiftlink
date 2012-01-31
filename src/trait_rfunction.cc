@@ -85,11 +85,11 @@ void TraitRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGrap
             
             indices[pmatrix_index][peel_id] = static_cast<int>(kid_trait);
             
-            tmp = 0.25 * get_trait_probability(peel_id, kid_trait);
+            tmp = get_trait_probability(peel_id, kid_trait);
             if(tmp == 0.0)
                 continue;
             
-            tmp *= (!dg ? 1.0 : get_recombination_probability(dg, peel_id, i, j));
+            tmp *= (!dg ? 0.25 : 0.25 * get_recombination_probability(dg, peel_id, i, j));
             if(tmp == 0.0)
                 continue;
             

@@ -611,6 +611,9 @@ __global__ void msampler_likelihood_kernel(struct gpu_state* state, int meiosis)
             fag->prob[tmp] = fag->prob[tmp2];
             fag->prob[tmp3] = founderallele_run(state, locus, personid, allele, tmp3);
         }
+        
+        fag->prob[0] = fag->prob[0] - gpu_log_sum(fag->prob[0], fag->prob[1]);
+        fag->prob[1] = fag->prob[1] - gpu_log_sum(fag->prob[0], fag->prob[1]);
     }
     //}
     //}
@@ -675,6 +678,9 @@ __global__ void msampler_sampling_kernel(struct gpu_state* state, int meiosis) {
                                         gpu_log_product(sh_matrix[i-1][0], sh_inversetheta[i-1]) \
                                     ) \
                                   );
+                                  
+            sh_matrix[i][0] = sh_matrix[i][0] - gpu_log_sum(sh_matrix[i][0], sh_matrix[i][1]);
+            sh_matrix[i][1] = sh_matrix[i][1] - gpu_log_sum(sh_matrix[i][0], sh_matrix[i][1]);
         }
         
         // backward
@@ -749,14 +755,14 @@ __global__ void msampler_window_sampling_kernel(struct gpu_state* state, int mei
             
             sh_matrix[i][0] = gpu_log_product(sh_matrix[i][0], \
                                     gpu_log_sum( \
-                                        gpu_log_product(sh_matrix[i-1][0], sh_theta[i-1]), \
-                                        gpu_log_product(sh_matrix[i-1][1], sh_inversetheta[i-1]) \
+                                        gpu_log_product(sh_matrix[i-1][0], sh_inversetheta[i-1]), \
+                                        gpu_log_product(sh_matrix[i-1][1], sh_theta[i-1]) \
                                     ) \
                                   );
             sh_matrix[i][1] = gpu_log_product(sh_matrix[i][1], \
                                     gpu_log_sum( \
-                                        gpu_log_product(sh_matrix[i-1][1], sh_theta[i-1]), \
-                                        gpu_log_product(sh_matrix[i-1][0], sh_inversetheta[i-1]) \
+                                        gpu_log_product(sh_matrix[i-1][1], sh_inversetheta[i-1]), \
+                                        gpu_log_product(sh_matrix[i-1][0], sh_theta[i-1]) \
                                     ) \
                                   );
         }

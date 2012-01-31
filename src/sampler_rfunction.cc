@@ -32,11 +32,11 @@ double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_t
     }
     
     if(not p->isfounder())
-              return 0.25;
+        return 0.25;
         
     return map->get_prob(locus, pt);
 }
-
+/*
 double SamplerRfunction::get_transmission_probability(enum phased_trait parent_trait, enum phased_trait kid_trait, enum parentage parent) {
     enum trait t = get_trait(kid_trait, parent);
     
@@ -50,7 +50,7 @@ double SamplerRfunction::get_transmission_probability(enum phased_trait parent_t
     
     return 1.0;
 }
-
+*/
 double SamplerRfunction::get_recombination_probability(DescentGraph* dg, 
                                      unsigned person_id, 
                                      enum phased_trait parent_trait, 
@@ -61,12 +61,10 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
     
     // deal with homozygotes first
     if(parent_trait == TRAIT_AA) {
-        //return (t == TRAIT_A) ? 0.5 : 0.0;
-        return (t == TRAIT_A) ? 0.25 : 0.0; // XXX <--- transmission prob as well!!!
+        return (t == TRAIT_A) ? 0.5 : 0.0;
     }
     else if(parent_trait == TRAIT_UU) {
-        //return (t == TRAIT_U) ? 0.5 : 0.0;
-        return (t == TRAIT_U) ? 0.25 : 0.0; // XXX <--- transmission prob as well!!!
+        return (t == TRAIT_U) ? 0.5 : 0.0;
     }
     
     // heterozygotes are informative, so i can look up
@@ -79,7 +77,7 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
         p = (t == TRAIT_A) ? 0 : 1;
     }
     
-    double tmp = 0.5; // XXX <--- transmission prob
+    double tmp = 1.0;
     if((locus != 0) and (not ignore_left)) {
         tmp *= ((dg->get(person_id, locus-1, parent) == p) ? antitheta2 : theta2);
     }

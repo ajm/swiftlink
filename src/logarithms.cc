@@ -11,10 +11,10 @@ double log_sum(double a, double b) {
 */
 
 double log_sum(double a, double b) {
-    if(a == LOG_ILLEGAL)
+    if(a == LOG_ZERO)
         return b;
     
-    if(b == LOG_ILLEGAL)
+    if(b == LOG_ZERO)
         return a;
     
     return log(exp(b - a) + 1) + a;

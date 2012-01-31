@@ -9,6 +9,7 @@ using namespace std;
 #include "descent_graph.h"
 #include "meiosis_sampler.h"
 #include "founder_allele_graph4.h"
+#include "random.h"
 
 
 void MeiosisSampler::reset(DescentGraph& dg) {
@@ -63,7 +64,7 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
     if(flip)
         f4[locus].flip(person_id, parent);
     
-    return lik4 == 0 ? LOG_ZERO : log(lik4);
+    return lik4 == 0.0 ? LOG_ZERO : log(lik4);
 }
 
 void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
@@ -74,7 +75,7 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
     int i, j;
     int tmp, tmp2;
     
-    // forwards
+    
     #pragma omp parallel for
     for(i = 0; i < num_markers; ++i) {
         int index = i * 2;
@@ -90,25 +91,30 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
             matrix[index + tmp] = matrix[index + tmp2];
             matrix[index + (1-tmp)] = graph_likelihood(dg, person_id, i, p, 1-tmp);
         }
+        
+        double total = log_sum(matrix[index], matrix[index+1]);
+        matrix[index] -= total;
+        matrix[index+1] -= total;
     }
     
+    // forwards
     for(i = 1; i < num_markers; ++i) {
+        int index = i * 2;
+        
         for(j = 0; j < 2; ++j) {
-            /*
-            matrix[(i * 2) + j] *= \
-                                ( \
-                                    (matrix[((i-1) * 2) + j]     * map->get_theta(i-1)) + \
-                                    (matrix[((i-1) * 2) + (1-j)] * map->get_inversetheta(i-1)) \
-                                );
-            */
-            matrix[(i * 2) + j] = log_product( \
-                                       matrix[(i * 2) + j], \
+            
+            matrix[index + j] = log_product( \
+                                       matrix[index + j], \
                                        log_sum( \
-                                               log_product(matrix[((i-1) * 2) + j],     map->get_theta_log(i-1)), \
-                                               log_product(matrix[((i-1) * 2) + (1-j)], map->get_inversetheta_log(i-1)) \
+                                               log_product(matrix[((i-1) * 2) + (1-j)], map->get_theta_log(i-1)), \
+                                               log_product(matrix[((i-1) * 2) +    j ], map->get_inversetheta_log(i-1)) \
                                                ) \
                                        );
         }
+        
+        double total = log_sum(matrix[index], matrix[index+1]);
+        matrix[index] -= total;
+        matrix[index+1] -= total;
     }
     
     // sample backwards
@@ -124,11 +130,12 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
     
     while(--i >= 0) {
         int index = i * 2;
+        
         for(j = 0; j < 2; ++j) {
-            /*
-            matrix[index + j] *= ((dg.get(person_id, i+1, p) != j) ? map->get_theta(i) : map->get_inversetheta(i));
-            */
-            matrix[index + j] = log_product(matrix[index + j], ((dg.get(person_id, i+1, p) != j) ? map->get_theta_log(i) : map->get_inversetheta_log(i)));
+            matrix[index + j] = log_product(\
+                                    matrix[index + j], \
+                                    ((dg.get(person_id, i+1, p) != j) ? map->get_theta_log(i) : map->get_inversetheta_log(i)) \
+                                );
         }
         
         tmp = sample(i);

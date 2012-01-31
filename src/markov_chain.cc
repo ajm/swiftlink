@@ -41,10 +41,17 @@ double* MarkovChain::run(DescentGraph& dg) {
     for(int i = 0; i < (options.iterations + options.burnin); ++i) {
         if(get_random() < options.lsampler_prob) {
             /*
+            int j = get_random_int(map->num_markers());
+            
+            lsamplers[j]->step(dg, j);
+            */
+            
+            /*
             for(unsigned int j = 0; j < map->num_markers(); ++j) {
                 lsamplers[j]->step(dg, j);
             }
             */
+            
             int batches = 10;
             
             for(int j = 0; j < batches; ++j) {
@@ -67,11 +74,28 @@ double* MarkovChain::run(DescentGraph& dg) {
             */
         }
         else {
+            
             msampler.reset(dg);
             for(unsigned int j = 0; j < num_meioses; ++j) {
                 msampler.step(dg, j);
             }
+            
+            
+            /*
+            int j = get_random_int(num_meioses);
+            
+            msampler.reset(dg);
+            msampler.step(dg, j);
+            */
         }
+        
+        /*
+        //XXX
+        if(dg.get_likelihood() == LOG_ILLEGAL) {
+            fprintf(stderr, "error: descent graph illegal...\n");
+            abort();
+        }
+        */
         
         p.increment();
         

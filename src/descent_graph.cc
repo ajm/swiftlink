@@ -191,7 +191,7 @@ double DescentGraph::get_recombination_prob(unsigned locus, bool count_crossover
                 ++recombinations;
             }
 				
-            tmp += crossover ? theta : antitheta ;
+            tmp += (crossover ? theta : antitheta) ;
         }
     }
     

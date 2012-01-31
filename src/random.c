@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <omp.h>
+#include <float.h>
 
 #if __GNUC__
 #if __x86_64__
@@ -24,9 +25,11 @@ static int mtss_count;
 void seed_random(unsigned int seed) {
     //srandom(seed);
     //init_genrand(seed);
+    
     int i;
     
     srandom(seed);
+    
     
     // if it has been initialised before
     if(mtss) {
@@ -53,13 +56,13 @@ void seed_random(unsigned int seed) {
 }
 
 double get_random() {
-    //return random() / DBL_RAND_MAX;
+    //return random() / (double)RAND_MAX;
     //return genrand_real1();
     return genrand_mt(mtss[omp_get_thread_num()]) * (1.0/4294967295.0);
 }
 
 int get_random_int(int limit) {
-    //return get_random() % limit;
+    //return get_random() * limit;
     //return genrand_int32() % limit;
     return genrand_mt(mtss[omp_get_thread_num()]) % limit;
 }

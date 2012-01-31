@@ -53,7 +53,7 @@ void SequentialImputation::run(DescentGraph& dg, int iterations) {
 */
 
 void SequentialImputation::run(DescentGraph& dg, int iterations) {
-    double best_prob = LOG_ILLEGAL;
+    double best_prob = LOG_ZERO;
     
     if(iterations == 0) {
         return;

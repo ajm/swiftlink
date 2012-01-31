@@ -356,10 +356,12 @@ void GPUMarkovChain::init_founderallelegraph() {
         abort();
     }
     
+    /*
     for(unsigned i = 0; i < map->num_markers(); ++i) {
         loc_state->graphs[i].num_neighbours = (int*) malloc(sizeof(int) * num_founderalleles);
         loc_state->graphs[i].graph = (struct adjacent_node*) malloc(sizeof(struct adjacent_node*) * num_founderalleles * num_founderalleles);        
     }
+    */
     
     loc_state->founderallele_count = num_founderalleles;
     
@@ -374,7 +376,7 @@ void GPUMarkovChain::init_founderallelegraph() {
 
 struct founderallelegraph* GPUMarkovChain::gpu_init_founderallelegraph() {
     
-    int num_founderalleles = ped->num_founders() * 2;
+    //int num_founderalleles = ped->num_founders() * 2;
     
     struct founderallelegraph* tmp = (struct founderallelegraph*) malloc(sizeof(struct founderallelegraph) * map->num_markers());
     if(!tmp) {
@@ -382,10 +384,12 @@ struct founderallelegraph* GPUMarkovChain::gpu_init_founderallelegraph() {
         abort();
     }
     
+    /*
     for(unsigned i = 0; i < map->num_markers(); ++i) {
         CUDA_CALLANDTEST(cudaMalloc((void**)&(tmp[i].num_neighbours), sizeof(int) * num_founderalleles));
         CUDA_CALLANDTEST(cudaMalloc((void**)&(tmp[i].graph), sizeof(struct adjacent_node) * num_founderalleles * num_founderalleles));
     }
+    */
     
     struct founderallelegraph* dev_fag;
     

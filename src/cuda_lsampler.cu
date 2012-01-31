@@ -9,15 +9,15 @@ __device__ double rfunction_trans_prob(struct gpu_state* state, int locus, int p
     
     int trait = get_trait(child_trait, parent);
     int meiosis = 0;
-    double tmp = 0.5;
+    double tmp = 1.0;
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     //struct geneticmap* map = GET_MAP(state);
     
     switch(parent_trait) {
         case GPU_TRAIT_AA:
-            return (trait == GPU_TRAIT_A) ? 0.25 : 0.0;
+            return (trait == GPU_TRAIT_A) ? 0.5 : 0.0;
         case GPU_TRAIT_BB:
-            return (trait == GPU_TRAIT_B) ? 0.25 : 0.0;
+            return (trait == GPU_TRAIT_B) ? 0.5 : 0.0;
         case GPU_TRAIT_AB:
             meiosis = (trait == GPU_TRAIT_A) ? 0 : 1;
             break;

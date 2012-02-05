@@ -1,6 +1,7 @@
 #ifndef LKG_FOUNDERALLELEGRAPH4_H_
 #define LKG_FOUNDERALLELEGRAPH4_H_
 
+#include <cmath>
 #include <vector>
 #include "genotype.h"
 #include "trait.h"
@@ -36,6 +37,7 @@ class FounderAlleleGraph4 {
     void combine_components(int component1, int component2, bool flip);
     void propagate_fa_update(Person* p, enum parentage allele, int old_fa, int new_fa);
     double get_freq(enum unphased_genotype g);
+    void valid_genotype(enum unphased_genotype g);
     
  public :
 	FounderAlleleGraph4(Pedigree* p, GeneticMap* g) :

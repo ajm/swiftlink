@@ -20,6 +20,8 @@ class LocusSampler : Sampler {
     
     vector<SamplerRfunction> rfunctions;
     unsigned int locus;
+    bool ignore_left;
+    bool ignore_right;
     
     void init_rfunctions(PeelSequenceGenerator* psg);    
     unsigned sample_mi(DescentGraph& dg, enum trait allele, enum phased_trait trait, unsigned personid, enum parentage parent);
@@ -28,14 +30,16 @@ class LocusSampler : Sampler {
     
     void sample_meiosis_indicators(vector<int>& pmk, DescentGraph& dg);
     
-    void set_all(bool left, bool right);
+    void set_ignores(bool left, bool right);
 
     
  public :
     LocusSampler(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator* psg, unsigned int locus) :
         Sampler(ped, map), 
         rfunctions(),
-        locus(locus) {
+        locus(locus),
+        ignore_left(false),
+        ignore_right(false) {
         
         init_rfunctions(psg);
     }
@@ -45,7 +49,9 @@ class LocusSampler : Sampler {
     LocusSampler(const LocusSampler& rhs) : 
         Sampler(rhs.ped, rhs.map),
         rfunctions(rhs.rfunctions),
-        locus(rhs.locus) {}
+        locus(rhs.locus),
+        ignore_left(rhs.ignore_left),
+        ignore_right(rhs.ignore_right) {}
     
     LocusSampler& operator=(const LocusSampler& rhs) {
         
@@ -53,6 +59,8 @@ class LocusSampler : Sampler {
             Sampler::operator=(rhs);
             rfunctions = rhs.rfunctions;
             locus = rhs.locus;
+            ignore_left = rhs.ignore_left;
+            ignore_right = rhs.ignore_right;
         }
         
         return *this;        

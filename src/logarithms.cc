@@ -23,3 +23,4 @@ double log_sum(double a, double b) {
 double log_product(double a, double b) {
     return ((a == LOG_ZERO) or (b == LOG_ZERO)) ? LOG_ZERO : a + b;
 }
+

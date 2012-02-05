@@ -21,7 +21,14 @@ bool GeneticMap::sanity_check() {
         map[i].init_probs();
     
     for(unsigned i = 0; i < thetas.size(); ++i) {
-        double tmp = haldane((get_marker(i+1).get_g_distance() - get_marker(i).get_g_distance()) / 2.0);
+        //double tmp = haldane((get_marker(i+1).get_g_distance() - get_marker(i).get_g_distance()) / 2.0);
+        
+        // XXX I am not sure if I can trust the genetic distances in the map
+        // file, this way at least I am consistent irrespective of what the user
+        // states the map is...
+        
+        double tmp = haldane(inverse_haldane(thetas[i]) / 2.0);
+        
         half_thetas.push_back(tmp);
         half_inversethetas.push_back(1.0 - tmp);
     }
@@ -50,6 +57,10 @@ string GeneticMap::debug_string() {
 
 double GeneticMap::haldane(double m) const {
     return 0.5 * (1.0 - exp(-2.0 * m));
+}
+
+double GeneticMap::inverse_haldane(double r) const {
+    return -0.5 * log(1 - (2 * r));
 }
 
 void GeneticMap::set_temperature(double t) {

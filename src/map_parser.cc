@@ -56,7 +56,7 @@ bool MapParser::parse_line(const int linenum, const string line) {
                 filename.c_str(), linenum+1, pdist);
         return false;
     }
-
+    
     gdist /= 100.0; // XXX get to morgans
     
     Snp snp(name, gdist, pdist);

@@ -18,9 +18,6 @@ class MarkovChain {
     PeelSequenceGenerator* psg;
     struct mcmc_options options;
     
-    void initialise(DescentGraph& dg, PeelSequenceGenerator& psg);
-    void parallel_initialise(DescentGraph& dg, PeelSequenceGenerator& psg);
-    
  public :
     MarkovChain(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator* psg, struct mcmc_options options) :
         ped(ped), 

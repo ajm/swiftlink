@@ -2,6 +2,9 @@
  * the only thing this file does is handle command line arguments
  * and then call another main function
  */
+ 
+#define _GNU_SOURCE 1
+#include <fenv.h>
 
 #include <cstdio>
 #include <cstdlib>
@@ -323,6 +326,10 @@ int testing_mode() {
 }
 
 int main(int argc, char **argv) {
+    
+    feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
+    
+
     _set_defaults();
     
 	_handle_args(argc, argv);

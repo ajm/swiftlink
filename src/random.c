@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <omp.h>
 #include <float.h>
-
+/*
 #if __GNUC__
 #if __x86_64__
 #error "64 bit!"
@@ -12,6 +12,8 @@
 #include "dc.h"
 #endif
 #endif
+*/
+#include "dc.h"
 
 //#include "types.h"
 #include "random.h"
@@ -29,6 +31,8 @@ void seed_random(unsigned int seed) {
     int i;
     
     srandom(seed);
+    
+    printf("seed = %u\n", seed);
     
     
     // if it has been initialised before

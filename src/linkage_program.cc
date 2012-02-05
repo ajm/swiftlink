@@ -4,6 +4,8 @@ using namespace std;
 #include <cstdlib>
 #include <ctime>
 #include <vector>
+#include <iostream>
+#include <fstream>
 
 #include "descent_graph.h"
 #include "linkage_program.h"
@@ -21,6 +23,7 @@ using namespace std;
 bool LinkageProgram::run() {
     vector<double*> lod_scores;
     double* tmp;
+    unsigned int seed;
     
     /*
     if(verbose) {
@@ -31,12 +34,29 @@ bool LinkageProgram::run() {
     
     // TODO XXX need to know how to do this properly, 
     // look up better random numbers for simulations etc
-    seed_random(time(NULL));
+    //seed = time(NULL);
+    fstream randfile;
+    
+    randfile.open ("/dev/urandom", ios::in);
+    if(not randfile.is_open()) {
+        fprintf(stderr, "error: could not open /dev/urandom\n");
+        abort();
+    }
+      
+    randfile.read((char*)&seed, sizeof(seed));
+    
+    randfile.close();
+    
+    
+    seed_random(seed);
+    
     
     for(unsigned int i = 0; i < pedigrees.size(); ++i) {
+        /*
         if(verbose) {
             fprintf(stderr, "%s\n", pedigrees[i].debug_string().c_str());
         }
+        */
         
         // it cannot actually be NULL, the program will call
         // abort() at the slightest hint of a problem

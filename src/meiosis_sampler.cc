@@ -13,6 +13,7 @@ using namespace std;
 
 
 void MeiosisSampler::reset(DescentGraph& dg) {
+    #pragma omp parallel for
     for(unsigned i = 0; i < map->num_markers(); ++i) {
         f4[i].reset(dg);
     }

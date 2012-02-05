@@ -97,7 +97,7 @@ void SequentialImputation::run(DescentGraph& dg, int iterations) {
     
     dg = *graphs[index];
     
-    fprintf(stderr, "starting point likelihood = %e\n", best_prob);
+    printf("starting point likelihood = %e\n", best_prob / log(10));
     
     for(int i = 0; i < iterations; ++i) {
         delete lsamplers[i];

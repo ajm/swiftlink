@@ -44,12 +44,12 @@ unsigned LocusSampler::sample_homo_mi(DescentGraph& dg, unsigned personid, enum 
     prob_dist[0] = 1.0;
     prob_dist[1] = 1.0;
     
-    if(locus != 0) {
+    if((locus != 0) and (not ignore_left)) {
         prob_dist[0] *= ((dg.get(personid, locus - 1, parent) == 0) ? map->get_inversetheta(locus - 1) : map->get_theta(locus - 1));
         prob_dist[1] *= ((dg.get(personid, locus - 1, parent) == 1) ? map->get_inversetheta(locus - 1) : map->get_theta(locus - 1));
     }
     
-    if(locus != (map->num_markers() - 1)) {
+    if((locus != (map->num_markers() - 1)) and (not ignore_right)) {
         prob_dist[0] *= ((dg.get(personid, locus + 1, parent) == 0) ? map->get_inversetheta(locus) : map->get_theta(locus));
         prob_dist[1] *= ((dg.get(personid, locus + 1, parent) == 1) ? map->get_inversetheta(locus) : map->get_theta(locus));
     }
@@ -66,7 +66,8 @@ unsigned LocusSampler::sample_homo_mi(DescentGraph& dg, unsigned personid, enum 
 // if a parent is heterozygous, then there is one choice of meiosis indicator
 // if a parent is homozygous, then sample based on meiosis indicators to immediate left and right    
 unsigned LocusSampler::sample_mi(DescentGraph& dg, \
-                                 enum trait allele, enum phased_trait trait, \
+                                 enum trait allele, \
+                                 enum phased_trait trait, \
                                  unsigned personid, \
                                  enum parentage parent) {
     switch(trait) {
@@ -127,36 +128,43 @@ void LocusSampler::step(DescentGraph& dg, unsigned parameter) {
 }
 
 void LocusSampler::reset() {
-    set_all(false, false);
+    set_ignores(false, false);
 }
 
-void LocusSampler::set_all(bool left, bool right) {
-    for(unsigned i = 0; i < rfunctions.size(); ++i)
-        rfunctions[i].set_ignore(left, right);
+void LocusSampler::set_ignores(bool left, bool right) {
+    
+    ignore_left = left;
+    ignore_right = right;
+    
+    for(unsigned i = 0; i < rfunctions.size(); ++i) {
+        rfunctions[i].set_ignore(ignore_left, ignore_right);
+    }
 }
 
 void LocusSampler::sequential_imputation(DescentGraph& dg) {
     unsigned int starting_locus = get_random_locus();
     unsigned int tmp = locus;
     
-    set_all(true, true);
+    set_ignores(true, true);
     set_locus(starting_locus);
     step(dg, starting_locus);
     
     // iterate left through the markers
-    set_all(true, false);
+    set_ignores(true, false);
     for(int i = (starting_locus - 1); i >= 0; --i) {
         set_locus(i);
         step(dg, i);
     }
     
     // iterate right through the markers
-    set_all(false, true);
+    set_ignores(false, true);
     for(int i = (starting_locus + 1); i < int(map->num_markers()); ++i) {
         set_locus(i);
         step(dg, i);
     }
     
+    // reset, in case not used for more si
     set_locus(tmp);
+    set_ignores(false, false);
 }
 

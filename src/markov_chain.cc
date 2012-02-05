@@ -16,6 +16,9 @@ using namespace std;
 
 
 double* MarkovChain::run(DescentGraph& dg) {
+    //int lsampler_count = 0;
+    //int msampler_count = 0;
+    
     // lod scorers
     vector<Peeler*> peelers;
     for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
@@ -40,9 +43,10 @@ double* MarkovChain::run(DescentGraph& dg) {
         
     for(int i = 0; i < (options.iterations + options.burnin); ++i) {
         if(get_random() < options.lsampler_prob) {
+            //lsampler_count ++;
+        
             /*
             int j = get_random_int(map->num_markers());
-            
             lsamplers[j]->step(dg, j);
             */
             
@@ -52,6 +56,7 @@ double* MarkovChain::run(DescentGraph& dg) {
             }
             */
             
+            
             int batches = 10;
             
             for(int j = 0; j < batches; ++j) {
@@ -60,6 +65,7 @@ double* MarkovChain::run(DescentGraph& dg) {
                     lsamplers[k]->step(dg, k);
                 }
             }
+            
             
             /*
             #pragma omp parallel for
@@ -74,12 +80,12 @@ double* MarkovChain::run(DescentGraph& dg) {
             */
         }
         else {
+            //msampler_count ++;
             
             msampler.reset(dg);
             for(unsigned int j = 0; j < num_meioses; ++j) {
                 msampler.step(dg, j);
             }
-            
             
             /*
             int j = get_random_int(num_meioses);
@@ -98,6 +104,9 @@ double* MarkovChain::run(DescentGraph& dg) {
         */
         
         p.increment();
+        
+        //if((i % options.scoring_period) == 0)
+        //    fprintf(stderr, "%d %e\n", i, dg.get_likelihood() / log(10.0));
         
         if(i < options.burnin) {
             continue;
@@ -124,6 +133,12 @@ double* MarkovChain::run(DescentGraph& dg) {
         lod_scores[i] = peelers[i]->get();
         delete peelers[i];
     }
+    
+    /*
+    printf("L-sampler : %.3f\nM-sampler : %.3f\n", \
+        lsampler_count / double(lsampler_count + msampler_count), \
+        msampler_count / double(lsampler_count + msampler_count));
+    */
     
     return lod_scores;
 }

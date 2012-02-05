@@ -40,8 +40,8 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator* psg, unsigned 
         rfunctions[i].set_locus(locus);
     }
     
-    printf("P(T) = %e\n", trait_prob / log(10));
-    printf("PEEL SEQUENCE SCORE (lower is better) : %d\n", int(psg->score_peel_sequence()));    
+    //printf("P(T) = %e\n", trait_prob / log(10));
+    //printf("PEEL SEQUENCE SCORE (lower is better) : %d\n", int(psg->score_peel_sequence()));    
 }
 
 Peeler::Peeler(const Peeler& rhs) :
@@ -95,13 +95,13 @@ void Peeler::process(DescentGraph* dg) {
     TraitRfunction& rf = rfunctions.back();
     double prob = log(rf.get_result()) - dg->get_recombination_prob(locus, false) - dg->get_marker_transmission();
     
-    //printf("\nCPU peel %d %f\n", locus, log(rf.get_result()));
-    //printf("CPU prob %f (%f, %f, %f)\n", prob, log(rf.get_result()), dg->get_recombination_prob(locus, false), dg->get_marker_transmission());
-    
     lod_score = initialised ? log_sum(prob, lod_score) : prob, initialised = true;
     ++count;
     
-    //printf("CPU fin %f\n", lod_score);
+    if(locus == 0) {
+    //printf("PROB %f\n", prob);
+        fprintf(stderr, "%f %f\n", (lod_score - log(count) - trait_prob) / log(10.0), (prob - trait_prob) / log(10.0));
+    }
 }
 
 double Peeler::get() {

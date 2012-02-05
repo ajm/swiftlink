@@ -14,18 +14,13 @@ double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_t
     Person* p = ped->get_by_index(person_id);
     
     if(p->istyped()) {
-    
         switch(p->get_marker(locus)) {
-            
             case HETERO :
                 return ((pt == TRAIT_AU) or (pt == TRAIT_UA)) ? 0.5 : 0.0;
-                
             case HOMOZ_A :
                 return (pt == TRAIT_UU) ? 1.0 : 0.0;
-                
             case HOMOZ_B :
                 return (pt == TRAIT_AA) ? 1.0 : 0.0;
-                
             default :
                 break;
         }

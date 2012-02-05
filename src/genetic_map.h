@@ -86,6 +86,7 @@ class GeneticMap {
     double temperature;
 
     double haldane(double m) const ;
+    double inverse_haldane(double m) const;
     
  public :
     GeneticMap() : 

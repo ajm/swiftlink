@@ -12,3 +12,4 @@ double log_sum(double a, double b);
 double log_product(double a, double b);
 
 #endif
+

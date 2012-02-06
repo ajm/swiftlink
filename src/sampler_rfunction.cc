@@ -11,41 +11,46 @@ using namespace std;
 
 
 double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_trait pt) {
+    
     Person* p = ped->get_by_index(person_id);
+    
+    if(not p->isfounder()) {
+        if(p->istyped()) {
+            switch(p->get_marker(locus)) {
+                case HETERO :
+                    return ((pt == TRAIT_AU) or (pt == TRAIT_UA)) ? 1.0 : 0.0;
+                case HOMOZ_A :
+                    return (pt == TRAIT_UU) ? 1.0 : 0.0;
+                case HOMOZ_B :
+                    return (pt == TRAIT_AA) ? 1.0 : 0.0;
+                default :
+                    return 0.25;
+            }
+        }
+        else {
+            return 0.25;
+        }
+    }
     
     if(p->istyped()) {
         switch(p->get_marker(locus)) {
             case HETERO :
-                return ((pt == TRAIT_AU) or (pt == TRAIT_UA)) ? 0.5 : 0.0;
+                return ((pt == TRAIT_AU) or (pt == TRAIT_UA)) ? map->get_prob(locus, pt) : 0.0;
             case HOMOZ_A :
-                return (pt == TRAIT_UU) ? 1.0 : 0.0;
+                return (pt == TRAIT_UU) ? map->get_prob(locus, pt) : 0.0;
             case HOMOZ_B :
-                return (pt == TRAIT_AA) ? 1.0 : 0.0;
+                return (pt == TRAIT_AA) ? map->get_prob(locus, pt) : 0.0;
             default :
-                break;
+                return map->get_prob(locus, pt);
         }
     }
-    
-    if(not p->isfounder())
-        return 0.25;
-    
-    return map->get_prob(locus, pt);
-}
-/*
-double SamplerRfunction::get_transmission_probability(enum phased_trait parent_trait, enum phased_trait kid_trait, enum parentage parent) {
-    enum trait t = get_trait(kid_trait, parent);
-    
-    if(parent_trait == TRAIT_AA) {
-        return (t == TRAIT_A) ? 0.5 : 0.0;
+    else {  
+        return map->get_prob(locus, pt);
     }
     
-    if(parent_trait == TRAIT_UU) {
-        return (t == TRAIT_U) ? 0.5 : 0.0;
-    }
-    
-    return 1.0;
+    abort();
 }
-*/
+
 double SamplerRfunction::get_recombination_probability(DescentGraph* dg, 
                                      unsigned person_id, 
                                      enum phased_trait parent_trait, 
@@ -72,7 +77,8 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
         p = (t == TRAIT_A) ? 0 : 1;
     }
     
-    double tmp = 1.0;
+    double tmp = 0.5;
+    
     if((locus != 0) and (not ignore_left)) {
         tmp *= ((dg->get(person_id, locus-1, parent) == p) ? antitheta2 : theta2);
     }
@@ -113,7 +119,6 @@ void SamplerRfunction::sample(vector<int>& pmk) {
     // sample
     double r = get_random();
     total = 0.0;
-    
     
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         total += prob_dist[i];

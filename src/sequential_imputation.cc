@@ -74,8 +74,8 @@ void SequentialImputation::run(DescentGraph& dg, int iterations) {
     
     #pragma omp parallel for
     for(int i = 0; i < iterations; ++i) {
-        lsamplers[i]->sequential_imputation(*(graphs[i]));
-        likelihoods[i] = graphs[i]->get_likelihood();
+        likelihoods[i] = lsamplers[i]->sequential_imputation(*(graphs[i]));
+        //likelihoods[i] = graphs[i]->get_likelihood();
         p.increment();
     }
     
@@ -93,11 +93,13 @@ void SequentialImputation::run(DescentGraph& dg, int iterations) {
             best_prob = likelihoods[i];
             index = i;
         }
+        
+        //printf("likelihood = %e (%e)\n", likelihoods[i], likelihoods[i] / log(10));
     }
     
     dg = *graphs[index];
     
-    printf("starting point likelihood = %e\n", best_prob / log(10));
+    printf("starting point likelihood = %e (%e)\n", best_prob, best_prob / log(10));
     
     for(int i = 0; i < iterations; ++i) {
         delete lsamplers[i];

@@ -68,7 +68,7 @@ class LocusSampler : Sampler {
     
     virtual void step(DescentGraph& dg, unsigned parameter);
     
-    void sequential_imputation(DescentGraph& dg);
+    double sequential_imputation(DescentGraph& dg);
     void reset();
     
     void set_locus(unsigned int locus) {

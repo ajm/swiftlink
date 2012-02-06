@@ -84,6 +84,11 @@ class Rfunction {
             antitheta2 = map->get_inversetheta(locus-1);
         }
     }
+    
+    double get_result() { 
+        return pmatrix.get_result();
+    }
 };
 
 #endif
+

@@ -165,6 +165,7 @@ void Rfunction::evaluate(DescentGraph* dg, double offset) {
     // crucial for TraitRfunction
     this->offset = offset;
     
+    #pragma omp parallel for
     for(unsigned int i = 0; i < size; ++i) {
         evaluate_element(i, dg);
     }

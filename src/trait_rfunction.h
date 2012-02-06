@@ -33,9 +33,11 @@ class TraitRfunction : public Rfunction {
         return *this;
     }
     
+    /*
     double get_result() { 
         return pmatrix.get_result();
     }
+    */
 };
 
 #endif

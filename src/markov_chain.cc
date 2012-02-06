@@ -50,13 +50,13 @@ double* MarkovChain::run(DescentGraph& dg) {
             lsamplers[j]->step(dg, j);
             */
             
-            /*
+            
             for(unsigned int j = 0; j < map->num_markers(); ++j) {
                 lsamplers[j]->step(dg, j);
             }
-            */
             
             
+            /*
             int batches = 10;
             
             for(int j = 0; j < batches; ++j) {
@@ -65,7 +65,7 @@ double* MarkovChain::run(DescentGraph& dg) {
                     lsamplers[k]->step(dg, k);
                 }
             }
-            
+            */
             
             /*
             #pragma omp parallel for
@@ -82,10 +82,12 @@ double* MarkovChain::run(DescentGraph& dg) {
         else {
             //msampler_count ++;
             
+            
             msampler.reset(dg);
             for(unsigned int j = 0; j < num_meioses; ++j) {
                 msampler.step(dg, j);
             }
+            
             
             /*
             int j = get_random_int(num_meioses);
@@ -113,7 +115,7 @@ double* MarkovChain::run(DescentGraph& dg) {
         }
         
         if((i % options.scoring_period) == 0) {
-            #pragma omp parallel for
+            //#pragma omp parallel for
             for(int j = 0; j < int(map->num_markers() - 1); ++j) {
                 peelers[j]->process(&dg);
             }

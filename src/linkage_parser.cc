@@ -240,7 +240,7 @@ bool LinkageParser::read_abstract_marker() {
 			}
 			
 			// XXX only suitable for SNPs and traits
-			marker_freq = (*af)[0];
+			marker_freq = (*af)[1];
 			
 			delete af;
 			marker_linenum++;
@@ -316,7 +316,7 @@ bool LinkageParser::read_affection_status() {
 			}
 
 			// seems like they are in the opposite order to numbered alleles (?)
-			dis.set_freq(1 - marker_freq);
+			dis.set_freq(marker_freq);
 			
 			delete af;
 			marker_end();

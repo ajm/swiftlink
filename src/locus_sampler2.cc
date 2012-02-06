@@ -137,23 +137,28 @@ void LocusSampler::set_ignores(bool left, bool right) {
     ignore_right = right;
     
     for(unsigned i = 0; i < rfunctions.size(); ++i) {
-        rfunctions[i].set_ignore(ignore_left, ignore_right);
+        rfunctions[i].set_ignores(ignore_left, ignore_right);
     }
 }
 
-void LocusSampler::sequential_imputation(DescentGraph& dg) {
+double LocusSampler::sequential_imputation(DescentGraph& dg) {
     unsigned int starting_locus = get_random_locus();
     unsigned int tmp = locus;
+    double weight = 0.0;
     
     set_ignores(true, true);
     set_locus(starting_locus);
     step(dg, starting_locus);
+    weight += log(rfunctions.back().get_result());
+    //fprintf(stderr, "  w %d = %e (%e)\n", starting_locus, log(rfunctions.back().get_result()), log10(rfunctions.back().get_result()));
     
     // iterate left through the markers
     set_ignores(true, false);
     for(int i = (starting_locus - 1); i >= 0; --i) {
         set_locus(i);
         step(dg, i);
+        weight += log(rfunctions.back().get_result());
+        //fprintf(stderr, "  w %d = %e (%e)\n", i, log(rfunctions.back().get_result()), log10(rfunctions.back().get_result()));
     }
     
     // iterate right through the markers
@@ -161,10 +166,14 @@ void LocusSampler::sequential_imputation(DescentGraph& dg) {
     for(int i = (starting_locus + 1); i < int(map->num_markers()); ++i) {
         set_locus(i);
         step(dg, i);
+        weight += log(rfunctions.back().get_result());
+        //fprintf(stderr, "  w %d = %e (%e)\n", i, log(rfunctions.back().get_result()), log10(rfunctions.back().get_result()));
     }
     
     // reset, in case not used for more si
     set_locus(tmp);
     set_ignores(false, false);
+    
+    return weight;    
 }
 

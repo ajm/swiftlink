@@ -43,7 +43,7 @@ class SamplerRfunction : public Rfunction {
     
     void sample(vector<int>& pmk);
     
-    void set_ignore(bool left, bool right) {
+    void set_ignores(bool left, bool right) {
         ignore_left = left;
         ignore_right = right;
     }

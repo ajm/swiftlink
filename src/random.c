@@ -30,6 +30,9 @@ void seed_random(unsigned int seed) {
     
     int i;
     
+    //seed = 4053259981;
+    //seed = 2992867934;
+    
     srandom(seed);
     
     printf("seed = %u\n", seed);
@@ -62,7 +65,21 @@ void seed_random(unsigned int seed) {
 double get_random() {
     //return random() / (double)RAND_MAX;
     //return genrand_real1();
-    return genrand_mt(mtss[omp_get_thread_num()]) * (1.0/4294967295.0);
+    
+    //double r = (double) genrand_mt(mtss[omp_get_thread_num()]);
+    //return r * (1.0/4294967295.0);
+    
+    // generate random number in the interval [0,1]
+    //double r = genrand_mt(mtss[omp_get_thread_num()]) * (1.0/4294967295.0);
+    // generate random number in the interval [0,1)
+    double r = (genrand_mt(mtss[omp_get_thread_num()]) * (1.0/4294967296.0)) + (1.0/4294967296.0);
+    
+    if((r <= 0.0) || (r > 1.0)) {
+        fprintf(stderr, "%f\n", r);
+        abort();
+    }
+    
+    return r;
 }
 
 int get_random_int(int limit) {

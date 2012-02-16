@@ -16,7 +16,7 @@ using namespace std;
 #include "logarithms.h"
 
 
-string FounderAlleleGraph4::debug_string() { 
+string FounderAlleleGraph4::debug_string() {
     stringstream ss;
     Person* p;
     int tmp, pid;
@@ -28,6 +28,21 @@ string FounderAlleleGraph4::debug_string() {
 	    
 	    ss << pid << "\t(" << edge_list[tmp] << ", " << edge_list[tmp + 1] << ")\n";
 	}
+	
+	/*
+	for(int i = 0; i < group_index; ++i) {
+        if(group_active[i]) {
+            if(group_fixed[i] == -1) {
+                ss << "group " << i << ": prob = (" << prob[0][i] << ", " << prob[1][i] << ")\n";
+            }
+            else {
+                ss << "group " << i << ": prob = (" << prob[group_fixed[i]][i] << ")\n";
+            }
+            
+            ss << "\n";
+        }
+    }
+    */
     
     return ss.str();
 }
@@ -39,7 +54,7 @@ double FounderAlleleGraph4::likelihood() {
     int mat_fa;
     int pat_fa;
     int num_groups;
-    int group_index;
+    //int group_index;
     int group1, group2;
     int fixed1, fixed2;
     bool legal0, legal1, legal2, legal3;
@@ -89,11 +104,17 @@ double FounderAlleleGraph4::likelihood() {
         
         tmp = i * 2;
         mat_fa = edge_list[tmp];
-        pat_fa = edge_list[++tmp];
+        pat_fa = edge_list[tmp+1];
+        
+        //fprintf(stderr, "%d (%s) is typed (%d, %d) => %d (locus=%d)\n", i, p->get_id().c_str() ,mat_fa, pat_fa, g, locus);
         
         // autozygous
         if(mat_fa == pat_fa) {
+        
+            //fprintf(stderr, " autozygous\n");
+        
             if(g == HETERO) {
+                //fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
                 return 0.0;
                 //return LOG_ZERO;
             }
@@ -105,6 +126,7 @@ double FounderAlleleGraph4::likelihood() {
                 fixed1 = group_fixed[group1];
                 if(fixed1 != -1) {
                     if(g != allele_assignment[fixed1][mat_fa]) {
+                        //fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
                         return 0.0;
                         //return LOG_ZERO;
                     }
@@ -119,6 +141,7 @@ double FounderAlleleGraph4::likelihood() {
                         prob[0][group1] = 0.0;
                     }
                     else {
+                        //fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
                         return 0.0;
                         //return LOG_ZERO;
                     }
@@ -142,16 +165,27 @@ double FounderAlleleGraph4::likelihood() {
             group1 = group_membership[mat_fa];
             group2 = group_membership[pat_fa];
             
+            //fprintf(stderr, " not autozygous\n");
+            
             if(group1 != DEFAULT_COMPONENT) {
                 
                 fixed1 = group_fixed[group1];
                 
+                //fprintf(stderr, " group1 not default (%d)\n", group1);
+                
                 if(group2 != DEFAULT_COMPONENT) {
+                    
+                    //fprintf(stderr, " group2 not default (%d)\n", group2);
+                    
                     // both in the same group
                     if(group1 == group2) {
                         if(fixed1 != -1) {
                             // fixed, check if legit
                             if(not legal(g, allele_assignment[fixed1][mat_fa], allele_assignment[fixed1][pat_fa])) {
+                                //fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
+                                //fprintf(stderr, "g = %d, mfa = %d, pfa = %d\n", g, allele_assignment[fixed1][mat_fa], allele_assignment[fixed1][pat_fa]);
+                                //fprintf(stderr, "ma = %d, pa = %d\n", mat_fa, pat_fa);
+                                //fprintf(stderr, "i = %d, locus = %d\n", i, locus);
                                 return 0.0;
                                 //return LOG_ZERO;
                             }
@@ -173,6 +207,7 @@ double FounderAlleleGraph4::likelihood() {
                                     prob[0][group1] = 0.0;
                                 }
                                 else {
+                                    //fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
                                     return 0.0;
                                     //return LOG_ZERO;
                                 }
@@ -187,6 +222,7 @@ double FounderAlleleGraph4::likelihood() {
                             if(fixed2 != -1) {
                                 // fixed, check if legit
                                 if(not legal(g, allele_assignment[fixed1][mat_fa], allele_assignment[fixed2][pat_fa])) {
+                                    //fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
                                     return 0.0;
                                     //return LOG_ZERO;
                                 }
@@ -201,6 +237,7 @@ double FounderAlleleGraph4::likelihood() {
                                 else if(legal1)
                                     fixed2 = 1;
                                 else {
+                                    //fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
                                     return 0.0;
                                     //return LOG_ZERO;
                                 }
@@ -216,6 +253,7 @@ double FounderAlleleGraph4::likelihood() {
                             else if(legal1)
                                 fixed1 = 1;
                             else {
+                                //fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
                                 return 0.0;
                                 //return LOG_ZERO;
                             }
@@ -228,6 +266,7 @@ double FounderAlleleGraph4::likelihood() {
                             legal3 = legal(g, allele_assignment[1][mat_fa], allele_assignment[1][pat_fa]);
                             
                             if(not (legal0 or legal1 or legal2 or legal3)) {
+                                //fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
                                 return 0.0;
                                 //return LOG_ZERO;
                             }
@@ -294,6 +333,7 @@ double FounderAlleleGraph4::likelihood() {
                         enum unphased_genotype tmp = get_other_allele(g, allele_assignment[fixed1][mat_fa]);
                         
                         if(tmp == UNTYPED) {
+                            //fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
                             return 0.0;
                             //return LOG_ZERO;
                         }
@@ -333,6 +373,7 @@ double FounderAlleleGraph4::likelihood() {
                                 prob[0][group1] = 0.0;
                             }
                             else {
+                                //fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
                                 return 0.0;
                                 //return LOG_ZERO;
                             }
@@ -350,6 +391,7 @@ double FounderAlleleGraph4::likelihood() {
                     enum unphased_genotype tmp = get_other_allele(g, allele_assignment[fixed2][pat_fa]);
                     
                     if(tmp == UNTYPED) {
+                        //fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
                         return 0.0;
                         //return LOG_ZERO;
                     }
@@ -389,6 +431,7 @@ double FounderAlleleGraph4::likelihood() {
                             prob[0][group2] = 0.0;
                         }
                         else {
+                            //fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
                             return 0.0;
                             //return LOG_ZERO;
                         }
@@ -529,6 +572,8 @@ void FounderAlleleGraph4::valid_genotype(enum unphased_genotype g) {
 void FounderAlleleGraph4::combine_components(int component1, int component2, bool flip) {
     enum unphased_genotype tmp;
     
+    //fprintf(stderr, "combine\n");
+    
     for(unsigned int i = 0; i < founder_alleles; ++i) {
         if(group_membership[i] == component2) {
             group_membership[i] = component1;
@@ -597,6 +642,8 @@ void FounderAlleleGraph4::flip(unsigned int personid, enum parentage allele) {
     int tmp = p->get_parentid(allele) * 2;
     int new_fa = ((edge_list[tmp] == old_fa) ? edge_list[tmp + 1] : edge_list[tmp]);
     
+    //fprintf(stderr, "personid = %d, allele = %d, parentid = %d, old_fa = %d, new_fa = %d\n", personid, allele, p->get_parentid(allele), old_fa, new_fa);
+    
     if(old_fa == new_fa)
         return;
     
@@ -615,6 +662,7 @@ void FounderAlleleGraph4::propagate_fa_update(Person* p, enum parentage allele, 
         propagate_fa_update(p->get_child(i), newallele, old_fa, new_fa);
     }
     
+    //fprintf(stderr, " [%d] %d -> %d\n", p->get_internalid(), edge_list[tmp + allele], new_fa);
     edge_list[tmp + allele] = new_fa;
 }
 

@@ -47,6 +47,19 @@ class PeelMatrix {
     }
     
     double get(vector<int>& pmk) const {
+        /*
+        fprintf(stderr, "PeelMatrix::get ");
+        for(unsigned int i = 0; i < num_keys; ++i) {
+            fprintf(stderr, "[%d %d] ", keys[i], pmk[keys[i]]);
+        }
+        
+        
+        double x = data[generate_index(pmk)];
+        
+        fprintf(stderr, "= %f\n", x);
+        
+        return x;
+        */
         return data[generate_index(pmk)];
     }
     

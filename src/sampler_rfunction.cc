@@ -8,12 +8,13 @@ using namespace std;
 #include "peeling.h"
 #include "peel_matrix.h"
 #include "random.h"
-
+    
 
 double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_trait pt) {
     
     Person* p = ped->get_by_index(person_id);
     
+    // penetrace prob
     if(not p->isfounder()) {
         if(p->istyped()) {
             switch(p->get_marker(locus)) {
@@ -24,14 +25,15 @@ double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_t
                 case HOMOZ_B :
                     return (pt == TRAIT_AA) ? 1.0 : 0.0;
                 default :
-                    return 0.25;
+                    return 1.0;
             }
         }
         else {
-            return 0.25;
+            return 1.0;
         }
     }
     
+    // penetrance + founder prob
     if(p->istyped()) {
         switch(p->get_marker(locus)) {
             case HETERO :
@@ -44,10 +46,11 @@ double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_t
                 return map->get_prob(locus, pt);
         }
     }
-    else {  
+    else {
         return map->get_prob(locus, pt);
     }
     
+    fprintf(stderr, "error: %s:%d\n", __FILE__, __LINE__);
     abort();
 }
 
@@ -57,14 +60,21 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
                                      enum phased_trait kid_trait, 
                                      enum parentage parent) {
     
+    // just transmission prob
+    if(ignore_left and ignore_right) {
+        return 0.5;
+    }
+    
+    // recombination + transmission prob
+    
     enum trait t = get_trait(kid_trait, parent);
     
     // deal with homozygotes first
     if(parent_trait == TRAIT_AA) {
-        return (t == TRAIT_A) ? 0.5 : 0.0;
+        return (t == TRAIT_A) ? 0.25 : 0.0;
     }
     else if(parent_trait == TRAIT_UU) {
-        return (t == TRAIT_U) ? 0.5 : 0.0;
+        return (t == TRAIT_U) ? 0.25 : 0.0;
     }
     
     // heterozygotes are informative, so i can look up
@@ -90,6 +100,23 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
     return tmp;
 }
 
+double SamplerRfunction::get_recombination_probability(DescentGraph* dg, unsigned person_id, 
+                                                     int maternal_allele, int paternal_allele) {
+    double tmp = 1.0;
+    
+    if((locus != 0) and (not ignore_left)) {
+        tmp *= ((dg->get(person_id, locus-1, MATERNAL) == maternal_allele) ? antitheta2 : theta2);
+        tmp *= ((dg->get(person_id, locus-1, PATERNAL) == paternal_allele) ? antitheta2 : theta2);
+    }
+    
+    if((locus != (map->num_markers() - 1)) and (not ignore_right)) {
+        tmp *= ((dg->get(person_id, locus+1, MATERNAL) == maternal_allele) ? antitheta : theta);
+        tmp *= ((dg->get(person_id, locus+1, PATERNAL) == paternal_allele) ? antitheta : theta);
+    }
+    
+    return tmp;
+}
+
 void SamplerRfunction::sample(vector<int>& pmk) {
     double prob_dist[NUM_ALLELES];
     double total = 0.0;
@@ -102,8 +129,9 @@ void SamplerRfunction::sample(vector<int>& pmk) {
         trait = static_cast<enum phased_trait>(i);
         pmk[node] = i;
         
+        //fprintf(stderr, "call\n");
         prob_dist[i] = pmatrix_presum.get(pmk);
-        total += prob_dist[i];        
+        total += prob_dist[i];
     }
     
     if(total == 0.0) {
@@ -115,6 +143,14 @@ void SamplerRfunction::sample(vector<int>& pmk) {
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         prob_dist[i] /= total;
     }
+    
+    /*
+    fprintf(stderr, "[%d] ", node);
+    for(int i = 0; i < 4; ++i) {
+        fprintf(stderr, "%.3f ", prob_dist[i]);
+    }
+    fprintf(stderr, "\n");
+    */
     
     // sample
     double r = get_random();
@@ -144,7 +180,6 @@ void SamplerRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGr
     enum phased_trait mat_trait;
     enum phased_trait pat_trait;
     enum phased_trait kid_trait;
-    
     double tmp;
     double total = 0.0;
     
@@ -152,6 +187,7 @@ void SamplerRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGr
     mat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][kid->get_maternalid()]);
     pat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][kid->get_paternalid()]);
     
+    /*
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         kid_trait = static_cast<enum phased_trait>(i);
         presum_index = pmatrix_index + (index_offset * i);
@@ -174,6 +210,36 @@ void SamplerRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGr
         
         total += tmp;
     }
+    */
+    
+    
+    for(int i = 0; i < 2; ++i) {        // maternal
+        for(int j = 0; j < 2; ++j) {    // paternal
+            
+            kid_trait = get_phased_trait(mat_trait, pat_trait, i, j);
+            presum_index = pmatrix_index + (index_offset * static_cast<int>(kid_trait));
+            
+            indices[pmatrix_index][peel_id] = static_cast<int>(kid_trait);
+            
+            tmp = get_trait_probability(peel_id, kid_trait);
+            if(tmp == 0.0)
+                continue;
+            /*
+            tmp *= (get_recombination_probability(dg, peel_id, mat_trait, kid_trait, MATERNAL) * \
+                    get_recombination_probability(dg, peel_id, pat_trait, kid_trait, PATERNAL));
+            */
+            tmp *= (0.25 * get_recombination_probability(dg, peel_id, i, j));
+            if(tmp == 0.0)
+                continue;
+            
+            tmp *= ((previous_rfunction1 != NULL ? previous_rfunction1->get(indices[pmatrix_index]) : 1.0) * \
+                    (previous_rfunction2 != NULL ? previous_rfunction2->get(indices[pmatrix_index]) : 1.0));
+            
+            pmatrix_presum.add(presum_index, tmp);
+            
+            total += tmp;
+        }
+    }
     
     pmatrix.set(pmatrix_index, total);
 }
@@ -182,21 +248,21 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
     
     unsigned int presum_index;
     
-    enum phased_trait child_trait;
-    enum phased_trait parent_trait;
-    enum phased_trait other_trait;
+    enum phased_trait pivot_trait;
+    enum phased_trait mat_trait;
+    enum phased_trait pat_trait;
     
     double tmp;
     double total = 0.0;
     
     
     for(unsigned int i = 0; i < NUM_ALLELES; ++i) {
-        parent_trait = static_cast<enum phased_trait>(i);
+        mat_trait = pat_trait = static_cast<enum phased_trait>(i);
         presum_index = pmatrix_index + (index_offset * i);
         
         indices[pmatrix_index][peel_id] = i;
         
-        tmp = get_trait_probability(peel_id, parent_trait);
+        tmp = get_trait_probability(peel_id, mat_trait);
         if(tmp == 0.0)
             continue;
         
@@ -214,17 +280,41 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
             if(not child->is_parent(peel_id))
                 continue;
             
-            child_trait = static_cast<enum phased_trait>(indices[pmatrix_index][child_id]);
-            other_trait = static_cast<enum phased_trait>(indices[pmatrix_index][child->get_maternalid() == peel_id ? child->get_paternalid() : child->get_maternalid()]);
+            
+            pivot_trait = static_cast<enum phased_trait>(indices[pmatrix_index][child_id]);
             
             if(child->get_maternalid() == peel_id) {
-                child_prob *= (get_recombination_probability(dg, child_id, parent_trait, child_trait, MATERNAL) *  \
-                               get_recombination_probability(dg, child_id, other_trait,  child_trait, PATERNAL));
+                pat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][child->get_paternalid()]);
             }
             else {
-                child_prob *= (get_recombination_probability(dg, child_id, parent_trait, child_trait, PATERNAL) *  \
-                               get_recombination_probability(dg, child_id, other_trait,  child_trait, MATERNAL));
+                mat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][child->get_maternalid()]);
             }
+            
+            /*
+            child_prob *= (get_recombination_probability(dg, child_id, mat_trait, pivot_trait, MATERNAL) *  \
+                           get_recombination_probability(dg, child_id, pat_trait, pivot_trait, PATERNAL));
+            */
+            
+            
+            double child_tmp = 0.0;
+            
+            for(int i = 0; i < 2; ++i) {        // maternal allele
+                for(int j = 0; j < 2; ++j) {    // paternal allele
+                    pivot_trait = get_phased_trait(mat_trait, pat_trait, i, j);
+                    
+                    if(pivot_trait != static_cast<enum phased_trait>(indices[pmatrix_index][child_id]))
+                        continue;
+                    
+                    child_tmp += (0.25 * get_recombination_probability(dg, peel_id, i, j));
+                    /*
+                    child_tmp += (get_recombination_probability(dg, peel_id, mat_trait, pivot_trait, MATERNAL) * \
+                                  get_recombination_probability(dg, peel_id, pat_trait, pivot_trait, PATERNAL));
+                    */
+                }
+            }
+            
+            child_prob *= child_tmp;
+            
             
             if(child_prob == 0.0)
                 break;

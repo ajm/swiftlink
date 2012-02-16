@@ -13,7 +13,10 @@ class SamplerRfunction : public Rfunction {
     double get_transmission_probability(enum phased_trait parent_trait, enum phased_trait kid_trait, enum parentage parent);
     double get_recombination_probability(DescentGraph* dg, unsigned kid_id, enum phased_trait parent_trait, 
                                          enum phased_trait kid_trait, enum parentage parent);
-                                         
+    
+    double get_recombination_probability(DescentGraph* dg, unsigned person_id, 
+                                         int maternal_allele, int paternal_allele);
+    
     void evaluate_child_peel(unsigned int pmatrix_index, DescentGraph* dg);
     void evaluate_parent_peel(unsigned int pmatrix_index, DescentGraph* dg);
 

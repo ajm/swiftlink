@@ -9,8 +9,8 @@ class TraitRfunction : public Rfunction {
     
     double get_recombination_probability(DescentGraph* dg, unsigned person_id, int maternal_allele, int paternal_allele);
     double get_trait_probability(unsigned person_id, enum phased_trait pt);
-    bool affected_trait(enum phased_trait pt, int allele);
-    enum phased_trait get_phased_trait(enum phased_trait m, enum phased_trait p, int maternal_allele, int paternal_allele);
+    //bool affected_trait(enum phased_trait pt, int allele);
+    //enum phased_trait get_phased_trait(enum phased_trait m, enum phased_trait p, int maternal_allele, int paternal_allele);
     
     void evaluate_child_peel(unsigned int pmatrix_index, DescentGraph* dg);
     void evaluate_parent_peel(unsigned int pmatrix_index, DescentGraph* dg);

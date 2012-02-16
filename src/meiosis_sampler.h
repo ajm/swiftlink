@@ -11,6 +11,8 @@ using namespace std;
 #include "logarithms.h"
 #include "founder_allele_graph4.h"
 
+#include "founder_allele_graph3.h"
+
 
 class Pedigree;
 class GeneticMap;
@@ -21,6 +23,8 @@ class MeiosisSampler : Sampler {
     vector<FounderAlleleGraph4> f4;
     vector<double> matrix;
     vector<int> seq;
+    
+    FounderAlleleGraph3 f3;
     
     
     double graph_likelihood(DescentGraph& dg, unsigned person_id, unsigned locus, enum parentage parent, unsigned value);
@@ -35,21 +39,25 @@ class MeiosisSampler : Sampler {
         Sampler(ped, map),
         f4(map->num_markers(), FounderAlleleGraph4(ped, map)),
         matrix(map->num_markers() * 2),
-        seq() {
-    
+        seq(),
+        f3(ped, map) {
+        
         find_founderallelegraph_ordering();
         
         for(unsigned int i = 0; i < map->num_markers(); ++i) {
             f4[i].set_sequence(&seq);
             f4[i].set_locus(i);
         }
+        
+        f3.set_sequence(&seq);
     }
     
     MeiosisSampler(const MeiosisSampler& rhs) :
         Sampler(rhs.ped, rhs.map),
         f4(rhs.f4),
         matrix(rhs.matrix),
-        seq(rhs.seq) {}
+        seq(rhs.seq),
+        f3(rhs.f3) {}
     
     virtual ~MeiosisSampler() {}
     

@@ -260,7 +260,16 @@ void PeelSequenceGenerator::bruteforce_assignments(PeelOperation& op) {
             assigns[ind][cutset[i]] = index / offset;
             index %= offset;
         }
+        
+        /*
+        for(int i = 0; i < ndim; ++i) {
+            fprintf(stderr, "%d ", assigns[ind][cutset[i]]);
+        }
+        fprintf(stderr, "\n");
+        */
     }
+    
+    //fprintf(stderr, "===\n");
     
     op.set_index_values(assigns);
 }

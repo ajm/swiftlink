@@ -100,10 +100,13 @@ void Peeler::process(DescentGraph* dg) {
     lod_score = initialised ? log_sum(prob, lod_score) : prob, initialised = true;
     ++count;
     
-    //if(locus == 0) {
-    //printf("PROB %f\n", prob);
-    //    fprintf(stderr, "%f %f\n", (lod_score - log(count) - trait_prob) / log(10.0), (prob - trait_prob) / log(10.0));
-    //}
+    /*
+    if(locus == 0) {
+        fprintf(stderr, "%f %f\n", 
+            (lod_score - log(count) - trait_prob) / log(10.0), 
+            (prob - trait_prob) / log(10.0));
+    }
+    */
 }
 
 double Peeler::get() {

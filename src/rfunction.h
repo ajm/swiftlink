@@ -50,6 +50,10 @@ class Rfunction {
         }
         abort();
     }
+    
+    bool affected_trait(enum phased_trait pt, int allele);
+    enum phased_trait get_phased_trait(enum phased_trait m, enum phased_trait p, 
+                                       int maternal_allele, int paternal_allele);
         
  private :
     bool legal_genotype(unsigned personid, enum phased_trait g);   

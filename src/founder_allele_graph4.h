@@ -22,6 +22,7 @@ class FounderAlleleGraph4 {
     double major_freq;
     double minor_freq;
     
+    int group_index;
     vector<int> edge_list;
     vector<int> group_membership;
     vector<int> group_fixed; // -1,0 or 1 - ie: -1 unfixed, 0,1 fixed to that index
@@ -31,6 +32,7 @@ class FounderAlleleGraph4 {
     vector<vector<double> > prob;
     
     vector<int>* sequence;
+    
     
     bool legal(enum unphased_genotype obs, enum unphased_genotype a1, enum unphased_genotype a2);
     enum unphased_genotype get_other_allele(enum unphased_genotype obs, enum unphased_genotype a1);
@@ -47,6 +49,7 @@ class FounderAlleleGraph4 {
         founder_alleles(p->num_founders() * 2),
         major_freq(g->get_major(locus)),
         minor_freq(g->get_minor(locus)),
+        group_index(0),
         edge_list(p->num_members() * 2, 0),
         group_membership(founder_alleles, DEFAULT_COMPONENT),
         group_fixed(founder_alleles, -1),
@@ -63,6 +66,7 @@ class FounderAlleleGraph4 {
         founder_alleles(f.founder_alleles),
         major_freq(f.major_freq),
         minor_freq(f.minor_freq),
+        group_index(f.group_index),
         edge_list(f.edge_list),
         group_membership(f.group_membership),
         group_fixed(f.group_fixed),
@@ -82,6 +86,7 @@ class FounderAlleleGraph4 {
             founder_alleles = rhs.founder_alleles;
             major_freq = rhs.major_freq;
             minor_freq = rhs.minor_freq;
+            group_index = rhs.group_index;
             
             edge_list = rhs.edge_list;
             group_membership = rhs.group_membership;

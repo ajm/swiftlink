@@ -28,6 +28,7 @@ OBJECTS	:= \
 	linkage_writer.o \
 	peel_sequence_generator.o \
 	founder_allele_graph4.o \
+	founder_allele_graph3.o \
 	elimination.o \
 	peel_matrix.o \
 	rfunction.o \

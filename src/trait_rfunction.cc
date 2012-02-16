@@ -27,6 +27,7 @@ double TraitRfunction::get_trait_probability(unsigned person_id, enum phased_tra
     return (ped->get_by_index(person_id))->get_disease_prob(pt);
 }
 
+/*
 bool TraitRfunction::affected_trait(enum phased_trait pt, int allele) {
     
     switch(allele) {
@@ -40,7 +41,8 @@ bool TraitRfunction::affected_trait(enum phased_trait pt, int allele) {
     
     abort();
 }
-
+*/
+/*
 enum phased_trait TraitRfunction::get_phased_trait(enum phased_trait m, enum phased_trait p, 
                                                    int maternal_allele, int paternal_allele) {
                                                    
@@ -57,6 +59,7 @@ enum phased_trait TraitRfunction::get_phased_trait(enum phased_trait m, enum pha
     
     return pt;
 }
+*/
 
 void TraitRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGraph* dg) {
     
@@ -160,6 +163,9 @@ void TraitRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentGra
             }
             
             child_prob *= child_tmp;
+            
+            if(child_prob == 0.0)
+                break;
         }
         
         tmp *= child_prob;

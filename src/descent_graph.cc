@@ -209,13 +209,13 @@ double DescentGraph::_sum_prior_prob() {
         f.set_locus(i);
         f.reset(*this);
         
-        if((tmp_prob = f.likelihood()) == LOG_ZERO) {
-            fprintf(stderr, "error: could not likelihood locus %d\n", int(i));
+        if((tmp_prob = f.likelihood()) == 0.0) {
+            fprintf(stderr, "error: descent graph illegal at locus %d\n", int(i));
             fprintf(stderr, "%s\n", f.debug_string().c_str());
 			return LOG_ZERO;
         }
         
-		return_prob += tmp_prob;
+		return_prob += log(tmp_prob);
     }
     
     return return_prob;

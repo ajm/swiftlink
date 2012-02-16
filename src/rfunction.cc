@@ -96,6 +96,37 @@ Rfunction& Rfunction::operator=(const Rfunction& rhs) {
     return *this;
 }
 
+bool Rfunction::affected_trait(enum phased_trait pt, int allele) {
+    
+    switch(allele) {
+        case 0 :
+            return (pt == TRAIT_AU) or (pt == TRAIT_AA);
+        case 1 :
+            return (pt == TRAIT_UA) or (pt == TRAIT_AA);
+        default :
+            break;
+    }
+    
+    abort();
+}
+
+enum phased_trait Rfunction::get_phased_trait(enum phased_trait m, enum phased_trait p, 
+                                                   int maternal_allele, int paternal_allele) {
+                                                   
+    bool m_affected = affected_trait(m, maternal_allele);
+    bool p_affected = affected_trait(p, paternal_allele);
+    enum phased_trait pt;
+    
+    if(m_affected) {
+        pt = p_affected ? TRAIT_AA : TRAIT_AU;
+    }
+    else {
+        pt = p_affected ? TRAIT_UA : TRAIT_UU;
+    }
+    
+    return pt;
+}
+
 // this function is the same for Traits and Sampling
 void Rfunction::evaluate_partner_peel(unsigned int pmatrix_index) {
     double tmp = 0.0;
@@ -114,16 +145,22 @@ void Rfunction::evaluate_partner_peel(unsigned int pmatrix_index) {
         
         tmp = get_trait_probability(peel_id, partner_trait);
         
+        //printf("locus = %d id = %d trait = %d prob = %f\n", locus, peel_id, partner_trait, tmp);
+        
         if(tmp == 0.0)
             continue;
         
         tmp *= (previous_rfunction1 == NULL ? 1.0 : previous_rfunction1->get(indices[pmatrix_index])) * \
                (previous_rfunction2 == NULL ? 1.0 : previous_rfunction2->get(indices[pmatrix_index]));
         
+        //printf("prob = %f\n", tmp);
+        
         pmatrix_presum.set(presum_index, tmp);
         
         total += tmp;
     }
+    
+    //printf("total = %f\n", total);
     
     pmatrix.set(pmatrix_index, total);
 }
@@ -165,7 +202,7 @@ void Rfunction::evaluate(DescentGraph* dg, double offset) {
     // crucial for TraitRfunction
     this->offset = offset;
     
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for(unsigned int i = 0; i < size; ++i) {
         evaluate_element(i, dg);
     }

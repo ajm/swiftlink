@@ -10,7 +10,10 @@ Progress::Progress(string s, unsigned int increments) :
     label(s), 
     increments_total(increments), 
     increments_count(0),
-    increments_per_percent(increments / 1000) {}
+    increments_per_percent(increments / 1000) {
+
+    update_progress();    
+}
 
 void Progress::update_progress() {
     printf("\r%s%s %.1f%% %s", 

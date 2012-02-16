@@ -17,7 +17,10 @@ double log_sum(double a, double b) {
     if(b == LOG_ZERO)
         return a;
     
-    return log(exp(b - a) + 1) + a;
+    //if(b < a)
+        return log(exp(b - a) + 1) + a;
+    
+    //return log(exp(a - b) + 1) + b;
 }
 
 double log_product(double a, double b) {

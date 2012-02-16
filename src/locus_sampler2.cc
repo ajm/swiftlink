@@ -123,7 +123,11 @@ void LocusSampler::step(DescentGraph& dg, unsigned parameter) {
     for(int i = static_cast<int>(rfunctions.size()) - 1; i >= 0; --i) {
         rfunctions[i].sample(pmk);
     }
-    
+    /*
+    for(unsigned int i = 0; i < pmk.size(); ++i) {
+        fprintf(stderr, "%d %d\n", i, pmk[i]);
+    }
+    */
     sample_meiosis_indicators(pmk, dg);
 }
 
@@ -142,7 +146,7 @@ void LocusSampler::set_ignores(bool left, bool right) {
 }
 
 double LocusSampler::sequential_imputation(DescentGraph& dg) {
-    unsigned int starting_locus = get_random_locus();
+    unsigned int starting_locus = 0;//get_random_locus();
     unsigned int tmp = locus;
     double weight = 0.0;
     
@@ -150,29 +154,31 @@ double LocusSampler::sequential_imputation(DescentGraph& dg) {
     set_locus(starting_locus);
     step(dg, starting_locus);
     weight += log(rfunctions.back().get_result());
-    //fprintf(stderr, "  w %d = %e (%e)\n", starting_locus, log(rfunctions.back().get_result()), log10(rfunctions.back().get_result()));
+    //fprintf(stderr, "  w %d = %f (%f)\n", starting_locus, log(rfunctions.back().get_result()), log10(rfunctions.back().get_result()));
     
     // iterate left through the markers
-    set_ignores(true, false);
+    //set_ignores(true, false);
     for(int i = (starting_locus - 1); i >= 0; --i) {
         set_locus(i);
         step(dg, i);
         weight += log(rfunctions.back().get_result());
-        //fprintf(stderr, "  w %d = %e (%e)\n", i, log(rfunctions.back().get_result()), log10(rfunctions.back().get_result()));
+        //fprintf(stderr, "  w %d = %f (%f)\n", i, log(rfunctions.back().get_result()), log10(rfunctions.back().get_result()));
     }
     
     // iterate right through the markers
-    set_ignores(false, true);
+    //set_ignores(false, true);
     for(int i = (starting_locus + 1); i < int(map->num_markers()); ++i) {
         set_locus(i);
         step(dg, i);
         weight += log(rfunctions.back().get_result());
-        //fprintf(stderr, "  w %d = %e (%e)\n", i, log(rfunctions.back().get_result()), log10(rfunctions.back().get_result()));
+        //fprintf(stderr, "  w %d = %f (%f)\n", i, log(rfunctions.back().get_result()), log10(rfunctions.back().get_result()));
     }
     
     // reset, in case not used for more si
     set_locus(tmp);
     set_ignores(false, false);
+    
+    //abort();
     
     return weight;    
 }

@@ -144,23 +144,16 @@ void Rfunction::evaluate_partner_peel(unsigned int pmatrix_index) {
         indices[pmatrix_index][peel_id] = i;
         
         tmp = get_trait_probability(peel_id, partner_trait);
-        
-        //printf("locus = %d id = %d trait = %d prob = %f\n", locus, peel_id, partner_trait, tmp);
-        
         if(tmp == 0.0)
             continue;
         
         tmp *= (previous_rfunction1 == NULL ? 1.0 : previous_rfunction1->get(indices[pmatrix_index])) * \
                (previous_rfunction2 == NULL ? 1.0 : previous_rfunction2->get(indices[pmatrix_index]));
         
-        //printf("prob = %f\n", tmp);
-        
         pmatrix_presum.set(presum_index, tmp);
         
         total += tmp;
     }
-    
-    //printf("total = %f\n", total);
     
     pmatrix.set(pmatrix_index, total);
 }

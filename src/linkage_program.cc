@@ -89,13 +89,22 @@ double* LinkageProgram::run_pedigree(Pedigree& p) {
     }
     
     DescentGraph dg(&p, &map);
-    //dg.random_descentgraph();
+    /*
+    dg.random_descentgraph();
+    
+    if(dg.get_likelihood() == LOG_ZERO) {
+        fprintf(stderr, "error, bad descent graph %s:%d\n", __FILE__, __LINE__);
+        abort();
+    }
+    */
     
     PeelSequenceGenerator psg(&p);
     psg.build_peel_order();
     
+    
     SequentialImputation si(&p, &map, &psg);
     si.run(dg, options.si_iterations);
+    
 
     if(not use_gpu) {
         MarkovChain chain(&p, &map, &psg, options);

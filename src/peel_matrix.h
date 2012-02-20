@@ -53,10 +53,10 @@ class PeelMatrix {
             fprintf(stderr, "[%d %d] ", keys[i], pmk[keys[i]]);
         }
         
+        int index = generate_index(pmk);
+        double x = data[index];
         
-        double x = data[generate_index(pmk)];
-        
-        fprintf(stderr, "= %f\n", x);
+        fprintf(stderr, "= %f (index=%d)\n", x, index);
         
         return x;
         */

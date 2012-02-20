@@ -13,12 +13,19 @@ class SamplerRfunction : public Rfunction {
     double get_transmission_probability(enum phased_trait parent_trait, enum phased_trait kid_trait, enum parentage parent);
     double get_recombination_probability(DescentGraph* dg, unsigned kid_id, enum phased_trait parent_trait, 
                                          enum phased_trait kid_trait, enum parentage parent);
-    
+    /*
     double get_recombination_probability(DescentGraph* dg, unsigned person_id, 
                                          int maternal_allele, int paternal_allele);
     
+    double get_transmission_prob(enum phased_trait kid_trait, 
+                                        enum phased_trait parent_trait, 
+                                        enum parentage parent);
+    */
     void evaluate_child_peel(unsigned int pmatrix_index, DescentGraph* dg);
     void evaluate_parent_peel(unsigned int pmatrix_index, DescentGraph* dg);
+    
+    void sample_child(DescentGraph* dg, vector<int>& pmk, double* prob);
+    void sample_partner(vector<int>& pmk, double* prob);
 
  public :    
     SamplerRfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, Rfunction* prev1, Rfunction* prev2) : 
@@ -44,7 +51,7 @@ class SamplerRfunction : public Rfunction {
         return *this;
     }
     
-    void sample(vector<int>& pmk);
+    void sample(DescentGraph* dg, vector<int>& pmk);
     
     void set_ignores(bool left, bool right) {
         ignore_left = left;

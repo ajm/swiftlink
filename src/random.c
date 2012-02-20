@@ -13,25 +13,30 @@
 #endif
 #endif
 */
-#include "dc.h"
+
+//#include "dc.h"
+
+#include "mt64.h"
 
 //#include "types.h"
 #include "random.h"
 
 
-
+/*
 static mt_struct **mtss;
 static int mtss_count;
-
+*/
 
 void seed_random(unsigned int seed) {
     //srandom(seed);
+    //return;
+    
+    init_genrand64(seed);
+    
     //init_genrand(seed);
     
+    /*
     int i;
-    
-    //seed = 4053259981;
-    //seed = 2992867934;
     
     srandom(seed);
     
@@ -60,10 +65,16 @@ void seed_random(unsigned int seed) {
     for(i = 0; i < mtss_count; ++i) {
         sgenrand_mt(random(), mtss[i]);
     }
+    */
 }
 
 double get_random() {
     //return random() / (double)RAND_MAX;
+    //return (random() * (1.0/4294967296.0)) + (1.0/4294967296.0);
+    
+    //return 0.0; // 1.0/9007199254740992.0;
+    return ((genrand64_int64() >> 11) * (1.0/9007199254740992.0)) + (1.0/9007199254740992.0);
+    
     //return genrand_real1();
     
     //double r = (double) genrand_mt(mtss[omp_get_thread_num()]);
@@ -71,6 +82,8 @@ double get_random() {
     
     // generate random number in the interval [0,1]
     //double r = genrand_mt(mtss[omp_get_thread_num()]) * (1.0/4294967295.0);
+    
+    /*
     // generate random number in the interval [0,1)
     double r = (genrand_mt(mtss[omp_get_thread_num()]) * (1.0/4294967296.0)) + (1.0/4294967296.0);
     
@@ -80,16 +93,19 @@ double get_random() {
     }
     
     return r;
+    */
 }
 
 int get_random_int(int limit) {
-    //return get_random() * limit;
+    //return random() % limit;
+    //return 0;
+    return genrand64_int64() % limit;
     //return genrand_int32() % limit;
-    return genrand_mt(mtss[omp_get_thread_num()]) % limit;
+    //return genrand_mt(mtss[omp_get_thread_num()]) % limit;
 }
 
 void destroy_random() {
-    free_mt_struct_array(mtss, mtss_count);
-    mtss_count = 0;
+    //free_mt_struct_array(mtss, mtss_count);
+    //mtss_count = 0;
 }
 

@@ -132,7 +132,7 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
         int index = i * 2;
         
         for(j = 0; j < 2; ++j) {
-            /*
+            
             matrix[index + j] = log_product( \
                                        matrix[index + j], \
                                        log_sum( \
@@ -140,8 +140,8 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
                                                log_product(matrix[((i-1) * 2) +    j ], map->get_inversetheta_log(i-1)) \
                                                ) \
                                        );
-            */
             
+            /*
             double prev1 = log_product(matrix[((i-1) * 2) + (1-j)], map->get_theta_log(i-1));
             double prev2 = log_product(matrix[((i-1) * 2) +    j ], map->get_inversetheta_log(i-1));
             double total = log_sum(prev1, prev2);
@@ -152,6 +152,7 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
                                     log_product(matrix[index + j], prev1), 
                                     log_product(matrix[index + j], prev2)
                                 );
+            */
         }
     }
     

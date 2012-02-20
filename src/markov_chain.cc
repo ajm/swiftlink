@@ -57,6 +57,7 @@ double* MarkovChain::run(DescentGraph& dg) {
     fprintf(stderr, "\n");
     */
     
+    fprintf(stderr, "P(l-sampler) = %f\n", options.lsampler_prob);
     
     Progress p("MCMC: ", options.iterations + options.burnin);
     
@@ -75,18 +76,11 @@ double* MarkovChain::run(DescentGraph& dg) {
             lsamplers[j]->step(dg, j);
             */
             
-            
+            /*
             for(unsigned int j = 0; j < map->num_markers(); ++j) {
                 lsamplers[j]->step(dg, j);
-            
-                /*
-                if(dg.get_likelihood() == LOG_ILLEGAL) {
-                    fprintf(stderr, "error: descent graph illegal post-lsampler...\n");
-                    abort();
-                }
-                */
             }
-            
+            */
             
             /*
             int batches = 2;
@@ -112,12 +106,12 @@ double* MarkovChain::run(DescentGraph& dg) {
             */
             
             
-            //random_shuffle(l_ordering.begin(), l_ordering.end());
-            /*
+            random_shuffle(l_ordering.begin(), l_ordering.end());
+            
             for(unsigned int j = 0; j < l_ordering.size(); ++j) {
                 lsamplers[l_ordering[j]]->step(dg, l_ordering[j]);
             }
-            */
+            
         }
         else {
             //msampler_count ++;
@@ -125,17 +119,11 @@ double* MarkovChain::run(DescentGraph& dg) {
             
             //msampler.reset(dg);
             
-            
+            /*
             for(unsigned int j = 0; j < num_meioses; ++j) {
                 msampler.step(dg, j);
-                /*
-                if(dg.get_likelihood() == LOG_ILLEGAL) {
-                    fprintf(stderr, "error: descent graph illegal post-msampler...\n");
-                    abort();
-                }
-                */
             }
-            
+            */
             
             /*
             int j = get_random_int(num_meioses);
@@ -143,19 +131,24 @@ double* MarkovChain::run(DescentGraph& dg) {
             msampler.step(dg, j);
             */
             
-            //random_shuffle(m_ordering.begin(), m_ordering.end());
-            /*
+            random_shuffle(m_ordering.begin(), m_ordering.end());
+            
             for(unsigned int j = 0; j < m_ordering.size(); ++j) {
-                msampler.reset(dg);
+                //msampler.reset(dg);
                 msampler.step(dg, m_ordering[j]);
             }
-            */
+            
         }
         
         p.increment();
         
         //if((i % options.scoring_period) == 0)
         //    fprintf(stderr, "%d %e\n", i, dg.get_likelihood() / log(10.0));
+        
+        if(dg.get_likelihood() == LOG_ILLEGAL) {
+            fprintf(stderr, "error: descent graph illegal...\n");
+            abort();
+        }
         
         if(i < options.burnin) {
             continue;

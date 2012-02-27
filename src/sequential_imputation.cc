@@ -74,14 +74,16 @@ void SequentialImputation::run(DescentGraph& dg, int iterations) {
     
     #pragma omp parallel for
     for(int i = 0; i < iterations; ++i) {
-        likelihoods[i] = lsamplers[i]->sequential_imputation(*(graphs[i]));
-        /*
-        if(graphs[i]->get_likelihood() == LOG_ZERO) {
+        //likelihoods[i] = 
+        lsamplers[i]->sequential_imputation(*(graphs[i]));
+        likelihoods[i] = graphs[i]->get_likelihood();
+        
+        if(likelihoods[i] == LOG_ZERO) {
             fprintf(stderr, "error: sequential imputation produced an invalid descent graph\n");
             fprintf(stderr, "%s\n", graphs[i]->debug_string().c_str());
             abort();
         }
-        */
+        
         p.increment();
     }
     

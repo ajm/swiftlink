@@ -62,6 +62,7 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
     
     enum trait t = get_trait(kid_trait, parent);
     
+    /*
     // just transmission prob
     if(ignore_left and ignore_right) {
         switch(parent_trait) {
@@ -74,6 +75,7 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
                 return 0.5;
         }
     }
+    */
     
     // recombination + transmission prob
     
@@ -84,18 +86,18 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
     if(parent_trait == TRAIT_AA) {
         //return (t == TRAIT_A) ? 0.5 : 0.0;
         tmp = (t == TRAIT_A) ? 1.0 : 0.0;
-        if(not ignore_left)
+        if((locus != 0) and (not ignore_left))
             tmp *= 0.5;
-        if(not ignore_right)
+        if((locus != (map->num_markers() - 1)) and (not ignore_right))
             tmp *= 0.5;
         return tmp;
     }
     else if(parent_trait == TRAIT_UU) {
         //return (t == TRAIT_U) ? 0.5 : 0.0;
         tmp = (t == TRAIT_U) ? 1.0 : 0.0;
-        if(not ignore_left)
+        if((locus != 0) and (not ignore_left))
             tmp *= 0.5;
-        if(not ignore_right)
+        if((locus != (map->num_markers() - 1)) and (not ignore_right))
             tmp *= 0.5;
         return tmp;
     }
@@ -110,6 +112,8 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
         p = (t == TRAIT_A) ? 0 : 1;
     }
     
+    // XXX this is transmission prob, but without it, I got a good result
+    // at least on marker 449
     tmp = 0.5;
     
     if((locus != 0) and (not ignore_left)) {
@@ -122,6 +126,7 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
     
     return tmp;
 }
+    
 /*
 double SamplerRfunction::get_recombination_probability(DescentGraph* dg, unsigned person_id, 
                                                      int maternal_allele, int paternal_allele) {
@@ -158,6 +163,7 @@ double SamplerRfunction::get_transmission_prob(enum phased_trait kid_trait,
     abort();
 }
 */
+
 void SamplerRfunction::sample(DescentGraph* dg, vector<int>& pmk) {
     double prob_dist[NUM_ALLELES];
     
@@ -203,73 +209,75 @@ void SamplerRfunction::sample_child(DescentGraph* dg, vector<int>& pmk, double* 
     enum phased_trait kid_trait;
     
     double tmp;
-    double total = 0.0;
+    double trans[4];
+    double prev1[4];
+    double prev2[4];
+    double total;
     
     mat_trait = static_cast<enum phased_trait>(pmk[kid->get_maternalid()]);
     pat_trait = static_cast<enum phased_trait>(pmk[kid->get_paternalid()]);
-    /*
-    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
-        kid_trait = static_cast<enum phased_trait>(i);
-        
-        pmk[peel_id] = i;
-        
-        tmp = get_trait_probability(peel_id, kid_trait);
-        
-        tmp *= (get_recombination_probability(dg, peel_id, mat_trait, kid_trait, MATERNAL) * \
-                get_recombination_probability(dg, peel_id, pat_trait, kid_trait, PATERNAL));
-        
-        tmp *= ((previous_rfunction1 != NULL) ? previous_rfunction1->get(pmk) : 1.0) * \
-               ((previous_rfunction2 != NULL) ? previous_rfunction2->get(pmk) : 1.0);
-        
-        prob[i] = tmp;
-        total += tmp;
-    }
-    */
     
+    
+    total = 0.0;
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         kid_trait = static_cast<enum phased_trait>(i);
         
         tmp = (get_recombination_probability(dg, peel_id, mat_trait, kid_trait, MATERNAL) * \
                get_recombination_probability(dg, peel_id, pat_trait, kid_trait, PATERNAL));
         
+        trans[i] = tmp;
         total += tmp;
-        
-        prob[i] = tmp;
     }
     
     if(total == 0.0) {
-        fprintf(stderr, "error: probabilities sum to zero (%d)\n", peel_id);
+        fprintf(stderr, "error: probabilities sum to zero (%s:%d)\n", __FILE__, __LINE__);
         abort();
     }
     
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
-        prob[i] /= total;
+        trans[i] /= total;
     }
     
-    total = 0.0;
     
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
-        kid_trait = static_cast<enum phased_trait>(i);
-        
         pmk[peel_id] = i;
         
-        tmp = get_trait_probability(peel_id, kid_trait);
+        prev1[i] = ((previous_rfunction1 != NULL) ? previous_rfunction1->get(pmk) : 1.0);
+        prev2[i] = ((previous_rfunction2 != NULL) ? previous_rfunction2->get(pmk) : 1.0);
+    }
+
+    total = prev1[0] + prev1[1] + prev1[2] + prev1[3];
+    
+    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+        prev1[i] /= total; 
+    }
+    
+    total = prev2[0] + prev2[1] + prev2[2] + prev2[3];
+    
+    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+        prev2[i] /= total; 
+    }
+    
+
+    total = 0.0;
+    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+        kid_trait = static_cast<enum phased_trait>(i);
+
+//        pmk[peel_id] = i;
+
+        tmp = get_trait_probability(peel_id, kid_trait) * trans[i] * prev1[i] * prev2[i];
         
-        /*
-        tmp *= (get_recombination_probability(dg, peel_id, mat_trait, kid_trait, MATERNAL) *
-                get_recombination_probability(dg, peel_id, pat_trait, kid_trait, PATERNAL));
-        */
-        tmp *= prob[i];
+//        tmp *= ((previous_rfunction1 != NULL) ? previous_rfunction1->get(pmk) : 1.0) *
+//               ((previous_rfunction2 != NULL) ? previous_rfunction2->get(pmk) : 1.0);
         
-        tmp *= ((previous_rfunction1 != NULL) ? previous_rfunction1->get(pmk) : 1.0) * \
-               ((previous_rfunction2 != NULL) ? previous_rfunction2->get(pmk) : 1.0);
-        
+//        tmp *= trans[i];
+
         prob[i] = tmp;
         total += tmp;
     }
     
     if(total == 0.0) {
-        fprintf(stderr, "error: probabilities sum to zero (%d)\n", peel_id);
+        fprintf(stderr, "error: probabilities sum to zero (%s:%d)\n", __FILE__, __LINE__);
         abort();
     }
     
@@ -281,17 +289,40 @@ void SamplerRfunction::sample_child(DescentGraph* dg, vector<int>& pmk, double* 
 void SamplerRfunction::sample_partner(vector<int>& pmk, double* prob) {
     enum phased_trait partner_trait;    
     double tmp;
-    double total = 0.0;
+    double total;    
+    double prev1[4];
+    double prev2[4];
     
+    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+        pmk[peel_id] = i;
+        prev1[i] = ((previous_rfunction1 != NULL) ? previous_rfunction1->get(pmk) : 1.0);
+        prev2[i] = ((previous_rfunction2 != NULL) ? previous_rfunction2->get(pmk) : 1.0);
+    }
+    
+    total = prev1[0] + prev1[1] + prev1[2] + prev1[3];
+    
+    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+        prev1[i] /= total; 
+    }
+    
+    total = prev2[0] + prev2[1] + prev2[2] + prev2[3];
+    
+    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+        prev2[i] /= total; 
+    }
+    
+    
+    total = 0.0;
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         partner_trait = static_cast<enum phased_trait>(i);        
         
         pmk[peel_id] = i;
         
-        tmp = get_trait_probability(peel_id, partner_trait);
+        tmp = get_trait_probability(peel_id, partner_trait) * prev1[i] * prev2[i];
         
-        tmp *= (previous_rfunction1 != NULL ? previous_rfunction1->get(pmk) : 1.0) * \
-               (previous_rfunction2 != NULL ? previous_rfunction2->get(pmk) : 1.0);
+        //tmp *= (previous_rfunction1 != NULL ? previous_rfunction1->get(pmk) : 1.0) *
+        //       (previous_rfunction2 != NULL ? previous_rfunction2->get(pmk) : 1.0);
+        //tmp *= prevs[i];
         
         prob[i] = tmp;
         total += tmp;

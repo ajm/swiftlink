@@ -244,6 +244,8 @@ void PeelSequenceGenerator::find_generic_functions(PeelOperation& op) {
     
     op.set_previous_operation(find_function_containing(tmp));
     op.set_previous_operation(find_function_containing(tmp));
+    
+    // how can i tell which is anc and which is des
 }
 
 void PeelSequenceGenerator::find_child_functions(PeelOperation& op) {
@@ -252,6 +254,7 @@ void PeelSequenceGenerator::find_child_functions(PeelOperation& op) {
     tmp.push_back(p->get_maternalid());
     tmp.push_back(p->get_paternalid());
     
+    // ancestors
     op.set_previous_operation(find_function_containing(tmp));
     
     if(p->isleaf())
@@ -260,6 +263,7 @@ void PeelSequenceGenerator::find_child_functions(PeelOperation& op) {
     tmp.clear();
     tmp.push_back(p->get_internalid());
     
+    // descendents
     op.set_previous_operation(find_function_containing(tmp));
 }
 

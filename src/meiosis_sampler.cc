@@ -152,6 +152,7 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
                                     log_product(matrix[index + j], prev1), 
                                     log_product(matrix[index + j], prev2)
                                 );
+            
             */
         }
     }

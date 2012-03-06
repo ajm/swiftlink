@@ -153,6 +153,8 @@ double LocusSampler::sequential_imputation(DescentGraph& dg) {
     unsigned int tmp = locus;
     double weight = 0.0;
     
+    //fprintf(stderr, "start locus = %d\n", starting_locus);
+    
     set_ignores(true, true);
     set_locus(starting_locus);
     step(dg, starting_locus);
@@ -180,6 +182,9 @@ double LocusSampler::sequential_imputation(DescentGraph& dg) {
     // reset, in case not used for more si
     set_locus(tmp);
     set_ignores(false, false);
+    
+    
+    //fprintf(stderr, "final = %f (%f)\n", weight, weight / log(10));
     
     //abort();
     

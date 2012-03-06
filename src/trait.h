@@ -27,5 +27,6 @@ enum phased_trait {
 
 string trait_str(enum phased_trait t);
 string trait_str(enum unphased_trait t);
+string fake_trait_str(int i);
 
 #endif

@@ -33,3 +33,24 @@ string trait_str(enum unphased_trait pt) {
     
     abort();
 }
+
+string fake_trait_str(int i) {
+
+    if(i == -1)
+        return "XX";
+
+    enum phased_trait pt = static_cast<enum phased_trait>(i);    
+    
+    switch(pt) {
+        case TRAIT_UU:
+            return "AA";
+        case TRAIT_AU :
+            return "BA";
+        case TRAIT_UA :
+            return "AB";
+        case TRAIT_AA :
+            return "BB";
+    }
+    
+    abort();
+}

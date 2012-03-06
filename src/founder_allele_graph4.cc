@@ -491,7 +491,7 @@ double FounderAlleleGraph4::likelihood() {
     double ret_prob = 1.0;
     
     for(int i = 0; i < group_index; ++i) {
-        if(group_active[i] and (group_size[i] > 1)) {
+        if(group_active[i] /* and (group_size[i] > 1)*/) {
             fixed1 = group_fixed[i];
             if(fixed1 != -1) {
                 //fprintf(stderr, "%f\n", prob[fixed1][i]);

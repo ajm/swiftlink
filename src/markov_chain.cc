@@ -15,6 +15,7 @@ using namespace std;
 #include "linkage_writer.h"
 #include "progress.h"
 #include "types.h"
+#include "random.h"
 
 
 double* MarkovChain::run(DescentGraph& dg) {
@@ -48,8 +49,8 @@ double* MarkovChain::run(DescentGraph& dg) {
     for(unsigned int i = 0; i < num_meioses; ++i)
         m_ordering.push_back(i);
     
-    random_shuffle(l_ordering.begin(), l_ordering.end());
-    random_shuffle(m_ordering.begin(), m_ordering.end());
+    //random_shuffle(l_ordering.begin(), l_ordering.end());
+    //random_shuffle(m_ordering.begin(), m_ordering.end());
     /*
     for(unsigned int i = 0; i < num_meioses; ++i) {
         fprintf(stderr, "%d ", m_ordering[i]);
@@ -181,6 +182,8 @@ double* MarkovChain::run(DescentGraph& dg) {
         lsampler_count / double(lsampler_count + msampler_count), \
         msampler_count / double(lsampler_count + msampler_count));
     */
+    
+    printf("random end = %u\n", get_random_raw());
     
     return lod_scores;
 }

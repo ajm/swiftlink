@@ -341,11 +341,17 @@ string FounderAlleleGraph3::debug_string() {
         ss << i << ": ";
         for(unsigned int j = 0; j < num_neighbours[i]; ++j) {
             AdjacentNode& tmp = adj_matrix[i][j];
-            ss << "{" << tmp.id << ", " << tmp.label << "} ";
+            ss << "{" << tmp.id << ", " << genotype_string(tmp.label) << "} ";
         }
         ss << "\n";
     }
-    //ss << "\n";
+    
+    for(unsigned i = 0; i < ped->num_members(); ++i) {
+	    int pid = (*sequence)[i];
+        ss << pid << " (" << assignment[pid * 2] << ", " << assignment[(pid * 2) + 1] << ")\n";
+    }
+    
+    ss << "\n";
     
     return ss.str();
 }

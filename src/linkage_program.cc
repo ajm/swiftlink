@@ -89,14 +89,14 @@ double* LinkageProgram::run_pedigree(Pedigree& p) {
     }
     
     DescentGraph dg(&p, &map);
-    /*
+    
     dg.random_descentgraph();
     
     if(dg.get_likelihood() == LOG_ZERO) {
         fprintf(stderr, "error, bad descent graph %s:%d\n", __FILE__, __LINE__);
         abort();
     }
-    */
+    
     
     PeelSequenceGenerator psg(&p);
     psg.build_peel_order();

@@ -10,6 +10,7 @@ extern "C" {
     void destroy_random();
     double get_random();
     int get_random_int(int limit);
+    unsigned int get_random_raw();
 
 #ifdef __cplusplus
 }

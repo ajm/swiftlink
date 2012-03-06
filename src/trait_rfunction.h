@@ -8,6 +8,8 @@
 class TraitRfunction : public Rfunction {
     
     double get_recombination_probability(DescentGraph* dg, unsigned person_id, int maternal_allele, int paternal_allele);
+    double get_recombination_probability2(DescentGraph* dg, unsigned person_id, 
+            enum phased_trait parent_trait, enum phased_trait kid_trait, enum parentage parent);
     double get_trait_probability(unsigned person_id, enum phased_trait pt);
     //bool affected_trait(enum phased_trait pt, int allele);
     //enum phased_trait get_phased_trait(enum phased_trait m, enum phased_trait p, int maternal_allele, int paternal_allele);

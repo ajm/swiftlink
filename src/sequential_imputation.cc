@@ -9,7 +9,7 @@ using namespace std;
 #include "locus_sampler2.h"
 #include "peel_sequence_generator.h"
 
-/*
+
 void SequentialImputation::run(DescentGraph& dg, int iterations) {
     DescentGraph tmp(ped, map);
     double tmp_prob, best_prob = LOG_ILLEGAL;
@@ -23,14 +23,15 @@ void SequentialImputation::run(DescentGraph& dg, int iterations) {
         abort();
     }
     
-    //fprintf(stderr, "initial random likelihood = %e\n", tmp_prob);
+    fprintf(stderr, "initial random likelihood = %e\n", tmp_prob);
     
     Progress p("Sequential Imputation: ", iterations);
     
     do {
-        lsampler.sequential_imputation(tmp);
-    
-        if((tmp_prob = tmp.get_likelihood()) == LOG_ZERO) {
+        tmp_prob = lsampler.sequential_imputation(tmp);
+        
+        //if((tmp_prob = tmp.get_likelihood()) == LOG_ZERO) {
+        if(tmp_prob == LOG_ZERO) {
             p.finish();
             fprintf(stderr, "error: sequential imputation produced an invalid descent graph\n");
             fprintf(stderr, "%s\n", tmp.debug_string().c_str());
@@ -38,6 +39,8 @@ void SequentialImputation::run(DescentGraph& dg, int iterations) {
         }
         
         p.increment();
+        
+        fprintf(stderr, "likelihood = %.2f\n", tmp_prob);
         
         if(tmp_prob > best_prob) {
             dg = tmp;
@@ -48,10 +51,9 @@ void SequentialImputation::run(DescentGraph& dg, int iterations) {
     
     p.finish();
     
-    //fprintf(stderr, "starting point likelihood = %e\n", best_prob);
+    fprintf(stderr, "starting point likelihood = %.3f (%.3f)\n", best_prob, best_prob / log(10));
 }
-*/
-
+/*
 void SequentialImputation::run(DescentGraph& dg, int iterations) {
     double best_prob = LOG_ZERO;
     
@@ -74,7 +76,8 @@ void SequentialImputation::run(DescentGraph& dg, int iterations) {
     
     #pragma omp parallel for
     for(int i = 0; i < iterations; ++i) {
-        //likelihoods[i] = 
+        //likelihoods[i] = lsamplers[i]->sequential_imputation(*(graphs[i]));
+        
         lsamplers[i]->sequential_imputation(*(graphs[i]));
         likelihoods[i] = graphs[i]->get_likelihood();
         
@@ -83,6 +86,8 @@ void SequentialImputation::run(DescentGraph& dg, int iterations) {
             fprintf(stderr, "%s\n", graphs[i]->debug_string().c_str());
             abort();
         }
+        
+        fprintf(stderr, "likelihood = %.2f\n", likelihoods[i]);
         
         p.increment();
     }
@@ -102,16 +107,20 @@ void SequentialImputation::run(DescentGraph& dg, int iterations) {
             index = i;
         }
         
-        //printf("likelihood = %e (%e)\n", likelihoods[i], likelihoods[i] / log(10));
+        //printf("likelihood = %.3f (%.3f)\n", likelihoods[i], likelihoods[i] / log(10));
+        //printf("%.3f\n", likelihoods[i]);
     }
     
     dg = *graphs[index];
     
-    printf("starting point likelihood = %e (%e)\n", best_prob, best_prob / log(10));
+    printf("starting point likelihood = %.3f (%.3f)\n", best_prob, best_prob / log(10));
+    
+    //abort();
     
     for(int i = 0; i < iterations; ++i) {
         delete lsamplers[i];
         delete graphs[i];
     }
 }
+*/
 

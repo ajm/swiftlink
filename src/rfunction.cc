@@ -131,10 +131,20 @@ enum phased_trait Rfunction::get_phased_trait(enum phased_trait m, enum phased_t
 void Rfunction::evaluate_partner_peel(unsigned int pmatrix_index) {
     double tmp = 0.0;
     double total = 0.0;
+    double pen[4];
     
     unsigned int presum_index;
     
     enum phased_trait partner_trait;
+    
+    // this will have no effect in TraitRfunction because they are normalised anyway
+    // maybe move into SamplerRfunction so avoid the unnecessary overhead
+    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+        partner_trait = static_cast<enum phased_trait>(i);
+        pen[i] = get_trait_probability(peel_id, partner_trait);
+    }
+    
+    normalise(pen, 4);
     
     
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
@@ -143,7 +153,8 @@ void Rfunction::evaluate_partner_peel(unsigned int pmatrix_index) {
         
         indices[pmatrix_index][peel_id] = i;
         
-        tmp = get_trait_probability(peel_id, partner_trait);
+        //tmp = get_trait_probability(peel_id, partner_trait);
+        tmp = pen[i];
         if(tmp == 0.0)
             continue;
         
@@ -198,6 +209,13 @@ void Rfunction::evaluate(DescentGraph* dg, double offset) {
     //#pragma omp parallel for
     for(unsigned int i = 0; i < size; ++i) {
         evaluate_element(i, dg);
+    }
+}
+
+void Rfunction::normalise(double* p, int len) {
+    double total = p[0] + p[1] + p[2] + p[3];
+    for(int i = 0; i < len; ++i) {
+        p[i] /= total;
     }
 }
 

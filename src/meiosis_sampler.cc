@@ -55,7 +55,7 @@ void MeiosisSampler::find_founderallelegraph_ordering() {
 }
 
 double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, unsigned locus, enum parentage parent, unsigned value) {
-    double lik4;//, lik3;
+    double lik4; //, lik3;
     unsigned tmp = dg.get(person_id, locus, parent);
     //bool flip = tmp != value;
     
@@ -74,10 +74,12 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
     /*
     lik3 = f3.evaluate(dg, locus);
     
-    if(fabs(lik3 - lik4) > 0.000001) {
-        fprintf(stderr, "%d,%d F3 %f F4 %f\n", locus, value, lik3, lik4);
-        fprintf(stderr, "%s\n\n", f3.debug_string().c_str());
-        abort();
+    //if(fabs(lik3 - lik4) > 0.000001) {
+    if((locus == 0) and (lik4 > 0.4)) {
+        fprintf(stdout, "\np = %d, l = %d, a = %d, v = %d\n", person_id, locus, parent, value);
+        fprintf(stdout, "%d,%d F3 %f F4 %f\n", locus, value, lik3, lik4);
+        fprintf(stdout, "%s\n\n", f3.debug_string().c_str());
+        //abort();
     }
     */
     
@@ -90,7 +92,8 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
     
     dg.set(person_id, locus, parent, tmp);
     
-    return lik4 == 0.0 ? LOG_ZERO : log(lik4);
+    //return lik4 == 0.0 ? LOG_ZERO : log(lik4);
+    return lik4;
 }
 
 void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
@@ -109,6 +112,8 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
         //if(parameter == 0) {
             matrix[index + 0] = graph_likelihood(dg, person_id, i, p, 0);
             matrix[index + 1] = graph_likelihood(dg, person_id, i, p, 1);
+            
+            //fprintf(stderr, "%d %f\n%d %f\n", i, matrix[index], i, matrix[index+1]);
         /*
         }
         else {
@@ -120,19 +125,41 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
         }
         */
         
+        /*
         if((matrix[index] == LOG_ZERO) and (matrix[index + 1] == LOG_ZERO)) {
+            fprintf(stderr, "bad: (locus = %d)\n", i);
+            abort();
+        }
+        */
+        
+        if((matrix[index] == 0.0) and (matrix[index+1] == 0.0)) {
             fprintf(stderr, "bad: (locus = %d)\n", i);
             abort();
         }
     }
     
+    /*
+    double total = log_sum(matrix[0], matrix[1]);
+        
+    if(matrix[0] != LOG_ZERO)
+        matrix[0] -= total;
+    
+    if(matrix[1] != LOG_ZERO)
+        matrix[1] -= total;
+    */
+    
+    double total = matrix[0] + matrix[1];
+    if(matrix[0] != 0.0)
+        matrix[0] /= total;
+    if(matrix[1] != 0.0)
+        matrix[1] /= total;
     
     // forwards
     for(i = 1; i < num_markers; ++i) {
         int index = i * 2;
         
         for(j = 0; j < 2; ++j) {
-            
+            /*
             matrix[index + j] = log_product( \
                                        matrix[index + j], \
                                        log_sum( \
@@ -140,21 +167,27 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
                                                log_product(matrix[((i-1) * 2) +    j ], map->get_inversetheta_log(i-1)) \
                                                ) \
                                        );
-            
-            /*
-            double prev1 = log_product(matrix[((i-1) * 2) + (1-j)], map->get_theta_log(i-1));
-            double prev2 = log_product(matrix[((i-1) * 2) +    j ], map->get_inversetheta_log(i-1));
-            double total = log_sum(prev1, prev2);
-            prev1 -= total;
-            prev2 -= total;
-            
-            matrix[index + j] = log_sum(
-                                    log_product(matrix[index + j], prev1), 
-                                    log_product(matrix[index + j], prev2)
-                                );
-            
             */
+            matrix[index + j] *= \
+                    ((matrix[((i - 1) * 2) + (1 - j)] * map->get_theta(i-1)         ) + \
+                     (matrix[((i - 1) * 2) +      j ] * map->get_inversetheta(i-1)) );
         }
+        
+        /*
+        double total = log_sum(matrix[index], matrix[index+1]);
+        
+        if(matrix[index] != LOG_ZERO)
+            matrix[index] -= total;
+        
+        if(matrix[index+1] != LOG_ZERO)
+            matrix[index+1] -= total;
+        */
+        
+        double total = matrix[index] + matrix[index + 1];
+        if(matrix[index] != 0.0)
+            matrix[index] /= total;
+        if(matrix[index + 1] != 0.0)
+            matrix[index + 1] /= total;
     }
     
     // sample backwards
@@ -176,9 +209,11 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
         int index = i * 2;
         
         for(j = 0; j < 2; ++j) {
-            double next = (dg.get(person_id, i+1, p) != j) ? map->get_theta_log(i) : map->get_inversetheta_log(i);
+            //double next = (dg.get(person_id, i+1, p) != j) ? map->get_theta_log(i) : map->get_inversetheta_log(i);
+            double next = (dg.get(person_id, i+1, p) != j) ? map->get_theta(i) : map->get_inversetheta(i);
         
-            matrix[index + j] = log_product(matrix[index + j], next);
+            //matrix[index + j] = log_product(matrix[index + j], next);
+            matrix[index + j] *= next;
         }
         
         /*
@@ -198,7 +233,7 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned parameter) {
 
 unsigned MeiosisSampler::sample(int locus) {
     int index = locus * 2;
-    
+    /*
     if((matrix[index] == LOG_ZERO) and (matrix[index + 1] == LOG_ZERO)) {
         fprintf(stderr, "error: m-sampler probability distribution sums to zero (locus = %d)\n", locus);
         abort();
@@ -215,5 +250,14 @@ unsigned MeiosisSampler::sample(int locus) {
     double r = get_random();
     
     return (log(r) < (matrix[index] - log_sum(matrix[index], matrix[index + 1]))) ? 0 : 1;
+    */
+    
+    if(matrix[index] == 0.0)
+        return 1;
+        
+    if(matrix[index + 1] == 0.0)
+        return 0;
+        
+    return (get_random() < (matrix[index] / (matrix[index] + matrix[index + 1]))) ? 0 : 1;
 }
 

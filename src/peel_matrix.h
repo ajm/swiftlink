@@ -40,6 +40,12 @@ class PeelMatrix {
         unsigned int tmp = 0;
     
         for(unsigned int i = 0; i < num_keys; ++i) {
+        
+            if(index[keys[i]] == -1) {
+                fprintf(stderr, "%d was -1\n", keys[i]);
+                abort();
+            }
+        
             tmp += (index[keys[i]] * (1 << (2 * i)));
         }
         

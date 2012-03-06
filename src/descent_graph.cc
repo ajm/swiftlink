@@ -144,6 +144,7 @@ int DescentGraph::get_founderallele(unsigned person_id, unsigned locus, enum par
 
 double DescentGraph::get_likelihood() {
     prob = log_product(_transmission_prob(), _sum_prior_prob());
+    //prob = _transmission_prob();
     return prob;
 }
 /*

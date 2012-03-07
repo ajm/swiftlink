@@ -106,32 +106,15 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
     return tmp;
 }
 
-void SamplerRfunction::sample(DescentGraph* dg, vector<int>& pmk) {
+void SamplerRfunction::sample(vector<int>& pmk) {
     double prob_dist[NUM_ALLELES];
-    
-    /*
-    // get probabilities
-    switch(peel->get_type()) {
-        case CHILD_PEEL:
-            sample_child(dg, pmk, prob_dist);
-            break;
-        case LAST_PEEL:
-        case PARTNER_PEEL:
-            sample_partner(pmk, prob_dist);
-            break;
-        default:
-            fprintf(stderr, "i hav' not written the code for this!\n");
-            abort();
-    }
-    */
     
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         pmk[peel_id] = i;
         prob_dist[i] = pmatrix_presum.get(pmk);        
     }
     
-    normalise(prob_dist, 4);
-    
+    normalise(prob_dist);
         
     // sample
     unsigned int last = 0;
@@ -153,100 +136,6 @@ void SamplerRfunction::sample(DescentGraph* dg, vector<int>& pmk) {
     pmk[peel_id] = last;
 }
 
-void SamplerRfunction::sample_child(DescentGraph* dg, vector<int>& pmk, double* prob) {
-    Person* kid = ped->get_by_index(peel_id);    
-    
-    enum phased_trait mat_trait;
-    enum phased_trait pat_trait;
-    enum phased_trait kid_trait;
-    
-    double tmp;
-    double trans[4];
-    double prev1[4];
-    double prev2[4];
-    double total;
-    
-    mat_trait = static_cast<enum phased_trait>(pmk[kid->get_maternalid()]);
-    pat_trait = static_cast<enum phased_trait>(pmk[kid->get_paternalid()]);
-    
-    
-    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
-        kid_trait = static_cast<enum phased_trait>(i);
-        
-        trans[i] = (get_recombination_probability(dg, peel_id, mat_trait, kid_trait, MATERNAL) * \
-                    get_recombination_probability(dg, peel_id, pat_trait, kid_trait, PATERNAL));
-    }
-    
-    normalise(trans, 4);
-    
-    
-    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
-        pmk[peel_id] = i;
-        
-        prev1[i] = ((previous_rfunction1 != NULL) ? previous_rfunction1->get(pmk) : 1.0);
-        prev2[i] = ((previous_rfunction2 != NULL) ? previous_rfunction2->get(pmk) : 1.0);
-    }
-    
-    //normalise(prev1, 4);
-    //normalise(prev2, 4);
-
-    total = 0.0;
-    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
-        kid_trait = static_cast<enum phased_trait>(i);
-
-        tmp = get_trait_probability(peel_id, kid_trait) * trans[i] * prev1[i] * prev2[i];
-
-        prob[i] = tmp;
-        total += tmp;
-    }
-    
-    if(total == 0.0) {
-        fprintf(stderr, "error: probabilities sum to zero (%s:%d)\n", __FILE__, __LINE__);
-        abort();
-    }
-    
-    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
-        prob[i] /= total;
-    }
-}
-
-void SamplerRfunction::sample_partner(vector<int>& pmk, double* prob) {
-    enum phased_trait partner_trait;    
-    double tmp;
-    double total;    
-    double prev1[4];
-    double prev2[4];
-    
-    
-    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
-        pmk[peel_id] = i;
-        prev1[i] = ((previous_rfunction1 != NULL) ? previous_rfunction1->get(pmk) : 1.0);
-        prev2[i] = ((previous_rfunction2 != NULL) ? previous_rfunction2->get(pmk) : 1.0);
-    }
-    
-    //normalise(prev1, 4);
-    //normalise(prev2, 4);
-    
-    total = 0.0;
-    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
-        partner_trait = static_cast<enum phased_trait>(i);
-        
-        tmp = get_trait_probability(peel_id, partner_trait) * prev1[i] * prev2[i];
-        
-        prob[i] = tmp;
-        total += tmp;
-    }
-    
-    if(total == 0.0) {
-        fprintf(stderr, "error: probabilities sum to zero (%d)\n", peel_id);
-        abort();
-    }
-    
-    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
-        prob[i] /= total;
-    }
-}
-
 void SamplerRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGraph* dg) {
         
     unsigned int presum_index;
@@ -258,22 +147,8 @@ void SamplerRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGr
     double tmp;
     double total = 0.0;
     
-    double trans[4];
-    double pen[4];
-    
     mat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][kid->get_maternalid()]);
     pat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][kid->get_paternalid()]);
-    
-    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
-        kid_trait = static_cast<enum phased_trait>(i);
-        trans[i] = get_recombination_probability(dg, peel_id, mat_trait, kid_trait, MATERNAL) * \
-                   get_recombination_probability(dg, peel_id, pat_trait, kid_trait, PATERNAL);
-        pen[i] = get_trait_probability(peel_id, kid_trait);
-    }
-    
-    normalise(trans, 4);
-    //normalise(pen, 4);
-    
     
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         kid_trait = static_cast<enum phased_trait>(i);
@@ -281,14 +156,11 @@ void SamplerRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGr
         
         indices[pmatrix_index][peel_id] = i;
         
-        //tmp = get_trait_probability(peel_id, kid_trait);
-        tmp = pen[i];
+        tmp = get_trait_probability(peel_id, kid_trait);
         if(tmp == 0.0)
             continue;
         
-        //tmp *= (get_recombination_probability(dg, peel_id, mat_trait, kid_trait, MATERNAL) *
-        //        get_recombination_probability(dg, peel_id, pat_trait, kid_trait, PATERNAL));
-        tmp *= trans[i];
+        tmp *= transmission[0][transmission_index(mat_trait, pat_trait, kid_trait)];
         if(tmp == 0.0)
             continue;
         
@@ -307,13 +179,13 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
     
     unsigned int presum_index;
     
-    enum phased_trait pivot_trait;
+    enum phased_trait kid_trait;
     enum phased_trait mat_trait;
     enum phased_trait pat_trait;
     
     double tmp;
     double total = 0.0;
-    
+        
     
     for(unsigned int i = 0; i < NUM_ALLELES; ++i) {
         mat_trait = pat_trait = static_cast<enum phased_trait>(i);
@@ -332,15 +204,13 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
         
         double child_prob = 1.0;
         
-        for(unsigned int c = 0; c < peel->get_cutset_size(); ++c) {
-            unsigned int child_id = peel->get_cutnode(c);
+        for(unsigned int c = 0; c < children.size(); ++c) {
+            unsigned int child_id = children[c];
             Person* child = ped->get_by_index(child_id);
             
-            if(not child->is_parent(peel_id))
-                continue;
+            //fprintf(stderr, "-> %d\n", child_id);
             
-            
-            pivot_trait = static_cast<enum phased_trait>(indices[pmatrix_index][child_id]);
+            kid_trait = static_cast<enum phased_trait>(indices[pmatrix_index][child_id]);
             
             if(child->get_maternalid() == peel_id) {
                 pat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][child->get_paternalid()]);
@@ -349,9 +219,7 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
                 mat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][child->get_maternalid()]);
             }
             
-            
-            child_prob *= (get_recombination_probability(dg, child_id, mat_trait, pivot_trait, MATERNAL) *  \
-                           get_recombination_probability(dg, child_id, pat_trait, pivot_trait, PATERNAL));
+            child_prob *= transmission[c][transmission_index(mat_trait, pat_trait, kid_trait)];
             
             if(child_prob == 0.0)
                 break;
@@ -365,5 +233,78 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
     }
     
     pmatrix.set(pmatrix_index, total);
+}
+
+void SamplerRfunction::setup_transmission_cache() {
+        
+    if(peel->get_type() == PARENT_PEEL) {
+        for(unsigned int c = 0; c < peel->get_cutset_size(); ++c) {
+            unsigned int child_id = peel->get_cutnode(c);
+            Person* child = ped->get_by_index(child_id);
+            
+            if(not child->is_parent(peel_id))
+                continue;
+            
+            transmission.push_back(new double[64]);
+            children.push_back(child_id);
+            
+            //fprintf(stderr, "<- %d\n", child_id);
+        }
+    }
+    else {
+        transmission.push_back(new double[64]);
+    }
+}
+
+void SamplerRfunction::teardown_transmission_cache() {
+    
+    for(unsigned int i = 0; i < transmission.size(); ++i) {
+        delete[] transmission[i];
+    }
+    
+    transmission.clear();
+    children.clear();
+}
+
+void SamplerRfunction::preevaluate_init(DescentGraph* dg) {
+    populate_transmission_cache(dg);
+}
+
+void SamplerRfunction::populate_transmission_cache(DescentGraph* dg) {
+
+    if(peel->get_type() == PARENT_PEEL) {
+        for(unsigned int i = 0; i < children.size(); ++i) {
+            transmission_matrix(dg, children[i], transmission[i]);
+        }
+    }
+    else {
+        transmission_matrix(dg, peel_id, transmission[0]);
+    }
+}
+
+unsigned int SamplerRfunction::transmission_index(enum phased_trait mat_trait, 
+                                                  enum phased_trait pat_trait, 
+                                                  enum phased_trait kid_trait) {
+
+    return (mat_trait * 16) + (pat_trait * 4) + kid_trait;
+}
+
+void SamplerRfunction::transmission_matrix(DescentGraph* dg, int kid_id, double* tmatrix) {
+    
+    //#pragma omp parallel for
+    for(int i = 0; i < 64; ++i) {
+        int tmp = i;
+        enum phased_trait mat_trait = static_cast<enum phased_trait>(tmp / 16); tmp %= 16;
+        enum phased_trait pat_trait = static_cast<enum phased_trait>(tmp / 4);  tmp %= 4;
+        enum phased_trait kid_trait = static_cast<enum phased_trait>(tmp);
+    
+        tmatrix[i] = get_recombination_probability(dg, kid_id, mat_trait, kid_trait, MATERNAL) *  \
+                     get_recombination_probability(dg, kid_id, pat_trait, kid_trait, PATERNAL);
+    }
+    
+    //#pragma omp parallel for
+    for(int i = 0; i < 64; i += 4) {
+        normalise(&tmatrix[i]);
+    }
 }
 

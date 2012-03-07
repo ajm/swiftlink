@@ -30,36 +30,21 @@ class Rfunction {
     Rfunction* previous_rfunction1;
     Rfunction* previous_rfunction2;
     unsigned int locus;
-    double theta;
-    double antitheta;
-    double theta2;
-    double antitheta2;
     vector<vector<int> > indices;
     unsigned int index_offset;
     unsigned int size;
     unsigned int peel_id;
     
-    inline enum trait get_trait(enum phased_trait p, enum parentage parent) {
-        switch(parent) {
-            case MATERNAL:
-                return (((p == TRAIT_UU) or (p == TRAIT_UA)) ? TRAIT_U : TRAIT_A);    
-            case PATERNAL:
-                return (((p == TRAIT_UU) or (p == TRAIT_AU)) ? TRAIT_U : TRAIT_A);
-            default:
-                break;
-        }
-        abort();
-    }
-    
+    enum trait get_trait(enum phased_trait p, enum parentage parent);
     bool affected_trait(enum phased_trait pt, int allele);
-    enum phased_trait get_phased_trait(enum phased_trait m, enum phased_trait p, 
-                                       int maternal_allele, int paternal_allele);
+    enum phased_trait get_phased_trait(enum phased_trait m, enum phased_trait p, int maternal_allele, int paternal_allele);
     
-    void normalise(double* p, int len);
+    void normalise(double* p);
     
         
  private :
-    bool legal_genotype(unsigned personid, enum phased_trait g);   
+    bool legal_genotype(unsigned personid, enum phased_trait g);
+    virtual void preevaluate_init(DescentGraph* dg)=0;
     virtual double get_trait_probability(unsigned person_id, enum phased_trait pt)=0;
     virtual void evaluate_child_peel(unsigned int pmatrix_index, DescentGraph* dg)=0;
     virtual void evaluate_parent_peel(unsigned int pmatrix_index, DescentGraph* dg)=0;
@@ -77,20 +62,6 @@ class Rfunction {
     }
     
     void evaluate(DescentGraph* dg, double offset);
-    
-    void set_locus(unsigned int locus) {
-        this->locus = locus;
-    
-        if(locus != (map->num_markers() - 1)) {
-            theta = map->get_theta(locus);
-            antitheta = map->get_inversetheta(locus);
-        }
-    
-        if(locus != 0) {
-            theta2 = map->get_theta(locus-1);
-            antitheta2 = map->get_inversetheta(locus-1);
-        }
-    }
     
     double get_result() { 
         return pmatrix.get_result();

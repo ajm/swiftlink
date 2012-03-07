@@ -7,22 +7,27 @@
 
 class TraitRfunction : public Rfunction {
     
-    double get_recombination_probability(DescentGraph* dg, unsigned person_id, int maternal_allele, int paternal_allele);
-    double get_recombination_probability2(DescentGraph* dg, unsigned person_id, 
-            enum phased_trait parent_trait, enum phased_trait kid_trait, enum parentage parent);
-    double get_trait_probability(unsigned person_id, enum phased_trait pt);
-    //bool affected_trait(enum phased_trait pt, int allele);
-    //enum phased_trait get_phased_trait(enum phased_trait m, enum phased_trait p, int maternal_allele, int paternal_allele);
+    double half_theta;
+    double half_inversetheta;
     
+    double get_recombination_probability(DescentGraph* dg, unsigned person_id, int maternal_allele, int paternal_allele);
+    double get_trait_probability(unsigned person_id, enum phased_trait pt);
+    
+    void preevaluate_init(DescentGraph* dg) {}
     void evaluate_child_peel(unsigned int pmatrix_index, DescentGraph* dg);
     void evaluate_parent_peel(unsigned int pmatrix_index, DescentGraph* dg);
     
  public :
     TraitRfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, Rfunction* prev1, Rfunction* prev2) : 
-        Rfunction(p, m, locus, po, prev1, prev2) {}
+        Rfunction(p, m, locus, po, prev1, prev2),
+        half_theta(m->get_theta_halfway(locus)),
+        half_inversetheta(m->get_inversetheta_halfway(locus)) {
+    }
     
     TraitRfunction(const TraitRfunction& rhs) :
-        Rfunction(rhs) {}
+        Rfunction(rhs),
+        half_theta(rhs.half_theta),
+        half_inversetheta(rhs.half_inversetheta) {}
     
     virtual ~TraitRfunction() {}
     
@@ -30,16 +35,12 @@ class TraitRfunction : public Rfunction {
         
         if(&rhs != this) {
             Rfunction::operator=(rhs);
+            half_theta = rhs.half_theta;
+            half_inversetheta = rhs.half_inversetheta;
         }
         
         return *this;
     }
-    
-    /*
-    double get_result() { 
-        return pmatrix.get_result();
-    }
-    */
 };
 
 #endif

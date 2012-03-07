@@ -299,11 +299,10 @@ PeelOperation Person::peel_operation(PeelingState& state) {
     else if(ripe_to_peel_up(state)) {
         p.set_type(CHILD_PEEL);
     }
-    /*
     else if(ripe_to_peel_down(state)) {
         p.set_type(PARENT_PEEL);
     }
-    */
+    
     if(p.get_type() != NULL_PEEL) {
         //p.set_peelnode(internal_id);
         get_cutset(p, state);

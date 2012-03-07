@@ -31,14 +31,16 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator* psg, unsigned 
         Rfunction* prev1 = ops[i].get_previous_op1() == -1 ? NULL : &rfunctions[ops[i].get_previous_op1()];
         Rfunction* prev2 = ops[i].get_previous_op2() == -1 ? NULL : &rfunctions[ops[i].get_previous_op2()];
         
-        rfunctions.push_back(TraitRfunction(ped, map, 0, &(ops[i]), prev1, prev2));
+        rfunctions.push_back(TraitRfunction(ped, map, locus, &(ops[i]), prev1, prev2));
     }
     
     trait_prob = calc_trait_prob();
     
+    /*
     for(unsigned i = 0; i < rfunctions.size(); ++i) {
         rfunctions[i].set_locus(locus);
     }
+    */
     
     if(locus == 0) {
         printf("P(T) = %e\n", trait_prob / log(10));

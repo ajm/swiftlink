@@ -121,7 +121,7 @@ void LocusSampler::step(DescentGraph& dg, unsigned parameter) {
     
     // reverse peel, sampling ordered genotypes
     for(int i = static_cast<int>(rfunctions.size()) - 1; i >= 0; --i) {
-        rfunctions[i].sample(&dg, pmk);
+        rfunctions[i].sample(pmk);
     }
     
     /*

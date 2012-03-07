@@ -11,8 +11,6 @@ using namespace std;
 double TraitRfunction::get_recombination_probability(DescentGraph* dg, unsigned person_id, 
                                                      int maternal_allele, int paternal_allele) {
     double tmp = 1.0;
-    double half_theta = map->get_theta_halfway(locus);
-    double half_inversetheta = map->get_inversetheta_halfway(locus);
         
     tmp *= ((dg->get(person_id, locus,   MATERNAL) == maternal_allele) ? half_inversetheta : half_theta);
     tmp *= ((dg->get(person_id, locus+1, MATERNAL) == maternal_allele) ? half_inversetheta : half_theta);
@@ -22,88 +20,10 @@ double TraitRfunction::get_recombination_probability(DescentGraph* dg, unsigned 
     
     return tmp;
 }
-
-double TraitRfunction::get_recombination_probability2(DescentGraph* dg, 
-                                     unsigned person_id, 
-                                     enum phased_trait parent_trait, 
-                                     enum phased_trait kid_trait, 
-                                     enum parentage parent) {
-    
-    enum trait t = get_trait(kid_trait, parent);
-    double tmp;
-    
-    // recombination + transmission prob
-    // deal with homozygotes first
-    if(parent_trait == TRAIT_AA) {
-        tmp = (t == TRAIT_A) ? 1.0 : 0.0;
-        return !dg ? tmp : tmp * 0.25;
-    }
-    else if(parent_trait == TRAIT_UU) {
-        tmp = (t == TRAIT_U) ? 1.0 : 0.0;
-        return !dg ? tmp : tmp * 0.25;
-    }
-    
-    if(!dg)
-        return 0.5;
-    
-    // heterozygotes are informative, so i can look up
-    // the recombination fractions
-    int p = 0;
-    if(parent_trait == TRAIT_UA) {
-        p = (t == TRAIT_U) ? 0 : 1;
-    }
-    else if(parent_trait == TRAIT_AU) {
-        p = (t == TRAIT_A) ? 0 : 1;
-    }
-    
-    tmp = 0.5;
-    
-    double half_theta = map->get_theta_halfway(locus);
-    double half_inversetheta = map->get_inversetheta_halfway(locus);
-    
-    tmp *= ((dg->get(person_id, locus, parent) == p) ? half_inversetheta : half_theta);
-    tmp *= ((dg->get(person_id, locus+1, parent) == p) ? half_inversetheta : half_theta);
-    
-    return tmp;
-}
     
 double TraitRfunction::get_trait_probability(unsigned person_id, enum phased_trait pt) {
     return (ped->get_by_index(person_id))->get_disease_prob(pt);
 }
-
-/*
-bool TraitRfunction::affected_trait(enum phased_trait pt, int allele) {
-    
-    switch(allele) {
-        case 0 :
-            return (pt == TRAIT_AU) or (pt == TRAIT_AA);
-        case 1 :
-            return (pt == TRAIT_UA) or (pt == TRAIT_AA);
-        default :
-            break;
-    }
-    
-    abort();
-}
-*/
-/*
-enum phased_trait TraitRfunction::get_phased_trait(enum phased_trait m, enum phased_trait p, 
-                                                   int maternal_allele, int paternal_allele) {
-                                                   
-    bool m_affected = affected_trait(m, maternal_allele);
-    bool p_affected = affected_trait(p, paternal_allele);
-    enum phased_trait pt;
-    
-    if(m_affected) {
-        pt = p_affected ? TRAIT_AA : TRAIT_AU;
-    }
-    else {
-        pt = p_affected ? TRAIT_UA : TRAIT_UU;
-    }
-    
-    return pt;
-}
-*/
 
 void TraitRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGraph* dg) {
     
@@ -116,23 +36,10 @@ void TraitRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGrap
     
     double tmp;
     double total = 0.0;
-    
-    //double trans[4] = {0.0, 0.0, 0.0, 0.0};
 
         
     mat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][kid->get_maternalid()]);
     pat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][kid->get_paternalid()]);
-    
-    /*
-    for(int i = 0; i < 2; ++i) {        // maternal
-        for(int j = 0; j < 2; ++j) {    // paternal
-            kid_trait = get_phased_trait(mat_trait, pat_trait, i, j);
-            trans[i] += (!dg ? 0.25 : 0.25 * get_recombination_probability(dg, peel_id, i, j));
-        }
-    }
-    
-    normalise(trans, 4);
-    */
     
     // iterate over all descent graphs to determine child trait 
     // based on parents' traits
@@ -148,7 +55,6 @@ void TraitRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGrap
             if(tmp == 0.0)
                 continue;
             
-            //tmp *= trans[i];
             tmp *= (!dg ? 0.25 : 0.25 * get_recombination_probability(dg, peel_id, i, j));
             if(tmp == 0.0)
                 continue;
@@ -161,42 +67,6 @@ void TraitRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGrap
             total += tmp;
         }
     }
-    
-    
-    /*
-    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
-        kid_trait = static_cast<enum phased_trait>(i);
-        trans[i] = get_recombination_probability2(dg, peel_id, mat_trait, kid_trait, MATERNAL) * \
-                   get_recombination_probability2(dg, peel_id, pat_trait, kid_trait, PATERNAL);
-    }
-    
-    normalise(trans, 4);
-    
-    
-    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
-        kid_trait = static_cast<enum phased_trait>(i);
-        presum_index = pmatrix_index + (index_offset * i);
-        
-        indices[pmatrix_index][peel_id] = i;
-        
-        tmp = get_trait_probability(peel_id, kid_trait);
-        if(tmp == 0.0)
-            continue;
-        
-        //tmp *= (get_recombination_probability2(dg, peel_id, mat_trait, kid_trait, MATERNAL) * 
-        //        get_recombination_probability2(dg, peel_id, pat_trait, kid_trait, PATERNAL));
-        tmp *= trans[i];
-        if(tmp == 0.0)
-            continue;
-        
-        tmp *= ((previous_rfunction1 != NULL) ? previous_rfunction1->get(indices[pmatrix_index]) : 1.0) * \
-               ((previous_rfunction2 != NULL) ? previous_rfunction2->get(indices[pmatrix_index]) : 1.0);
-        
-        pmatrix_presum.set(presum_index, tmp);
-        
-        total += tmp;
-    }
-    */
     
     pmatrix.set(pmatrix_index, total);
 }
@@ -271,3 +141,4 @@ void TraitRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentGra
     
     pmatrix.set(pmatrix_index, total);
 }
+

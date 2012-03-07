@@ -2,18 +2,14 @@
 #define LKG_RANDOM_H_
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-    
-    void seed_random(unsigned int seed);
-    void destroy_random();
-    double get_random();
-    int get_random_int(int limit);
-    unsigned int get_random_raw();
+void init_random();
+void destroy_random();
 
-#ifdef __cplusplus
-}
-#endif
+void seed_random_explicit(unsigned int seed);
+void seed_random_implicit();
+
+double get_random();
+int get_random_int(int limit);
 
 #endif
+

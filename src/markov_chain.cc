@@ -183,8 +183,6 @@ double* MarkovChain::run(DescentGraph& dg) {
         msampler_count / double(lsampler_count + msampler_count));
     */
     
-    printf("random end = %u\n", get_random_raw());
-    
     return lod_scores;
 }
 

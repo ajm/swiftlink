@@ -23,7 +23,6 @@ using namespace std;
 bool LinkageProgram::run() {
     vector<double*> lod_scores;
     double* tmp;
-    unsigned int seed;
     
     /*
     if(verbose) {
@@ -32,24 +31,8 @@ bool LinkageProgram::run() {
     }
     */
     
-    // TODO XXX need to know how to do this properly, 
-    // look up better random numbers for simulations etc
-    //seed = time(NULL);
-    fstream randfile;
-    
-    randfile.open ("/dev/urandom", ios::in);
-    if(not randfile.is_open()) {
-        fprintf(stderr, "error: could not open /dev/urandom\n");
-        abort();
-    }
-      
-    randfile.read((char*)&seed, sizeof(seed));
-    
-    randfile.close();
-    
-    
-    seed_random(seed);
-    
+    init_random();
+    seed_random_implicit();
     
     for(unsigned int i = 0; i < pedigrees.size(); ++i) {
         

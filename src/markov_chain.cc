@@ -19,9 +19,7 @@ using namespace std;
 
 
 double* MarkovChain::run(DescentGraph& dg) {
-    //int lsampler_count = 0;
-    //int msampler_count = 0;
-    
+
     // lod scorers
     vector<Peeler*> peelers;
     for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
@@ -49,14 +47,6 @@ double* MarkovChain::run(DescentGraph& dg) {
     for(unsigned int i = 0; i < num_meioses; ++i)
         m_ordering.push_back(i);
     
-    //random_shuffle(l_ordering.begin(), l_ordering.end());
-    //random_shuffle(m_ordering.begin(), m_ordering.end());
-    /*
-    for(unsigned int i = 0; i < num_meioses; ++i) {
-        fprintf(stderr, "%d ", m_ordering[i]);
-    }
-    fprintf(stderr, "\n");
-    */
     
     fprintf(stderr, "P(l-sampler) = %f\n", options.lsampler_prob);
     
@@ -69,44 +59,7 @@ double* MarkovChain::run(DescentGraph& dg) {
 
         
     for(int i = 0; i < (options.iterations + options.burnin); ++i) {
-        if(get_random() < options.lsampler_prob) {
-            //lsampler_count ++;
-        
-            /*
-            int j = get_random_int(map->num_markers());
-            lsamplers[j]->step(dg, j);
-            */
-            
-            /*
-            for(unsigned int j = 0; j < map->num_markers(); ++j) {
-                lsamplers[j]->step(dg, j);
-            }
-            */
-            
-            /*
-            int batches = 2;
-            
-            for(int j = 0; j < batches; ++j) {
-                //#pragma omp parallel for
-                for(int k = j; k < int(map->num_markers()); k += batches) {
-                    lsamplers[k]->step(dg, k);
-                }
-            }
-            */
-            
-            /*
-            #pragma omp parallel for
-            for(int j = 0; j < int(map->num_markers()); j += 2) {
-                lsamplers[j]->step(dg, j);
-            }
-            
-            #pragma omp parallel for
-            for(int j = 1; j < int(map->num_markers()); j += 2) {
-                lsamplers[j]->step(dg, j);
-            }
-            */
-            
-            
+        if(get_random() < options.lsampler_prob) {            
             random_shuffle(l_ordering.begin(), l_ordering.end());
             
             for(unsigned int j = 0; j < l_ordering.size(); ++j) {
@@ -115,23 +68,6 @@ double* MarkovChain::run(DescentGraph& dg) {
             
         }
         else {
-            //msampler_count ++;
-            
-            
-            //msampler.reset(dg);
-            
-            /*
-            for(unsigned int j = 0; j < num_meioses; ++j) {
-                msampler.step(dg, j);
-            }
-            */
-            
-            /*
-            int j = get_random_int(num_meioses);
-            //msampler.reset(dg);
-            msampler.step(dg, j);
-            */
-            
             random_shuffle(m_ordering.begin(), m_ordering.end());
             
             for(unsigned int j = 0; j < m_ordering.size(); ++j) {
@@ -142,9 +78,6 @@ double* MarkovChain::run(DescentGraph& dg) {
         }
         
         p.increment();
-        
-        //if((i % options.scoring_period) == 0)
-        //    fprintf(stderr, "%d %e\n", i, dg.get_likelihood() / log(10.0));
         
         if(dg.get_likelihood() == LOG_ILLEGAL) {
             fprintf(stderr, "error: descent graph illegal...\n");
@@ -176,12 +109,6 @@ double* MarkovChain::run(DescentGraph& dg) {
         lod_scores[i] = peelers[i]->get();
         delete peelers[i];
     }
-    
-    /*
-    printf("L-sampler : %.3f\nM-sampler : %.3f\n", \
-        lsampler_count / double(lsampler_count + msampler_count), \
-        msampler_count / double(lsampler_count + msampler_count));
-    */
     
     return lod_scores;
 }

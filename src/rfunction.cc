@@ -136,8 +136,7 @@ void Rfunction::evaluate_partner_peel(unsigned int pmatrix_index) {
 }
 
 void Rfunction::evaluate_element(unsigned int pmatrix_index, DescentGraph* dg) {
-    // XXX could remove this with some inheritance?
-    // RfunctionChild RfunctionParent?
+    
     switch(peel->get_type()) {
         
         case CHILD_PEEL :

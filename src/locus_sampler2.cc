@@ -124,13 +124,6 @@ void LocusSampler::step(DescentGraph& dg, unsigned parameter) {
         rfunctions[i].sample(pmk);
     }
     
-    /*
-    for(unsigned int i = 0; i < pmk.size(); ++i) {
-        fprintf(stderr, "%d %d\n", i, pmk[i]);
-    }
-    abort();
-    */
-    
     sample_meiosis_indicators(pmk, dg);
 }
 

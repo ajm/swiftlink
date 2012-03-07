@@ -208,8 +208,6 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
             unsigned int child_id = children[c];
             Person* child = ped->get_by_index(child_id);
             
-            //fprintf(stderr, "-> %d\n", child_id);
-            
             kid_trait = static_cast<enum phased_trait>(indices[pmatrix_index][child_id]);
             
             if(child->get_maternalid() == peel_id) {

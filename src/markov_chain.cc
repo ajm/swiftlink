@@ -70,11 +70,10 @@ double* MarkovChain::run(DescentGraph& dg) {
         else {
             random_shuffle(m_ordering.begin(), m_ordering.end());
             
+            msampler.reset(dg, m_ordering[0]);
             for(unsigned int j = 0; j < m_ordering.size(); ++j) {
-                //msampler.reset(dg);
                 msampler.step(dg, m_ordering[j]);
             }
-            
         }
         
         p.increment();

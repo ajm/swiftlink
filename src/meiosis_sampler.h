@@ -11,8 +11,6 @@ using namespace std;
 #include "logarithms.h"
 #include "founder_allele_graph4.h"
 
-#include "founder_allele_graph3.h"
-
 
 class Pedigree;
 class GeneticMap;
@@ -23,8 +21,7 @@ class MeiosisSampler : Sampler {
     vector<FounderAlleleGraph4> f4;
     vector<double> matrix;
     vector<int> seq;
-    
-    FounderAlleleGraph3 f3;
+    unsigned int last_parameter;
     
     
     double graph_likelihood(DescentGraph& dg, unsigned person_id, unsigned locus, enum parentage parent, unsigned value);
@@ -40,7 +37,7 @@ class MeiosisSampler : Sampler {
         f4(map->num_markers(), FounderAlleleGraph4(ped, map)),
         matrix(map->num_markers() * 2),
         seq(),
-        f3(ped, map) {
+        last_parameter(0) {
         
         find_founderallelegraph_ordering();
         
@@ -48,8 +45,6 @@ class MeiosisSampler : Sampler {
             f4[i].set_sequence(&seq);
             f4[i].set_locus(i);
         }
-        
-        f3.set_sequence(&seq);
     }
     
     MeiosisSampler(const MeiosisSampler& rhs) :
@@ -57,7 +52,7 @@ class MeiosisSampler : Sampler {
         f4(rhs.f4),
         matrix(rhs.matrix),
         seq(rhs.seq),
-        f3(rhs.f3) {}
+        last_parameter(rhs.last_parameter) {}
     
     virtual ~MeiosisSampler() {}
     
@@ -68,14 +63,15 @@ class MeiosisSampler : Sampler {
             f4 = rhs.f4;
             matrix = rhs.matrix;
             seq = rhs.seq;
+            last_parameter = rhs.last_parameter;
         }
         
         return *this;
     }
     
-    void reset(DescentGraph& dg);
+    void reset(DescentGraph& dg, unsigned int parameter);
     
-    virtual void step(DescentGraph& dg, unsigned parameter);
+    virtual void step(DescentGraph& dg, unsigned int parameter);
 };
 
 #endif

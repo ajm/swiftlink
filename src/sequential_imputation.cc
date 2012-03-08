@@ -16,21 +16,11 @@ void SequentialImputation::run(DescentGraph& dg, int iterations) {
     
     LocusSampler lsampler(ped, map, psg, 0);
     
-    tmp.random_descentgraph();
-    
-    if((tmp_prob = tmp.get_likelihood()) == LOG_ZERO) {
-        fprintf(stderr, "error: failed to produce a valid random descent graph\n");
-        abort();
-    }
-    
-    fprintf(stderr, "initial random likelihood = %e\n", tmp_prob);
-    
     Progress p("Sequential Imputation: ", iterations);
     
     do {
         tmp_prob = lsampler.sequential_imputation(tmp);
         
-        //if((tmp_prob = tmp.get_likelihood()) == LOG_ZERO) {
         if(tmp_prob == LOG_ZERO) {
             p.finish();
             fprintf(stderr, "error: sequential imputation produced an invalid descent graph\n");
@@ -39,8 +29,6 @@ void SequentialImputation::run(DescentGraph& dg, int iterations) {
         }
         
         p.increment();
-        
-        fprintf(stderr, "likelihood = %.2f\n", tmp_prob);
         
         if(tmp_prob > best_prob) {
             dg = tmp;
@@ -53,8 +41,9 @@ void SequentialImputation::run(DescentGraph& dg, int iterations) {
     
     fprintf(stderr, "starting point likelihood = %.3f (%.3f)\n", best_prob, best_prob / log(10));
 }
-/*
-void SequentialImputation::run(DescentGraph& dg, int iterations) {
+
+
+void SequentialImputation::parallel_run(DescentGraph& dg, int iterations) {
     double best_prob = LOG_ZERO;
     
     if(iterations == 0) {
@@ -63,8 +52,8 @@ void SequentialImputation::run(DescentGraph& dg, int iterations) {
     
     vector<LocusSampler*> lsamplers;
     vector<DescentGraph*> graphs;
-    vector<double> likelihoods(iterations, 0.0);
-    for(int i = 0; i < iterations; ++i) {
+    vector<double> likelihoods(64, 0.0);
+    for(int i = 0; i < 64; ++i) {
         LocusSampler* tmp = new LocusSampler(ped, map, psg, 0);
         lsamplers.push_back(tmp);
         
@@ -74,53 +63,42 @@ void SequentialImputation::run(DescentGraph& dg, int iterations) {
     
     Progress p("Sequential Imputation: ", iterations);
     
-    #pragma omp parallel for
-    for(int i = 0; i < iterations; ++i) {
-        //likelihoods[i] = lsamplers[i]->sequential_imputation(*(graphs[i]));
+    for(int i = 0; i < iterations; i += 64) {
         
-        lsamplers[i]->sequential_imputation(*(graphs[i]));
-        likelihoods[i] = graphs[i]->get_likelihood();
-        
-        if(likelihoods[i] == LOG_ZERO) {
-            fprintf(stderr, "error: sequential imputation produced an invalid descent graph\n");
-            fprintf(stderr, "%s\n", graphs[i]->debug_string().c_str());
-            abort();
+        #pragma omp parallel for
+        for(int j = 0; j < 64; ++j) {
+            if((i + j) < iterations) {
+                likelihoods[j] = lsamplers[j]->sequential_imputation(*(graphs[j]));
+                p.increment();
+            }
         }
         
-        fprintf(stderr, "likelihood = %.2f\n", likelihoods[i]);
+        int index = -1;
+        for(int j = 0; j < 64; ++j) {
+            if(likelihoods[j] == LOG_ZERO) {
+                fprintf(stderr, "error: sequential imputation produced an invalid descent graph\n");
+                abort();
+            }
+            
+            if(likelihoods[j] > best_prob) {
+                best_prob = likelihoods[i];
+                index = j;
+            }
+        }
         
-        p.increment();
+        if(index != -1) {
+            dg = *graphs[index];
+        }
     }
     
     p.finish();
     
-    int index = 0;
-    for(int i = 0; i < iterations; ++i) {
-        if(likelihoods[i] == LOG_ZERO) {
-            fprintf(stderr, "error: sequential imputation produced an invalid descent graph\n");
-            fprintf(stderr, "%s\n", graphs[i]->debug_string().c_str());
-            abort();
-        }
-        
-        if(likelihoods[i] > best_prob) {
-            best_prob = likelihoods[i];
-            index = i;
-        }
-        
-        //printf("likelihood = %.3f (%.3f)\n", likelihoods[i], likelihoods[i] / log(10));
-        //printf("%.3f\n", likelihoods[i]);
-    }
     
-    dg = *graphs[index];
+    //printf("starting point likelihood = %.3f (%.3f)\n", best_prob, best_prob / log(10));
     
-    printf("starting point likelihood = %.3f (%.3f)\n", best_prob, best_prob / log(10));
-    
-    //abort();
-    
-    for(int i = 0; i < iterations; ++i) {
+    for(int i = 0; i < 64; ++i) {
         delete lsamplers[i];
         delete graphs[i];
     }
 }
-*/
 

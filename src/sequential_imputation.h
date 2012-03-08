@@ -39,6 +39,7 @@ class SequentialImputation {
     }
     
     void run(DescentGraph& dg, int iterations);
+    void parallel_run(DescentGraph& dg, int iterations);
 };
 
 #endif

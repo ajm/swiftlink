@@ -3,33 +3,40 @@ using namespace std;
 #include <cstdio>
 #include <iostream>
 #include <fstream>
+
+#include <omp.h>
 #include <gsl/gsl_rng.h>
 
 #include "random.h"
 
 const gsl_rng_type* T;
-gsl_rng* r;
+gsl_rng** r;
 
 
 void init_random() {    
     gsl_rng_env_setup();
     
     T = gsl_rng_default;
-    r = gsl_rng_alloc (T);    
+    //r = gsl_rng_alloc (T);
+    
+    r = new gsl_rng*[omp_get_max_threads()];
+    
+    for(int i = 0; i < omp_get_max_threads(); ++i) {
+        r[i] = gsl_rng_alloc(T);
+    }
 }
 
 void destroy_random() {
-    gsl_rng_free(r);
+    //gsl_rng_free(r);
+    
+    for(int i = 0; i < omp_get_max_threads(); ++i) {
+        gsl_rng_free(r[i]);
+    }
+    
+    delete[] r;
 }
 
-void seed_random_explicit(unsigned int seed) {
-    gsl_rng_set(r, seed);
-
-    printf ("generator type: %s\n", gsl_rng_name(r));
-    printf ("seed = %u\n", seed);
-}
-
-void seed_random_implicit() {
+unsigned int get_randomness() {
     unsigned int seed;
     fstream randfile;
     
@@ -43,15 +50,32 @@ void seed_random_implicit() {
     
     randfile.close();
     
+    return seed;
+}
+
+void seed_random_explicit(unsigned int seed) {
+    gsl_rng* ran = gsl_rng_alloc(T);
+    gsl_rng_set(ran, seed);
     
-    seed_random_explicit(seed);
+    for(int i = 0; i < omp_get_max_threads(); ++i) {
+        gsl_rng_set(r[i], gsl_rng_get(ran));
+    }
+    
+    printf("generator type: %s\n", gsl_rng_name(ran));
+    printf("seed = %u\n", seed);
+    
+    gsl_rng_free(ran);
+}
+
+void seed_random_implicit() {
+    seed_random_explicit(get_randomness());
 }
 
 double get_random() {
-    return gsl_rng_uniform(r);
+    return gsl_rng_uniform(r[omp_get_thread_num()]);
 }
 
 int get_random_int(int limit) {
-    return gsl_rng_uniform_int(r, limit);
+    return gsl_rng_uniform_int(r[omp_get_thread_num()], limit);
 }
 

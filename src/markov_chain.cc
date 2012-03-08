@@ -41,9 +41,13 @@ double* MarkovChain::run(DescentGraph& dg) {
     vector<int> l_ordering;
     vector<int> m_ordering;
     
+    /*
     for(unsigned int i = 0; i < map->num_markers(); ++i)
         l_ordering.push_back(i);
-        
+    */
+    for(unsigned int i = 0; i < 20; ++i)
+        l_ordering.push_back(i);
+    
     for(unsigned int i = 0; i < num_meioses; ++i)
         m_ordering.push_back(i);
     
@@ -59,13 +63,33 @@ double* MarkovChain::run(DescentGraph& dg) {
 
         
     for(int i = 0; i < (options.iterations + options.burnin); ++i) {
-        if(get_random() < options.lsampler_prob) {            
+        if(get_random() < options.lsampler_prob) {
+            /*
             random_shuffle(l_ordering.begin(), l_ordering.end());
             
             for(unsigned int j = 0; j < l_ordering.size(); ++j) {
                 lsamplers[l_ordering[j]]->step(dg, l_ordering[j]);
             }
+            */
             
+            random_shuffle(l_ordering.begin(), l_ordering.end());
+            
+            // run every nth locus indepentently, shuffling the order of n
+            for(unsigned int j = 0; j < l_ordering.size(); ++j) {
+                #pragma omp parallel for
+                for(unsigned int k = l_ordering[j]; k < map->num_markers(); k += 20) {
+                    lsamplers[k]->step(dg, k);
+                }
+            }
+            /*
+            // run every other locus independently
+            for(unsigned int j = 0; j < 2; ++j) {
+                #pragma omp parallel for
+                for(unsigned int k = j; k < map->num_markers(); k += 2) {
+                    lsamplers[k]->step(dg, k);
+                }
+            }
+            */
         }
         else {
             random_shuffle(m_ordering.begin(), m_ordering.end());

@@ -58,7 +58,8 @@ void seed_random_explicit(unsigned int seed) {
     gsl_rng_set(ran, seed);
     
     for(int i = 0; i < omp_get_max_threads(); ++i) {
-        gsl_rng_set(r[i], gsl_rng_get(ran));
+        //gsl_rng_set(r[i], gsl_rng_get(ran));
+        gsl_rng_set(r[i], get_randomness());
     }
     
     printf("generator type: %s\n", gsl_rng_name(ran));

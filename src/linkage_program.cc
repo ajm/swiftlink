@@ -86,6 +86,7 @@ double* LinkageProgram::run_pedigree(Pedigree& p) {
     
     
     SequentialImputation si(&p, &map, &psg);
+    //si.run(dg, options.si_iterations);
     si.parallel_run(dg, options.si_iterations);
     
 

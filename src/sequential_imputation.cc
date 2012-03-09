@@ -12,7 +12,7 @@ using namespace std;
 
 void SequentialImputation::run(DescentGraph& dg, int iterations) {
     DescentGraph tmp(ped, map);
-    double tmp_prob, best_prob = LOG_ILLEGAL;
+    double tmp_prob, best_prob = LOG_ZERO;
     
     LocusSampler lsampler(ped, map, psg, 0);
     
@@ -39,7 +39,7 @@ void SequentialImputation::run(DescentGraph& dg, int iterations) {
     
     p.finish();
     
-    fprintf(stderr, "starting point likelihood = %.3f (%.3f)\n", best_prob, best_prob / log(10));
+    fprintf(stderr, "starting likelihood (log10) = %.3f\n", best_prob / log(10));
 }
 
 
@@ -81,7 +81,7 @@ void SequentialImputation::parallel_run(DescentGraph& dg, int iterations) {
             }
             
             if(likelihoods[j] > best_prob) {
-                best_prob = likelihoods[i];
+                best_prob = likelihoods[j];
                 index = j;
             }
         }
@@ -94,7 +94,7 @@ void SequentialImputation::parallel_run(DescentGraph& dg, int iterations) {
     p.finish();
     
     
-    //printf("starting point likelihood = %.3f (%.3f)\n", best_prob, best_prob / log(10));
+    printf("starting likelihood (log10) = %.3f\n", best_prob / log(10));
     
     for(int i = 0; i < 64; ++i) {
         delete lsamplers[i];

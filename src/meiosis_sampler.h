@@ -19,7 +19,8 @@ class GeneticMap;
 class MeiosisSampler : Sampler {
     
     vector<FounderAlleleGraph4> f4;
-    vector<double> matrix;
+    vector<double> raw_matrix;
+    vector<double> fb_matrix;
     vector<int> seq;
     unsigned int last_parameter;
     
@@ -35,7 +36,8 @@ class MeiosisSampler : Sampler {
     MeiosisSampler(Pedigree* ped, GeneticMap* map) :
         Sampler(ped, map),
         f4(map->num_markers(), FounderAlleleGraph4(ped, map)),
-        matrix(map->num_markers() * 2),
+        raw_matrix(map->num_markers() * 2),
+        fb_matrix(map->num_markers() * 2),
         seq(),
         last_parameter(0) {
         
@@ -50,7 +52,8 @@ class MeiosisSampler : Sampler {
     MeiosisSampler(const MeiosisSampler& rhs) :
         Sampler(rhs.ped, rhs.map),
         f4(rhs.f4),
-        matrix(rhs.matrix),
+        raw_matrix(rhs.raw_matrix),
+        fb_matrix(rhs.fb_matrix),
         seq(rhs.seq),
         last_parameter(rhs.last_parameter) {}
     
@@ -61,7 +64,8 @@ class MeiosisSampler : Sampler {
         if(this != &rhs) {
             Sampler::operator=(rhs);
             f4 = rhs.f4;
-            matrix = rhs.matrix;
+            raw_matrix = rhs.raw_matrix;
+            fb_matrix = rhs.fb_matrix;
             seq = rhs.seq;
             last_parameter = rhs.last_parameter;
         }

@@ -23,9 +23,9 @@ void MeiosisSampler::reset(DescentGraph& dg, unsigned int parameter) {
         int index = i * 2;
         int meiosis = dg.get(person_id, i, p);
         
-        matrix[index + meiosis] = graph_likelihood(dg, person_id, i, p, meiosis);
+        raw_matrix[index + meiosis] = graph_likelihood(dg, person_id, i, p, meiosis);
         
-        if(matrix[index + meiosis] == 0.0) {
+        if(raw_matrix[index + meiosis] == 0.0) {
             fprintf(stderr, "error: illegal descent graph given to m-sampler (%s:%d)\n", __FILE__, __LINE__);
             abort();
         }
@@ -98,41 +98,40 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned int parameter) {
         
         //matrix[index + 0] = graph_likelihood(dg, person_id, i, p, 0);
         //matrix[index + 1] = graph_likelihood(dg, person_id, i, p, 1);
-
         
         int tmp = dg.get(person_id, i, p);
         int tmp2 = dg.get(last_id, i, last_p);
         
-        matrix[index + tmp] = matrix[index + tmp2];
-        matrix[index + (1-tmp)] = graph_likelihood(dg, person_id, i, p, 1-tmp);
+        raw_matrix[index + tmp] = raw_matrix[index + tmp2];
+        raw_matrix[index + (1-tmp)] = graph_likelihood(dg, person_id, i, p, 1-tmp);
         
         
-        if((matrix[index] == 0.0) and (matrix[index+1] == 0.0)) {
+        if((raw_matrix[index] == 0.0) and (raw_matrix[index+1] == 0.0)) {
             fprintf(stderr, "error: illegal descent graph given to m-sampler (%s:%d)\n", __FILE__, __LINE__);
             abort();
         }
     }
     
     
-    double total = matrix[0] + matrix[1];
+    double total = raw_matrix[0] + raw_matrix[1];
     
-    matrix[0] /= total;
-    matrix[1] /= total;
+    fb_matrix[0] = raw_matrix[0] / total;
+    fb_matrix[1] = raw_matrix[1] / total;
     
     // forwards
     for(int i = 1; i < num_markers; ++i) {
         int index = i * 2;
         
         for(int j = 0; j < 2; ++j) {
-            matrix[index + j] *= \
-                    ((matrix[((i-1) * 2) + (1-j)] * map->get_theta(i-1)) + \
-                     (matrix[((i-1) * 2) +    j ] * map->get_inversetheta(i-1)));
+            fb_matrix[index + j] = raw_matrix[index + j] * \
+                    ((fb_matrix[((i-1) * 2) + (1-j)] * map->get_theta(i-1)) + \
+                     (fb_matrix[((i-1) * 2) +    j ] * map->get_inversetheta(i-1)));
         }
         
-        double total = matrix[index] + matrix[index + 1];
+        double total = fb_matrix[index] + fb_matrix[index + 1];
         
-        matrix[index] /= total;
-        matrix[index + 1] /= total;
+        fb_matrix[index] /= total;
+        fb_matrix[index + 1] /= total;
     }
     
     // sample backwards
@@ -145,7 +144,7 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned int parameter) {
         
         for(int j = 0; j < 2; ++j) {
             double next = (dg.get(person_id, i+1, p) != j) ? map->get_theta(i) : map->get_inversetheta(i);
-            matrix[index + j] *= next;
+            fb_matrix[index + j] *= next;
         }
         
         dg.set(person_id, i, p, sample(i));
@@ -157,12 +156,12 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned int parameter) {
 unsigned MeiosisSampler::sample(int locus) {
     int index = locus * 2;
     
-    if(matrix[index] == 0.0)
+    if(fb_matrix[index] == 0.0)
         return 1;
         
-    if(matrix[index + 1] == 0.0)
+    if(fb_matrix[index + 1] == 0.0)
         return 0;
         
-    return (get_random() < (matrix[index] / (matrix[index] + matrix[index + 1]))) ? 0 : 1;
+    return (get_random() < (fb_matrix[index] / (fb_matrix[index] + fb_matrix[index + 1]))) ? 0 : 1;
 }
 

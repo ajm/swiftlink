@@ -74,15 +74,18 @@ void SequentialImputation::parallel_run(DescentGraph& dg, int iterations) {
         }
         
         int index = -1;
+        
         for(int j = 0; j < 64; ++j) {
-            if(likelihoods[j] == LOG_ZERO) {
-                fprintf(stderr, "error: sequential imputation produced an invalid descent graph\n");
-                abort();
-            }
-            
-            if(likelihoods[j] > best_prob) {
-                best_prob = likelihoods[j];
-                index = j;
+            if((i + j) < iterations) {
+                if(likelihoods[j] == LOG_ZERO) {
+                    fprintf(stderr, "error: sequential imputation produced an invalid descent graph\n");
+                    abort();
+                }
+                
+                if(likelihoods[j] > best_prob) {
+                    best_prob = likelihoods[j];
+                    index = j;
+                }
             }
         }
         

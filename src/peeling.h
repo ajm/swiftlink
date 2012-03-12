@@ -24,7 +24,7 @@ enum peeloperation {
 class PeelOperation {
     enum peeloperation type;
     vector<unsigned int> cutset; // what is being peeled on to by this operation
-    vector<unsigned int> nuclearset; // what is the nuclear family of the peelnode that is contained in the cutset
+    vector<unsigned int> children;
     unsigned int peelnode;       // what is being peeled by this operation
     bool used;
     int prev1;
@@ -36,20 +36,17 @@ class PeelOperation {
     PeelOperation(unsigned int peelnode) :  
         type(NULL_PEEL), 
         cutset(), 
-        nuclearset(),
+        children(),
         peelnode(peelnode), 
         used(false),
         prev1(-1),
         prev2(-1),
-        assignments() {
-    
-        nuclearset.push_back(peelnode);    
-    }
+        assignments() {}
     
     PeelOperation(const PeelOperation& rhs) :
         type(rhs.type),
         cutset(rhs.cutset),
-        nuclearset(rhs.nuclearset),
+        children(rhs.children),
         peelnode(rhs.peelnode),
         used(rhs.used),
         prev1(rhs.prev1),
@@ -61,7 +58,7 @@ class PeelOperation {
         if(&rhs != this) {
             type = rhs.type;
             cutset = rhs.cutset;
-            nuclearset = rhs.nuclearset;
+            children = rhs.children;
             peelnode = rhs.peelnode;
             used = rhs.used;
             prev1 = rhs.prev1;
@@ -88,6 +85,10 @@ class PeelOperation {
     
     void set_type(enum peeloperation po) {
         type = po;
+        
+        if(type == CHILD_PEEL) {
+            children.push_back(peelnode);
+        }
     }
     
     enum peeloperation get_type() const {
@@ -102,20 +103,22 @@ class PeelOperation {
         return cutset;
     }
     
-    unsigned int get_nuclearset_size() {
-        return nuclearset.size();
+    unsigned int get_children_size() {
+        return children.size();
     }
     
-    vector<unsigned int>& get_nuclearset() {
-        return nuclearset;
+    vector<unsigned int>& get_children() {
+        return children;
     }
     
-    void add_cutnode(unsigned int c, bool in_nuclear_fam) {
+    void add_cutnode(unsigned int c, bool is_offspring) {
         if(not in_cutset(c)) {
             cutset.push_back(c);
             
-            if(in_nuclear_fam) {
-                nuclearset.push_back(c);
+            if(is_offspring) {
+                if(find(children.begin(), children.end(), c) == children.end()) {
+                    children.push_back(c);
+                }
             }
         }
     }
@@ -204,19 +207,17 @@ class PeelOperation {
         }
         ss << ") ";
         
-        /*
-        ss << "nuclear = (";
-        tmp = nuclearset.size();
+        ss << " prev = (" << prev1 << ", " << prev2 << ")";
+        
+        ss << " children = (";
+        tmp = children.size();
         for(unsigned i = 0; i < tmp; ++i) {
-            ss << nuclearset[i];
+            ss << children[i];
             if(i != (tmp-1)) {
                 ss << ",";
             }
         }
         ss << ") ";
-        */
-        
-        ss << " prev = (" << prev1 << ", " << prev2 << ")";
         
         return ss.str();
     }

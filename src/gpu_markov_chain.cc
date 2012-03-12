@@ -87,7 +87,7 @@ size_t GPUMarkovChain::calculate_memory_requirements(vector<PeelOperation>& ops)
     mem_rand = sizeof(curandState) * num_blocks();
     
     int num_fa = ped->num_founders() * 2;
-    mem_fag = (sizeof(struct founderallelegraph) + (num_fa * sizeof(int)) + (num_fa * num_fa * sizeof(struct adjacent_node))) * map->num_markers();
+    //mem_fag = (sizeof(struct founderallelegraph) + (num_fa * sizeof(int)) + (num_fa * num_fa * sizeof(struct adjacent_node))) * map->num_markers();
     
     return (num_samplers() * mem_per_sampler) + mem_pedigree + mem_map + mem_rand + mem_fag + sizeof(struct gpu_state) + (sizeof(int) * ped->num_members());
 }
@@ -203,29 +203,34 @@ void GPUMarkovChain::gpu_init(vector<PeelOperation>& ops) {
     
     struct gpu_state tmp;
     
-    tmp.map = gpu_init_map();
-    tmp.dg = gpu_init_descentgraph();
+    tmp.map = gpu_init_map(); fprintf(stderr, "GPU: map loaded\n");
+    tmp.dg = gpu_init_descentgraph(); fprintf(stderr, "GPU: descent graph loaded\n");
     
-    tmp.pedigree = gpu_init_pedigree();
+    tmp.pedigree = gpu_init_pedigree(); fprintf(stderr, "GPU: pedigree loaded\n");
     tmp.pedigree_length = loc_state->pedigree_length;
     
-    tmp.functions = gpu_init_rfunctions(ops);
+    tmp.functions = gpu_init_rfunctions(ops); fprintf(stderr, "GPU: rfunctions loaded\n");
     tmp.functions_length = loc_state->functions_length;
     tmp.functions_per_locus = loc_state->functions_per_locus;
     
-    tmp.randstates = gpu_init_random_curand();
+    tmp.randstates = gpu_init_random_curand(); fprintf(stderr, "GPU: random loaded\n");
     //tmp.randmt = gpu_init_random_tinymt();
     
-    tmp.lodscores = gpu_init_lodscores();
+    tmp.lodscores = gpu_init_lodscores(); fprintf(stderr, "GPU: lod scores loaded\n");
     
-    tmp.graphs = gpu_init_founderallelegraph();
+    //tmp.graphs = gpu_init_founderallelegraph();
     tmp.founderallele_count = loc_state->founderallele_count;
     
-    CUDA_CALLANDTEST(cudaMalloc((void**)&(tmp.fa_sequence), sizeof(int) * ped->num_members()));
+    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.raw_matrix, sizeof(double) * map->num_markers() * 2));
+    fprintf(stderr, "GPU: msampler matrix loaded\n");
+    
+    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.fa_sequence, sizeof(int) * ped->num_members()));
     CUDA_CALLANDTEST(cudaMemcpy(tmp.fa_sequence, loc_state->fa_sequence, sizeof(int) * ped->num_members(), cudaMemcpyHostToDevice));
+    fprintf(stderr, "GPU: msampler order loaded\n");
     
     CUDA_CALLANDTEST(cudaMalloc((void**)&dev_state, sizeof(struct gpu_state)));
     CUDA_CALLANDTEST(cudaMemcpy(dev_state, &tmp, sizeof(struct gpu_state), cudaMemcpyHostToDevice));
+    fprintf(stderr, "GPU: memory loaded\n");
 }
 
 curandState* GPUMarkovChain::gpu_init_random_curand() {
@@ -349,12 +354,13 @@ tinymt32_status_t* GPUMarkovChain::gpu_init_random_tinymt() {
 void GPUMarkovChain::init_founderallelegraph() {
 
     int num_founderalleles = ped->num_founders() * 2;
-    
+    /*
     loc_state->graphs = (struct founderallelegraph*) malloc(sizeof(struct founderallelegraph) * map->num_markers());
     if(!(loc_state->graphs)) {
         fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
         abort();
     }
+    */
     
     /*
     for(unsigned i = 0; i < map->num_markers(); ++i) {
@@ -373,7 +379,7 @@ void GPUMarkovChain::init_founderallelegraph() {
     
     find_founderallelegraph_ordering(loc_state);
 }
-
+/*
 struct founderallelegraph* GPUMarkovChain::gpu_init_founderallelegraph() {
     
     //int num_founderalleles = ped->num_founders() * 2;
@@ -384,12 +390,13 @@ struct founderallelegraph* GPUMarkovChain::gpu_init_founderallelegraph() {
         abort();
     }
     
-    /*
-    for(unsigned i = 0; i < map->num_markers(); ++i) {
-        CUDA_CALLANDTEST(cudaMalloc((void**)&(tmp[i].num_neighbours), sizeof(int) * num_founderalleles));
-        CUDA_CALLANDTEST(cudaMalloc((void**)&(tmp[i].graph), sizeof(struct adjacent_node) * num_founderalleles * num_founderalleles));
-    }
-    */
+    
+    
+    //for(unsigned i = 0; i < map->num_markers(); ++i) {
+    //    CUDA_CALLANDTEST(cudaMalloc((void**)&(tmp[i].num_neighbours), sizeof(int) * num_founderalleles));
+    //    CUDA_CALLANDTEST(cudaMalloc((void**)&(tmp[i].graph), sizeof(struct adjacent_node) * num_founderalleles * num_founderalleles));
+    //}
+    
     
     struct founderallelegraph* dev_fag;
     
@@ -400,7 +407,7 @@ struct founderallelegraph* GPUMarkovChain::gpu_init_founderallelegraph() {
     
     return dev_fag;
 }
-
+*/
 void GPUMarkovChain::init_descentgraph() {
     
     loc_state->dg = (struct descentgraph*) malloc(sizeof(struct descentgraph));
@@ -687,31 +694,72 @@ struct rfunction* GPUMarkovChain::gpu_init_rfunctions(vector<PeelOperation>& ops
     struct rfunction tmp;
     struct rfunction* dev_rfunc;
     
-    CUDA_CALLANDTEST(cudaMalloc((void**) &dev_rfunc, sizeof(struct rfunction) * loc_state->functions_length));
-
-    for(int i = 0; i < loc_state->functions_per_locus; ++i) {
-        for(int j = 0; j < loc_state->map->map_length; ++j) {
-
-            struct rfunction* rf = &loc_state->functions[(j * loc_state->functions_per_locus) + i];
-            struct rfunction* dev_rf = &dev_rfunc[(j * loc_state->functions_per_locus) + i];
+    CUDA_CALLANDTEST(cudaMalloc((void**) &dev_rfunc, sizeof(struct rfunction) * ops.size() * map->num_markers()));
+    
+    
+    for(int i = 0; i < int(ops.size()); ++i) {
+        // get all the stuff for this rfunction
+        int prev1_index = ops[i].get_previous_op1();
+        int prev2_index = ops[i].get_previous_op2();
+        
+        int children_length = ops[i].get_children_size();
+        int* children = NULL;
+        
+        if(children_length > 0) {
+            children = new int[children_length];
+            copy(ops[i].get_children().begin(), ops[i].get_children().end(), children);
+        }
+        
+        int cutset_length = ops[i].get_cutset_size() + 1;
+        int* cutset = new int[cutset_length];
+        for(int j = 0; j < (cutset_length - 1); ++j) {
+            cutset[j] = ops[i].get_cutnode(j);
+        }
+        cutset[cutset_length-1] = ops[i].get_peelnode();
+        
+        tmp.id = i;
+        tmp.peel_type = convert_type(ops[i].get_type());
+        tmp.peel_node = ops[i].get_peelnode();
+        
+        tmp.cutset_length = cutset_length;
+        tmp.presum_length = int(pow(4.0, ops[i].get_cutset_size() + 1));
+        tmp.matrix_length = int(pow(4.0, ops[i].get_cutset_size()));
+        tmp.children_length = children_length;
+        
+        fprintf(stderr, "  rfunctions: loading %d...\n", i);
+        
+        for(int j = 0; j < int(map->num_markers()); ++j) {
+            // 3 - 5 mallocs, 1 - 2 memcpys
+            CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.presum_matrix, sizeof(fp_type) * tmp.presum_length));
+            CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.matrix,        sizeof(fp_type) * tmp.matrix_length));
+            CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.cutset,        sizeof(int)     * tmp.cutset_length));
+            CUDA_CALLANDTEST(cudaMemcpy(tmp.cutset, cutset, sizeof(int) * tmp.cutset_length, cudaMemcpyHostToDevice));
             
-            memcpy(&tmp, rf, sizeof(struct rfunction));
+            if(children_length > 0) {
+                CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.children, sizeof(int) * tmp.children_length));
+                CUDA_CALLANDTEST(cudaMemcpy(tmp.children, children, sizeof(int) * tmp.children_length, cudaMemcpyHostToDevice));
             
-            // 3 mallocs
-            CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.cutset, sizeof(int) * rf->cutset_length));
-            CUDA_CALLANDTEST(cudaMemcpy(tmp.cutset, rf->cutset, sizeof(int) * rf->cutset_length, cudaMemcpyHostToDevice));
-            
-            CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.presum_matrix, sizeof(fp_type) * rf->presum_length));
-            CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.matrix, sizeof(fp_type) * rf->matrix_length));
+                CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.transmission, sizeof(fp_type) * tmp.children_length * 64));
+            }
+            else {
+                tmp.children = NULL;
+                tmp.transmission = NULL;
+            }
             
             // 2 pointers
-            if(ops[i].get_previous_op1() != -1)
-                tmp.prev1 = &dev_rfunc[(j * loc_state->functions_per_locus) + ops[i].get_previous_op1()];
-            if(ops[i].get_previous_op2() != -1)
-                tmp.prev2 = &dev_rfunc[(j * loc_state->functions_per_locus) + ops[i].get_previous_op2()];
+            tmp.prev1 = (prev1_index != -1) ? &dev_rfunc[(j * ops.size()) + prev1_index] : NULL;
+            tmp.prev2 = (prev2_index != -1) ? &dev_rfunc[(j * ops.size()) + prev2_index] : NULL;
+            
+            // copy tmp to device via dev_rf pointer
+            struct rfunction* dev_rf = &dev_rfunc[(j * ops.size()) + i];
             
             CUDA_CALLANDTEST(cudaMemcpy(dev_rf, &tmp, sizeof(struct rfunction), cudaMemcpyHostToDevice));
         }
+        
+        if(children_length > 0)
+            delete[] children;
+        
+        delete[] cutset;
     }
     
     return dev_rfunc;
@@ -783,6 +831,12 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
     setup_lodscore_kernel();
     setup_msampler_kernel();
     
+    fprintf(stderr, "GPU: setup done\n");
+    
+    
+    //run_gpu_print_kernel(dev_state);
+    
+    
     /*
     vector<Peeler*> peelers;
     for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
@@ -813,6 +867,9 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
                 printf("CUDA kernel error (%s:%d): %s\n", __FILE__, __LINE__, cudaGetErrorString(error));
                 abort();
             }
+            
+            
+            //abort();
             
             run_gpu_lsampler_kernel(odd_count, num_threads_per_block(), dev_state, 1);
             cudaThreadSynchronize();
@@ -885,8 +942,8 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
                     abort();
                 }
                 
-                //run_gpu_msampler_sampling_kernel(dev_state, j);
-                run_gpu_msampler_window_sampling_kernel(windowed_msampler_blocks(window_length[window_index]), 32, dev_state, j, window_length[window_index]);
+                run_gpu_msampler_sampling_kernel(dev_state, j);
+                //run_gpu_msampler_window_sampling_kernel(windowed_msampler_blocks(window_length[window_index]), 32, dev_state, j, window_length[window_index]);
                 cudaThreadSynchronize();
                 error = cudaGetLastError();
                 if(error != cudaSuccess) {
@@ -895,6 +952,8 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
                 }
                 
                 window_index = (window_index + 1) % 3;
+                
+                //abort();
                 
                 /*
                 // test legality of descent graph

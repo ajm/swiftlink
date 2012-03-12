@@ -222,7 +222,7 @@ void PeelSequenceGenerator::build_peel_order() {
     */
     
     for(unsigned int i = 0; i < peelorder.size(); ++i) {
-        bruteforce_assignments(peelorder[i]);  
+        bruteforce_assignments(peelorder[i]);
     }
 }
 

@@ -121,23 +121,39 @@ __device__ int get_trait(int value, int parent) {
 __device__ double rfunction_trait_prob(struct gpu_state* state, int id, int value, int locus) {
     struct person* p = GET_PERSON(state, id);
     
-    if(PERSON_ISTYPED(p)) {
-        switch(PERSON_GENOTYPE(p, locus)) {
-            case GPU_GENOTYPE_AB :
-                return ((value == GPU_TRAIT_AB) || (value == GPU_TRAIT_BA)) ? 0.5 : 0.0;
-            case GPU_GENOTYPE_AA :
-                return (value == GPU_TRAIT_AA) ? 1.0 : 0.0;
-            case GPU_GENOTYPE_BB :
-                return (value == GPU_TRAIT_BB) ? 1.0 : 0.0;
-            default :
-                break;
+    if(! PERSON_ISFOUNDER(p)) {
+        if(PERSON_ISTYPED(p)) {
+            switch(PERSON_GENOTYPE(p, locus)) {
+                case GPU_GENOTYPE_AB :
+                    return ((value == GPU_TRAIT_AB) || (value == GPU_TRAIT_BA)) ? 1.0 : 0.0;
+                case GPU_GENOTYPE_AA :
+                    return (value == GPU_TRAIT_AA) ? 1.0 : 0.0;
+                case GPU_GENOTYPE_BB :
+                    return (value == GPU_TRAIT_BB) ? 1.0 : 0.0;
+                default :
+                    return 1.0;
+            }
+        }
+        else {
+            return 1.0;
         }
     }
     
-    if(! PERSON_ISFOUNDER(p))
-        return 0.25;
-    
-    return MAP_PROB(GET_MAP(state), locus, value);
+    if(PERSON_ISTYPED(p)) {
+        switch(PERSON_GENOTYPE(p, locus)) {
+            case GPU_GENOTYPE_AB :
+                return ((value == GPU_TRAIT_AB) || (value == GPU_TRAIT_BA)) ? MAP_PROB(GET_MAP(state), locus, value) : 0.0;
+            case GPU_GENOTYPE_AA :
+                return (value == GPU_TRAIT_AA) ? MAP_PROB(GET_MAP(state), locus, value) : 0.0;
+            case GPU_GENOTYPE_BB :
+                return (value == GPU_TRAIT_BB) ? MAP_PROB(GET_MAP(state), locus, value) : 0.0;
+            default :
+                return MAP_PROB(GET_MAP(state), locus, value);
+        }
+    }
+    else {
+        return MAP_PROB(GET_MAP(state), locus, value);
+    }
 }
 
 __device__ double gpu_log_sum_dbl(double a, double b) {

@@ -39,7 +39,6 @@ unsigned LocusSampler::sample_hetero_mi(enum trait allele, enum phased_trait tra
 // normalise + sample
 unsigned LocusSampler::sample_homo_mi(DescentGraph& dg, unsigned personid, enum parentage parent) {
     double prob_dist[2];
-    double total;
     
     prob_dist[0] = 1.0;
     prob_dist[1] = 1.0;
@@ -54,13 +53,7 @@ unsigned LocusSampler::sample_homo_mi(DescentGraph& dg, unsigned personid, enum 
         prob_dist[1] *= ((dg.get(personid, locus + 1, parent) == 1) ? map->get_inversetheta(locus) : map->get_theta(locus));
     }
     
-    total = prob_dist[0] + prob_dist[1];
-    
-    prob_dist[0] /= total;
-    prob_dist[1] /= total;
-    
-    
-    return (get_random() < prob_dist[0]) ? 0 : 1;
+    return (get_random() < (prob_dist[0] / (prob_dist[0] + prob_dist[1]))) ? 0 : 1;
 }
 
 // if a parent is heterozygous, then there is one choice of meiosis indicator
@@ -80,8 +73,10 @@ unsigned LocusSampler::sample_mi(DescentGraph& dg, \
             return sample_homo_mi(dg, personid, parent);
             
         default:
-            abort();
+            break;
     }
+    
+    abort();
 }
 
 // sample meiosis indicators

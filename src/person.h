@@ -59,7 +59,6 @@ class Person {
     }
 
     // private, peeling related
-    bool in_nuclear_family(unsigned int node);
     bool is_offspring(unsigned int node);
     
     unsigned count_unpeeled(vector<Person*>& v, PeelingState& ps);

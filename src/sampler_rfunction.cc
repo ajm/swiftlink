@@ -61,9 +61,10 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
                                      enum parentage parent) {
     
     enum trait t = get_trait(kid_trait, parent);
+    int p = 0;
+    double tmp = 1.0;
     
     // recombination + transmission prob
-    double tmp = 1.0;
     
     // deal with homozygotes first
     if(parent_trait == TRAIT_AA) {
@@ -85,7 +86,6 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
     
     // heterozygotes are informative, so i can look up
     // the recombination fractions
-    int p = 0;
     if(parent_trait == TRAIT_UA) {
         p = (t == TRAIT_U) ? 0 : 1;
     }
@@ -96,11 +96,13 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
     tmp = 0.5;
     
     if((locus != 0) and (not ignore_left)) {
-        tmp *= ((dg->get(person_id, locus-1, parent) == p) ? antitheta2 : theta2);
+        tmp *= ((dg->get(person_id, locus-1, parent) == p) ? \
+            antitheta2 : theta2);
     }
     
     if((locus != (map->num_markers() - 1)) and (not ignore_right)) {
-        tmp *= ((dg->get(person_id, locus+1, parent) == p) ? antitheta : theta);
+        tmp *= ((dg->get(person_id, locus+1, parent) == p) ? \
+            antitheta : theta);
     }
     
     return tmp;
@@ -123,6 +125,7 @@ void SamplerRfunction::sample(vector<int>& pmk) {
     
     for(unsigned i = 0; i < NUM_ALLELES; ++i) {
         total += prob_dist[i];
+        
         if(r < total) {
             pmk[peel_id] = i;
             return;

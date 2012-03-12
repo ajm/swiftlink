@@ -54,18 +54,26 @@ unsigned int get_randomness() {
 }
 
 void seed_random_explicit(unsigned int seed) {
-    gsl_rng* ran = gsl_rng_alloc(T);
-    gsl_rng_set(ran, seed);
+    //gsl_rng* ran = gsl_rng_alloc(T);
+    //gsl_rng_set(ran, seed);
+    
+    //srandom(seed);
     
     for(int i = 0; i < omp_get_max_threads(); ++i) {
+        //gsl_rng_set(r[i], random());
         //gsl_rng_set(r[i], gsl_rng_get(ran));
-        gsl_rng_set(r[i], get_randomness());
+        //gsl_rng_set(r[i], get_randomness());
+        
+        unsigned int s = get_randomness();
+        gsl_rng_set(r[i], s);
+        
+        printf("seed %d = %u\n", i, s);
     }
     
-    printf("generator type: %s\n", gsl_rng_name(ran));
-    printf("seed = %u\n", seed);
+    printf("generator type: %s\n", gsl_rng_name(r[0]));
+    //printf("seed = %u\n", seed);
     
-    gsl_rng_free(ran);
+    //gsl_rng_free(ran);
 }
 
 void seed_random_implicit() {

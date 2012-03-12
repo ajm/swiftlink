@@ -56,7 +56,8 @@ struct gpu_state {
     int functions_per_locus;
     
     // msampler stuff
-    struct founderallelegraph* graphs;
+    //struct founderallelegraph* graphs;
+    double* raw_matrix;
     int founderallele_count;
     
     // constant information
@@ -76,6 +77,7 @@ struct gpu_state {
     int* fa_sequence;
 };
 
+/*
 struct adjacent_node {
     int id;
     int label;
@@ -98,6 +100,7 @@ struct founderallelegraph {
 #define FAG_GET_NEIGHBOURS(fag_ptr, node)   (&(fag_ptr)->num_neighbours[(node)])
 #define NODE_ID(node_ptr, n)                ((node_ptr)[(n)]->id)
 #define NODE_LABEL(node_ptr, n)             ((node_ptr)[(n)]->label)
+*/
 
 struct geneticmap {
     double* thetas;
@@ -131,8 +134,12 @@ struct rfunction {
     double* matrix;
     int matrix_length;          // 4 ** cutset_length
     
+    double* transmission;       // 64 * children_length
+    int* children;
+    int children_length;
+    
     struct rfunction* prev1;    // must be NULL if not used
-    struct rfunction* prev2;    // must be NULL if not used    
+    struct rfunction* prev2;    // must be NULL if not used
 };
 
 struct person {
@@ -148,7 +155,7 @@ struct person {
     float prob[4];  // <--- XXX if this is double, then the sizeof differs between host and device XXX
                     //  this is probably due to the genotypes pointer which is different on different
                     //  architectures and maybe the compiler is trying to add some padding as things
-                    //  might been to be word aligned in different situations
+                    //  might need to be word aligned in different situations
 };
 
 struct descentgraph {

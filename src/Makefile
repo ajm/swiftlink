@@ -1,15 +1,12 @@
 CXX	:= g++
 CC := gcc
 GPUCC := nvcc
-CXXFLAGS := -g -O2 -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe -fopenmp #-m32 -fopenmp
-CFLAGS := -g -O2 -Wall -pipe -fopenmp #-m32 -fopenmp
+CXXFLAGS := -g -O2 -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe -fopenmp #-m32
+CFLAGS := -g -O2 -Wall -pipe -fopenmp #-m32
 LDFLAGS := #-m32
-#INCLUDES := -I. -I/usr/local/cuda/include
-#INCLUDES := -I. -I/usr/local/cuda/include -I./mt19937-64 #-I./dcmt0.6.1/include
 INCLUDES := -I. -I/usr/local/cuda/include
-LIBS := -lgomp -lgsl -lgslcblas #-L/usr/local/cuda/lib64 -lcudart -lgomp #-L./dcmt0.6.1/lib -ldcmt
-#LIBS := -L/usr/local/cuda/lib -L/usr/lib32 -lcudart -lgomp
-#LIBS := -L./dcmt0.6.1/lib -ldcmt -lgomp -L/usr/local/cuda/lib -L/usr/lib32 -lcudart
+LIBS := -lgomp -lgsl -lgslcblas -L/usr/local/cuda/lib64 -lcudart
+#LIBS := -L/usr/local/cuda/lib -L/usr/lib32 -lcudart -lgomp -lgsl -lgslcblas
 GPUFLAGS := -arch=sm_20 -O2 #-m32
 
 OBJECTS	:= \
@@ -43,7 +40,7 @@ OBJECTS	:= \
 	linkage_program.o \
 	program.o \
 	progress.o \
-	main.o #\
+	main.o \
 	gpu_markov_chain.o \
 	cuda_linkage.o
 

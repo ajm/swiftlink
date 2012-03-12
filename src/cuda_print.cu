@@ -24,6 +24,10 @@ __device__ void print_rfunction(struct rfunction* r) {
     printf("\tcutset: ");
     print_ints(r->cutset, r->cutset_length);
     printf("\n");
+    
+    printf("\tchildren: ");
+    print_ints(r->children, r->children_length);
+    printf("\n");
 }
 
 __device__ void print_person(struct person* p) {

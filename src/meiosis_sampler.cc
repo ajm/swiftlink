@@ -105,7 +105,6 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned int parameter) {
         raw_matrix[index + tmp] = raw_matrix[index + tmp2];
         raw_matrix[index + (1-tmp)] = graph_likelihood(dg, person_id, i, p, 1-tmp);
         
-        
         if((raw_matrix[index] == 0.0) and (raw_matrix[index+1] == 0.0)) {
             fprintf(stderr, "error: illegal descent graph given to m-sampler (%s:%d)\n", __FILE__, __LINE__);
             abort();

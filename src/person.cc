@@ -138,10 +138,6 @@ void Person::fill_in_relationships() {
 
 //--- peeling related ---
 
-bool Person::in_nuclear_family(unsigned int node) {
-    return is_parent(node) or is_offspring(node);
-}
-
 bool Person::is_offspring(unsigned int node) {
     for(unsigned i = 0; i < children.size(); ++i) {
         if(children[i]->get_internalid() == node) {
@@ -378,7 +374,7 @@ void Person::get_cutset(PeelOperation& operation, PeelingState& state) {
             tmp2 = n[i];
 
             if(not state.is_peeled(tmp2)) {
-                operation.add_cutnode(tmp2, in_nuclear_family(tmp2));
+                operation.add_cutnode(tmp2, is_offspring(tmp2));
                 continue;
             }
 

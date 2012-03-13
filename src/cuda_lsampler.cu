@@ -58,8 +58,7 @@ __device__ int trans_cache_index(int mat_trait, int pat_trait, int kid_trait) {
     return (mat_trait * 16) + (pat_trait * 4) + kid_trait;
 }
 
-__device__ void transmission_matrix(struct rfunction* rf, struct gpu_state* state, int locus,
-                                    int child_id, double* transmission_matrix) {
+__device__ void transmission_matrix(struct gpu_state* state, int locus, int child_id, double* transmission_matrix) {
     int i;
     
     if(threadIdx.x < 64) {
@@ -69,17 +68,16 @@ __device__ void transmission_matrix(struct rfunction* rf, struct gpu_state* stat
         int kid_trait = tmp;
         
         transmission_matrix[threadIdx.x] = \
-            rfunction_trans_prob(state, locus, rf->peel_node, mat_trait, kid_trait, GPU_MATERNAL_ALLELE) * \
-            rfunction_trans_prob(state, locus, rf->peel_node, pat_trait, kid_trait, GPU_PATERNAL_ALLELE);
+            rfunction_trans_prob(state, locus, child_id, mat_trait, kid_trait, GPU_MATERNAL_ALLELE) * \
+            rfunction_trans_prob(state, locus, child_id, pat_trait, kid_trait, GPU_PATERNAL_ALLELE);
     }
-    
     
     __syncthreads();
     
     if(threadIdx.x < 16) {
         int tmp = threadIdx.x * 4;
-        int total = transmission_matrix[tmp]   + transmission_matrix[tmp+1] + 
-                    transmission_matrix[tmp+2] + transmission_matrix[tmp+3];
+        double total = transmission_matrix[tmp]   + transmission_matrix[tmp+1] + 
+                       transmission_matrix[tmp+2] + transmission_matrix[tmp+3];
         
         #pragma unroll
         for(i = tmp; i < (tmp + 4); ++i) {
@@ -95,11 +93,11 @@ __device__ void populate_transmission_matrix(struct rfunction* rf, struct gpu_st
     
     if(RFUNCTION_TYPE(rf) == GPU_PARENT_PEEL) {
         for(i = 0; i < rf->children_length; ++i) {
-            transmission_matrix(rf, state, locus, rf->children[i], &rf->transmission[i * 64]);
+            transmission_matrix(state, locus, rf->children[i], &(rf->transmission[i * 64]));
         }
     }
     else if(RFUNCTION_TYPE(rf) == GPU_CHILD_PEEL) {
-        transmission_matrix(rf, state, locus, rf->peel_node, rf->transmission);
+        transmission_matrix(state, locus, rf->peel_node, rf->transmission);
     }
 }
 
@@ -124,13 +122,13 @@ __device__ int sample_homo_mi(struct gpu_state* state, int personid, int locus, 
     prob_dist[1] = 1.0;
     
     if(locus != 0) {
-        i = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, locus - 1, parent));
+        i = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, locus-1, parent));
         prob_dist[0] *= (i == 0 ? INVTHETA_LEFT : THETA_LEFT);
         prob_dist[1] *= (i == 1 ? INVTHETA_LEFT : THETA_LEFT);
     }
     
     if(locus != (map_length - 1)) {
-        i = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, locus + 1, parent));
+        i = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, locus+1, parent));
         prob_dist[0] *= (i == 0 ? INVTHETA_RIGHT : THETA_RIGHT);
         prob_dist[1] *= (i == 1 ? INVTHETA_RIGHT : THETA_RIGHT);
     }
@@ -304,7 +302,6 @@ __device__ void rfunction_evaluate_parent_peel(struct rfunction* rf, struct gpu_
           (rf->prev1 == NULL ? 1.0 : rfunction_get(rf->prev1, assignment, assignment_length)) * \
           (rf->prev2 == NULL ? 1.0 : rfunction_get(rf->prev2, assignment, assignment_length));
     
-    
     for(i = 0; i < rf->children_length; ++i) {
         p = GET_PERSON(state, rf->children[i]);
         
@@ -314,7 +311,6 @@ __device__ void rfunction_evaluate_parent_peel(struct rfunction* rf, struct gpu_
                                             assignment[PERSON_ID(p)]) \
                                           ];
     }
-    
     
     RFUNCTION_PRESUM_SET(rf, ind, tmp);
 }
@@ -385,12 +381,17 @@ __device__ void rfunction_evaluate(struct rfunction* rf, struct gpu_state* state
     */
 }
 
-__global__ void lsampler_kernel(struct gpu_state* state, int offset) {
+__global__ void lsampler_kernel(struct gpu_state* state, int window_length, int offset) {
     int i;
-    int locus = (blockIdx.x * 2) + offset;
+    int locus = (blockIdx.x * window_length) + offset;
     int assignment[128];
     
     struct geneticmap* map = GET_MAP(state);
+    
+    // XXX just in case too many blocks are run
+    if(locus > (map->map_length - 1)) {
+        return;
+    }
     
     // populate map cache in shared memory
     if(threadIdx.x == 0) {
@@ -416,7 +417,6 @@ __global__ void lsampler_kernel(struct gpu_state* state, int offset) {
         
         rfunction_evaluate(GET_RFUNCTION(state, i, locus), state, locus);
     }
-    
     
     // reverse peel, sampling ordered genotypes
     if(threadIdx.x == 0) {
@@ -492,8 +492,8 @@ __global__ void lsampler_sample_kernel(struct gpu_state* state, int offset) {
     __syncthreads();
 }
 
-void run_gpu_lsampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int offset) {
-    lsampler_kernel<<<numblocks, numthreads>>>(state, offset);
+void run_gpu_lsampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int window_length, int offset) {
+    lsampler_kernel<<<numblocks, numthreads>>>(state, window_length, offset);
 }
 
 void run_gpu_lsampler_onepeel_kernel(int numblocks, int numthreads, struct gpu_state* state, int offset, int function_index) {

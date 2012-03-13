@@ -217,12 +217,13 @@ extern "C" {
     void run_gpu_print_kernel(struct gpu_state* state);
     void run_gpu_print_pedigree_kernel(struct person* p, int length);
     
-    void run_gpu_lsampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int offset);
+    void run_gpu_lsampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int window_length, int offset);
     void run_gpu_lsampler_onepeel_kernel(int numblocks, int numthreads, struct gpu_state* state, int offset, int function_index);
     void run_gpu_lsampler_sample_kernel(int numblocks, int numthreads, struct gpu_state* state, int offset);
     
     void run_gpu_msampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis);
-    void run_gpu_msampler_likelihood_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis, size_t shared);
+    void run_gpu_msampler_reset_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis, size_t shared);
+    void run_gpu_msampler_likelihood_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis, int last_meiosis, size_t shared);
     void run_gpu_msampler_sampling_kernel(struct gpu_state* state, int meiosis);
     void run_gpu_msampler_window_sampling_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis, int offset);
     

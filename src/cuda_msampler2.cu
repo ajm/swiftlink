@@ -513,32 +513,56 @@ __device__ double founderallele_run(struct gpu_state* state, int locus, int pers
     return prob;
 }
 
-__global__ void msampler_likelihood_kernel(struct gpu_state* state, int meiosis) {
+__global__ void msampler_reset_kernel(struct gpu_state* state, int meiosis) {
     int locus = ((blockIdx.x * 256) + threadIdx.x) / 32;
     int personid = (state->founderallele_count / 2) + (meiosis / 2);
     int allele = meiosis % 2;
+    struct geneticmap* map = GET_MAP(state);
+    
+    //struct descentgraph* dg = GET_DESCENTGRAPH(state);
+    //int tmp, tmp2, tmp3;
+    int index = locus * 2;
+    
+    if(locus < map->map_length) {        
+        state->raw_matrix[index]     = founderallele_run(state, locus, personid, allele, 0);
+        state->raw_matrix[index + 1] = founderallele_run(state, locus, personid, allele, 1);
+    }
+}
+
+__global__ void msampler_likelihood_kernel(struct gpu_state* state, int meiosis, int last_meiosis) {
+    int locus = ((blockIdx.x * 256) + threadIdx.x) / 32;
+    int personid = (state->founderallele_count / 2) + (meiosis / 2);
+    int allele = meiosis % 2;
+    
+    int last_personid = (state->founderallele_count / 2) + (last_meiosis / 2);
+    int last_allele = last_meiosis % 2;
+    
+    
     struct geneticmap* map = GET_MAP(state);
     
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     int tmp, tmp2, tmp3;
     int index = locus * 2;
     
-    if(locus < map->map_length) {        
+    if(locus < map->map_length) {
+        /*
         if((meiosis == 0) && (allele == 0)) {
             state->raw_matrix[index]     = founderallele_run(state, locus, personid, allele, 0);
             state->raw_matrix[index + 1] = founderallele_run(state, locus, personid, allele, 1);
         }
         else {
+        */
             tmp = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, locus, allele));
             
             tmp2 = DESCENTGRAPH_GET(dg, 
-                    DESCENTGRAPH_OFFSET(dg, (state->founderallele_count / 2) + ((meiosis - 1) / 2), 
-                                        locus, (meiosis - 1) % 2));
+                    DESCENTGRAPH_OFFSET(dg, last_personid, locus, last_allele));
             
             tmp3 = 1 - tmp; // XXX if i just do this inline i get a invalid write of 8 bytes!
             state->raw_matrix[index + tmp] = state->raw_matrix[index + tmp2];
             state->raw_matrix[index + tmp3] = founderallele_run(state, locus, personid, allele, tmp3);
+        /*
         }
+        */
     }
 }
 
@@ -707,8 +731,12 @@ __global__ void msampler_window_sampling_kernel(struct gpu_state* state, int mei
     }
 }
 
-void run_gpu_msampler_likelihood_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis, size_t shared) {
-    msampler_likelihood_kernel<<<numblocks, numthreads, shared>>>(state, meiosis);
+void run_gpu_msampler_reset_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis, size_t shared) {
+    msampler_reset_kernel<<<numblocks, numthreads, shared>>>(state, meiosis);
+}
+
+void run_gpu_msampler_likelihood_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis, int last_meiosis, size_t shared) {
+    msampler_likelihood_kernel<<<numblocks, numthreads, shared>>>(state, meiosis, last_meiosis);
 }
 
 void run_gpu_msampler_sampling_kernel(struct gpu_state* state, int meiosis) {

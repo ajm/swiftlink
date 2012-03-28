@@ -433,6 +433,15 @@ int Person::get_cutset_size(PeelingState& state) {
 
 //--- end peeling related ---
 
+bool Person::safe_to_ignore_meiosis(enum parentage p) {
+    Person* tmp = ped->get_by_index(p == MATERNAL ? maternal_id : paternal_id);
+    
+    if(not tmp->isfounder())
+        return false;
+        
+    return tmp->num_children() == 1;
+}
+
 string Person::debug_string() {
     stringstream ss;
     

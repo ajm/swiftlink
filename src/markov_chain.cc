@@ -21,6 +21,7 @@ using namespace std;
 
 
 //#define MICROBENCHMARK_TIMING 1
+//#define CODA_OUTPUT 1
 
 
 double* MarkovChain::run(DescentGraph& dg) {
@@ -51,16 +52,24 @@ double* MarkovChain::run(DescentGraph& dg) {
         l_ordering.push_back(i);
     */
     
-    int markers_per_window = 98;
+    int markers_per_window = 98; // this needs to be set dynamically
     //int markers_per_window = 49;
     //int markers_per_window = 13;
     //int markers_per_window = 2;
-    for(unsigned int i = 0; i < markers_per_window; ++i)
+    for(int i = 0; i < markers_per_window; ++i)
         l_ordering.push_back(i);
     
     
-    for(unsigned int i = 0; i < num_meioses; ++i)
-        m_ordering.push_back(i);
+    for(unsigned int i = 0; i < num_meioses; ++i) {
+        unsigned person_id = ped->num_founders() + (i / 2);
+        enum parentage p = static_cast<enum parentage>(i % 2);
+        
+        Person* tmp = ped->get_by_index(person_id);
+        
+        if(not tmp->safe_to_ignore_meiosis(p)) {
+            m_ordering.push_back(i);
+        }
+    }
     
     
     printf("P(l-sampler) = %f\n", options.lsampler_prob);
@@ -118,7 +127,8 @@ double* MarkovChain::run(DescentGraph& dg) {
         p.increment();
         
         
-        //if(i < options.burnin) {
+        #ifdef CODA_OUTPUT
+        if(i < options.burnin) {
             double current_likelihood = dg.get_likelihood();
             if(current_likelihood == LOG_ILLEGAL) {
                 fprintf(stderr, "error: descent graph illegal...\n");
@@ -126,7 +136,8 @@ double* MarkovChain::run(DescentGraph& dg) {
             }
             
             fprintf(stderr, "%d\t%f\n", i+1, current_likelihood);
-         //}
+        }
+        #endif
         
         if(i < options.burnin) {
             continue;

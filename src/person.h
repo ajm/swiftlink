@@ -195,6 +195,8 @@ class Person {
     void get_cutset(PeelOperation& operation, PeelingState& state);
     int get_cutset_size(PeelingState& state);
     
+    bool safe_to_ignore_meiosis(enum parentage p);
+    
     string debug_string();
 };
 

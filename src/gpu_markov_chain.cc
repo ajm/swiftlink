@@ -849,9 +849,19 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
     for(int i = 0; i < markers_per_window; ++i)
         l_ordering.push_back(i);
     
-    for(int i = 0; i < num_meioses; ++i)
-        m_ordering.push_back(i);
-    
+    //for(int i = 0; i < num_meioses; ++i)
+    //    m_ordering.push_back(i);
+        
+    for(unsigned int i = 0; i < num_meioses; ++i) {
+        unsigned person_id = ped->num_founders() + (i / 2);
+        enum parentage p = static_cast<enum parentage>(i % 2);
+        
+        Person* tmp = ped->get_by_index(person_id);
+        
+        if(not tmp->safe_to_ignore_meiosis(p)) {
+            m_ordering.push_back(i);
+        }
+    }
     
         
     printf("requesting %.2f KB (%d bytes) of shared memory per block\n", shared_mem / 1024.0, (int)shared_mem);

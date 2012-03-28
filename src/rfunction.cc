@@ -168,6 +168,7 @@ void Rfunction::evaluate(DescentGraph* dg, double offset) {
     pmatrix.reset();
     pmatrix_presum.reset();
     
+    // transmission probability cache
     preevaluate_init(dg);
     
     // crucial for TraitRfunction

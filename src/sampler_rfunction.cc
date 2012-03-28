@@ -163,7 +163,7 @@ void SamplerRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGr
         if(tmp == 0.0)
             continue;
         
-        tmp *= transmission[0][transmission_index(mat_trait, pat_trait, kid_trait)];
+        tmp *= transmission[0][transmission_index(mat_trait, pat_trait, kid_trait)];        
         if(tmp == 0.0)
             continue;
         
@@ -221,7 +221,6 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
             }
             
             child_prob *= transmission[c][transmission_index(mat_trait, pat_trait, kid_trait)];
-            
             if(child_prob == 0.0)
                 break;
         }
@@ -306,6 +305,6 @@ void SamplerRfunction::transmission_matrix(DescentGraph* dg, int kid_id, double*
     //#pragma omp parallel for
     for(int i = 0; i < 64; i += 4) {
         normalise(&tmatrix[i]);
-    }
+    }    
 }
 

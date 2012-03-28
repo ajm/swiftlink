@@ -807,11 +807,15 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
     shared_mem *= 8;
     
     //int msampler_blocks = (map->num_markers() / 10) + ((map->num_markers() % 10) == 0 ? 0 : 1);
-    int window_index = 0;
-    int window_length[] = {11, 13, 17};
+    
+    //int window_index = 0;
+    //int window_length[] = {21, 23, 25};
+    int window_length = 20;
     
     Peeler peel(ped, map, psg, 0);
     double trait_likelihood = peel.get_trait_prob();
+    
+    vector<PeelOperation>& ops = psg->get_peel_order();
     
     /*
     run_gpu_print_kernel(dev_state);
@@ -841,7 +845,8 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
     vector<int> l_ordering;
     vector<int> m_ordering;
     
-    for(int i = 0; i < 10; ++i)
+    int markers_per_window = 2;
+    for(int i = 0; i < markers_per_window; ++i)
         l_ordering.push_back(i);
     
     for(int i = 0; i < num_meioses; ++i)
@@ -883,10 +888,22 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
             
             random_shuffle(l_ordering.begin(), l_ordering.end());
             
+//#define GPU_LSAMPLER_MICROBENCHMARKING 1
+#ifdef GPU_LSAMPLER_MICROBENCHMARKING
+            cudaEvent_t start;
+            cudaEvent_t stop;
+            
+            cudaEventCreate(&start);
+            cudaEventCreate(&stop);
+            
+            cudaEventRecord(start, 0);
+#endif
+            
             for(int j = 0; j < int(l_ordering.size()); ++j) {
-                int num_blocks = (map->num_markers() / 10) + ((map->num_markers() % 10 == 0) ? 0 : 1);
+                int num_blocks = (map->num_markers() / markers_per_window) + \
+                                ((map->num_markers() % markers_per_window == 0) ? 0 : 1);
                 
-                run_gpu_lsampler_kernel(num_blocks, num_threads_per_block(), dev_state, 10, l_ordering[j]);
+                run_gpu_lsampler_kernel(num_blocks, num_threads_per_block(), dev_state, markers_per_window, l_ordering[j]);
                 
                 cudaThreadSynchronize();
                 error = cudaGetLastError();
@@ -895,6 +912,20 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
                     abort();
                 }
             }
+            
+#ifdef GPU_LSAMPLER_MICROBENCHMARKING
+            cudaEventRecord(stop, 0);
+            cudaEventSynchronize(stop);
+            
+            float elapsedTime; // in milliseconds
+            cudaEventElapsedTime(&elapsedTime, start, stop);
+            
+            if(i < options.burnin)
+                fprintf(stderr, "LSAMPLER %.3f\n", elapsedTime);
+            
+            cudaEventDestroy(start);
+            cudaEventDestroy(stop);
+#endif
             
             
             /*
@@ -953,7 +984,17 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
             */
         }
         else {
-        
+#define GPU_MSAMPLER_MICROBENCHMARKING 1
+#ifdef GPU_MSAMPLER_MICROBENCHMARKING
+            cudaEvent_t start;
+            cudaEvent_t stop;
+            
+            cudaEventCreate(&start);
+            cudaEventCreate(&stop);
+            
+            cudaEventRecord(start, 0);
+#endif
+
             random_shuffle(m_ordering.begin(), m_ordering.end());
             
             run_gpu_msampler_reset_kernel(msampler_num_blocks(), 256, dev_state, m_ordering[0], shared_mem);
@@ -974,8 +1015,9 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
                     abort();
                 }
                 
-                //run_gpu_msampler_sampling_kernel(dev_state, j);
-                run_gpu_msampler_window_sampling_kernel(windowed_msampler_blocks(window_length[window_index]), 32, dev_state, m_ordering[j], window_length[window_index]);
+                //run_gpu_msampler_sampling_kernel(dev_state, m_ordering[j]);
+                //run_gpu_msampler_window_sampling_kernel(windowed_msampler_blocks(window_length[window_index]), 32, dev_state, m_ordering[j], window_length[window_index]);
+                run_gpu_msampler_window_sampling_kernel(windowed_msampler_blocks(window_length), 32, dev_state, m_ordering[j], window_length);
                 cudaThreadSynchronize();
                 error = cudaGetLastError();
                 if(error != cudaSuccess) {
@@ -983,7 +1025,7 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
                     abort();
                 }
                 
-                window_index = (window_index + 1) % 3;
+                //window_index = (window_index + 1) % 3;
                 
                 
                 
@@ -997,6 +1039,19 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
                 }
                 */
             }
+#ifdef GPU_MSAMPLER_MICROBENCHMARKING
+            cudaEventRecord(stop, 0);
+            cudaEventSynchronize(stop);
+            
+            float elapsedTime; // in milliseconds
+            cudaEventElapsedTime(&elapsedTime, start, stop);
+            
+            if(i < options.burnin)
+                fprintf(stderr, "MSAMPLER %.3f\n", elapsedTime);
+            
+            cudaEventDestroy(start);
+            cudaEventDestroy(stop);
+#endif
         }
         
         
@@ -1012,10 +1067,31 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
             }
             */
             
+#ifdef GPU_LODSCORE_MICROBENCHMARKING
+            cudaEvent_t start;
+            cudaEvent_t stop;
+            
+            cudaEventCreate(&start);
+            cudaEventCreate(&stop);
+            
+            cudaEventRecord(start, 0);
+#endif
+            
+            /*
+            for(unsigned int j = 0; j < ops.size(); ++j) {
+                int num_threads = static_cast<int>(pow(4.0, ops[j].get_cutset_size() + 1));
+                
+                run_gpu_lodscore_onepeel_kernel(lodscore_num_blocks(), num_threads, dev_state, j);            
+                cudaThreadSynchronize();
+                error = cudaGetLastError();
+                if(error != cudaSuccess) {
+                    printf("CUDA kernel error (%s:%d): %s\n", __FILE__, __LINE__, cudaGetErrorString(error));
+                    abort();
+                }
+            }
+            */
+            
             run_gpu_lodscore_kernel(lodscore_num_blocks(), num_threads_per_block(), dev_state);
-            
-            count++;
-            
             cudaThreadSynchronize();
             
             cudaError_t error = cudaGetLastError();
@@ -1023,6 +1099,22 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
                 printf("CUDA kernel error (%s:%d): %s\n", __FILE__, __LINE__, cudaGetErrorString(error));
                 abort();
             }
+            
+#ifdef GPU_LODSCORE_MICROBENCHMARKING
+            cudaEventRecord(stop, 0);
+            cudaEventSynchronize(stop);
+            
+            float elapsedTime; // in milliseconds
+            cudaEventElapsedTime(&elapsedTime, start, stop);
+            
+            fprintf(stderr, "LODSCORE %.3f\n", elapsedTime);
+            
+            cudaEventDestroy(start);
+            cudaEventDestroy(stop);
+#endif
+            
+            count++;
+            
         }
     }
     

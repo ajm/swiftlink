@@ -458,6 +458,7 @@ __global__ void lsampler_onepeel_kernel(struct gpu_state* state, int offset, int
     
     // forward peel
     //for(i = 0; i < state->functions_per_locus; ++i) {
+        populate_transmission_matrix(GET_RFUNCTION(state, function_offset, locus), state, locus);
         rfunction_evaluate(GET_RFUNCTION(state, function_offset, locus), state, locus);
     //}
 }    

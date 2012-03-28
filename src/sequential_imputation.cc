@@ -47,6 +47,12 @@ void SequentialImputation::parallel_run(DescentGraph& dg, int iterations) {
     double best_prob = LOG_ZERO;
     
     if(iterations == 0) {
+        
+        LocusSampler tmp(ped, map, psg, 0);
+        double tmp_likelihood = tmp.locus_by_locus(dg);
+        
+        printf("starting likelihood (log10) = %.3f\n", tmp_likelihood / log(10));
+        
         return;
     }
     

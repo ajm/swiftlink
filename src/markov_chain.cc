@@ -4,6 +4,8 @@ using namespace std;
 #include <vector>
 #include <algorithm>
 
+#include <time.h>
+
 #include "markov_chain.h"
 #include "peel_sequence_generator.h"
 #include "peeler.h"
@@ -16,6 +18,9 @@ using namespace std;
 #include "progress.h"
 #include "types.h"
 #include "random.h"
+
+
+//#define MICROBENCHMARK_TIMING 1
 
 
 double* MarkovChain::run(DescentGraph& dg) {
@@ -45,14 +50,20 @@ double* MarkovChain::run(DescentGraph& dg) {
     for(unsigned int i = 0; i < map->num_markers(); ++i)
         l_ordering.push_back(i);
     */
-    for(unsigned int i = 0; i < 20; ++i)
+    
+    int markers_per_window = 98;
+    //int markers_per_window = 49;
+    //int markers_per_window = 13;
+    //int markers_per_window = 2;
+    for(unsigned int i = 0; i < markers_per_window; ++i)
         l_ordering.push_back(i);
+    
     
     for(unsigned int i = 0; i < num_meioses; ++i)
         m_ordering.push_back(i);
     
     
-    fprintf(stderr, "P(l-sampler) = %f\n", options.lsampler_prob);
+    printf("P(l-sampler) = %f\n", options.lsampler_prob);
     
     Progress p("MCMC: ", options.iterations + options.burnin);
     
@@ -72,15 +83,18 @@ double* MarkovChain::run(DescentGraph& dg) {
             }
             */
             
+            
             random_shuffle(l_ordering.begin(), l_ordering.end());
             
             // run every nth locus indepentently, shuffling the order of n
             for(unsigned int j = 0; j < l_ordering.size(); ++j) {
                 #pragma omp parallel for
-                for(unsigned int k = l_ordering[j]; k < map->num_markers(); k += 20) {
+                for(unsigned int k = l_ordering[j]; k < map->num_markers(); k += markers_per_window) {
                     lsamplers[k]->step(dg, k);
                 }
             }
+            
+            
             /*
             // run every other locus independently
             for(unsigned int j = 0; j < 2; ++j) {
@@ -100,24 +114,58 @@ double* MarkovChain::run(DescentGraph& dg) {
             }
         }
         
+        
         p.increment();
         
-        if(dg.get_likelihood() == LOG_ILLEGAL) {
-            fprintf(stderr, "error: descent graph illegal...\n");
-            abort();
-        }
+        
+        //if(i < options.burnin) {
+            double current_likelihood = dg.get_likelihood();
+            if(current_likelihood == LOG_ILLEGAL) {
+                fprintf(stderr, "error: descent graph illegal...\n");
+                abort();
+            }
+            
+            fprintf(stderr, "%d\t%f\n", i+1, current_likelihood);
+         //}
         
         if(i < options.burnin) {
             continue;
         }
-        
+                
         if((i % options.scoring_period) == 0) {
+        
+            #ifdef MICROBENCHMARK_TIMING
+            struct timespec start_time;
+            struct timespec end_time;
+            
+            clock_gettime(CLOCK_MONOTONIC, &start_time);
+            
+            int repeats = 100;
+            
+            for(int x = 0; x < repeats; ++x) {
+            #endif
+            
             #pragma omp parallel for
             for(int j = 0; j < int(map->num_markers() - 1); ++j) {
                 peelers[j]->process(&dg);
             }
+            
+            #ifdef MICROBENCHMARK_TIMING
+            }
+            
+            clock_gettime(CLOCK_MONOTONIC, &end_time);
+            
+            double milliseconds = \
+                (((end_time.tv_sec   * 1000.0) + (end_time.tv_nsec   / 1000000.0)) - \
+                 ((start_time.tv_sec * 1000.0) + (start_time.tv_nsec / 1000000.0))) / double(repeats);
+            
+            fprintf(stderr, "LODSCORE %.3f\n", milliseconds);
+            #endif
         }
+        
+        
     }
+    
     
     p.finish();
     

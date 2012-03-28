@@ -639,6 +639,7 @@ __global__ void msampler_sampling_kernel(struct gpu_state* state, int meiosis) {
     }
 }
 
+/*
 __global__ void msampler_window_sampling_kernel(struct gpu_state* state, int meiosis, int window_length) {
     int starting_locus = blockIdx.x * window_length;
     int current_locus;
@@ -652,15 +653,18 @@ __global__ void msampler_window_sampling_kernel(struct gpu_state* state, int mei
     
     // these are all 20 because shared mem needs to be 
     // declared with a constant
-    __shared__ float sh_theta[20];
-    __shared__ float sh_inversetheta[20];
-    __shared__ float sh_matrix[20][2];
-    __shared__ int sh_descentgraph[20][2];
+    __shared__ float sh_theta[32];
+    __shared__ float sh_inversetheta[32];
+    __shared__ float sh_matrix[32][2];
+    __shared__ int sh_descentgraph[32][2];
     
     
     map_length = map->map_length;
     
     current_locus = starting_locus + threadIdx.x;
+    
+    if((map_length - current_locus) < 2)
+        return;
     
     if((threadIdx.x < window_length) && (current_locus < map_length)) {
         
@@ -683,7 +687,6 @@ __global__ void msampler_window_sampling_kernel(struct gpu_state* state, int mei
         total = sh_matrix[0][0] + sh_matrix[0][1];
         sh_matrix[0][0] /= total;
         sh_matrix[0][1] /= total;
-        //printf("%e %e\n", sh_matrix[0][0], sh_matrix[0][1]);
         
         // forward
         for(i = 1; i < window_length; ++i) {
@@ -700,13 +703,11 @@ __global__ void msampler_window_sampling_kernel(struct gpu_state* state, int mei
             total = sh_matrix[i][0] + sh_matrix[i][1];
             sh_matrix[i][0] /= total;
             sh_matrix[i][1] /= total;
-            //printf("%e %e\n", sh_matrix[i][0], sh_matrix[i][1]);
         
             last_index = i;
         }
         
         
-        //printf("window_length = %d\n", window_length);
         
         // backward
         i = last_index;
@@ -721,11 +722,107 @@ __global__ void msampler_window_sampling_kernel(struct gpu_state* state, int mei
         }
     }
     
-    
     __syncthreads();
     
     
     if((threadIdx.x < window_length) && (current_locus < map_length)) {
+        DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, current_locus, GPU_MATERNAL_ALLELE), sh_descentgraph[threadIdx.x][0]);
+        DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, current_locus, GPU_PATERNAL_ALLELE), sh_descentgraph[threadIdx.x][1]);
+    }
+}
+*/
+
+__global__ void msampler_window_sampling_kernel(struct gpu_state* state, int meiosis, int window_length) {
+    int starting_locus = blockIdx.x * window_length;
+    int current_locus;
+    int personid = (state->founderallele_count / 2) + (meiosis / 2);
+    int allele = meiosis % 2;
+    struct geneticmap* map = GET_MAP(state);
+    struct descentgraph* dg = GET_DESCENTGRAPH(state);
+    int i, j;
+    float total;
+    int last_index;
+    
+    // these are all 20 because shared mem needs to be 
+    // declared with a constant
+    __shared__ float sh_theta[32];
+    __shared__ float sh_inversetheta[32];
+    __shared__ float sh_matrix[32][2];
+    __shared__ int sh_descentgraph[32][2];
+    
+    int buffer = 6;
+    int left_buffer = starting_locus == 0 ? 0 : buffer;
+    
+    int window_starting_locus = starting_locus - left_buffer;
+    int buffer_window_length = window_length + left_buffer + buffer;
+    
+    map_length = map->map_length;
+    
+    current_locus = window_starting_locus + threadIdx.x;
+    
+    if((map_length - current_locus) < 2)
+        return;
+    
+    if((threadIdx.x < buffer_window_length) && (current_locus < map_length)) {
+        
+        sh_descentgraph[threadIdx.x][0] = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, current_locus, GPU_MATERNAL_ALLELE));
+        sh_descentgraph[threadIdx.x][1] = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, current_locus, GPU_PATERNAL_ALLELE));
+        
+        sh_matrix[threadIdx.x][0] = state->raw_matrix[current_locus * 2];
+        sh_matrix[threadIdx.x][1] = state->raw_matrix[(current_locus * 2) + 1];
+        
+        if(current_locus < (map_length - 1)) {
+            sh_theta[threadIdx.x]        = (float) MAP_THETA(       map, current_locus);
+            sh_inversetheta[threadIdx.x] = (float) MAP_INVERSETHETA(map, current_locus);
+        }
+    }
+    
+    __syncthreads();
+    
+    
+    if(threadIdx.x == 0) {
+        total = sh_matrix[0][0] + sh_matrix[0][1];
+        sh_matrix[0][0] /= total;
+        sh_matrix[0][1] /= total;
+        
+        // forward
+        for(i = 1; i < buffer_window_length; ++i) {
+            if((window_starting_locus + i) >= map_length)
+                break;
+            
+            for(j = 0; j < 2; ++j) {
+                sh_matrix[i][j] *= ( \
+                    (sh_matrix[i-1][j]   * sh_inversetheta[i-1]) + \
+                    (sh_matrix[i-1][1-j] * sh_theta[i-1]) \
+                  );
+            }
+            
+            total = sh_matrix[i][0] + sh_matrix[i][1];
+            sh_matrix[i][0] /= total;
+            sh_matrix[i][1] /= total;
+        
+            last_index = i;
+        }
+        
+        
+        
+        // backward
+        i = last_index;
+        sh_descentgraph[i][allele] = founderallele_sample2(state, sh_matrix[i][0], sh_matrix[i][1]);
+        
+        while(--i >= 0) {
+            for(j = 0; j < 2; ++j) {
+                sh_matrix[i][j] *= ((sh_descentgraph[i+1][allele] != j) ? sh_theta[i] : sh_inversetheta[i]);
+            }
+            
+            sh_descentgraph[i][allele] = founderallele_sample2(state, sh_matrix[i][0], sh_matrix[i][1]);
+        }
+    }
+    
+    __syncthreads();
+    
+    
+    if((threadIdx.x > left_buffer) && (threadIdx.x < (window_length + left_buffer)) && (current_locus < map_length)) {
         DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, current_locus, GPU_MATERNAL_ALLELE), sh_descentgraph[threadIdx.x][0]);
         DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, current_locus, GPU_PATERNAL_ALLELE), sh_descentgraph[threadIdx.x][1]);
     }

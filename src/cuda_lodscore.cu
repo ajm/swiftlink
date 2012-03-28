@@ -233,15 +233,27 @@ __device__ void lodscore_evaluate(struct rfunction* rf, struct gpu_state* state,
         lodscore_evaluate_element(rf, state, locus, i);
     }
     
+    __syncthreads();
+    
+    
+    /*
+    // for onepeel kernel
+    if(threadIdx.x < rf->matrix_length) {
+        lodscore_evaluate_element(rf, state, locus, threadIdx.x);
+    }
+    
+    __syncthreads();
+    */
+    
     /*
     if(threadIdx.x == 0) {
         for(i = 0; i < rf->matrix_length; ++i) {
             lodscore_evaluate_element(rf, state, locus, i);
         }
     }
-    */
     
     __syncthreads();
+    */
 }
 
 // this can be done inline?
@@ -317,6 +329,41 @@ __global__ void lodscore_kernel(struct gpu_state* state) {
     }
 }
 
+__global__ void lodscore_onepeel_kernel(struct gpu_state* state, int function_offset) {
+    int locus = blockIdx.x;
+    //int i;
+    struct rfunction* rf;
+    struct geneticmap* map = GET_MAP(state);
+    
+    // populate map cache in shared memory
+    if(threadIdx.x == 0) {
+        map_cache[0] = MAP_HALF_THETA(map, locus);
+        map_cache[1] = MAP_HALF_INVERSETHETA(map, locus);
+        
+        map_cache[2] = log(MAP_THETA(map, locus));
+        map_cache[3] = log(MAP_INVERSETHETA(map, locus));
+        
+        map_length = map->map_length;
+    }
+    
+    __syncthreads();
+    
+    // forward peel
+    //for(i = 0; i < state->functions_per_locus; ++i) {
+        rf = GET_RFUNCTION(state, function_offset, locus);
+        lodscore_evaluate(rf, state, locus);
+    //}
+    
+    
+    // get result from last rfunction
+    // calculate a lod score
+    if((threadIdx.x == 0) && (function_offset == (state->functions_per_locus - 1))) {
+        //printf("GPU peel %d %f\n", locus, log(RFUNCTION_GET(rf, 0)));
+        lodscore_add(state, log(RFUNCTION_GET(rf, 0)));
+    }
+    
+}
+
 __global__ void lodscoreinit_kernel(double* lodscores) {
     if(threadIdx.x == 0) {
         lodscores[blockIdx.x] = DBL_LOG_ZERO;
@@ -341,6 +388,10 @@ __global__ void lodscoreprint_kernel(struct gpu_state* state) {
 
 void run_gpu_lodscore_kernel(int numblocks, int numthreads, struct gpu_state* state) {
     lodscore_kernel<<<numblocks, numthreads>>>(state);
+}
+
+void run_gpu_lodscore_onepeel_kernel(int numblocks, int numthreads, struct gpu_state* state, int function_offset) {
+    lodscore_onepeel_kernel<<<numblocks, numthreads>>>(state, function_offset);
 }
 
 void run_gpu_lodscoreinit_kernel(int numblocks, double* lodscores) {

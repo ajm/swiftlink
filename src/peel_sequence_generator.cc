@@ -47,12 +47,13 @@ PeelOperation PeelSequenceGenerator::get_best_operation(vector<PeelOperation>& v
         if(it->get_cutset_size() != cs_size) {
             break;
         }
-        it++;
+        ++it;
     }
 
     vector<PeelOperation> tmp(v.begin(), it);
 
-    return get_best_operation_heuristic(tmp);
+    //return get_best_operation_heuristic(tmp);
+    return get_random_operation(tmp);
 }
 
 // create a list of all the possible peels from peripheral families
@@ -99,7 +100,8 @@ void PeelSequenceGenerator::build_peel_order() {
             abort();
         }
         
-        PeelOperation p = get_best_operation(tmp);
+        //PeelOperation p = get_best_operation(tmp);
+        PeelOperation p = get_random_operation(tmp);
 
         find_previous_functions(p);
         
@@ -112,7 +114,9 @@ void PeelSequenceGenerator::build_peel_order() {
         printf("%s\n", p.debug_string().c_str());
     }
     
-    /*
+    
+    
+    // section 6.3, peeling sequence generation
     // use greedy solution as input to random down hill search
     vector<int> current;
     for(unsigned i = 0; i < peelorder.size(); ++i) {
@@ -121,12 +125,13 @@ void PeelSequenceGenerator::build_peel_order() {
     
     printf("peel cost start: %d\n", calculate_cost(current));
     
+    
     int swap0, swap1, tmp, new_cost;
     int cost = calculate_cost(current);
     
     swap0 = swap1 = 0;
     
-    for(unsigned int i = 0; i < 100000; ++i) {
+    for(unsigned int i = 0; i < 1000000; ++i) {
         
         do {
             swap0 = get_random_int(current.size());
@@ -159,67 +164,28 @@ void PeelSequenceGenerator::build_peel_order() {
         current[swap1] = tmp;
     }
     
-    printf("peel cost end: %d\n", calculate_cost(current));
+    printf("%d\n", calculate_cost(current));
     
+    //exit(0);
     
     rebuild_peel_order(current);
     
-    //exit(-1);
-    */
+    
     
     /*
-    vector<int> v;
+    // section 6.3, peeling sequence generation
+    // greedy
+    vector<int> current;
     
-    v.push_back(10);
-    v.push_back(11);
-    v.push_back(1);
-    v.push_back(13);
-    v.push_back(0);
-    v.push_back(16);
-    v.push_back(12);
-    v.push_back(4);
-    v.push_back(14);
-    v.push_back(6);
-    v.push_back(27);
-    v.push_back(17);
-    v.push_back(18);
-    v.push_back(25);
-    v.push_back(2);
-    v.push_back(26);
-    v.push_back(19);
-    v.push_back(7);
-    v.push_back(22);
-    v.push_back(24);
-    v.push_back(3);
-    v.push_back(23);
-    v.push_back(20);
-    v.push_back(5);
-    v.push_back(21);
-    v.push_back(15);
-    v.push_back(9);
-    v.push_back(8);
+    for(unsigned i = 0; i < peelorder.size(); ++i) {
+        current.push_back(peelorder[i].get_peelnode());
+    }
     
-    rebuild_peel_order(v);
+    printf("%d\n", calculate_cost(current));
+    
+    exit(0);
     */
-    /*
-    vector<int> v;
     
-    v.push_back(12);
-    v.push_back(6);
-    v.push_back(0);
-    v.push_back(5);
-    v.push_back(7);
-    v.push_back(9);
-    v.push_back(1);
-    v.push_back(8);
-    v.push_back(11);
-    v.push_back(4);
-    v.push_back(10);
-    v.push_back(2);
-    v.push_back(3);
-    
-    rebuild_peel_order(v);
-    */
     
     for(unsigned int i = 0; i < peelorder.size(); ++i) {
         bruteforce_assignments(peelorder[i]);

@@ -136,6 +136,31 @@ void LocusSampler::set_ignores(bool left, bool right) {
     }
 }
 
+double LocusSampler::locus_by_locus(DescentGraph& dg) {
+    unsigned int starting_locus = 0;
+    unsigned int tmp = locus;
+    double weight = 0.0;
+    
+    set_ignores(true, true);
+    
+    set_locus(starting_locus);
+    step(dg, starting_locus);
+    weight += log(rfunctions.back().get_result());
+    
+    // iterate right through the markers
+    for(int i = (starting_locus + 1); i < int(map->num_markers()); ++i) {
+        set_locus(i);
+        step(dg, i);
+        weight += log(rfunctions.back().get_result());
+    }
+    
+    // reset, in case not used for more si
+    set_locus(tmp);
+    set_ignores(false, false);
+    
+    return weight;    
+}
+
 double LocusSampler::sequential_imputation(DescentGraph& dg) {
     unsigned int starting_locus = get_random_locus();
     unsigned int tmp = locus;

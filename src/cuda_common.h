@@ -9,7 +9,7 @@
 
 #include "tinymt/tinymt32_host.h"
 
-#define NUM_THREADS 128
+#define NUM_THREADS 96
 #define NUM_ALLELES 4
 #define GPU_DEFAULT_COMPONENT -1
 
@@ -228,6 +228,7 @@ extern "C" {
     void run_gpu_msampler_window_sampling_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis, int offset);
     
     void run_gpu_lodscore_kernel(int numblocks, int numthreads, struct gpu_state* state);
+    void run_gpu_lodscore_onepeel_kernel(int numblocks, int numthreads, struct gpu_state* state, int function_offset);
     void run_gpu_lodscoreinit_kernel(int numblocks, double* lodscores);
     void run_gpu_lodscorenormalise_kernel(int numblocks, struct gpu_state* state, int count, double trait_likelihood);
     void run_gpu_lodscoreprint_kernel(struct gpu_state* state);

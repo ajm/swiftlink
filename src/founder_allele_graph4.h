@@ -37,7 +37,7 @@ class FounderAlleleGraph4 {
     bool legal(enum unphased_genotype obs, enum unphased_genotype a1, enum unphased_genotype a2);
     enum unphased_genotype get_other_allele(enum unphased_genotype obs, enum unphased_genotype a1);
     void combine_components(int component1, int component2, bool flip);
-    void propagate_fa_update(Person* p, enum parentage allele, int old_fa, int new_fa);
+    void propagate_fa_update(DescentGraph& dg, Person* p, enum parentage allele, enum parentage allele_value, int new_fa);
     double get_freq(enum unphased_genotype g);
     void valid_genotype(enum unphased_genotype g);
     
@@ -111,7 +111,7 @@ class FounderAlleleGraph4 {
     
     void reset(DescentGraph& dg);
     double likelihood();
-    void flip(unsigned int personid, enum parentage p);
+    void flip(DescentGraph& dg, unsigned int personid, enum parentage p);
     
     string debug_string();
 };

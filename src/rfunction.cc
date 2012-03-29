@@ -73,20 +73,6 @@ Rfunction& Rfunction::operator=(const Rfunction& rhs) {
     return *this;
 }
 
-bool Rfunction::affected_trait(enum phased_trait pt, int allele) {
-    
-    switch(allele) {
-        case 0 :
-            return (pt == TRAIT_AU) or (pt == TRAIT_AA);
-        case 1 :
-            return (pt == TRAIT_UA) or (pt == TRAIT_AA);
-        default :
-            break;
-    }
-    
-    abort();
-}
-
 enum phased_trait Rfunction::get_phased_trait(enum phased_trait m, enum phased_trait p, 
                                                    int maternal_allele, int paternal_allele) {
                                                    

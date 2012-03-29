@@ -548,35 +548,31 @@ void FounderAlleleGraph4::reset(DescentGraph& dg) {
 	}
 }
 
-/*
-void FounderAlleleGraph4::flip(unsigned int personid, enum parentage allele) {
+void FounderAlleleGraph4::flip(DescentGraph& dg, unsigned int personid, enum parentage allele) {
     Person* p = ped->get_by_index(personid);
-    int old_fa = edge_list[(personid * 2) + allele];
+    
+    enum parentage allele_value = static_cast<enum parentage>(dg.get(personid, locus, allele));
+    
     int tmp = p->get_parentid(allele) * 2;
+    int old_fa = edge_list[(personid * 2) + allele];
     int new_fa = ((edge_list[tmp] == old_fa) ? edge_list[tmp + 1] : edge_list[tmp]);
     
-    //fprintf(stderr, "personid = %d, allele = %d, parentid = %d, old_fa = %d, new_fa = %d\n", personid, allele, p->get_parentid(allele), old_fa, new_fa);
-    
-    if(old_fa == new_fa)
-        return;
-    
-    propagate_fa_update(p, allele, old_fa, new_fa);
+    propagate_fa_update(dg, p, allele, allele_value, new_fa);
 }
 
-void FounderAlleleGraph4::propagate_fa_update(Person* p, enum parentage allele, int old_fa, int new_fa) {
-    int tmp = p->get_internalid() * 2;
+void FounderAlleleGraph4::propagate_fa_update(DescentGraph& dg, Person* p, enum parentage allele, 
+                                                enum parentage allele_value, int new_fa) {
     
-    if(edge_list[tmp + allele] != old_fa)
+    if(dg.get(p->get_internalid(), locus, allele) != allele_value) {
         return;
-    
-    enum parentage newallele = p->isfemale() ? MATERNAL : PATERNAL;
-    
-    for(unsigned i = 0; i < p->num_children(); ++i) {
-        propagate_fa_update(p->get_child(i), newallele, old_fa, new_fa);
     }
     
-    //fprintf(stderr, " [%d] %d -> %d\n", p->get_internalid(), edge_list[tmp + allele], new_fa);
-    edge_list[tmp + allele] = new_fa;
+    enum parentage new_allele = p->isfemale() ? MATERNAL : PATERNAL;
+    
+    for(unsigned i = 0; i < p->num_children(); ++i) {
+        propagate_fa_update(dg, p->get_child(i), new_allele, allele, new_fa);
+    }
+    
+    edge_list[(p->get_internalid() * 2) + allele] = new_fa;
 }
-*/
 

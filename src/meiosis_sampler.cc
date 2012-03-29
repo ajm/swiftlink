@@ -20,6 +20,11 @@ void MeiosisSampler::reset(DescentGraph& dg, unsigned int parameter) {
     
     #pragma omp parallel for
     for(unsigned int i = 0; i < map->num_markers(); ++i) {
+        f4[i].reset(dg);
+    }
+    
+    #pragma omp parallel for
+    for(unsigned int i = 0; i < map->num_markers(); ++i) {
         int index = i * 2;
         int meiosis = dg.get(person_id, i, p);
         
@@ -68,6 +73,8 @@ void MeiosisSampler::find_founderallelegraph_ordering() {
 }
 
 double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, unsigned locus, enum parentage parent, unsigned value) {
+    /*
+    // don't use 'flip' code...
     double lik4;
     unsigned tmp = dg.get(person_id, locus, parent);
         
@@ -77,6 +84,20 @@ double MeiosisSampler::graph_likelihood(DescentGraph& dg, unsigned person_id, un
     lik4 = f4[locus].likelihood();
     
     dg.set(person_id, locus, parent, tmp);
+    
+    return lik4;
+    */
+    double lik4;
+    unsigned tmp = dg.get(person_id, locus, parent);
+    bool flip = tmp != value;
+    
+    if(flip)
+        f4[locus].flip(dg, person_id, parent);
+    
+    lik4 = f4[locus].likelihood();
+    
+    if(flip)
+        f4[locus].flip(dg, person_id, parent);
     
     return lik4;
 }
@@ -136,7 +157,15 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned int parameter) {
     // sample backwards
     // change descent graph in place
     int i = num_markers - 1;
-    dg.set(person_id, i, p, sample(i));
+    int tmp_orig = dg.get(person_id, i, p);
+    int tmp_samp = sample(i);
+    
+    //dg.set(person_id, i, p, sample(i));
+    
+    if(tmp_orig != tmp_samp) {
+        f4[i].flip(dg, person_id, p);
+        dg.set(person_id, i, p, tmp_samp);
+    }
     
     while(--i >= 0) {
         int index = i * 2;
@@ -146,7 +175,15 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned int parameter) {
             fb_matrix[index + j] *= next;
         }
         
-        dg.set(person_id, i, p, sample(i));
+        //dg.set(person_id, i, p, sample(i));
+        
+        tmp_orig = dg.get(person_id, i, p);
+        tmp_samp = sample(i);
+        
+        if(tmp_orig != tmp_samp) {
+            f4[i].flip(dg, person_id, p);
+            dg.set(person_id, i, p, tmp_samp);
+        }
     }
     
     last_parameter = parameter;

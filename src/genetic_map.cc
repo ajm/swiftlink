@@ -84,7 +84,7 @@ double GeneticMap::get_theta_halfway(unsigned int i) const {
 double GeneticMap::get_inversetheta_halfway(unsigned int i) const {
     return half_inversethetas[i];
 }
-
+/*
 double GeneticMap::get_theta(unsigned int i) const {
     return thetas[i];
 }
@@ -92,7 +92,7 @@ double GeneticMap::get_theta(unsigned int i) const {
 double GeneticMap::get_inversetheta(unsigned int i) const {
     return inversethetas[i];
 }
-
+*/
 double GeneticMap::get_theta_log(unsigned int i) const {
     return log(thetas[i]);
 }

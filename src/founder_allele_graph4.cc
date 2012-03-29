@@ -47,9 +47,11 @@ double FounderAlleleGraph4::likelihood() {
     // reset everything
     num_groups = 0;
     group_index = 0;
+    
     group_membership.assign(founder_alleles, DEFAULT_COMPONENT);
     group_fixed.assign(founder_alleles, -1);
     group_active.assign(founder_alleles, false);
+    
     //prob[0].assign(founder_alleles, 1.0);
     //prob[1].assign(founder_alleles, 1.0);
     

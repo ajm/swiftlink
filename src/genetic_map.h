@@ -138,8 +138,16 @@ class GeneticMap {
         return map[i].get_prob(pt);
     }
     
-    double get_theta(unsigned int i) const ;
-    double get_inversetheta(unsigned int i) const ;
+    //double get_theta(unsigned int i) const ;
+    //double get_inversetheta(unsigned int i) const ;
+    
+    inline double get_theta(unsigned int i) const {
+        return thetas[i];
+    }
+
+    inline double get_inversetheta(unsigned int i) const {
+        return inversethetas[i];
+    }
     
     double get_theta_log(unsigned int i) const ;
     double get_inversetheta_log(unsigned int i) const ;

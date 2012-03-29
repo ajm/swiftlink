@@ -83,7 +83,7 @@ class Rfunction {
         
         switch(pt) {
             case TRAIT_UU :
-                abort();
+                return false;
             case TRAIT_AU :
                 return allele == 0;
             case TRAIT_UA :

@@ -12,7 +12,9 @@ class SamplerRfunction : public Rfunction {
     double antitheta;
     double theta2;
     double antitheta2;
+    double homoz_cache;
     vector<double*> transmission;
+    vector<double> thetas;
     vector<unsigned int> children;
     
     
@@ -20,6 +22,8 @@ class SamplerRfunction : public Rfunction {
     double get_transmission_probability(enum phased_trait parent_trait, enum phased_trait kid_trait, enum parentage parent);
     double get_recombination_probability(DescentGraph* dg, unsigned kid_id, enum phased_trait parent_trait, 
                                          enum phased_trait kid_trait, enum parentage parent);
+    void get_recombination_distribution(DescentGraph* dg, unsigned person_id, enum phased_trait parent_trait, 
+                                        enum parentage parent, double* dist);
     void transmission_matrix(DescentGraph* dg, int kid_id, double* tmatrix);
     void populate_transmission_cache(DescentGraph* dg);
     void setup_transmission_cache();
@@ -38,13 +42,15 @@ class SamplerRfunction : public Rfunction {
         ignore_left(false), 
         ignore_right(false),
         theta(0.0),
-        antitheta(0.0),
+        antitheta(1.0),
         theta2(0.0),
-        antitheta2(0.0),
+        antitheta2(1.0),
+        homoz_cache(1.0),
         transmission(),
+        thetas(4, 0.0),
         children() {
         
-        set_locus(locus);
+        set_locus(locus, ignore_left, ignore_right);
         setup_transmission_cache();
     }
     
@@ -56,10 +62,12 @@ class SamplerRfunction : public Rfunction {
         antitheta(rhs.antitheta),
         theta2(rhs.theta2),
         antitheta2(rhs.antitheta2),
+        homoz_cache(rhs.homoz_cache),
         transmission(),
+        thetas(4, 0.0),
         children() {
     
-        set_locus(locus);
+        set_locus(locus, ignore_left, ignore_right);
         setup_transmission_cache();    
     }
     
@@ -77,6 +85,9 @@ class SamplerRfunction : public Rfunction {
             antitheta = rhs.antitheta;
             theta2 = rhs.theta2;
             antitheta2 = rhs.antitheta2;
+            homoz_cache = rhs.homoz_cache;
+            
+            thetas = rhs.thetas;
             
             teardown_transmission_cache();
             setup_transmission_cache();
@@ -87,23 +98,44 @@ class SamplerRfunction : public Rfunction {
     
     void sample(vector<int>& pmk);
     
-    void set_ignores(bool left, bool right) {
+    void set_locus(unsigned int l, bool left, bool right) {
+        locus = l;
         ignore_left = left;
         ignore_right = right;
-    }
-    
-    void set_locus(unsigned int l) {
-        locus = l;
         
-        if(locus != (map->num_markers() - 1)) {
-            theta = map->get_theta(locus);
-            antitheta = map->get_inversetheta(locus);
-        }
+        //theta = theta2 = 0.0;
+        //antitheta = antitheta2 = 1.0;
         
-        if(locus != 0) {
+        theta = theta2 = antitheta = antitheta2 = 1.0;
+        
+        homoz_cache = 1.0;
+        
+        
+        if((locus != 0) and (not ignore_left)) {
             theta2 = map->get_theta(locus-1);
             antitheta2 = map->get_inversetheta(locus-1);
+            homoz_cache *= 0.5;
         }
+        
+        if((locus != (map->num_markers() - 1)) and (not ignore_right)) {
+            theta = map->get_theta(locus);
+            antitheta = map->get_inversetheta(locus);
+            homoz_cache *= 0.5;
+        }
+        
+        /*
+        thetas[0] = theta2     * theta;
+        thetas[1] = theta2     * antitheta;
+        thetas[2] = antitheta2 * theta;
+        thetas[3] = antitheta2 * antitheta;
+        
+        double total = thetas[0] + thetas[1] + \
+                       thetas[2] + thetas[3];
+
+        for(int i = 0; i < 4; ++i) {
+            thetas[i] /= total;
+        }
+        */
     }
 };
 

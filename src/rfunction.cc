@@ -191,16 +191,3 @@ void Rfunction::normalise(double* p) {
     }
 }
 
-enum trait Rfunction::get_trait(enum phased_trait p, enum parentage parent) {
-    switch(parent) {
-        case MATERNAL:
-            return (((p == TRAIT_UU) or (p == TRAIT_UA)) ? TRAIT_U : TRAIT_A);    
-        case PATERNAL:
-            return (((p == TRAIT_UU) or (p == TRAIT_AU)) ? TRAIT_U : TRAIT_A);
-        default:
-            break;
-    }
-    
-    abort();
-}
-

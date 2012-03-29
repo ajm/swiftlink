@@ -36,11 +36,6 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator* psg, unsigned 
     
     trait_prob = calc_trait_prob();
     
-    /*
-    for(unsigned i = 0; i < rfunctions.size(); ++i) {
-        rfunctions[i].set_locus(locus);
-    }
-    */
     
     if(locus == 0) {
         printf("P(T) = %e\n", trait_prob / log(10));

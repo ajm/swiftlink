@@ -994,7 +994,7 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
             */
         }
         else {
-#define GPU_MSAMPLER_MICROBENCHMARKING 1
+//#define GPU_MSAMPLER_MICROBENCHMARKING 1
 #ifdef GPU_MSAMPLER_MICROBENCHMARKING
             cudaEvent_t start;
             cudaEvent_t stop;

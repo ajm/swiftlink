@@ -35,11 +35,37 @@ class Rfunction {
     unsigned int size;
     unsigned int peel_id;
     
-    enum trait get_trait(enum phased_trait p, enum parentage parent);
+    //enum trait get_trait(enum phased_trait p, enum parentage parent);
     bool affected_trait(enum phased_trait pt, int allele);
     enum phased_trait get_phased_trait(enum phased_trait m, enum phased_trait p, int maternal_allele, int paternal_allele);
     
     void normalise(double* p);
+    
+    inline enum trait get_trait(enum phased_trait p, enum parentage parent) {
+        /*
+        switch(parent) {
+            case MATERNAL:
+                return (((p == TRAIT_UU) or (p == TRAIT_UA)) ? TRAIT_U : TRAIT_A);    
+            case PATERNAL:
+                return (((p == TRAIT_UU) or (p == TRAIT_AU)) ? TRAIT_U : TRAIT_A);
+            default:
+                break;
+        }
+        
+        abort();
+        */
+        
+        switch(p) {
+            case TRAIT_UU :
+                return TRAIT_U;
+            case TRAIT_AU :
+                return (parent == MATERNAL) ? TRAIT_A : TRAIT_U;
+            case TRAIT_UA :
+                return (parent == MATERNAL) ? TRAIT_U : TRAIT_A;
+            case TRAIT_AA :
+                return TRAIT_A;
+        }
+    }
     
         
  private :

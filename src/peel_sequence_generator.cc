@@ -131,7 +131,7 @@ void PeelSequenceGenerator::build_peel_order() {
     
     swap0 = swap1 = 0;
     
-    for(unsigned int i = 0; i < 1000000; ++i) {
+    for(unsigned int i = 0; i < 10000; ++i) {
         
         do {
             swap0 = get_random_int(current.size());

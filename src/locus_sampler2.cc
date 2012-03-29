@@ -123,16 +123,16 @@ void LocusSampler::step(DescentGraph& dg, unsigned parameter) {
 }
 
 void LocusSampler::reset() {
-    set_ignores(false, false);
+    set_locus(locus, false, false);
 }
 
-void LocusSampler::set_ignores(bool left, bool right) {
-    
+void LocusSampler::set_locus(unsigned int l, bool left, bool right) {
+    locus = l;
     ignore_left = left;
     ignore_right = right;
-    
-    for(unsigned i = 0; i < rfunctions.size(); ++i) {
-        rfunctions[i].set_ignores(ignore_left, ignore_right);
+
+    for(unsigned int i = 0; i < rfunctions.size(); ++i) {
+        rfunctions[i].set_locus(locus, ignore_left, ignore_right);
     }
 }
 
@@ -141,22 +141,20 @@ double LocusSampler::locus_by_locus(DescentGraph& dg) {
     unsigned int tmp = locus;
     double weight = 0.0;
     
-    set_ignores(true, true);
     
-    set_locus(starting_locus);
+    set_locus(starting_locus, true, true);
     step(dg, starting_locus);
     weight += log(rfunctions.back().get_result());
     
     // iterate right through the markers
     for(int i = (starting_locus + 1); i < int(map->num_markers()); ++i) {
-        set_locus(i);
+        set_locus(i, true, true);
         step(dg, i);
         weight += log(rfunctions.back().get_result());
     }
     
     // reset, in case not used for more si
-    set_locus(tmp);
-    set_ignores(false, false);
+    set_locus(tmp, false, false);
     
     return weight;    
 }
@@ -166,40 +164,26 @@ double LocusSampler::sequential_imputation(DescentGraph& dg) {
     unsigned int tmp = locus;
     double weight = 0.0;
     
-    //fprintf(stderr, "start locus = %d\n", starting_locus);
-    
-    set_ignores(true, true);
-    set_locus(starting_locus);
+    set_locus(starting_locus, true, true);
     step(dg, starting_locus);
     weight += log(rfunctions.back().get_result());
-    //fprintf(stderr, "  w %d = %f (%f)\n", starting_locus, log(rfunctions.back().get_result()), log10(rfunctions.back().get_result()));
     
     // iterate left through the markers
-    set_ignores(true, false);
     for(int i = (starting_locus - 1); i >= 0; --i) {
-        set_locus(i);
+        set_locus(i, true, false);
         step(dg, i);
         weight += log(rfunctions.back().get_result());
-        //fprintf(stderr, "  w %d = %f (%f)\n", i, log(rfunctions.back().get_result()), log10(rfunctions.back().get_result()));
     }
     
     // iterate right through the markers
-    set_ignores(false, true);
     for(int i = (starting_locus + 1); i < int(map->num_markers()); ++i) {
-        set_locus(i);
+        set_locus(i, false, true);
         step(dg, i);
         weight += log(rfunctions.back().get_result());
-        //fprintf(stderr, "  w %d = %f (%f)\n", i, log(rfunctions.back().get_result()), log10(rfunctions.back().get_result()));
     }
     
     // reset, in case not used for more si
-    set_locus(tmp);
-    set_ignores(false, false);
-    
-    
-    //fprintf(stderr, "final = %f (%f)\n", weight, weight / log(10));
-    
-    //abort();
+    set_locus(tmp, false, false);
     
     return weight;    
 }

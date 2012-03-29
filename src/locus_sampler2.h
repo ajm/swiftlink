@@ -29,8 +29,6 @@ class LocusSampler : Sampler {
     unsigned sample_hetero_mi(enum trait allele, enum phased_trait trait);
     
     void sample_meiosis_indicators(vector<int>& pmk, DescentGraph& dg);
-    
-    void set_ignores(bool left, bool right);
 
     
  public :
@@ -72,14 +70,7 @@ class LocusSampler : Sampler {
     double sequential_imputation(DescentGraph& dg);
     void reset();
     
-    void set_locus(unsigned int locus) {
-    
-        this->locus = locus;
-    
-        for(unsigned int i = 0; i < rfunctions.size(); ++i) {
-            rfunctions[i].set_locus(locus);
-        }
-    }
+    void set_locus(unsigned int locus, bool ignore_left, bool ignore_right);
 };
 
 #endif

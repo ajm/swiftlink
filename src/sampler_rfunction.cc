@@ -54,6 +54,7 @@ double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_t
     abort();
 }
 
+/*
 double SamplerRfunction::get_recombination_probability(DescentGraph* dg, 
                                      unsigned person_id, 
                                      enum phased_trait parent_trait, 
@@ -95,17 +96,121 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
     
     tmp = 0.5;
     
+    
+    //bool crossover1 = false;
+    //bool crossover2 = false;
+        
     if((locus != 0) and (not ignore_left)) {
-        tmp *= ((dg->get(person_id, locus-1, parent) == p) ? \
-            antitheta2 : theta2);
+        tmp *= ((dg->get(person_id, locus-1, parent) == p) ? antitheta2 : theta2);
+        //crossover1 = dg->get(person_id, locus-1, parent) != p;
     }
     
     if((locus != (map->num_markers() - 1)) and (not ignore_right)) {
-        tmp *= ((dg->get(person_id, locus+1, parent) == p) ? \
-            antitheta : theta);
+        tmp *= ((dg->get(person_id, locus+1, parent) == p) ? antitheta : theta);
+        //crossover2 = dg->get(person_id, locus+1, parent) != p;
+    }
+    
+    
+    //if(crossover1) {
+    //    tmp *= (crossover2 ? thetas[0] : thetas[1]);
+    //}
+    //else {
+    //    tmp *= (crossover2 ? thetas[2] : thetas[3]);
+    //}
+    
+    
+    return tmp;
+}
+*/
+
+double SamplerRfunction::get_recombination_probability(DescentGraph* dg, 
+                                     unsigned person_id, 
+                                     enum phased_trait parent_trait, 
+                                     enum phased_trait kid_trait, 
+                                     enum parentage parent) {
+    
+    enum trait t = get_trait(kid_trait, parent);
+    int p = 0;
+    
+    switch(parent_trait) {
+        case TRAIT_UU :
+            return (t == TRAIT_U) ? 1.0 /*homoz_cache*/ : 0.0;
+    
+        case TRAIT_AU :
+            p = (t == TRAIT_A) ? 0 : 1;
+            break;
+        
+        case TRAIT_UA :
+            p = (t == TRAIT_U) ? 0 : 1;
+            break;
+        
+        case TRAIT_AA :
+            return (t == TRAIT_A) ? 1.0 /*homoz_cache*/ : 0.0;
+    }
+    
+    double tmp = 0.5;
+    
+    if(locus != 0) {
+        tmp *= ((dg->get(person_id, locus-1, parent) == p) ? antitheta2 : theta2);
+    }
+    
+    if(locus != (map->num_markers() - 1)) {
+        tmp *= ((dg->get(person_id, locus+1, parent) == p) ? antitheta : theta);
     }
     
     return tmp;
+}
+
+void SamplerRfunction::get_recombination_distribution(DescentGraph* dg, 
+                                     unsigned person_id, 
+                                     enum phased_trait parent_trait, 
+                                     enum parentage parent, 
+                                     double* dist) {
+    
+    switch(parent_trait) {
+        case TRAIT_UU :
+            dist[TRAIT_U] = 1.0;
+            dist[TRAIT_A] = 0.0;
+            return;
+            
+        case TRAIT_AU :
+        case TRAIT_UA :
+            break;
+            
+        case TRAIT_AA :
+            dist[TRAIT_U] = 0.0;
+            dist[TRAIT_A] = 1.0;
+            return;
+    }
+    
+    double tmp0 = 0.5;
+    double tmp1 = 0.5;
+    
+    if(locus != 0) {
+        bool cross = dg->get(person_id, locus-1, parent) != 0;
+        
+        tmp0 *= (cross ? theta2     : antitheta2);
+        tmp1 *= (cross ? antitheta2 : theta2);
+    }
+    
+    if(locus != (map->num_markers() - 1)) {
+        bool cross = dg->get(person_id, locus+1, parent) != 0;
+        
+        tmp0 *= (cross ? theta     : antitheta);
+        tmp1 *= (cross ? antitheta : theta);
+    }
+    
+    double total = tmp0 + tmp1;
+    
+    if(parent_trait == TRAIT_AU) {
+        dist[TRAIT_U] = tmp1 / total;
+        dist[TRAIT_A] = 1.0 - dist[TRAIT_U];
+    }
+    else {
+        dist[TRAIT_U] = tmp0 / total;
+        dist[TRAIT_A] = 1.0 - dist[TRAIT_U];
+    }
+    
 }
 
 void SamplerRfunction::sample(vector<int>& pmk) {
@@ -163,7 +268,9 @@ void SamplerRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGr
         if(tmp == 0.0)
             continue;
         
-        tmp *= transmission[0][transmission_index(mat_trait, pat_trait, kid_trait)];        
+        tmp *= transmission[0][transmission_index(mat_trait, pat_trait, kid_trait)];
+        //tmp *= (get_recombination_probability(dg, peel_id, mat_trait, kid_trait, MATERNAL) *
+        //        get_recombination_probability(dg, peel_id, pat_trait, kid_trait, PATERNAL));
         if(tmp == 0.0)
             continue;
         
@@ -221,6 +328,8 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
             }
             
             child_prob *= transmission[c][transmission_index(mat_trait, pat_trait, kid_trait)];
+            //child_prob *= (get_recombination_probability(dg, child_id, mat_trait, kid_trait, MATERNAL) *
+            //               get_recombination_probability(dg, child_id, pat_trait, kid_trait, PATERNAL));
             if(child_prob == 0.0)
                 break;
         }
@@ -247,8 +356,6 @@ void SamplerRfunction::setup_transmission_cache() {
             
             transmission.push_back(new double[64]);
             children.push_back(child_id);
-            
-            //fprintf(stderr, "<- %d\n", child_id);
         }
     }
     else {
@@ -261,6 +368,7 @@ void SamplerRfunction::teardown_transmission_cache() {
     for(unsigned int i = 0; i < transmission.size(); ++i) {
         delete[] transmission[i];
     }
+    
     
     transmission.clear();
     children.clear();
@@ -290,7 +398,7 @@ unsigned int SamplerRfunction::transmission_index(enum phased_trait mat_trait,
 }
 
 void SamplerRfunction::transmission_matrix(DescentGraph* dg, int kid_id, double* tmatrix) {
-    
+    /*
     //#pragma omp parallel for
     for(int i = 0; i < 64; ++i) {
         int tmp = i;
@@ -305,6 +413,28 @@ void SamplerRfunction::transmission_matrix(DescentGraph* dg, int kid_id, double*
     //#pragma omp parallel for
     for(int i = 0; i < 64; i += 4) {
         normalise(&tmatrix[i]);
-    }    
+    }
+    */
+    
+    double mat_dist[2];
+    double pat_dist[2];
+    int mindex, pindex;
+    
+    for(int i = 0; i < 4; ++i) {
+        mindex = 16 * i;
+        get_recombination_distribution(dg, kid_id, static_cast<enum phased_trait>(i), MATERNAL, mat_dist);
+        
+        for(int j = 0; j < 4; ++j) {
+            pindex = mindex + (4 * j);
+            get_recombination_distribution(dg, kid_id, static_cast<enum phased_trait>(j), PATERNAL, pat_dist);
+            
+            // U = 0, A = 1
+            // UU = 0, AU = 1, UA = 2, AA = 3
+            tmatrix[pindex + TRAIT_UU] = mat_dist[TRAIT_U] * pat_dist[TRAIT_U];
+            tmatrix[pindex + TRAIT_AU] = mat_dist[TRAIT_A] * pat_dist[TRAIT_U];
+            tmatrix[pindex + TRAIT_UA] = mat_dist[TRAIT_U] * pat_dist[TRAIT_A];
+            tmatrix[pindex + TRAIT_AA] = mat_dist[TRAIT_A] * pat_dist[TRAIT_A];
+        }
+    }
 }
 

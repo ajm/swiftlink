@@ -92,7 +92,6 @@ double* MarkovChain::run(DescentGraph& dg) {
             }
             */
             
-            
             random_shuffle(l_ordering.begin(), l_ordering.end());
             
             // run every nth locus indepentently, shuffling the order of n
@@ -102,17 +101,6 @@ double* MarkovChain::run(DescentGraph& dg) {
                     lsamplers[k]->step(dg, k);
                 }
             }
-            
-            
-            /*
-            // run every other locus independently
-            for(unsigned int j = 0; j < 2; ++j) {
-                #pragma omp parallel for
-                for(unsigned int k = j; k < map->num_markers(); k += 2) {
-                    lsamplers[k]->step(dg, k);
-                }
-            }
-            */
         }
         else {
             random_shuffle(m_ordering.begin(), m_ordering.end());
@@ -126,6 +114,13 @@ double* MarkovChain::run(DescentGraph& dg) {
         
         p.increment();
         
+        /*
+        double current_likelihood = dg.get_likelihood();
+        if(current_likelihood == LOG_ILLEGAL) {
+            fprintf(stderr, "error: descent graph illegal...\n");
+            abort();
+        }
+        */
         
         #ifdef CODA_OUTPUT
         if(i < options.burnin) {

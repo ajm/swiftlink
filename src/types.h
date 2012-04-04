@@ -5,6 +5,7 @@
 
 #include "genotype.h"
 #include "trait.h"
+#include "defaults.h"
 
 
 const unsigned int UNKNOWN_PARENT = ~0u;
@@ -49,7 +50,6 @@ string gender_str(enum sex s);
 string affection_str(enum affection a);
 string parent_str(enum parentage p);
 
-
 struct mcmc_options {
     int burnin;
     int iterations;
@@ -57,7 +57,18 @@ struct mcmc_options {
     int scoring_period;
     
     double lsampler_prob;
-    double temperature;
+    
+    string peelseq_filename;
+    string random_filename;
+    
+    mcmc_options() :
+        burnin(DEFAULT_BURNIN_ITERATIONS),
+        iterations(DEFAULT_MCMC_ITERATIONS),
+        si_iterations(DEFAULT_SEQUENTIALIMPUTATION_RUNS),
+        scoring_period(DEFAULT_SCORING_PERIOD),
+        lsampler_prob(DEFAULT_LSAMPLER_PROB),
+        peelseq_filename(""),
+        random_filename("") {}
 };
 
 

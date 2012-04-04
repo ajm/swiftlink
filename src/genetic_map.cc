@@ -63,6 +63,9 @@ double GeneticMap::inverse_haldane(double r) const {
     return -0.5 * log(1 - (2 * r));
 }
 
+// XXX
+// this was never used, the idea was to do parallel tempering
+// but in the end it did not seem necessary
 void GeneticMap::set_temperature(double t) {
     if(temperature != 0.0) {
         fprintf(stderr, "error: temperature cannot be set twice in GeneticMap objects\n");

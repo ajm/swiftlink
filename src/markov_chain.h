@@ -25,7 +25,7 @@ class MarkovChain {
         psg(psg),
         options(options) {
     
-        map->set_temperature(options.temperature);    
+        //map->set_temperature(0.0);    
     }
     
     ~MarkovChain() {}

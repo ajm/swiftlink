@@ -23,6 +23,7 @@ class Pedigree;
 class PeelSequenceGenerator {
 
     Pedigree* ped;
+    bool verbose;
     vector<PeelOperation> peelorder;
     vector<PeelOperation> tmp;
     PeelingState state;
@@ -37,12 +38,13 @@ class PeelSequenceGenerator {
     PeelOperation get_best_operation(vector<PeelOperation>& v);
     void all_possible_peels(int& unpeeled);
 
-    int calculate_cost(vector<int>& seq);
-    void rebuild_peel_order(vector<int>& seq);
+    int calculate_cost(vector<unsigned int>& seq);
+    void rebuild_peel_order(vector<unsigned int>& seq);
 
   public :
-    PeelSequenceGenerator(Pedigree* p) : 
+    PeelSequenceGenerator(Pedigree* p, bool verbose=false) : 
         ped(p),
+        verbose(verbose),
         peelorder(),
         tmp(),
         state(p) {}
@@ -51,6 +53,7 @@ class PeelSequenceGenerator {
     
     PeelSequenceGenerator(const PeelSequenceGenerator& rhs) :
         ped(rhs.ped),
+        verbose(rhs.verbose),
         peelorder(rhs.peelorder),
         tmp(rhs.tmp),
         state(rhs.state) {}
@@ -58,6 +61,7 @@ class PeelSequenceGenerator {
     PeelSequenceGenerator& operator=(const PeelSequenceGenerator& rhs) {
         if(&rhs != this) {
             ped = rhs.ped;
+            verbose = rhs.verbose;
             peelorder = rhs.peelorder;
             tmp = rhs.tmp;
             state = rhs.state;
@@ -67,6 +71,7 @@ class PeelSequenceGenerator {
     }
     
     void build_peel_order();
+    bool read_from_file(string filename);
     vector<PeelOperation>& get_peel_order();
     
     unsigned score_peel_sequence();

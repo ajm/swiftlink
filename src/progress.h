@@ -19,7 +19,6 @@ class Progress {
     unsigned int increments_per_percent;
 
     void update_progress();
-    void complete();
 
  public:
     Progress(string s, unsigned int increments);
@@ -27,6 +26,7 @@ class Progress {
     void start();
     void increment();
     void finish();
+    void finish_msg(const char* fmt, ...);
     void error(const string& err);
 
 };

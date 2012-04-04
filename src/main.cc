@@ -67,8 +67,9 @@ void _usage(char *prog) {
 "  -g, --gpu\n"
 "\n"
 "Misc:\n"
-"  -v, --verbose\n"
-"  -h, --help\n"
+"  -q seqfile, --peelsequence=seqfile\n"
+"  -v,         --verbose\n"
+"  -h,         --help\n"
 "\n", prog);
 }
 
@@ -137,12 +138,13 @@ void _handle_args(int argc, char **argv) {
 	        {"map",                 required_argument,  0,      'm'},
 	        {"dat",                 required_argument,  0,      'd'},
 	        {"output",              required_argument,  0,      'o'},
+	        {"peelsequence",        required_argument,  0,      'q'},
 	        {0, 0, 0, 0}
 	    };
     
     int option_index = 0;
     
-	while ((ch = getopt_long(argc, argv, ":p:d:m:o:i:b:s:l:c:x:vhcg", long_options, &option_index)) != -1) {
+	while ((ch = getopt_long(argc, argv, ":p:d:m:o:i:b:s:l:c:x:q:vhcg", long_options, &option_index)) != -1) {
 		switch (ch) {
 			case 'p':
 				pedfile = optarg;
@@ -233,6 +235,10 @@ void _handle_args(int argc, char **argv) {
             case 'g':
                 use_gpu = true;
                 break;
+                
+            case 'q':
+                options.peelseq_filename = string(optarg);
+                break;
             
             /*
 		    case 'a':
@@ -285,15 +291,6 @@ void _handle_args(int argc, char **argv) {
 	}
 }
 
-void _set_defaults() {
-    options.iterations      = DEFAULT_MCMC_ITERATIONS;
-    options.burnin          = DEFAULT_BURNIN_ITERATIONS;
-    options.si_iterations   = DEFAULT_SEQUENTIALIMPUTATION_RUNS;
-    options.scoring_period  = DEFAULT_SCORING_PERIOD;
-    options.lsampler_prob   = DEFAULT_LSAMPLER_PROB;
-    options.temperature     = 0.0;
-}
-
 void _set_runtime_parameters() {
     printf("setting %d threads\n", thread_count);
     omp_set_num_threads(thread_count);
@@ -329,8 +326,6 @@ int main(int argc, char **argv) {
     
     feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
     
-
-    _set_defaults();
     
 	_handle_args(argc, argv);
 	

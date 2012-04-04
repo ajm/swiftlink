@@ -10,17 +10,14 @@ using namespace std;
 #include "peel_sequence_generator.h"
 #include "person.h"
 #include "random.h"
+#include "progress.h"
+#include "simple_parser.h"
 
 
 PeelOperation PeelSequenceGenerator::get_random_operation(vector<PeelOperation>& v) {
     return v[get_random_int(v.size())];
 }
 
-// XXX add any heuristics related to peel operation selection here
-// based on the last item to be added to 'peelorder' vector
-// i)  if one child peeled up, then peel the rest?
-// ii) if one parent peeled down, then peel the other one?
-//          <-- this will probably happen automatically
 PeelOperation PeelSequenceGenerator::get_best_operation_heuristic(vector<PeelOperation>& v) {
     
     for(unsigned int i = 0; i < v.size(); ++i) {
@@ -32,11 +29,6 @@ PeelOperation PeelSequenceGenerator::get_best_operation_heuristic(vector<PeelOpe
     return v[0];
 }
 
-// XXX see Thomas'86, need to consider number of alleles
-// to work out the number of computations at each step
-// not just the size of the cutset
-// number of alleles depends on peeling descent graph (4) or 
-// genotypes during the L-sampler (3)
 PeelOperation PeelSequenceGenerator::get_best_operation(vector<PeelOperation>& v) {    
 
     sort(v.begin(), v.end());
@@ -111,19 +103,20 @@ void PeelSequenceGenerator::build_peel_order() {
         
         state.toggle_peel_operation(p);
         
-        printf("%s\n", p.debug_string().c_str());
+        //printf("%s\n", p.debug_string().c_str());
     }
     
-    
+    int iterations = 1000000;
+    Progress p("Peel Sequence:", iterations);
     
     // section 6.3, peeling sequence generation
     // use greedy solution as input to random down hill search
-    vector<int> current;
+    vector<unsigned int> current;
     for(unsigned i = 0; i < peelorder.size(); ++i) {
         current.push_back(peelorder[i].get_peelnode());
     }
     
-    printf("peel cost start: %d\n", calculate_cost(current));
+    //printf("peel cost start: %d\n", calculate_cost(current));
     
     
     int swap0, swap1, tmp, new_cost;
@@ -131,7 +124,7 @@ void PeelSequenceGenerator::build_peel_order() {
     
     swap0 = swap1 = 0;
     
-    for(unsigned int i = 0; i < 10000; ++i) {
+    for(int i = 0; i < iterations; ++i) {
         
         do {
             swap0 = get_random_int(current.size());
@@ -146,11 +139,13 @@ void PeelSequenceGenerator::build_peel_order() {
         
         new_cost = calculate_cost(current);
         
-        //printf("iteration %d: %d (%d, %d)\n", i, new_cost, swap0, swap1);
-        
+        /*
         if((new_cost != -1) and (new_cost < cost)) {
             printf("iteration %d: %d\n", i, new_cost);
         }
+        */
+        
+        p.increment();
         
         // if better, store result
         if((new_cost != -1) and (new_cost <= cost)) {
@@ -164,7 +159,9 @@ void PeelSequenceGenerator::build_peel_order() {
         current[swap1] = tmp;
     }
     
-    printf("%d\n", calculate_cost(current));
+    p.finish_msg("final cost = %d", calculate_cost(current));
+    
+    //printf("%d\n", calculate_cost(current));
     
     //exit(0);
     
@@ -190,6 +187,26 @@ void PeelSequenceGenerator::build_peel_order() {
     for(unsigned int i = 0; i < peelorder.size(); ++i) {
         bruteforce_assignments(peelorder[i]);
     }
+}
+
+bool PeelSequenceGenerator::read_from_file(string filename) {
+    SimpleParser sp(filename);
+    if(not sp.parse()) {
+        fprintf(stderr, "bad parse\n");
+        return false;
+    }
+    
+    vector<unsigned int>& current = sp.get_values();
+    
+    printf("read peeling sequence, cost = %d\n", calculate_cost(current));
+    
+    rebuild_peel_order(current);
+    
+    for(unsigned int i = 0; i < peelorder.size(); ++i) {
+        bruteforce_assignments(peelorder[i]);
+    }
+    
+    return true;
 }
 
 vector<PeelOperation>& PeelSequenceGenerator::get_peel_order() {
@@ -299,7 +316,7 @@ void PeelSequenceGenerator::bruteforce_assignments(PeelOperation& op) {
     op.set_index_values(assigns);
 }
 
-int PeelSequenceGenerator::calculate_cost(vector<int>& seq) {
+int PeelSequenceGenerator::calculate_cost(vector<unsigned int>& seq) {
     PeelingState ps(ped);
     int cost = 0;
     
@@ -321,7 +338,7 @@ int PeelSequenceGenerator::calculate_cost(vector<int>& seq) {
     return cost;
 }
 
-void PeelSequenceGenerator::rebuild_peel_order(vector<int>& seq) {
+void PeelSequenceGenerator::rebuild_peel_order(vector<unsigned int>& seq) {
     
     peelorder.clear();
     state.reset();
@@ -337,7 +354,9 @@ void PeelSequenceGenerator::rebuild_peel_order(vector<int>& seq) {
         
         find_previous_functions(p);
 
-        printf("rebuild: %s\n", p.debug_string().c_str());
+        if(verbose) {
+            fprintf(stderr, "rebuild: %s\n", p.debug_string().c_str());
+        }
         
         state.toggle_peel_operation(p);
         

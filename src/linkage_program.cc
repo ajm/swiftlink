@@ -81,9 +81,10 @@ double* LinkageProgram::run_pedigree(Pedigree& p) {
     }
     
     
-    PeelSequenceGenerator psg(&p);
-    psg.build_peel_order();
-    
+    PeelSequenceGenerator psg(&p, verbose);
+    if((options.peelseq_filename == "") or not psg.read_from_file(options.peelseq_filename)) {
+        psg.build_peel_order();
+    }
     
     SequentialImputation si(&p, &map, &psg);
     //si.run(dg, options.si_iterations);

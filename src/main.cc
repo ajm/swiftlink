@@ -100,12 +100,12 @@ bool str2float(double &i, char *s) {
     d = strtod(s, &end);
     
     // overflow
-    if((errno = ERANGE) and (d == HUGE_VAL)) {
+    if((errno == ERANGE) and (d == HUGE_VAL)) {
         return false;
     }
     
     // underflow
-    if((errno = ERANGE) and (d == 0.0)) {
+    if((errno == ERANGE) and (d == 0.0)) {
         return false;
     }
         
@@ -357,3 +357,4 @@ int main(int argc, char **argv) {
 	return EXIT_FAILURE;
 	*/
 }
+

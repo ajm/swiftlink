@@ -10,5 +10,5 @@
 #include "cuda_lsampler.cu"
 #include "cuda_msampler2.cu"
 
-#include "cuda_print.cu"
+//#include "cuda_print.cu"
 

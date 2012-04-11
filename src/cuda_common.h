@@ -9,7 +9,7 @@
 
 #include "tinymt/tinymt32_host.h"
 
-#define NUM_THREADS 96
+//#define NUM_THREADS 96
 #define NUM_ALLELES 4
 #define GPU_DEFAULT_COMPONENT -1
 

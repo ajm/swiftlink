@@ -6,6 +6,7 @@ using namespace std;
 #include <cerrno>
 #include <cmath>
 #include <ctime>
+#include <cfloat>
 
 #include <iostream>
 #include <fstream>
@@ -97,7 +98,8 @@ unsigned GPUMarkovChain::num_samplers() {
 }
 
 int GPUMarkovChain::num_threads_per_block() {
-    return NUM_THREADS;
+    //return NUM_THREADS;
+    return 96;
 }
 
 int GPUMarkovChain::lsampler_num_blocks() {
@@ -795,6 +797,130 @@ int GPUMarkovChain::windowed_msampler_blocks(int window_length) {
     return (map->num_markers() / window_length) + ((map->num_markers() % window_length) == 0 ? 0 : 1);
 }
 
+int GPUMarkovChain::optimal_lodscore_threads() {
+        
+    int threadcount[] = {32, 64, 96, 128, 160, 192, 224, 256};
+    
+    float mintime = FLT_MAX;
+    int minthread = 32;
+    
+    for(int i = 0; i < 8; ++i) {
+    
+        float total = 0.0;
+    
+        for(int j = 0; j < 10; ++j) {
+            cudaEvent_t start;
+            cudaEvent_t stop;
+            
+            cudaEventCreate(&start);
+            cudaEventCreate(&stop);
+            
+            cudaEventRecord(start, 0);
+            
+            
+            run_gpu_lodscore_kernel(lodscore_num_blocks(), threadcount[i], dev_state);
+            cudaThreadSynchronize();
+            
+            cudaError_t error = cudaGetLastError();
+            if(error != cudaSuccess) {
+                printf("CUDA kernel error (%s:%d): %s\n", __FILE__, __LINE__, cudaGetErrorString(error));
+                abort();
+            }
+            
+            
+            cudaEventRecord(stop, 0);
+            cudaEventSynchronize(stop);
+            
+            float elapsedTime;
+            cudaEventElapsedTime(&elapsedTime, start, stop);
+            
+            total += elapsedTime;
+            
+            cudaEventDestroy(start);
+            cudaEventDestroy(stop);
+        }
+        
+        total /= 10.0;
+        
+        if(total < mintime) {
+            mintime = total;
+            minthread = threadcount[i];
+        }
+    }
+    
+    fprintf(stderr, "optimal LOD score threads = %d\n", minthread);
+    
+    return minthread;
+}
+
+int GPUMarkovChain::optimal_lsampler_threads() {
+    int threadcount[] = {32, 64, 96, 128, 160, 192, 224, 256};
+    
+    float mintime = FLT_MAX;
+    int minthread = 32;
+    
+    vector<int> l_ordering;
+    
+    int markers_per_window = 2;
+    for(int i = 0; i < markers_per_window; ++i)
+        l_ordering.push_back(i);
+    
+    
+    for(int i = 0; i < 8; ++i) {
+    
+        float total = 0.0;
+    
+        for(int j = 0; j < 10; ++j) {
+            cudaEvent_t start;
+            cudaEvent_t stop;
+            
+            cudaEventCreate(&start);
+            cudaEventCreate(&stop);
+            
+            cudaEventRecord(start, 0);
+            
+            
+            for(int k = 0; k < int(l_ordering.size()); ++k) {
+                int num_blocks = (map->num_markers() / markers_per_window) + \
+                                ((map->num_markers() % markers_per_window == 0) ? 0 : 1);
+                
+                run_gpu_lsampler_kernel(num_blocks, threadcount[i], dev_state, markers_per_window, l_ordering[k]);
+                cudaThreadSynchronize();
+                
+                cudaError_t error = cudaGetLastError();
+                if(error != cudaSuccess) {
+                    printf("CUDA kernel error (%s:%d): %s\n", __FILE__, __LINE__, cudaGetErrorString(error));
+                    abort();
+                }
+            }
+            
+            
+            cudaEventRecord(stop, 0);
+            cudaEventSynchronize(stop);
+            
+            float elapsedTime;
+            cudaEventElapsedTime(&elapsedTime, start, stop);
+            
+            total += elapsedTime;
+            
+            cudaEventDestroy(start);
+            cudaEventDestroy(stop);
+        }
+        
+        total /= 10.0;
+        
+        if(total < mintime) {
+            mintime = total;
+            minthread = threadcount[i];
+        }
+    }
+    
+    fprintf(stderr, "optimal locus sampler threads = %d\n", minthread);
+    
+    return minthread;
+}
+
+
 double* GPUMarkovChain::run(DescentGraph& dg) {
     int count = 0;
     int even_count;
@@ -811,6 +937,7 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
     //int window_index = 0;
     //int window_length[] = {21, 23, 25};
     int window_length = 20;
+    //int window_length = 32;
     
     Peeler peel(ped, map, psg, 0);
     double trait_likelihood = peel.get_trait_prob();
@@ -840,6 +967,15 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
     
     //run_gpu_print_kernel(dev_state);
     
+    
+    
+    
+    CUDA_CALLANDTEST(cudaMemcpy(dev_graph, dg.get_internal_ptr(), dg.get_internal_size(), cudaMemcpyHostToDevice));
+    
+    int lodscore_threads = optimal_lodscore_threads();
+    int lsampler_threads = optimal_lsampler_threads();
+    
+    //abort();
     
     
     vector<int> l_ordering;
@@ -913,7 +1049,7 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
                 int num_blocks = (map->num_markers() / markers_per_window) + \
                                 ((map->num_markers() % markers_per_window == 0) ? 0 : 1);
                 
-                run_gpu_lsampler_kernel(num_blocks, num_threads_per_block(), dev_state, markers_per_window, l_ordering[j]);
+                run_gpu_lsampler_kernel(num_blocks, lsampler_threads, dev_state, markers_per_window, l_ordering[j]);
                 
                 cudaThreadSynchronize();
                 error = cudaGetLastError();
@@ -1101,7 +1237,7 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
             }
             */
             
-            run_gpu_lodscore_kernel(lodscore_num_blocks(), num_threads_per_block(), dev_state);
+            run_gpu_lodscore_kernel(lodscore_num_blocks(), lodscore_threads, dev_state);
             cudaThreadSynchronize();
             
             cudaError_t error = cudaGetLastError();

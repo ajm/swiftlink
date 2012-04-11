@@ -229,7 +229,7 @@ __device__ void lodscore_evaluate_element(struct rfunction* rf, struct gpu_state
 __device__ void lodscore_evaluate(struct rfunction* rf, struct gpu_state* state, int locus) {
     int i;
     
-    for(i = threadIdx.x; i < rf->matrix_length; i += NUM_THREADS) {
+    for(i = threadIdx.x; i < rf->matrix_length; i += blockDim.x) {
         lodscore_evaluate_element(rf, state, locus, i);
     }
     

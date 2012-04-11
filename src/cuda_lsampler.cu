@@ -354,13 +354,13 @@ __device__ void rfunction_evaluate_element(struct rfunction* rf, struct gpu_stat
 __device__ void rfunction_evaluate(struct rfunction* rf, struct gpu_state* state, int locus) {
     int i;
     
-    for(i = threadIdx.x; i < rf->presum_length; i += NUM_THREADS) {
+    for(i = threadIdx.x; i < rf->presum_length; i += blockDim.x) {
         rfunction_evaluate_element(rf, state, locus, i);
     }
     
     __syncthreads();
     
-    for(i = threadIdx.x; i < rf->matrix_length; i += NUM_THREADS) {
+    for(i = threadIdx.x; i < rf->matrix_length; i += blockDim.x) {
         rfunction_sum(rf, i);
     }
     

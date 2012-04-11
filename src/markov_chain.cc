@@ -5,6 +5,7 @@ using namespace std;
 #include <algorithm>
 
 #include <time.h>
+#include <omp.h>
 
 #include "markov_chain.h"
 #include "peel_sequence_generator.h"
@@ -52,7 +53,10 @@ double* MarkovChain::run(DescentGraph& dg) {
         l_ordering.push_back(i);
     */
     
-    int markers_per_window = 98; // this needs to be set dynamically
+    int markers_per_window = (map->num_markers() / omp_get_max_threads()) + \
+                            ((map->num_markers() % omp_get_max_threads()) == 0 ? 0 : 1);
+    fprintf(stderr, "setting %d markers per window\n", markers_per_window);
+    //int markers_per_window = 98; // this needs to be set dynamically
     //int markers_per_window = 49;
     //int markers_per_window = 13;
     //int markers_per_window = 2;

@@ -42,7 +42,8 @@ OBJECTS	:= \
 	progress.o \
 	main.o \
 	gpu_markov_chain.o \
-	cuda_linkage.o
+	cuda_linkage.o \
+	tinymt/tinymt32_host.o
 
 app: $(OBJECTS)
 	$(CXX) -o $@ $(OBJECTS) $(LDFLAGS) $(LIBS)

@@ -7,8 +7,8 @@
 
 #include "peeling.h"
 #include "peel_sequence_generator.h"
-//#include "gpu_rfunction.h"
 #include "types.h"
+//#include "tinymt/tinymt32_host.h"
 
 
 #define fp_type double
@@ -66,6 +66,9 @@ class GPUMarkovChain {
     void select_best_gpu();
     
     void kill_everything();
+    
+    int optimal_lodscore_threads();
+    int optimal_lsampler_threads();
     
     
  public :

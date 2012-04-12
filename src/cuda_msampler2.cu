@@ -822,7 +822,7 @@ __global__ void msampler_window_sampling_kernel(struct gpu_state* state, int mei
     __syncthreads();
     
     
-    if((threadIdx.x > left_buffer) && (threadIdx.x < (window_length + left_buffer)) && (current_locus < map_length)) {
+    if((threadIdx.x >= left_buffer) && (threadIdx.x < (window_length + left_buffer)) && (current_locus < map_length)) {
         DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, current_locus, GPU_MATERNAL_ALLELE), sh_descentgraph[threadIdx.x][0]);
         DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, current_locus, GPU_PATERNAL_ALLELE), sh_descentgraph[threadIdx.x][1]);
     }

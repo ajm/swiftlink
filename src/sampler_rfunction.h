@@ -52,6 +52,10 @@ class SamplerRfunction : public Rfunction {
         
         set_locus(locus, ignore_left, ignore_right);
         setup_transmission_cache();
+        
+        for(int i = 0; i < 4; ++i) {
+            trait_cache[i] = get_trait_probability(peel_id, static_cast<enum phased_trait>(i));
+        }
     }
     
     SamplerRfunction(const SamplerRfunction& rhs) :
@@ -68,7 +72,11 @@ class SamplerRfunction : public Rfunction {
         children() {
     
         set_locus(locus, ignore_left, ignore_right);
-        setup_transmission_cache();    
+        setup_transmission_cache();
+        
+        for(int i = 0; i < 4; ++i) {
+            trait_cache[i] = get_trait_probability(peel_id, static_cast<enum phased_trait>(i));
+        }
     }
     
     virtual ~SamplerRfunction() {
@@ -103,9 +111,6 @@ class SamplerRfunction : public Rfunction {
         ignore_left = left;
         ignore_right = right;
         
-        //theta = theta2 = 0.0;
-        //antitheta = antitheta2 = 1.0;
-        
         theta = theta2 = antitheta = antitheta2 = 1.0;
         
         homoz_cache = 1.0;
@@ -123,19 +128,9 @@ class SamplerRfunction : public Rfunction {
             homoz_cache *= 0.5;
         }
         
-        /*
-        thetas[0] = theta2     * theta;
-        thetas[1] = theta2     * antitheta;
-        thetas[2] = antitheta2 * theta;
-        thetas[3] = antitheta2 * antitheta;
-        
-        double total = thetas[0] + thetas[1] + \
-                       thetas[2] + thetas[3];
-
         for(int i = 0; i < 4; ++i) {
-            thetas[i] /= total;
+            trait_cache[i] = get_trait_probability(peel_id, static_cast<enum phased_trait>(i));
         }
-        */
     }
 };
 

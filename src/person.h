@@ -142,6 +142,8 @@ class Person {
 	}
 	
 	bool legal_genotype(unsigned locus, enum phased_trait g) {
+	
+	    //fprintf(stderr, "id = %d, locus = %d, g = %d, typed = %s\n", internal_id, locus, g, typed ? "true" : "false");
 	    
 	    if(not typed)
 	        return true;

@@ -34,7 +34,7 @@ Rfunction::Rfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperati
     vector<unsigned> tmp(peel->get_cutset());
     tmp.push_back(peel->get_peelnode());
     
-    pmatrix_presum.set_keys(tmp);       
+    pmatrix_presum.set_keys(tmp);      
 }
 
 Rfunction::Rfunction(const Rfunction& rhs) :
@@ -106,12 +106,21 @@ void Rfunction::evaluate_partner_peel(unsigned int pmatrix_index) {
         
         indices[pmatrix_index][peel_id] = i;
         
-        tmp = get_trait_probability(peel_id, partner_trait);
+        //tmp = get_trait_probability(peel_id, partner_trait);
+        tmp = trait_cache[i];
         if(tmp == 0.0)
             continue;
         
+        /*
         tmp *= (previous_rfunction1 == NULL ? 1.0 : previous_rfunction1->get(indices[pmatrix_index])) * \
                (previous_rfunction2 == NULL ? 1.0 : previous_rfunction2->get(indices[pmatrix_index]));
+        */
+        
+        tmp *= (previous_rfunction1 == NULL ? 1.0 : previous_rfunction1->get(indices[pmatrix_index]));
+        if(tmp == 0.0)
+            continue;
+        
+        tmp *= (previous_rfunction2 == NULL ? 1.0 : previous_rfunction2->get(indices[pmatrix_index]));
         
         pmatrix_presum.set(presum_index, tmp);
         

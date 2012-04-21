@@ -22,12 +22,21 @@ class TraitRfunction : public Rfunction {
         Rfunction(p, m, locus, po, prev1, prev2),
         half_theta(m->get_theta_halfway(locus)),
         half_inversetheta(m->get_inversetheta_halfway(locus)) {
+        
+        for(int i = 0; i < 4; ++i) {
+            trait_cache[i] = get_trait_probability(peel_id, static_cast<enum phased_trait>(i));
+        }
     }
     
     TraitRfunction(const TraitRfunction& rhs) :
         Rfunction(rhs),
         half_theta(rhs.half_theta),
-        half_inversetheta(rhs.half_inversetheta) {}
+        half_inversetheta(rhs.half_inversetheta) {
+    
+        for(int i = 0; i < 4; ++i) {
+            trait_cache[i] = get_trait_probability(peel_id, static_cast<enum phased_trait>(i));
+        }
+    }
     
     virtual ~TraitRfunction() {}
     

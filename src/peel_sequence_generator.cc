@@ -77,6 +77,9 @@ void PeelSequenceGenerator::all_possible_peels(int& unpeeled) {
 
 void PeelSequenceGenerator::build_peel_order() {
 
+    int start_index = 0;
+    bool use_random = false;
+
     while(true) {
         int unpeeled = 0;
 
@@ -92,19 +95,28 @@ void PeelSequenceGenerator::build_peel_order() {
             abort();
         }
         
-        //PeelOperation p = get_best_operation(tmp);
-        PeelOperation p = get_random_operation(tmp);
-
+        
+        PeelOperation p = use_random ? get_random_operation(tmp) : get_best_operation(tmp);
+        
+        if((not use_random) and (p.get_cutset_size() > 2)) {
+            start_index = peelorder.size();
+            use_random = true;
+            printf("[switching to random]\n");
+            continue;
+        }
+        
+        
         find_previous_functions(p);
         
         //bruteforce_assignments(p);
-
+        
         peelorder.push_back(p);
         
         state.toggle_peel_operation(p);
         
-        //printf("%s\n", p.debug_string().c_str());
+        printf("%s\n", p.debug_string().c_str());
     }
+    
     
     int iterations = 1000000;
     Progress p("Peel Sequence:", iterations);
@@ -116,20 +128,27 @@ void PeelSequenceGenerator::build_peel_order() {
         current.push_back(peelorder[i].get_peelnode());
     }
     
+    
     //printf("peel cost start: %d\n", calculate_cost(current));
     
     
     int swap0, swap1, tmp, new_cost;
     int cost = calculate_cost(current);
+    //int best_cost = cost;
     
     swap0 = swap1 = 0;
+    
+    int total = current.size() - start_index;
+    
+    //double temperature = 1000;
     
     for(int i = 0; i < iterations; ++i) {
         
         do {
-            swap0 = get_random_int(current.size());
-            swap1 = get_random_int(current.size());
-        
+            //swap0 = get_random_int(current.size());
+            //swap1 = get_random_int(current.size());
+            swap0 = get_random_int(total) + start_index;
+            swap1 = get_random_int(total) + start_index;
         } while(swap0 == swap1);
         
         // swap random peels
@@ -139,19 +158,38 @@ void PeelSequenceGenerator::build_peel_order() {
         
         new_cost = calculate_cost(current);
         
-        /*
+        
         if((new_cost != -1) and (new_cost < cost)) {
             printf("iteration %d: %d\n", i, new_cost);
         }
-        */
+        
         
         p.increment();
+        
+        /*
+        if((i % 1000) == 0) {
+            temperature *= 0.995;
+        }
+        
+        if((new_cost != -1) and (new_cost < best_cost)) {
+            best_cost = new_cost;
+        }
+        */
         
         // if better, store result
         if((new_cost != -1) and (new_cost <= cost)) {
             cost = new_cost;
+            //printf("iteration %d: * %d\n", i, new_cost);
             continue;
         }
+        
+        /*
+        if((new_cost != -1) and (exp((cost - new_cost) / temperature) > get_random())) {
+            cost = new_cost;
+            printf("iteration %d: %d\n", i, new_cost);
+            continue;
+        }
+        */
         
         // not better swap back
         tmp = current[swap0];
@@ -161,12 +199,18 @@ void PeelSequenceGenerator::build_peel_order() {
     
     p.finish_msg("final cost = %d", calculate_cost(current));
     
+    //printf("best = %d\n", best_cost);
+    
     //printf("%d\n", calculate_cost(current));
     
-    //exit(0);
+    
+    for(unsigned int i = 0; i < current.size(); ++i) {
+        printf("%d\n", current[i]);
+    }
     
     rebuild_peel_order(current);
     
+    //exit(0);
     
     
     /*

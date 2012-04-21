@@ -35,6 +35,8 @@ class Rfunction {
     unsigned int size;
     unsigned int peel_id;
     
+    double trait_cache[4];
+    
     //enum trait get_trait(enum phased_trait p, enum parentage parent);
     //bool affected_trait(enum phased_trait pt, int allele);
     enum phased_trait get_phased_trait(enum phased_trait m, enum phased_trait p, int maternal_allele, int paternal_allele);

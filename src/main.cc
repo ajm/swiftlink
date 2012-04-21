@@ -324,7 +324,7 @@ int testing_mode() {
 
 int main(int argc, char **argv) {
     
-    feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
+    //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
     
     
 	_handle_args(argc, argv);

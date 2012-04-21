@@ -200,6 +200,7 @@ bool Person::ripe_to_peel_up(PeelingState& ps) {
 }
 
 // XXX i am not completely sure why the second clause here is correct...
+//  - because if previous peel was a peel down, this one should be a partner peel
 bool Person::ripe_to_peel_across(PeelingState& ps) {
     return  (parents_peeled(ps) and offspring_peeled(ps) and (count_unpeeled(mates, ps) == 1)) or \
             (parents_peeled(ps) and partners_peeled(ps)) or \

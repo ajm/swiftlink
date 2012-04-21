@@ -186,6 +186,7 @@ void MeiosisSampler::step(DescentGraph& dg, unsigned int parameter) {
         }
     }
     
+    
     last_parameter = parameter;
 }
 

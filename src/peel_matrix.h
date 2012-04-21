@@ -36,6 +36,7 @@ class PeelMatrix {
     double sum();
     void normalise();
     
+    /*
     unsigned int generate_index(vector<int>& index) const {
         unsigned int tmp = 0;
     
@@ -51,6 +52,9 @@ class PeelMatrix {
         
         return tmp;
     }
+    */
+    
+    unsigned int generate_index(vector<int>& index) const;
     
     double get(vector<int>& pmk) const {
         /*

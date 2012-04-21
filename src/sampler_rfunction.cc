@@ -1,6 +1,7 @@
 using namespace std;
 
 #include <cstdlib>
+#include <cstring>
 
 #include "sampler_rfunction.h"
 #include "descent_graph.h"
@@ -264,7 +265,8 @@ void SamplerRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGr
         
         indices[pmatrix_index][peel_id] = i;
         
-        tmp = get_trait_probability(peel_id, kid_trait);
+        //tmp = get_trait_probability(peel_id, kid_trait);
+        tmp = trait_cache[i];
         if(tmp == 0.0)
             continue;
         
@@ -303,7 +305,8 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
         
         indices[pmatrix_index][peel_id] = i;
         
-        tmp = get_trait_probability(peel_id, mat_trait);
+        //tmp = get_trait_probability(peel_id, mat_trait);
+        tmp = trait_cache[i];
         if(tmp == 0.0)
             continue;
         
@@ -385,7 +388,7 @@ void SamplerRfunction::populate_transmission_cache(DescentGraph* dg) {
             transmission_matrix(dg, children[i], transmission[i]);
         }
     }
-    else {
+    else if(peel->get_type() == CHILD_PEEL){
         transmission_matrix(dg, peel_id, transmission[0]);
     }
 }
@@ -420,13 +423,28 @@ void SamplerRfunction::transmission_matrix(DescentGraph* dg, int kid_id, double*
     double pat_dist[2];
     int mindex, pindex;
     
+    //Person *c = ped->get_by_index(kid_id);
+    //Person *p = ped->get_by_index(c->get_paternalid());
+    //Person *m = ped->get_by_index(c->get_maternalid());
+    
+    
+    enum phased_trait ptm, ptp;
+    
     for(int i = 0; i < 4; ++i) {
+        ptm = static_cast<enum phased_trait>(i);
         mindex = 16 * i;
-        get_recombination_distribution(dg, kid_id, static_cast<enum phased_trait>(i), MATERNAL, mat_dist);
+        //mat_dist[0] = mat_dist[1] = 0.0;
+        
+        //if(m->legal_genotype(locus, ptm))
+        get_recombination_distribution(dg, kid_id, ptm, MATERNAL, mat_dist);
         
         for(int j = 0; j < 4; ++j) {
+            ptp = static_cast<enum phased_trait>(j);
             pindex = mindex + (4 * j);
-            get_recombination_distribution(dg, kid_id, static_cast<enum phased_trait>(j), PATERNAL, pat_dist);
+            //pat_dist[0] = pat_dist[1] = 0.0;
+            
+            //if(p->legal_genotype(locus, ptp))
+            get_recombination_distribution(dg, kid_id, ptp, PATERNAL, pat_dist);
             
             // U = 0, A = 1
             // UU = 0, AU = 1, UA = 2, AA = 3

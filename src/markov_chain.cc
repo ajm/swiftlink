@@ -138,10 +138,11 @@ double* MarkovChain::run(DescentGraph& dg) {
         }
         #endif
         
+        
         if(i < options.burnin) {
             continue;
         }
-                
+        
         if((i % options.scoring_period) == 0) {
         
             #ifdef MICROBENCHMARK_TIMING
@@ -172,7 +173,6 @@ double* MarkovChain::run(DescentGraph& dg) {
             fprintf(stderr, "LODSCORE %.3f\n", milliseconds);
             #endif
         }
-        
         
     }
     

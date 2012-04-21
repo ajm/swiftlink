@@ -51,7 +51,8 @@ void TraitRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGrap
             
             indices[pmatrix_index][peel_id] = static_cast<int>(kid_trait);
             
-            tmp = get_trait_probability(peel_id, kid_trait);
+            //tmp = get_trait_probability(peel_id, kid_trait);
+            tmp = trait_cache[static_cast<int>(kid_trait)];
             if(tmp == 0.0)
                 continue;
             
@@ -89,7 +90,8 @@ void TraitRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentGra
         
         indices[pmatrix_index][peel_id] = a;
         
-        tmp = get_trait_probability(peel_id, mat_trait);
+        //tmp = get_trait_probability(peel_id, mat_trait);
+        tmp = trait_cache[a];
         if(tmp == 0.0)
             continue;
         

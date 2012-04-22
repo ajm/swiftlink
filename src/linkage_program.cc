@@ -81,7 +81,7 @@ double* LinkageProgram::run_pedigree(Pedigree& p) {
     }
     
     
-    PeelSequenceGenerator psg(&p, verbose);
+    PeelSequenceGenerator psg(&p, &map, verbose);
     if((options.peelseq_filename == "") or not psg.read_from_file(options.peelseq_filename)) {
         psg.build_peel_order();
     }

@@ -72,6 +72,9 @@ class GenotypeElimination {
     
     bool elimination();
     bool random_descentgraph(DescentGraph& d);
+    bool is_legal(int id, int locus, int value) {
+        return genotype_possible(possible_genotypes[locus][id], genotype_from_trait(value));
+    }
 };
 
 #endif

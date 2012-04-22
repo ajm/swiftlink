@@ -2,6 +2,7 @@ using namespace std;
 
 #include <cstdio>
 #include <cmath>
+#include <cstring>
 #include <map>
 #include <vector>
 #include <algorithm>
@@ -24,9 +25,14 @@ PeelMatrix::PeelMatrix(unsigned int num_dim, unsigned int val_dim) :
 }
 
 void PeelMatrix::reset() {
+    /*
     for(unsigned i = 0; i < size; ++i) {
         data[i] = 0.0;
     }
+    
+    memset(data, 0, sizeof(double) * size);
+    */
+    fill(data, data + size, 0.0);
 }
 
 PeelMatrix::PeelMatrix(const PeelMatrix& rhs) :

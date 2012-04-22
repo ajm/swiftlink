@@ -31,6 +31,7 @@ class Rfunction {
     Rfunction* previous_rfunction2;
     unsigned int locus;
     vector<vector<int> > indices;
+    vector<int> valid_indices;
     unsigned int index_offset;
     unsigned int size;
     unsigned int peel_id;

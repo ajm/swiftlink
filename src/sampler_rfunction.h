@@ -131,6 +131,12 @@ class SamplerRfunction : public Rfunction {
         for(int i = 0; i < 4; ++i) {
             trait_cache[i] = get_trait_probability(peel_id, static_cast<enum phased_trait>(i));
         }
+        
+        // XXX this is such a bad idea, it get changed all over the place!
+        valid_indices = peel->get_valid_indices(l);
+        
+        pmatrix.reset();
+        pmatrix_presum.reset();
     }
 };
 

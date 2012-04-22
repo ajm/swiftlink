@@ -363,3 +363,19 @@ bool GenotypeElimination::random_descentgraph(DescentGraph& d) {
     
     return true;
 }
+
+bool GenotypeElimination::elimination() {
+
+    if(not init_processing) {
+        _initial_elimination();
+        for(unsigned i = 0; i < ped->num_markers(); ++i) {
+            if(not _elimination_pass(possible_genotypes, i)) {
+                return false;
+            }
+        }
+        init_processing = true;
+    }
+
+    return true;
+}
+

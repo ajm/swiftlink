@@ -9,6 +9,7 @@ using namespace std;
 
 
 class Pedigree;
+class GeneticMap;
 
 // XXX i think I would need one that could peel :
 // i) over genotypes at loci (to create L-sampler)
@@ -23,6 +24,7 @@ class Pedigree;
 class PeelSequenceGenerator {
 
     Pedigree* ped;
+    GeneticMap* map;
     bool verbose;
     vector<PeelOperation> peelorder;
     vector<PeelOperation> tmp;
@@ -42,8 +44,9 @@ class PeelSequenceGenerator {
     void rebuild_peel_order(vector<unsigned int>& seq);
 
   public :
-    PeelSequenceGenerator(Pedigree* p, bool verbose=false) : 
+    PeelSequenceGenerator(Pedigree* p, GeneticMap* m, bool verbose=false) : 
         ped(p),
+        map(m),
         verbose(verbose),
         peelorder(),
         tmp(),
@@ -53,6 +56,7 @@ class PeelSequenceGenerator {
     
     PeelSequenceGenerator(const PeelSequenceGenerator& rhs) :
         ped(rhs.ped),
+        map(rhs.map),
         verbose(rhs.verbose),
         peelorder(rhs.peelorder),
         tmp(rhs.tmp),
@@ -61,6 +65,7 @@ class PeelSequenceGenerator {
     PeelSequenceGenerator& operator=(const PeelSequenceGenerator& rhs) {
         if(&rhs != this) {
             ped = rhs.ped;
+            map = rhs.map;
             verbose = rhs.verbose;
             peelorder = rhs.peelorder;
             tmp = rhs.tmp;

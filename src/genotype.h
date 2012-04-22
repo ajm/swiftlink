@@ -4,6 +4,9 @@
 using namespace std;
 
 #include <string>
+#include <cstdlib>
+
+#include "trait.h"
 
 // this is kind of old-school, my initial attempt at this
 // program was in C, so there are the occasional C-idioms
@@ -36,6 +39,8 @@ bool genotype_hetero (enum unphased_genotype g);
 
 string genotype_string(enum phased_genotype g);
 string genotype_string(enum unphased_genotype g);
+
+enum phased_genotype genotype_from_trait(int i);
 
 // add to bitmap        |=
 // toggle from bitmap   ^=

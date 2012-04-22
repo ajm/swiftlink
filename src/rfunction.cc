@@ -24,6 +24,7 @@ Rfunction::Rfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperati
     previous_rfunction2(prev2),
     locus(locus),
     indices(peel->get_index_values()),
+    valid_indices(peel->get_valid_indices(locus)),
     index_offset(1 << (2 * peel->get_cutset_size())),
     size(pow((double)NUM_ALLELES, (int)peel->get_cutset_size())),
     peel_id(peel->get_peelnode()) {
@@ -48,6 +49,7 @@ Rfunction::Rfunction(const Rfunction& rhs) :
     previous_rfunction2(rhs.previous_rfunction2),
     locus(rhs.locus),
     indices(rhs.indices),
+    valid_indices(rhs.valid_indices),
     index_offset(rhs.index_offset),
     size(rhs.size),
     peel_id(rhs.peel_id) {}
@@ -65,6 +67,7 @@ Rfunction& Rfunction::operator=(const Rfunction& rhs) {
         previous_rfunction2 = rhs.previous_rfunction2;
         locus = rhs.locus;
         indices = rhs.indices;
+        valid_indices = rhs.valid_indices;
         index_offset = rhs.index_offset;
         size = rhs.size;
         peel_id = rhs.peel_id;
@@ -108,8 +111,8 @@ void Rfunction::evaluate_partner_peel(unsigned int pmatrix_index) {
         
         //tmp = get_trait_probability(peel_id, partner_trait);
         tmp = trait_cache[i];
-        if(tmp == 0.0)
-            continue;
+        //if(tmp == 0.0)
+        //    continue;
         
         /*
         tmp *= (previous_rfunction1 == NULL ? 1.0 : previous_rfunction1->get(indices[pmatrix_index])) * \
@@ -117,8 +120,8 @@ void Rfunction::evaluate_partner_peel(unsigned int pmatrix_index) {
         */
         
         tmp *= (previous_rfunction1 == NULL ? 1.0 : previous_rfunction1->get(indices[pmatrix_index]));
-        if(tmp == 0.0)
-            continue;
+        //if(tmp == 0.0)
+        //    continue;
         
         tmp *= (previous_rfunction2 == NULL ? 1.0 : previous_rfunction2->get(indices[pmatrix_index]));
         
@@ -160,8 +163,9 @@ bool Rfunction::legal_genotype(unsigned personid, enum phased_trait g) {
 }
 
 void Rfunction::evaluate(DescentGraph* dg, double offset) {
-    pmatrix.reset();
-    pmatrix_presum.reset();
+    
+    //pmatrix.reset();
+    //pmatrix_presum.reset();
     
     // transmission probability cache
     preevaluate_init(dg);
@@ -170,8 +174,17 @@ void Rfunction::evaluate(DescentGraph* dg, double offset) {
     this->offset = offset;
     
     //#pragma omp parallel for
-    for(unsigned int i = 0; i < size; ++i) {
-        evaluate_element(i, dg);
+    
+    if(offset != 0.0) {
+        for(unsigned int i = 0; i < size; ++i) {
+            evaluate_element(i, dg);
+        }
+    }
+    else {
+        // this is only for the SamplerRfunction at the moment
+        for(unsigned int i = 0; i < valid_indices.size(); ++i) {
+            evaluate_element(valid_indices[i], dg);
+        }
     }
 }
 

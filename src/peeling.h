@@ -31,6 +31,7 @@ class PeelOperation {
     int prev2;
     
     vector<vector<int> > assignments;
+    vector<vector<int> > valid_indices;
     
  public :
     PeelOperation(unsigned int peelnode) :  
@@ -41,7 +42,8 @@ class PeelOperation {
         used(false),
         prev1(-1),
         prev2(-1),
-        assignments() {}
+        assignments(),
+        valid_indices() {}
     
     PeelOperation(const PeelOperation& rhs) :
         type(rhs.type),
@@ -51,7 +53,8 @@ class PeelOperation {
         used(rhs.used),
         prev1(rhs.prev1),
         prev2(rhs.prev2),
-        assignments(rhs.assignments) {}
+        assignments(rhs.assignments),
+        valid_indices(rhs.valid_indices) {}
     
     PeelOperation& operator=(const PeelOperation& rhs) {
         
@@ -64,6 +67,7 @@ class PeelOperation {
             prev1 = rhs.prev1;
             prev2 = rhs.prev2;
             assignments = rhs.assignments;
+            valid_indices = rhs.valid_indices;
         }
         
         return *this;
@@ -226,10 +230,20 @@ class PeelOperation {
         assignments = assigns;
     }
     
+    void set_valid_indices(vector<vector<int> > indices) {
+        valid_indices = indices;
+    }
+    
+    // XXX do these really need to be return-by-value? are they not read-only?
+    // 
     // i know this is returned-by-value, it is to get rid of some concurrency problems
     // at the expense of memory
     vector<vector<int> > get_index_values() {
         return assignments;
+    }
+    
+    vector<int> get_valid_indices(int locus) {
+        return valid_indices[locus];
     }
     
     bool operator<(const PeelOperation& p) const {

@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <cstdlib>
 #include "genotype.h"
 
@@ -51,7 +52,7 @@ string genotype_string(enum phased_genotype g) {
 			return "BB";
 	}
 			
-	abort();
+    abort();
 }
 
 string genotype_string(enum unphased_genotype g) {
@@ -69,3 +70,17 @@ string genotype_string(enum unphased_genotype g) {
     
     abort();
 }
+
+enum phased_genotype genotype_from_trait(int i) {
+    
+    switch(i) {
+        case TRAIT_UU: return AA;
+        case TRAIT_AU: return BA;
+        case TRAIT_UA: return AB;
+        case TRAIT_AA: return BB;
+    }
+    
+    fprintf(stderr, "error in genotype_from_trait, %d\n", i);
+    abort();
+}
+

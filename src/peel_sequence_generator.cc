@@ -12,6 +12,8 @@ using namespace std;
 #include "random.h"
 #include "progress.h"
 #include "simple_parser.h"
+#include "elimination.h"
+#include "genetic_map.h"
 
 
 PeelOperation PeelSequenceGenerator::get_random_operation(vector<PeelOperation>& v) {
@@ -357,7 +359,30 @@ void PeelSequenceGenerator::bruteforce_assignments(PeelOperation& op) {
     
     //fprintf(stderr, "===\n");
     
+    GenotypeElimination ge(ped);
+    ge.elimination();
+    
+    vector<vector<int> > valid_indices(map->num_markers());
+    
+    for(int locus = 0; locus < int(map->num_markers()); ++locus) {
+        for(int i = 0; i < total; ++i) {
+            bool valid = true;
+            
+            for(int j = 0; j < ndim; ++j) {
+                if(not ge.is_legal(cutset[j], locus, assigns[i][cutset[j]])) {
+                    valid = false;
+                    break;
+                }
+            }
+            
+            if(valid) {
+                valid_indices[locus].push_back(i);
+            }
+        }
+    }
+    
     op.set_index_values(assigns);
+    op.set_valid_indices(valid_indices);
 }
 
 int PeelSequenceGenerator::calculate_cost(vector<unsigned int>& seq) {

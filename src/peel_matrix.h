@@ -54,7 +54,17 @@ class PeelMatrix {
     }
     */
     
-    unsigned int generate_index(vector<int>& index) const;
+    //unsigned int generate_index(vector<int>& index) const;
+    
+    inline int generate_index(vector<int>& index) const {
+        int tmp = 0;
+        
+        for(int i = 0; i < int(num_keys); ++i) {
+            tmp += (index[keys[i]] * (1 << (2 * i)));
+        }
+        
+        return tmp;
+    }
     
     double get(vector<int>& pmk) const {
         /*

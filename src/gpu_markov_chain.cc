@@ -654,7 +654,7 @@ void GPUMarkovChain::init_rfunctions(vector<PeelOperation>& ops) {
         int prev2_index = ops[j].get_previous_op2();
         
         for(unsigned i = 0; i < num_samp; ++i) {
-            vector<int>* vindices = ops[j].get_valid_indices(i);
+            vector<int>* vindices = ops[j].get_presum_indices(i);
         
             struct rfunction* rf = &loc_state->functions[(i * num_func_per_samp) + j];
             
@@ -769,7 +769,7 @@ struct rfunction* GPUMarkovChain::gpu_init_rfunctions(vector<PeelOperation>& ops
             
             
             // valid indices from genotype elimination
-            vector<int>* vindices = ops[i].get_valid_indices(j);
+            vector<int>* vindices = ops[i].get_presum_indices(j);
             
             tmp.presum_indices_length = vindices->size();
             //fprintf(stderr, "length = %d valid = %d\n", tmp.presum_length, tmp.valid_indices_length);
@@ -955,7 +955,7 @@ int GPUMarkovChain::optimal_lsampler_threads() {
 }
 
 
-double* GPUMarkovChain::run(DescentGraph& dg, double trait_likelihood) {
+double* GPUMarkovChain::run(DescentGraph& dg) {
     int count = 0;
     int even_count;
     int odd_count;
@@ -974,8 +974,8 @@ double* GPUMarkovChain::run(DescentGraph& dg, double trait_likelihood) {
     //int window_length = 32;
     
     
-    //Peeler peel(ped, map, psg, 0);
-    //double trait_likelihood = peel.get_trait_prob();
+    Peeler peel(ped, map, psg, 0);
+    double trait_likelihood = peel.get_trait_prob();
     
     vector<PeelOperation>& ops = psg->get_peel_order();
     

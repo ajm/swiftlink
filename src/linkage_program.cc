@@ -81,7 +81,7 @@ double* LinkageProgram::run_pedigree(Pedigree& p) {
     }
     
     
-    PeelSequenceGenerator psg(&p, &map, false, verbose);
+    PeelSequenceGenerator psg(&p, &map, verbose);
     if((options.peelseq_filename == "") or not psg.read_from_file(options.peelseq_filename)) {
         psg.build_peel_order();
     }
@@ -97,16 +97,8 @@ double* LinkageProgram::run_pedigree(Pedigree& p) {
     }
     else {
         // XXX this is such a bad idea... need a better api to solve this
-        PeelSequenceGenerator psg2(&p, &map, use_gpu, verbose);
-        if((options.peelseq_filename == "") or not psg2.read_from_file(options.peelseq_filename)) {
-            psg2.build_peel_order();
-        }
-        
-        Peeler peel(&p, &map, &psg, 0);
-        double trait_likelihood = peel.get_trait_prob();
-        
-        GPUMarkovChain chain(&p, &map, &psg2, options);
-        return chain.run(dg, trait_likelihood);
+        GPUMarkovChain chain(&p, &map, &psg, options);
+        return chain.run(dg);
     }
     
     fprintf(stderr, "error: nothing was run (%s:%d)\n", __FILE__, __LINE__);

@@ -333,54 +333,34 @@ int PeelSequenceGenerator::find_function_containing(vector<unsigned>& nodes) {
 
 void PeelSequenceGenerator::bruteforce_assignments(PeelOperation& op) {
     int ndim = op.get_cutset_size();
+    int total, offset, index;
     
-    // because gpu uses one thread per element in presum matrix
-    if(usegpu) {
-        ndim++;
-    }
-    
-    int total = pow(4.0, ndim);
-    int offset, index;
-    
-    //fprintf(stderr, "total = %d\n", total);
-    
-    vector<unsigned int> cutset(op.get_cutset());
-    
-    if(usegpu) {
-        cutset.push_back(op.get_peelnode());
-    }
+    total = pow(4.0, ndim + 1);
     
     vector<vector<int> > assigns(total, vector<int>(ped->num_members(), -1));
+    vector<vector<int> > matrix_indices(map->num_markers());
+    vector<vector<int> > presum_indices(map->num_markers());
+    vector<int> lod_indices;
+    
+    vector<unsigned int> cutset(op.get_cutset());
+    cutset.push_back(op.get_peelnode());
     
     for(int ind = 0; ind < total; ++ind) {
         index = ind;
         
-        for(int i = ndim - 1; i > -1; --i) {
+        for(int i = ndim; i > -1; --i) {
             offset = 1 << (i * 2);
             assigns[ind][cutset[i]] = index / offset;
             index %= offset;
         }
-        
-        /*
-        for(int i = 0; i < ndim; ++i) {
-            fprintf(stderr, "%d ", assigns[ind][cutset[i]]);
-        }
-        fprintf(stderr, "\n");
-        */
     }
     
-    //fprintf(stderr, "===\n");
-    
-    
-    
-    vector<vector<int> > valid_indices(map->num_markers());
-    vector<int> valid_lod_indices;
-    
+    // XXX presum indices, ndim is always one bigger
     for(int locus = 0; locus < int(map->num_markers()); ++locus) {
         for(int i = 0; i < total; ++i) {
             bool valid = true;
             
-            for(int j = 0; j < ndim; ++j) {
+            for(int j = 0; j < (ndim + 1); ++j) {
                 if(not ge.is_legal(cutset[j], locus, assigns[i][cutset[j]])) {
                     valid = false;
                     break;
@@ -388,11 +368,47 @@ void PeelSequenceGenerator::bruteforce_assignments(PeelOperation& op) {
             }
                         
             if(valid) {
-                valid_indices[locus].push_back(i);
+                presum_indices[locus].push_back(i);
             }
         }
     }
     
+    
+    cutset.pop_back();
+    total = pow(4.0, ndim);
+    vector<vector<int> > assigns2(total, vector<int>(ped->num_members(), -1));
+    
+    for(int ind = 0; ind < total; ++ind) {
+        index = ind;
+        
+        for(int i = ndim; i > -1; --i) {
+            offset = 1 << (i * 2);
+            assigns2[ind][cutset[i]] = index / offset;
+            index %= offset;
+        }
+    }
+    
+    
+    // XXX matrix_indices
+    for(int locus = 0; locus < int(map->num_markers()); ++locus) {
+        for(int i = 0; i < total; ++i) {
+            bool valid = true;
+            
+            for(int j = 0; j < ndim; ++j) {
+                if(not ge.is_legal(cutset[j], locus, assigns2[i][cutset[j]])) {
+                    valid = false;
+                    break;
+                }
+            }
+                        
+            if(valid) {
+                matrix_indices[locus].push_back(i);
+            }
+        }
+    }
+        
+    
+    // XXX lod indices
     enum phased_trait pt;
     
     for(int i = 0; i < total; ++i) {
@@ -408,14 +424,15 @@ void PeelSequenceGenerator::bruteforce_assignments(PeelOperation& op) {
         }
         
         if(valid) {
-            valid_lod_indices.push_back(i);
+            lod_indices.push_back(i);
         }
     }
     
     
-    op.set_index_values(assigns);
-    op.set_valid_indices(valid_indices);
-    op.set_valid_lod_indices(valid_lod_indices);
+    op.set_index_values(assigns2);
+    op.set_matrix_indices(matrix_indices);
+    op.set_presum_indices(presum_indices);
+    op.set_lod_indices(lod_indices);
 }
 
 int PeelSequenceGenerator::calculate_cost(vector<unsigned int>& seq) {

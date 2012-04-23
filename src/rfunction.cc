@@ -24,8 +24,8 @@ Rfunction::Rfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperati
     previous_rfunction2(prev2),
     locus(locus),
     indices(peel->get_index_values()),
-    valid_indices(peel->get_valid_indices(locus)),
-    valid_lod_indices(peel->get_valid_lod_indices()),
+    valid_indices(peel->get_matrix_indices(locus)),
+    valid_lod_indices(peel->get_lod_indices()),
     index_offset(1 << (2 * peel->get_cutset_size())),
     size(pow((double)NUM_ALLELES, (int)peel->get_cutset_size())),
     peel_id(peel->get_peelnode()) {

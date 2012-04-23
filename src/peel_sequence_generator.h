@@ -26,7 +26,6 @@ class PeelSequenceGenerator {
 
     Pedigree* ped;
     GeneticMap* map;
-    bool usegpu;
     bool verbose;
     vector<PeelOperation> peelorder;
     vector<PeelOperation> tmp;
@@ -47,10 +46,9 @@ class PeelSequenceGenerator {
     void rebuild_peel_order(vector<unsigned int>& seq);
 
   public :
-    PeelSequenceGenerator(Pedigree* p, GeneticMap* m, bool usegpu, bool verbose) : 
+    PeelSequenceGenerator(Pedigree* p, GeneticMap* m, bool verbose) : 
         ped(p),
         map(m),
-        usegpu(usegpu),
         verbose(verbose),
         peelorder(),
         tmp(),
@@ -65,7 +63,6 @@ class PeelSequenceGenerator {
     PeelSequenceGenerator(const PeelSequenceGenerator& rhs) :
         ped(rhs.ped),
         map(rhs.map),
-        usegpu(rhs.usegpu),
         verbose(rhs.verbose),
         peelorder(rhs.peelorder),
         tmp(rhs.tmp),
@@ -76,7 +73,6 @@ class PeelSequenceGenerator {
         if(&rhs != this) {
             ped = rhs.ped;
             map = rhs.map;
-            usegpu = rhs.usegpu;
             verbose = rhs.verbose;
             peelorder = rhs.peelorder;
             tmp = rhs.tmp;

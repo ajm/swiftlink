@@ -121,7 +121,7 @@ class GPUMarkovChain {
         return *this;
     }
     
-    double* run(DescentGraph& dg, double trait_likelihood);
+    double* run(DescentGraph& dg);
 };
 
 #endif

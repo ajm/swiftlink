@@ -133,7 +133,7 @@ class SamplerRfunction : public Rfunction {
         }
         
         // XXX this is such a bad idea, it get changed all over the place!
-        valid_indices = peel->get_valid_indices(l);
+        valid_indices = peel->get_matrix_indices(l);
         
         pmatrix.reset();
         pmatrix_presum.reset();

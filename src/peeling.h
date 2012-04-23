@@ -31,8 +31,9 @@ class PeelOperation {
     int prev2;
     
     vector<vector<int> > assignments;
-    vector<vector<int> > valid_indices;
-    vector<int> valid_lod_indices;
+    vector<vector<int> > presum_indices;
+    vector<vector<int> > matrix_indices;
+    vector<int> lod_indices;
     
  public :
     PeelOperation(unsigned int peelnode) :  
@@ -44,8 +45,9 @@ class PeelOperation {
         prev1(-1),
         prev2(-1),
         assignments(),
-        valid_indices(),
-        valid_lod_indices() {}
+        presum_indices(),
+        matrix_indices(),
+        lod_indices() {}
     
     PeelOperation(const PeelOperation& rhs) :
         type(rhs.type),
@@ -56,8 +58,9 @@ class PeelOperation {
         prev1(rhs.prev1),
         prev2(rhs.prev2),
         assignments(rhs.assignments),
-        valid_indices(rhs.valid_indices),
-        valid_lod_indices(rhs.valid_lod_indices) {}
+        presum_indices(rhs.presum_indices),
+        matrix_indices(rhs.matrix_indices),
+        lod_indices(rhs.lod_indices) {}
     
     PeelOperation& operator=(const PeelOperation& rhs) {
         
@@ -70,8 +73,9 @@ class PeelOperation {
             prev1 = rhs.prev1;
             prev2 = rhs.prev2;
             assignments = rhs.assignments;
-            valid_indices = rhs.valid_indices;
-            valid_lod_indices = rhs.valid_lod_indices;
+            presum_indices = rhs.presum_indices;
+            matrix_indices = rhs.matrix_indices;
+            lod_indices = rhs.lod_indices;
         }
         
         return *this;
@@ -234,12 +238,16 @@ class PeelOperation {
         assignments = assigns;
     }
     
-    void set_valid_indices(vector<vector<int> > indices) {
-        valid_indices = indices;
+    void set_presum_indices(vector<vector<int> > indices) {
+        presum_indices = indices;
     }
     
-    void set_valid_lod_indices(vector<int> lod_indices) {
-        valid_lod_indices = lod_indices;
+    void set_matrix_indices(vector<vector<int> > indices) {
+        matrix_indices = indices;
+    }
+    
+    void set_lod_indices(vector<int> indices) {
+        lod_indices = indices;
     }
     
     // XXX do these really need to be return-by-value? are they not read-only?
@@ -250,12 +258,16 @@ class PeelOperation {
         return assignments;
     }
     
-    vector<int>* get_valid_indices(int locus) {
-        return &valid_indices[locus];
+    vector<int>* get_presum_indices(int locus) {
+        return &presum_indices[locus];
     }
     
-    vector<int>* get_valid_lod_indices() {
-        return &valid_lod_indices;
+    vector<int>* get_matrix_indices(int locus) {
+        return &matrix_indices[locus];
+    }
+    
+    vector<int>* get_lod_indices() {
+        return &lod_indices;
     }
     
     bool operator<(const PeelOperation& p) const {

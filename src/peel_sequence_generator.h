@@ -6,6 +6,7 @@ using namespace std;
 #include <vector>
 
 #include "peeling.h"
+#include "elimination.h"
 
 
 class Pedigree;
@@ -25,10 +26,12 @@ class PeelSequenceGenerator {
 
     Pedigree* ped;
     GeneticMap* map;
+    bool usegpu;
     bool verbose;
     vector<PeelOperation> peelorder;
     vector<PeelOperation> tmp;
     PeelingState state;
+    GenotypeElimination ge;
     
     void find_previous_functions(PeelOperation& op);
     void find_generic_functions(PeelOperation& op);
@@ -44,32 +47,41 @@ class PeelSequenceGenerator {
     void rebuild_peel_order(vector<unsigned int>& seq);
 
   public :
-    PeelSequenceGenerator(Pedigree* p, GeneticMap* m, bool verbose=false) : 
+    PeelSequenceGenerator(Pedigree* p, GeneticMap* m, bool usegpu, bool verbose) : 
         ped(p),
         map(m),
+        usegpu(usegpu),
         verbose(verbose),
         peelorder(),
         tmp(),
-        state(p) {}
+        state(p),
+        ge(p) {
+        
+        ge.elimination();    
+    }
         
     ~PeelSequenceGenerator() {}
     
     PeelSequenceGenerator(const PeelSequenceGenerator& rhs) :
         ped(rhs.ped),
         map(rhs.map),
+        usegpu(rhs.usegpu),
         verbose(rhs.verbose),
         peelorder(rhs.peelorder),
         tmp(rhs.tmp),
-        state(rhs.state) {}
+        state(rhs.state),
+        ge(rhs.ge) {}
         
     PeelSequenceGenerator& operator=(const PeelSequenceGenerator& rhs) {
         if(&rhs != this) {
             ped = rhs.ped;
             map = rhs.map;
+            usegpu = rhs.usegpu;
             verbose = rhs.verbose;
             peelorder = rhs.peelorder;
             tmp = rhs.tmp;
             state = rhs.state;
+            ge = rhs.ge;
         }
         
         return *this;

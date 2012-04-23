@@ -267,8 +267,8 @@ void SamplerRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGr
         
         //tmp = get_trait_probability(peel_id, kid_trait);
         tmp = trait_cache[i];
-        //if(tmp == 0.0)
-        //    continue;
+        if(tmp == 0.0)
+            continue;
         
         tmp *= transmission[0][transmission_index(mat_trait, pat_trait, kid_trait)];
         //tmp *= (get_recombination_probability(dg, peel_id, mat_trait, kid_trait, MATERNAL) *
@@ -308,8 +308,8 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
         
         //tmp = get_trait_probability(peel_id, mat_trait);
         tmp = trait_cache[i];
-        //if(tmp == 0.0)
-        //    continue;
+        if(tmp == 0.0)
+            continue;
         
         tmp *= ((previous_rfunction1 != NULL ? previous_rfunction1->get(indices[pmatrix_index]) : 1.0) * \
                 (previous_rfunction2 != NULL ? previous_rfunction2->get(indices[pmatrix_index]) : 1.0));

@@ -56,14 +56,15 @@ void TraitRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGrap
             if(tmp == 0.0)
                 continue;
             
-            tmp *= (!dg ? 0.25 : 0.25 * get_recombination_probability(dg, peel_id, i, j));
-            if(tmp == 0.0)
-                continue;
-            
             tmp *= ((previous_rfunction1 != NULL ? previous_rfunction1->get(indices[pmatrix_index]) : 1.0) * \
                     (previous_rfunction2 != NULL ? previous_rfunction2->get(indices[pmatrix_index]) : 1.0));
+            //if(tmp == 0.0)
+            //    continue;
             
-            pmatrix_presum.add(presum_index, tmp);
+            
+            tmp *= (!dg ? 0.25 : 0.25 * get_recombination_probability(dg, peel_id, i, j));
+            
+            //pmatrix_presum.add(presum_index, tmp);
             
             total += tmp;
         }
@@ -97,15 +98,21 @@ void TraitRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentGra
         
         tmp *= ((previous_rfunction1 != NULL ? previous_rfunction1->get(indices[pmatrix_index]) : 1.0) * \
                 (previous_rfunction2 != NULL ? previous_rfunction2->get(indices[pmatrix_index]) : 1.0));
-        if(tmp == 0)
-            continue;
+        //if(tmp == 0)
+        //    continue;
         
         double child_prob = 1.0;
         
         for(unsigned c = 0; c < peel->get_cutset_size(); ++c) {
             unsigned int child_id = peel->get_cutnode(c);
+            enum phased_trait kid_trait = static_cast<enum phased_trait>(indices[pmatrix_index][child_id]);
+            
+            //if(get_trait_probability(child_id, kid_trait) == 0.0) {
+            //    child_prob = 0.0;
+            //    break;
+            //}
+            
             Person* child = ped->get_by_index(child_id);
-            double child_tmp = 0.0;
             
             if(not child->is_parent(peel_id))
                 continue;
@@ -117,11 +124,13 @@ void TraitRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentGra
                 mat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][child->get_maternalid()]);
             }
             
+            double child_tmp = 0.0;
+            
             for(int i = 0; i < 2; ++i) {        // maternal allele
                 for(int j = 0; j < 2; ++j) {    // paternal allele
                     pivot_trait = get_phased_trait(mat_trait, pat_trait, i, j);
                     
-                    if(pivot_trait != static_cast<enum phased_trait>(indices[pmatrix_index][child_id]))
+                    if(pivot_trait != kid_trait)
                         continue;
                     
                     child_tmp += (!dg ? 0.25 : 0.25 * get_recombination_probability(dg, child_id, i, j));
@@ -130,13 +139,13 @@ void TraitRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentGra
             
             child_prob *= child_tmp;
             
-            if(child_prob == 0.0)
-                break;
+            //if(child_prob == 0.0)
+            //    break;
         }
         
         tmp *= child_prob;
         
-        pmatrix_presum.set(presum_index, tmp);
+        //pmatrix_presum.set(presum_index, tmp);
         
         total += tmp;
     }

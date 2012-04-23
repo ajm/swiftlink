@@ -354,6 +354,23 @@ __device__ void rfunction_evaluate_element(struct rfunction* rf, struct gpu_stat
 __device__ void rfunction_evaluate(struct rfunction* rf, struct gpu_state* state, int locus) {
     int i;
     
+    // calculate only valid assignments
+    
+    for(i = threadIdx.x; i < rf->presum_indices_length; i += blockDim.x) {
+        rfunction_evaluate_element(rf, state, locus, rf->presum_indices[i]);
+    }
+    
+    __syncthreads();
+    
+    for(i = threadIdx.x; i < rf->matrix_length; i += blockDim.x) {
+        rfunction_sum(rf, i);
+    }
+    
+    __syncthreads();
+    
+    
+    // calculate all possible assignments
+    /*
     for(i = threadIdx.x; i < rf->presum_length; i += blockDim.x) {
         rfunction_evaluate_element(rf, state, locus, i);
     }
@@ -365,7 +382,9 @@ __device__ void rfunction_evaluate(struct rfunction* rf, struct gpu_state* state
     }
     
     __syncthreads();
+    */
     
+    // exactly one thread per cell
     /*
     if(threadIdx.x < rf->presum_length) {
         rfunction_evaluate_element(rf, state, locus, threadIdx.x);
@@ -427,8 +446,6 @@ __global__ void lsampler_kernel(struct gpu_state* state, int window_length, int 
         
         sample_meiosis_indicators(state, assignment, locus);
     }
-    
-    __syncthreads();
 }
 
 __global__ void lsampler_onepeel_kernel(struct gpu_state* state, int offset, int function_offset) {
@@ -489,8 +506,6 @@ __global__ void lsampler_sample_kernel(struct gpu_state* state, int offset) {
         
         sample_meiosis_indicators(state, assignment, locus);
     }
-    
-    __syncthreads();
 }
 
 void run_gpu_lsampler_kernel(int numblocks, int numthreads, struct gpu_state* state, int window_length, int offset) {

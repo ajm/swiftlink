@@ -17,6 +17,7 @@ class PeelMatrix {
 
     unsigned int num_keys;
     unsigned int* keys;
+    //unsigned int* offsets;
     unsigned int number_of_dimensions;
     unsigned int values_per_dimension;
     unsigned int size;
@@ -61,6 +62,7 @@ class PeelMatrix {
         
         for(int i = 0; i < int(num_keys); ++i) {
             tmp += (index[keys[i]] * (1 << (2 * i)));
+            //tmp += (index[keys[i]] * offsets[i]);
         }
         
         return tmp;

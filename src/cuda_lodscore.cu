@@ -361,7 +361,6 @@ __global__ void lodscore_onepeel_kernel(struct gpu_state* state, int function_of
         //printf("GPU peel %d %f\n", locus, log(RFUNCTION_GET(rf, 0)));
         lodscore_add(state, log(RFUNCTION_GET(rf, 0)));
     }
-    
 }
 
 __global__ void lodscoreinit_kernel(double* lodscores) {

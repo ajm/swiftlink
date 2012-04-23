@@ -381,6 +381,7 @@ void GPUMarkovChain::init_founderallelegraph() {
     
     find_founderallelegraph_ordering(loc_state);
 }
+
 /*
 struct founderallelegraph* GPUMarkovChain::gpu_init_founderallelegraph() {
     
@@ -653,6 +654,8 @@ void GPUMarkovChain::init_rfunctions(vector<PeelOperation>& ops) {
         int prev2_index = ops[j].get_previous_op2();
         
         for(unsigned i = 0; i < num_samp; ++i) {
+            vector<int>* vindices = ops[j].get_valid_indices(i);
+        
             struct rfunction* rf = &loc_state->functions[(i * num_func_per_samp) + j];
             
             rf->id = j;
@@ -686,9 +689,18 @@ void GPUMarkovChain::init_rfunctions(vector<PeelOperation>& ops) {
                 rf->cutset[k] = ops[j].get_cutnode(k);
             }
             rf->cutset[cutset_length - 1] = peel_node;
+            
+            // valid indices from genotype elimination
+            rf->presum_indices_length = vindices->size();
+            rf->presum_indices = (int*) malloc(rf->presum_indices_length * sizeof(int));
+            if(! rf->presum_indices) {
+                fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+                abort();
+            }
+            
+            copy(vindices->begin(), vindices->end(), rf->presum_indices);
         }
-    }
-    
+    }   
 }
 
 struct rfunction* GPUMarkovChain::gpu_init_rfunctions(vector<PeelOperation>& ops) {
@@ -728,11 +740,14 @@ struct rfunction* GPUMarkovChain::gpu_init_rfunctions(vector<PeelOperation>& ops
         tmp.matrix_length = int(pow(4.0, ops[i].get_cutset_size()));
         tmp.children_length = children_length;
         
+        
         fprintf(stderr, "  rfunctions: loading %d...\n", i);
         
         for(int j = 0; j < int(map->num_markers()); ++j) {
             // 3 - 5 mallocs, 1 - 2 memcpys
             CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.presum_matrix, sizeof(fp_type) * tmp.presum_length));
+            CUDA_CALLANDTEST(cudaMemset(tmp.presum_matrix, 0, sizeof(fp_type) * tmp.presum_length));
+            
             CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.matrix,        sizeof(fp_type) * tmp.matrix_length));
             CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.cutset,        sizeof(int)     * tmp.cutset_length));
             CUDA_CALLANDTEST(cudaMemcpy(tmp.cutset, cutset, sizeof(int) * tmp.cutset_length, cudaMemcpyHostToDevice));
@@ -751,6 +766,21 @@ struct rfunction* GPUMarkovChain::gpu_init_rfunctions(vector<PeelOperation>& ops
             // 2 pointers
             tmp.prev1 = (prev1_index != -1) ? &dev_rfunc[(j * ops.size()) + prev1_index] : NULL;
             tmp.prev2 = (prev2_index != -1) ? &dev_rfunc[(j * ops.size()) + prev2_index] : NULL;
+            
+            
+            // valid indices from genotype elimination
+            vector<int>* vindices = ops[i].get_valid_indices(j);
+            
+            tmp.presum_indices_length = vindices->size();
+            //fprintf(stderr, "length = %d valid = %d\n", tmp.presum_length, tmp.valid_indices_length);
+            int* presum_indices = new int[vindices->size()];
+            copy(vindices->begin(), vindices->end(), presum_indices);
+            
+            CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.presum_indices, sizeof(int) * tmp.presum_indices_length));
+            CUDA_CALLANDTEST(cudaMemcpy(tmp.presum_indices, presum_indices, sizeof(int) * tmp.presum_indices_length, cudaMemcpyHostToDevice));
+            
+            delete[] presum_indices;
+            // 
             
             // copy tmp to device via dev_rf pointer
             struct rfunction* dev_rf = &dev_rfunc[(j * ops.size()) + i];
@@ -842,6 +872,8 @@ int GPUMarkovChain::optimal_lodscore_threads() {
         
         total /= 10.0;
         
+        fprintf(stderr, "lodscores: %d threads - %.3fms\n", threadcount[i], total);
+        
         if(total < mintime) {
             mintime = total;
             minthread = threadcount[i];
@@ -909,6 +941,8 @@ int GPUMarkovChain::optimal_lsampler_threads() {
         
         total /= 10.0;
         
+        fprintf(stderr, "lsampler: %d threads - %.3fms\n", threadcount[i], total);
+        
         if(total < mintime) {
             mintime = total;
             minthread = threadcount[i];
@@ -921,7 +955,7 @@ int GPUMarkovChain::optimal_lsampler_threads() {
 }
 
 
-double* GPUMarkovChain::run(DescentGraph& dg) {
+double* GPUMarkovChain::run(DescentGraph& dg, double trait_likelihood) {
     int count = 0;
     int even_count;
     int odd_count;
@@ -939,8 +973,9 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
     int window_length = 20;
     //int window_length = 32;
     
-    Peeler peel(ped, map, psg, 0);
-    double trait_likelihood = peel.get_trait_prob();
+    
+    //Peeler peel(ped, map, psg, 0);
+    //double trait_likelihood = peel.get_trait_prob();
     
     vector<PeelOperation>& ops = psg->get_peel_order();
     
@@ -1285,7 +1320,6 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
     }
     //return lod_scores;
     */
-    
     
     double* data = new double[map->num_markers() - 1];
     

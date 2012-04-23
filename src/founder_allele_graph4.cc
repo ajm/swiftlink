@@ -385,7 +385,7 @@ double FounderAlleleGraph4::likelihood() {
             }
         }
         
-        
+#ifdef LKG_DEBUG
         // check probs
         for(int j = 0; j < group_index; ++j) {
             if(group_active[j]) {
@@ -403,6 +403,7 @@ double FounderAlleleGraph4::likelihood() {
                 }
             }
         }
+#endif
     }
     
     // calculate likelihood

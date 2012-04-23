@@ -138,6 +138,13 @@ struct rfunction {
     int* children;
     int children_length;
     
+    int* presum_indices;
+    int presum_indices_length;
+    
+    int* matrix_indices;
+    int matrix_indices_length;
+    
+    
     struct rfunction* prev1;    // must be NULL if not used
     struct rfunction* prev2;    // must be NULL if not used
 };

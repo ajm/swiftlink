@@ -25,6 +25,7 @@ Rfunction::Rfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperati
     locus(locus),
     indices(peel->get_index_values()),
     valid_indices(peel->get_valid_indices(locus)),
+    valid_lod_indices(peel->get_valid_lod_indices()),
     index_offset(1 << (2 * peel->get_cutset_size())),
     size(pow((double)NUM_ALLELES, (int)peel->get_cutset_size())),
     peel_id(peel->get_peelnode()) {
@@ -50,6 +51,7 @@ Rfunction::Rfunction(const Rfunction& rhs) :
     locus(rhs.locus),
     indices(rhs.indices),
     valid_indices(rhs.valid_indices),
+    valid_lod_indices(rhs.valid_lod_indices),
     index_offset(rhs.index_offset),
     size(rhs.size),
     peel_id(rhs.peel_id) {}
@@ -68,6 +70,7 @@ Rfunction& Rfunction::operator=(const Rfunction& rhs) {
         locus = rhs.locus;
         indices = rhs.indices;
         valid_indices = rhs.valid_indices;
+        valid_lod_indices = rhs.valid_lod_indices;
         index_offset = rhs.index_offset;
         size = rhs.size;
         peel_id = rhs.peel_id;
@@ -111,8 +114,8 @@ void Rfunction::evaluate_partner_peel(unsigned int pmatrix_index) {
         
         //tmp = get_trait_probability(peel_id, partner_trait);
         tmp = trait_cache[i];
-        //if(tmp == 0.0)
-        //    continue;
+        if(tmp == 0.0)
+            continue;
         
         /*
         tmp *= (previous_rfunction1 == NULL ? 1.0 : previous_rfunction1->get(indices[pmatrix_index])) * \
@@ -176,14 +179,15 @@ void Rfunction::evaluate(DescentGraph* dg, double offset) {
     //#pragma omp parallel for
     
     if(offset != 0.0) {
-        for(unsigned int i = 0; i < size; ++i) {
-            evaluate_element(i, dg);
+        //for(unsigned int i = 0; i < size; ++i) {
+        for(unsigned int i = 0; i < valid_lod_indices->size(); ++i) {
+            evaluate_element((*valid_lod_indices)[i], dg);
         }
     }
     else {
         // this is only for the SamplerRfunction at the moment
-        for(unsigned int i = 0; i < valid_indices.size(); ++i) {
-            evaluate_element(valid_indices[i], dg);
+        for(unsigned int i = 0; i < valid_indices->size(); ++i) {
+            evaluate_element((*valid_indices)[i], dg);
         }
     }
 }

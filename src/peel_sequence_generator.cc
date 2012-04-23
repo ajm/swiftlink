@@ -333,10 +333,22 @@ int PeelSequenceGenerator::find_function_containing(vector<unsigned>& nodes) {
 
 void PeelSequenceGenerator::bruteforce_assignments(PeelOperation& op) {
     int ndim = op.get_cutset_size();
+    
+    // because gpu uses one thread per element in presum matrix
+    if(usegpu) {
+        ndim++;
+    }
+    
     int total = pow(4.0, ndim);
     int offset, index;
     
-    vector<unsigned int>& cutset = op.get_cutset();
+    //fprintf(stderr, "total = %d\n", total);
+    
+    vector<unsigned int> cutset(op.get_cutset());
+    
+    if(usegpu) {
+        cutset.push_back(op.get_peelnode());
+    }
     
     vector<vector<int> > assigns(total, vector<int>(ped->num_members(), -1));
     
@@ -359,10 +371,10 @@ void PeelSequenceGenerator::bruteforce_assignments(PeelOperation& op) {
     
     //fprintf(stderr, "===\n");
     
-    GenotypeElimination ge(ped);
-    ge.elimination();
+    
     
     vector<vector<int> > valid_indices(map->num_markers());
+    vector<int> valid_lod_indices;
     
     for(int locus = 0; locus < int(map->num_markers()); ++locus) {
         for(int i = 0; i < total; ++i) {
@@ -374,15 +386,36 @@ void PeelSequenceGenerator::bruteforce_assignments(PeelOperation& op) {
                     break;
                 }
             }
-            
+                        
             if(valid) {
                 valid_indices[locus].push_back(i);
             }
         }
     }
     
+    enum phased_trait pt;
+    
+    for(int i = 0; i < total; ++i) {
+        bool valid = true;
+        
+        for(int j = 0; j < ndim; ++j) {
+            pt = static_cast<enum phased_trait>(assigns[i][cutset[j]]);
+            
+            if((ped->get_by_index(cutset[j]))->get_disease_prob(pt) == 0.0) {
+                valid = false;
+                break;
+            }
+        }
+        
+        if(valid) {
+            valid_lod_indices.push_back(i);
+        }
+    }
+    
+    
     op.set_index_values(assigns);
     op.set_valid_indices(valid_indices);
+    op.set_valid_lod_indices(valid_lod_indices);
 }
 
 int PeelSequenceGenerator::calculate_cost(vector<unsigned int>& seq) {

@@ -97,6 +97,8 @@ void PeelSequenceGenerator::build_peel_order() {
             abort();
         }
         
+        //PeelOperation p = get_best_operation(tmp);
+        
         
         PeelOperation p = use_random ? get_random_operation(tmp) : get_best_operation(tmp);
         
@@ -118,7 +120,7 @@ void PeelSequenceGenerator::build_peel_order() {
         
         printf("%s\n", p.debug_string().c_str());
     }
-    
+        
     
     int iterations = 1000000;
     Progress p("Peel Sequence:", iterations);
@@ -136,6 +138,7 @@ void PeelSequenceGenerator::build_peel_order() {
     
     int swap0, swap1, tmp, new_cost;
     int cost = calculate_cost(current);
+    int iter = -1;
     //int best_cost = cost;
     
     swap0 = swap1 = 0;
@@ -163,6 +166,7 @@ void PeelSequenceGenerator::build_peel_order() {
         
         if((new_cost != -1) and (new_cost < cost)) {
             printf("iteration %d: %d\n", i, new_cost);
+            iter = i;
         }
         
         
@@ -200,6 +204,10 @@ void PeelSequenceGenerator::build_peel_order() {
     }
     
     p.finish_msg("final cost = %d", calculate_cost(current));
+    
+    //printf("%d %d\n", cost, iter);
+    
+    //exit(0);
     
     //printf("best = %d\n", best_cost);
     

@@ -970,8 +970,8 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
     
     //int window_index = 0;
     //int window_length[] = {21, 23, 25};
-    int window_length = 20;
-    //int window_length = 32;
+    //int window_length = 20;
+    int window_length = 32;
     
     
     Peeler peel(ped, map, psg, 0);
@@ -1198,7 +1198,8 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
                 
                 //run_gpu_msampler_sampling_kernel(dev_state, m_ordering[j]);
                 //run_gpu_msampler_window_sampling_kernel(windowed_msampler_blocks(window_length[window_index]), 32, dev_state, m_ordering[j], window_length[window_index]);
-                run_gpu_msampler_window_sampling_kernel(windowed_msampler_blocks(window_length), 32, dev_state, m_ordering[j], window_length);
+                
+                run_gpu_msampler_window_sampling_kernel(windowed_msampler_blocks(window_length), window_length, dev_state, m_ordering[j], window_length, j);
                 cudaThreadSynchronize();
                 error = cudaGetLastError();
                 if(error != cudaSuccess) {

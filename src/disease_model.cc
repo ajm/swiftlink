@@ -106,16 +106,16 @@ double DiseaseModel::get_apriori_prob(enum affection a, enum unphased_trait t) c
 // of what the trait might be in an individual given their affection status
 // this info will be used by the Person objects
 void DiseaseModel::finish_init() {
-    
-	// penetrances
+	
+    // penetrances
 	penetrance_prob[AFFECTED][TRAIT_HOMO_A] = penetrance[TRAIT_HOMO_A];
 	penetrance_prob[AFFECTED][TRAIT_HETERO] = penetrance[TRAIT_HETERO];
 	penetrance_prob[AFFECTED][TRAIT_HOMO_U] = penetrance[TRAIT_HOMO_U];
-
+    
 	penetrance_prob[UNAFFECTED][TRAIT_HOMO_A] = (1.0 - penetrance[TRAIT_HOMO_A]);
 	penetrance_prob[UNAFFECTED][TRAIT_HETERO] = (1.0 - penetrance[TRAIT_HETERO]);
 	penetrance_prob[UNAFFECTED][TRAIT_HOMO_U] = (1.0 - penetrance[TRAIT_HOMO_U]);
-
+    
 	penetrance_prob[UNKNOWN_AFFECTION][TRAIT_HOMO_A] = 0.25;
 	penetrance_prob[UNKNOWN_AFFECTION][TRAIT_HETERO] = 0.25;
 	penetrance_prob[UNKNOWN_AFFECTION][TRAIT_HOMO_U] = 0.25;
@@ -132,5 +132,4 @@ void DiseaseModel::finish_init() {
 	apriori_prob[UNKNOWN_AFFECTION][TRAIT_HOMO_A] = apriori_prob[AFFECTED][TRAIT_HOMO_A] + apriori_prob[UNAFFECTED][TRAIT_HOMO_A];
 	apriori_prob[UNKNOWN_AFFECTION][TRAIT_HETERO] = apriori_prob[AFFECTED][TRAIT_HETERO] + apriori_prob[UNAFFECTED][TRAIT_HETERO];
 	apriori_prob[UNKNOWN_AFFECTION][TRAIT_HOMO_U] = apriori_prob[AFFECTED][TRAIT_HOMO_U] + apriori_prob[UNAFFECTED][TRAIT_HOMO_U];
-
 }

@@ -25,6 +25,8 @@ using namespace std;
 #include "progress.h"
 #include "random.h"
 
+#include "meiosis_sampler.h"
+
 #include "peeler.h"
 #include <vector>
 
@@ -979,6 +981,13 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
     
     vector<PeelOperation>& ops = psg->get_peel_order();
     
+#define HYBRID_CPUGPU 1
+#ifdef HYBRID_CPUGPU
+    bool gpu_active = true;
+    MeiosisSampler msampler(ped, map);
+
+#endif
+    
     /*
     run_gpu_print_kernel(dev_state);
     cudaThreadSynchronize();
@@ -1019,6 +1028,9 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
     int markers_per_window = 2;
     for(int i = 0; i < markers_per_window; ++i)
         l_ordering.push_back(i);
+        
+    int num_blocks = (map->num_markers() / markers_per_window) + \
+                    ((map->num_markers() % markers_per_window == 0) ? 0 : 1);
     
     //for(int i = 0; i < num_meioses; ++i)
     //    m_ordering.push_back(i);
@@ -1066,6 +1078,12 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
             }
             */
             
+#ifdef HYBRID_CPUGPU
+            if(not gpu_active) {
+                CUDA_CALLANDTEST(cudaMemcpy(dev_graph, dg.get_internal_ptr(), dg.get_internal_size(), cudaMemcpyHostToDevice));
+                gpu_active = true;
+            }
+#endif
             
             random_shuffle(l_ordering.begin(), l_ordering.end());
             
@@ -1081,8 +1099,8 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
 #endif
             
             for(int j = 0; j < int(l_ordering.size()); ++j) {
-                int num_blocks = (map->num_markers() / markers_per_window) + \
-                                ((map->num_markers() % markers_per_window == 0) ? 0 : 1);
+                //int num_blocks = (map->num_markers() / markers_per_window) + 
+                //                ((map->num_markers() % markers_per_window == 0) ? 0 : 1);
                 
                 run_gpu_lsampler_kernel(num_blocks, lsampler_threads, dev_state, markers_per_window, l_ordering[j]);
                 
@@ -1165,6 +1183,20 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
             */
         }
         else {
+#ifdef HYBRID_CPUGPU
+            if(gpu_active) {
+                CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
+                gpu_active = false;
+            }
+
+            random_shuffle(m_ordering.begin(), m_ordering.end());
+            
+            msampler.reset(dg, m_ordering[0]);
+            for(unsigned int j = 0; j < m_ordering.size(); ++j) {
+                msampler.step(dg, m_ordering[j]);
+            }
+#else
+
 //#define GPU_MSAMPLER_MICROBENCHMARKING 1
 #ifdef GPU_MSAMPLER_MICROBENCHMARKING
             cudaEvent_t start;
@@ -1234,13 +1266,31 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
             cudaEventDestroy(start);
             cudaEventDestroy(stop);
 #endif
+
+#endif
         }
         
         
         p.increment();
         
-        if(i < options.burnin)
+        if(i < options.burnin) {
+//#define CODA_OUTPUT 1
+#ifdef CODA_OUTPUT
+            if(gpu_active) {
+                CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
+                gpu_active = false;
+            }
+            
+            double current_likelihood = dg.get_likelihood();
+            if(current_likelihood == LOG_ILLEGAL) {
+                fprintf(stderr, "error: descent graph illegal...\n");
+                abort();
+            }
+            
+            fprintf(stderr, "%d\t%f\n", i+1, current_likelihood);
+#endif
             continue;
+        }
         
         if((i % options.scoring_period) == 0) {
             /*
@@ -1248,6 +1298,14 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
                 peelers[i]->process(&dg);
             }
             */
+            
+#ifdef HYBRID_CPUGPU
+            if(not gpu_active) {
+                CUDA_CALLANDTEST(cudaMemcpy(dev_graph, dg.get_internal_ptr(), dg.get_internal_size(), cudaMemcpyHostToDevice));
+                gpu_active = true;
+            }
+#endif
+            
             
 #ifdef GPU_LODSCORE_MICROBENCHMARKING
             cudaEvent_t start;

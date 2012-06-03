@@ -30,7 +30,7 @@ bool LinkageProgram::run() {
         fprintf(stderr, "%s\n", map.debug_string().c_str());
     }
     */
-    
+        
     init_random();
     seed_random_implicit();
     

@@ -120,7 +120,13 @@ void PeelSequenceGenerator::build_peel_order() {
         
         printf("%s\n", p.debug_string().c_str());
     }
-        
+    
+    /*
+    for(unsigned i = 0; i < peelorder.size(); ++i) {
+        printf("%d\n", peelorder[i].get_peelnode());
+    }
+    exit(0);
+    */
     
     int iterations = 1000000;
     Progress p("Peel Sequence:", iterations);

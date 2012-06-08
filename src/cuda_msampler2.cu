@@ -732,8 +732,8 @@ __global__ void msampler_window_sampling_kernel(struct gpu_state* state, int mei
 }
 */
 
-__global__ void msampler_window_sampling_kernel(struct gpu_state* state, int meiosis, int window_length, int index) {
-    int starting_locus = blockIdx.x * window_length;
+__global__ void msampler_window_sampling_kernel(struct gpu_state* state, int meiosis, int window_length, int index, int offset) {
+    int starting_locus = (blockIdx.x + offset) * 2 * (window_length - 1);
     int current_locus;
     int personid = (state->founderallele_count / 2) + (meiosis / 2);
     int allele = meiosis % 2;
@@ -743,34 +743,25 @@ __global__ void msampler_window_sampling_kernel(struct gpu_state* state, int mei
     float total;
     int last_index;
     
-    //if((index % 2) == 0) {
-    //    starting_locus += (window_length / 2);
-    //}
-     
-    //starting_locus += ((window_length / 4) * (index % 4));
+    if((index % 2) == 0) {
+        starting_locus += (window_length / 2);
+    }
     
-    // these are all 20 because shared mem needs to be 
-    // declared with a constant
+     
+    // shared mem needs to be declared with a constant
     __shared__ float sh_theta[64];
     __shared__ float sh_inversetheta[64];
     __shared__ float sh_matrix[64][2];
     __shared__ int sh_descentgraph[64][2];
     
-    //int buffer = 0;
-    //int left_buffer = starting_locus == 0 ? 0 : buffer;
-    //
-    //int window_starting_locus = starting_locus - left_buffer;
-    //int buffer_window_length = window_length + left_buffer + buffer;
     
     map_length = map->map_length;
     
-    //current_locus = window_starting_locus + threadIdx.x;
     current_locus = starting_locus + threadIdx.x;
     
     if((map_length - current_locus) < 2)
         return;
     
-    //if((threadIdx.x < buffer_window_length) && (current_locus < map_length)) {
     if((threadIdx.x < window_length) && (current_locus < map_length)) {
         
         sh_descentgraph[threadIdx.x][0] = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, personid, current_locus, GPU_MATERNAL_ALLELE));
@@ -794,7 +785,6 @@ __global__ void msampler_window_sampling_kernel(struct gpu_state* state, int mei
         sh_matrix[0][1] /= total;
         
         // forward
-        //for(i = 1; i < buffer_window_length; ++i) {
         for(i = 1; i < window_length; ++i) {
             //if((window_starting_locus + i) >= map_length)
             if((starting_locus + i) >= map_length)
@@ -814,8 +804,6 @@ __global__ void msampler_window_sampling_kernel(struct gpu_state* state, int mei
             last_index = i;
         }
         
-        
-        
         // backward
         i = last_index;
         sh_descentgraph[i][allele] = founderallele_sample2(state, sh_matrix[i][0], sh_matrix[i][1]);
@@ -832,7 +820,6 @@ __global__ void msampler_window_sampling_kernel(struct gpu_state* state, int mei
     __syncthreads();
     
     
-    //if((threadIdx.x >= left_buffer) && (threadIdx.x < (window_length + left_buffer)) && (current_locus < map_length)) {
     if((threadIdx.x < window_length) && (current_locus < map_length)) {
         DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, current_locus, GPU_MATERNAL_ALLELE), sh_descentgraph[threadIdx.x][0]);
         DESCENTGRAPH_SET(dg, DESCENTGRAPH_OFFSET(dg, personid, current_locus, GPU_PATERNAL_ALLELE), sh_descentgraph[threadIdx.x][1]);
@@ -851,8 +838,8 @@ void run_gpu_msampler_sampling_kernel(struct gpu_state* state, int meiosis) {
     msampler_sampling_kernel<<<1, 256>>>(state, meiosis);
 }
 
-void run_gpu_msampler_window_sampling_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis, int window_length, int index) {
-    msampler_window_sampling_kernel<<<numblocks, numthreads>>>(state, meiosis, window_length, index);
+void run_gpu_msampler_window_sampling_kernel(int numblocks, int numthreads, struct gpu_state* state, int meiosis, int window_length, int index, int offset) {
+    msampler_window_sampling_kernel<<<numblocks, numthreads>>>(state, meiosis, window_length, index, offset);
 }
 
 void setup_msampler_kernel() {

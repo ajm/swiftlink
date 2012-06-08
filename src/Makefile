@@ -45,7 +45,7 @@ OBJECTS	:= \
 	cuda_linkage.o \
 	tinymt/tinymt32_host.o
 
-apphybrid: $(OBJECTS)
+appgpu: $(OBJECTS)
 	$(CXX) -o $@ $(OBJECTS) $(LDFLAGS) $(LIBS)
 
 %.o: %.cc

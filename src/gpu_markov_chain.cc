@@ -60,8 +60,11 @@ size_t GPUMarkovChain::calculate_memory_requirements(vector<PeelOperation>& ops)
     size_t mem_pedigree;
     size_t mem_map;
     size_t mem_rand;
-    size_t mem_fag;
+    size_t mem_dg;
+    size_t mem_msampler;
     
+    
+    // genetic stuff
     mem_map = sizeof(struct geneticmap) + \
                 (4 * sizeof(fp_type) * (map->num_markers() - 1)) + \
                 (4 * sizeof(fp_type) *  map->num_markers());
@@ -75,8 +78,17 @@ size_t GPUMarkovChain::calculate_memory_requirements(vector<PeelOperation>& ops)
         }
     }
     
+    mem_rand = sizeof(curandState) * lsampler_num_blocks();
+    
+    mem_dg = sizeof(struct descentgraph) + (sizeof(int) * (2 * ped->num_members() * map->num_markers()));
+    
+    
+    // m-sampler stuff, mostly done in shared mem
+    mem_msampler = sizeof(double) * map->num_markers() * 2;
+    
+    // l-sampler stuff
     mem_per_sampler = 0;
-    //mem_shared = 0;
+    
     for(unsigned i = 0; i < ops.size(); ++i) {
         double s = ops[i].get_cutset_size();
         
@@ -87,30 +99,33 @@ size_t GPUMarkovChain::calculate_memory_requirements(vector<PeelOperation>& ops)
         mem_per_sampler += sizeof(struct rfunction);            // containing struct
     }
     
-    mem_rand = sizeof(curandState) * num_blocks();
-    
-    int num_fa = ped->num_founders() * 2;
-    //mem_fag = (sizeof(struct founderallelegraph) + (num_fa * sizeof(int)) + (num_fa * num_fa * sizeof(struct adjacent_node))) * map->num_markers();
-    
-    return (num_samplers() * mem_per_sampler) + mem_pedigree + mem_map + mem_rand + mem_fag + sizeof(struct gpu_state) + (sizeof(int) * ped->num_members());
+    return (num_samplers() * mem_per_sampler) + \
+           (mem_pedigree + mem_map + mem_rand + mem_msampler + mem_dg + sizeof(struct gpu_state)) + \
+           (sizeof(int) * ped->num_members()) + \
+           (sizeof(double) * (map->num_markers() - 1)) + \
+           (mem_msampler);
 }
 
 unsigned GPUMarkovChain::num_samplers() {
     return map->num_markers();
 }
 
+/*
 int GPUMarkovChain::num_threads_per_block() {
     //return NUM_THREADS;
     return 96;
 }
+*/
 
 int GPUMarkovChain::lsampler_num_blocks() {
     return (map->num_markers() / 2) + ((map->num_markers() % 2) == 0 ? 0 : 1);
 }
 
+/*
 int GPUMarkovChain::num_blocks() {
     return lsampler_num_blocks();
 }
+*/
 
 int GPUMarkovChain::msampler_num_blocks() {
     return (map->num_markers() / 8) + ((map->num_markers() % 8) == 0 ? 0 : 1);
@@ -241,7 +256,7 @@ curandState* GPUMarkovChain::gpu_init_random_curand() {
     long int* host_seeds;
     long int* dev_seeds;
     curandState* dev_rng_state;
-    int prng_num = num_blocks();
+    int prng_num = lsampler_num_blocks();
     fstream randfile;
     
     host_seeds = (long int*) malloc(sizeof(*host_seeds) * prng_num);
@@ -275,7 +290,7 @@ curandState* GPUMarkovChain::gpu_init_random_curand() {
     CUDA_CALLANDTEST(cudaMalloc((void**) &dev_rng_state, sizeof(*dev_rng_state) * prng_num));
     
     
-    run_gpu_curand_init_kernel(num_blocks(), dev_rng_state, dev_seeds);
+    run_gpu_curand_init_kernel(lsampler_num_blocks(), dev_rng_state, dev_seeds);
     
     
     free(host_seeds);
@@ -826,7 +841,9 @@ void GPUMarkovChain::copy_from_gpu(DescentGraph& dg) {
 }
 
 int GPUMarkovChain::windowed_msampler_blocks(int window_length) {
-    return (map->num_markers() / window_length) + ((map->num_markers() % window_length) == 0 ? 0 : 1);
+    int half_markers = map->num_markers() / 2;
+    return (half_markers / window_length) + ((half_markers % window_length) == 0 ? 0 : 1);
+    //return (map->num_markers() / window_length) + ((map->num_markers() % window_length) == 0 ? 0 : 1);
 }
 
 int GPUMarkovChain::optimal_lodscore_threads() {
@@ -963,25 +980,19 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
     int odd_count;
     cudaError_t error;
     int num_meioses = 2 * (ped->num_members() - ped->num_founders());
-    //size_t shared_mem = 8 * ((2 * (2 * ped->num_founders()) * (2 * ped->num_founders())) + (2 * ped->num_founders())) ;
     size_t shared_mem = (14 * (2 * ped->num_founders())) + (2 * ped->num_members());
     shared_mem += (shared_mem % 4);
     shared_mem *= 8;
     
-    //int msampler_blocks = (map->num_markers() / 10) + ((map->num_markers() % 10) == 0 ? 0 : 1);
-    
-    //int window_index = 0;
-    //int window_length[] = {21, 23, 25};
-    //int window_length = 20;
     int window_length = 32;
     
     
     Peeler peel(ped, map, psg, 0);
     double trait_likelihood = peel.get_trait_prob();
     
-    vector<PeelOperation>& ops = psg->get_peel_order();
+    //vector<PeelOperation>& ops = psg->get_peel_order();
     
-#define HYBRID_CPUGPU 1
+//#define HYBRID_CPUGPU 1
 #ifdef HYBRID_CPUGPU
     bool gpu_active = true;
     MeiosisSampler msampler(ped, map);
@@ -1008,10 +1019,17 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
     
     fprintf(stderr, "GPU: setup done\n");
     
+    size_t avail;
+    size_t total;
+    
+    cudaMemGetInfo( &avail, &total );
+    size_t used = total - avail;
+    
+    printf("Device memory used: %f MB\n", used / 1e6);
+
+    
     
     //run_gpu_print_kernel(dev_state);
-    
-    
     
     
     CUDA_CALLANDTEST(cudaMemcpy(dev_graph, dg.get_internal_ptr(), dg.get_internal_size(), cudaMemcpyHostToDevice));
@@ -1035,7 +1053,7 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
     //for(int i = 0; i < num_meioses; ++i)
     //    m_ordering.push_back(i);
         
-    for(unsigned int i = 0; i < num_meioses; ++i) {
+    for(int i = 0; i < num_meioses; ++i) {
         unsigned person_id = ped->num_founders() + (i / 2);
         enum parentage p = static_cast<enum parentage>(i % 2);
         
@@ -1057,26 +1075,7 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
     for(int i = 0; i < (options.iterations + options.burnin); ++i) {
         
         if(get_random() < options.lsampler_prob) {
-        //if((i % 2) == 0) {
-            
-            /*
-            run_gpu_lsampler_kernel(even_count, num_threads_per_block(), dev_state, 2, 0);            
-            cudaThreadSynchronize();
-            error = cudaGetLastError();
-            if(error != cudaSuccess) {
-                printf("CUDA kernel error (%s:%d): %s\n", __FILE__, __LINE__, cudaGetErrorString(error));
-                abort();
-            }
-            
-            
-            run_gpu_lsampler_kernel(odd_count, num_threads_per_block(), dev_state, 2, 1);
-            cudaThreadSynchronize();
-            error = cudaGetLastError();
-            if(error != cudaSuccess) {
-                printf("CUDA kernel error (%s:%d): %s\n", __FILE__, __LINE__, cudaGetErrorString(error));
-                abort();
-            }
-            */
+        //if((i % 2) == 0) {  // use this to run computeprof, as it only shows common code paths between runs
             
 #ifdef HYBRID_CPUGPU
             if(not gpu_active) {
@@ -1172,7 +1171,7 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
             
             
             
-            /*
+#ifdef GPU_DEBUG
             // test legality of descent graph
             CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
             
@@ -1180,7 +1179,7 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
                 fprintf(stderr, "error: descent graph illegal after l-sampler (%d)\n", i);
                 abort();
             }
-            */
+#endif
         }
         else {
 #ifdef HYBRID_CPUGPU
@@ -1228,10 +1227,7 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
                     abort();
                 }
                 
-                //run_gpu_msampler_sampling_kernel(dev_state, m_ordering[j]);
-                //run_gpu_msampler_window_sampling_kernel(windowed_msampler_blocks(window_length[window_index]), 32, dev_state, m_ordering[j], window_length[window_index]);
-                
-                run_gpu_msampler_window_sampling_kernel(windowed_msampler_blocks(window_length), window_length, dev_state, m_ordering[j], window_length, j);
+                run_gpu_msampler_window_sampling_kernel(windowed_msampler_blocks(window_length-1), window_length, dev_state, m_ordering[j], window_length, j, 0);
                 cudaThreadSynchronize();
                 error = cudaGetLastError();
                 if(error != cudaSuccess) {
@@ -1239,11 +1235,16 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
                     abort();
                 }
                 
-                //window_index = (window_index + 1) % 3;
+                run_gpu_msampler_window_sampling_kernel(windowed_msampler_blocks(window_length-1), window_length, dev_state, m_ordering[j], window_length, j, 1);
+                cudaThreadSynchronize();
+                error = cudaGetLastError();
+                if(error != cudaSuccess) {
+                    printf("CUDA kernel error (%s:%d): %s\n", __FILE__, __LINE__, cudaGetErrorString(error));
+                    abort();
+                }
                 
                 
-                
-                /*
+#ifdef GPU_DEBUG
                 // test legality of descent graph
                 CUDA_CALLANDTEST(cudaMemcpy(dg.get_internal_ptr(), dev_graph, dg.get_internal_size(), cudaMemcpyDeviceToHost));
                 
@@ -1251,7 +1252,8 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
                     fprintf(stderr, "error: descent graph illegal after m-sampler (meiosis %d) (%d)\n", j, i);
                     abort();
                 }
-                */
+#endif
+
             }
 #ifdef GPU_MSAMPLER_MICROBENCHMARKING
             cudaEventRecord(stop, 0);
@@ -1363,12 +1365,6 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
     
     run_gpu_lodscorenormalise_kernel(map->num_markers() - 1, dev_state, count, trait_likelihood);
     cudaThreadSynchronize();
-    
-    
-    //run_gpu_lodscoreprint_kernel(dev_state);
-    //cudaThreadSynchronize();
-    //printf("count = %d, P(T) = %.3f\n", count, trait_likelihood / log(10));
-    
     
     /*
     //double* lod_scores = new double[map->num_markers() - 1];

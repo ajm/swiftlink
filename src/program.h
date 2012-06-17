@@ -9,6 +9,7 @@ using namespace std;
 #include "pedigree.h"
 #include "genetic_map.h"
 #include "disease_model.h"
+#include "types.h"
 
 
 class Program {
@@ -24,17 +25,19 @@ class Program {
 	vector<Pedigree> pedigrees;
 	GeneticMap map;
 	DiseaseModel dm;
-	bool verbose;
+	struct mcmc_options options;
+	string outfile;
 	
  public :
-	Program(const char* ped, const char* map, const char* dat, bool verbose) : 
+	Program(const char* ped, const char* map, const char* dat, const char* out, struct mcmc_options options) : 
 	    pedfile(ped), 
 	    mapfile(map), 
-	    datfile(dat), 
+	    datfile(dat),
 	    pedigrees(),
-	    map(),
+	    map(options.lodscores),
 	    dm(),
-	    verbose(verbose) {
+	    options(options),
+	    outfile(out) {
 
         if(! read_and_check_input()) {
             exit(1);
@@ -48,7 +51,8 @@ class Program {
 	    pedigrees(rhs.pedigrees),
 	    map(rhs.map),
 	    dm(rhs.dm),
-	    verbose(rhs.verbose) {}
+	    options(rhs.options),
+	    outfile(rhs.outfile) {}
     
     Program& operator=(const Program& rhs) {
         
@@ -59,7 +63,8 @@ class Program {
 	        pedigrees = rhs.pedigrees;
 	        map = rhs.map;
 	        dm = rhs.dm;
-	        verbose = rhs.verbose;
+	        options = rhs.options;
+	        outfile = rhs.outfile;
         }
         
         return *this;

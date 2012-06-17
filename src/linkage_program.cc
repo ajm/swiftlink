@@ -25,7 +25,7 @@ bool LinkageProgram::run() {
     double* tmp;
     
     /*
-    if(verbose) {
+    if(options.verbose) {
         fprintf(stderr, "%s\n", dm.debug_string().c_str());
         fprintf(stderr, "%s\n", map.debug_string().c_str());
     }
@@ -36,7 +36,7 @@ bool LinkageProgram::run() {
     
     for(unsigned int i = 0; i < pedigrees.size(); ++i) {
         
-        if(verbose) {
+        if(options.verbose) {
             fprintf(stderr, "%s\n", pedigrees[i].debug_string().c_str());
         }
         
@@ -53,9 +53,9 @@ bool LinkageProgram::run() {
         lod_scores.push_back(tmp);
     }
     
-    LinkageWriter lw(&map, output_filename, verbose);
+    LinkageWriter lw(&map, outfile, options.verbose);
     if(not lw.write(lod_scores)) {
-        fprintf(stderr, "error: could not write output file '%s'\n", output_filename.c_str());
+        fprintf(stderr, "error: could not write output file '%s'\n", outfile.c_str());
         
         return false;
     }
@@ -67,7 +67,7 @@ bool LinkageProgram::run() {
 
 double* LinkageProgram::run_pedigree(Pedigree& p) {
     
-    if(verbose) {
+    if(options.verbose) {
         fprintf(stderr, "processing pedigree %s\n", p.get_id().c_str());
     }
     
@@ -81,7 +81,7 @@ double* LinkageProgram::run_pedigree(Pedigree& p) {
     }
     
     
-    PeelSequenceGenerator psg(&p, &map, verbose);
+    PeelSequenceGenerator psg(&p, &map, options.verbose);
     if((options.peelseq_filename == "") or not psg.read_from_file(options.peelseq_filename)) {
         psg.build_peel_order();
     }
@@ -91,12 +91,11 @@ double* LinkageProgram::run_pedigree(Pedigree& p) {
     si.parallel_run(dg, options.si_iterations);
     
 
-    if(not use_gpu) {
+    if(not options.use_gpu) {
         MarkovChain chain(&p, &map, &psg, options);
         return chain.run(dg);
     }
     else {
-        // XXX this is such a bad idea... need a better api to solve this
         //GPUMarkovChain chain(&p, &map, &psg, options);
         //return chain.run(dg);
     }

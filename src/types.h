@@ -51,22 +51,32 @@ string affection_str(enum affection a);
 string parent_str(enum parentage p);
 
 struct mcmc_options {
+    bool verbose;
+
     int burnin;
     int iterations;
     int si_iterations;
     int scoring_period;
+    int lodscores;
     
     double lsampler_prob;
+    
+    int thread_count;
+    bool use_gpu;
     
     string peelseq_filename;
     string random_filename;
     
     mcmc_options() :
+        verbose(false),
         burnin(DEFAULT_BURNIN_ITERATIONS),
         iterations(DEFAULT_MCMC_ITERATIONS),
         si_iterations(DEFAULT_SEQUENTIALIMPUTATION_RUNS),
         scoring_period(DEFAULT_SCORING_PERIOD),
+        lodscores(DEFAULT_LODSCORES),
         lsampler_prob(DEFAULT_LSAMPLER_PROB),
+        thread_count(DEFAULT_THREAD_COUNT),
+        use_gpu(false),
         peelseq_filename(""),
         random_filename("") {}
 };

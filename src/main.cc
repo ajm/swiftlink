@@ -34,18 +34,15 @@ char* mapfile = NULL;
 char* pedfile = NULL;
 char* datfile = NULL;
 char* outfile = DEFAULT_RESULTS_FILENAME;
+
 struct mcmc_options options;
 
-bool verbose = false;
 //enum analysistype analysis = LINKAGE;
-int thread_count = DEFAULT_THREAD_COUNT;
-bool use_gpu = false;
-
 
 
 void _usage(char *prog) {
 	fprintf(stderr,
-"Usage: %s [OPTION] -p pedfile -m mapfile -d datfile\n"
+"Usage: %s [OPTIONS] -p pedfile -m mapfile -d datfile\n"
 "\n"
 "Input files:\n"
 "  -p pedfile, --pedigree=pedfile\n"
@@ -53,24 +50,35 @@ void _usage(char *prog) {
 "  -d datfile, --dat=datfile\n"
 "\n"
 "Output files:\n"
-"  -o outfile, --output=outfile\n"
+"  -o outfile, --output=outfile            (default = '%s')\n"
 "\n"
 "MCMC options:\n"
-"  -i NUM,     --iterations=NUM\n"
-"  -b NUM,     --burnin=NUM\n"
-"  -s NUM,     --sequentialimputation=NUM\n"
-"  -x NUM,     --scoringperiod=NUM\n"
-"  -l FLOAT,   --lsamplerprobability=FLOAT\n"
+"  -i NUM,     --iterations=NUM            (default = %d)\n"
+"  -b NUM,     --burnin=NUM                (default = %d)\n"
+"  -s NUM,     --sequentialimputation=NUM  (default = %d)\n"
+"  -x NUM,     --scoringperiod=NUM         (default = %d)\n"
+"  -l FLOAT,   --lsamplerprobability=FLOAT (default = %.1f)\n"
+"  -n NUM,     --lodscores=NUM             (default = %d)\n"
 "\n"
 "Runtime options:\n"
-"  -c NUM, --cores=NUM\n"
-"  -g, --gpu\n"
+"  -c NUM,     --cores=NUM                 (default = %d)\n"
+"  -g,         --gpu\n"
 "\n"
 "Misc:\n"
 "  -q seqfile, --peelsequence=seqfile\n"
 "  -v,         --verbose\n"
 "  -h,         --help\n"
-"\n", prog);
+"\n", 
+prog, 
+DEFAULT_RESULTS_FILENAME, 
+DEFAULT_MCMC_ITERATIONS,
+DEFAULT_BURNIN_ITERATIONS,
+DEFAULT_SEQUENTIALIMPUTATION_RUNS,
+DEFAULT_SCORING_PERIOD,
+DEFAULT_LSAMPLER_PROB,
+DEFAULT_LODSCORES,
+DEFAULT_THREAD_COUNT
+);
 }
 
 bool str2int(int &i, char* s) {
@@ -139,12 +147,13 @@ void _handle_args(int argc, char **argv) {
 	        {"dat",                 required_argument,  0,      'd'},
 	        {"output",              required_argument,  0,      'o'},
 	        {"peelsequence",        required_argument,  0,      'q'},
+	        {"lodscores",           required_argument,  0,      'n'},
 	        {0, 0, 0, 0}
 	    };
     
     int option_index = 0;
     
-	while ((ch = getopt_long(argc, argv, ":p:d:m:o:i:b:s:l:c:x:q:vhcg", long_options, &option_index)) != -1) {
+	while ((ch = getopt_long(argc, argv, ":p:d:m:o:i:b:s:l:c:x:q:n:vhcg", long_options, &option_index)) != -1) {
 		switch (ch) {
 			case 'p':
 				pedfile = optarg;
@@ -159,7 +168,7 @@ void _handle_args(int argc, char **argv) {
 				break;
 				
 			case 'v':
-				verbose = true;
+				options.verbose = true;
 				break;
 				
             case 'o':
@@ -211,12 +220,12 @@ void _handle_args(int argc, char **argv) {
                 break;
                 
             case 'c':
-                if(not str2int(thread_count, optarg)) {
+                if(not str2int(options.thread_count, optarg)) {
                     fprintf(stderr, "%s: option '-c' requires an int as an argument ('%s' given)\n", argv[0], optarg);
                     exit(EXIT_FAILURE);
                 }
-                if(thread_count < 1) {
-                    fprintf(stderr, "%s: thread count must be at least one (%d given)\n", argv[0], thread_count);
+                if(options.thread_count < 1) {
+                    fprintf(stderr, "%s: thread count must be at least one (%d given)\n", argv[0], options.thread_count);
                     exit(EXIT_FAILURE);
                 }
                 break;
@@ -232,8 +241,19 @@ void _handle_args(int argc, char **argv) {
                 }
                 break;
                 
+            case 'n':
+                if(not str2int(options.lodscores, optarg)) {
+                    fprintf(stderr, "%s: option '-n' requires an int as an argument ('%s' given)\n", argv[0], optarg);
+                    exit(EXIT_FAILURE);
+                }
+                if(options.lodscores <= 0) {
+                    fprintf(stderr, "%s: lodscores must be positive (%d given)\n", argv[0], options.lodscores);
+                    exit(EXIT_FAILURE);
+                }
+                break;
+                
             case 'g':
-                use_gpu = true;
+                options.use_gpu = true;
                 break;
                 
             case 'q':
@@ -292,14 +312,12 @@ void _handle_args(int argc, char **argv) {
 }
 
 void _set_runtime_parameters() {
-    printf("setting %d threads\n", thread_count);
-    omp_set_num_threads(thread_count);
+    printf("setting %d threads\n", options.thread_count);
+    omp_set_num_threads(options.thread_count);
 }
 
 int linkage_analysis() {
-    LinkageProgram lp(pedfile, mapfile, datfile, outfile, options, verbose);
-    
-    lp.set_usegpu(use_gpu);
+    LinkageProgram lp(pedfile, mapfile, datfile, outfile, options);
     
     return lp.run() ? EXIT_SUCCESS : EXIT_FAILURE;
 }

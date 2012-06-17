@@ -97,8 +97,8 @@ double* LinkageProgram::run_pedigree(Pedigree& p) {
     }
     else {
         // XXX this is such a bad idea... need a better api to solve this
-        GPUMarkovChain chain(&p, &map, &psg, options);
-        return chain.run(dg);
+        //GPUMarkovChain chain(&p, &map, &psg, options);
+        //return chain.run(dg);
     }
     
     fprintf(stderr, "error: nothing was run (%s:%d)\n", __FILE__, __LINE__);

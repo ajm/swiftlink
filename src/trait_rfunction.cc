@@ -11,7 +11,10 @@ using namespace std;
 double TraitRfunction::get_recombination_probability(DescentGraph* dg, unsigned person_id, 
                                                      int maternal_allele, int paternal_allele) {
     double tmp = 1.0;
-        
+    double half_theta =         map->get_theta_partial(locus, 1);
+    //double half_inversetheta =  map->get_inversetheta_partial(locus, 1);
+    double half_inversetheta = 1.0 - half_theta;
+    
     tmp *= ((dg->get(person_id, locus,   MATERNAL) == maternal_allele) ? half_inversetheta : half_theta);
     tmp *= ((dg->get(person_id, locus+1, MATERNAL) == maternal_allele) ? half_inversetheta : half_theta);
             

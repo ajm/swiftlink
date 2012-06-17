@@ -12,6 +12,8 @@ using namespace std;
 
 
 bool GeneticMap::sanity_check() {
+    double tmp;
+
     if(map.size() != (thetas.size() + 1)) {
         fprintf(stderr, "error: number of markers = %d, number of thetas = %d\n", int(map.size()), int(thetas.size()));
         return false;
@@ -21,16 +23,9 @@ bool GeneticMap::sanity_check() {
         map[i].init_probs();
     
     for(unsigned i = 0; i < thetas.size(); ++i) {
-        //double tmp = haldane((get_marker(i+1).get_g_distance() - get_marker(i).get_g_distance()) / 2.0);
+        tmp = haldane(inverse_haldane(thetas[i]) / double(partial_theta_count + 1));
         
-        // XXX I am not sure if I can trust the genetic distances in the map
-        // file, this way at least I am consistent irrespective of what the user
-        // states the map is...
-        
-        double tmp = haldane(inverse_haldane(thetas[i]) / 2.0);
-        
-        half_thetas.push_back(tmp);
-        half_inversethetas.push_back(1.0 - tmp);
+        partial_thetas.push_back(tmp);
     }
     
     return true;
@@ -80,22 +75,15 @@ void GeneticMap::set_temperature(double t) {
     }
 }
 
-double GeneticMap::get_theta_halfway(unsigned int i) const {
-    return half_thetas[i];
+// XXX offset is 1 -- partial_theta_count
+double GeneticMap::get_theta_partial(unsigned int index, unsigned int offset) const {
+    return partial_thetas[index] * offset;
 }
 
-double GeneticMap::get_inversetheta_halfway(unsigned int i) const {
-    return half_inversethetas[i];
-}
-/*
-double GeneticMap::get_theta(unsigned int i) const {
-    return thetas[i];
+double GeneticMap::get_inversetheta_partial(unsigned int index, unsigned int offset) const {
+    return 1.0 - (partial_thetas[index] * offset);
 }
 
-double GeneticMap::get_inversetheta(unsigned int i) const {
-    return inversethetas[i];
-}
-*/
 double GeneticMap::get_theta_log(unsigned int i) const {
     return log(thetas[i]);
 }

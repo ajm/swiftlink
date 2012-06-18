@@ -130,10 +130,15 @@ class SamplerRfunction : public Rfunction {
     void set_locus_minimal(unsigned int l) {
         locus = l;
         
-        theta2     = map->get_theta(locus-1);
-        antitheta2 = map->get_inversetheta(locus-1);
-        theta      = map->get_theta(locus);
-        antitheta  = map->get_inversetheta(locus);
+        if(locus != 0) {
+            theta2     = map->get_theta(locus-1);
+            antitheta2 = map->get_inversetheta(locus-1);
+        }
+        
+        if(locus != (map->num_markers() - 1)) {
+            theta      = map->get_theta(locus);
+            antitheta  = map->get_inversetheta(locus);
+        }
         
         for(int i = 0; i < 4; ++i) {
             trait_cache[i] = get_trait_probability(peel_id, static_cast<enum phased_trait>(i));

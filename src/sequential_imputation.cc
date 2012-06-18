@@ -1,6 +1,7 @@
 using namespace std;
 
 #include <cstdio>
+#include <omp.h>
 
 #include "sequential_imputation.h"
 #include "logarithms.h"
@@ -56,10 +57,11 @@ void SequentialImputation::parallel_run(DescentGraph& dg, int iterations) {
         return;
     }
     
+    int num_threads = omp_get_max_threads();
     vector<LocusSampler*> lsamplers;
     vector<DescentGraph*> graphs;
-    vector<double> likelihoods(64, 0.0);
-    for(int i = 0; i < 64; ++i) {
+    vector<double> likelihoods(num_threads, 0.0);
+    for(int i = 0; i < num_threads; ++i) {
         LocusSampler* tmp = new LocusSampler(ped, map, psg, 0);
         lsamplers.push_back(tmp);
         
@@ -69,10 +71,10 @@ void SequentialImputation::parallel_run(DescentGraph& dg, int iterations) {
     
     Progress p("Sequential Imputation: ", iterations);
     
-    for(int i = 0; i < iterations; i += 64) {
+    for(int i = 0; i < iterations; i += num_threads) {
         
         #pragma omp parallel for
-        for(int j = 0; j < 64; ++j) {
+        for(int j = 0; j < num_threads; ++j) {
             if((i + j) < iterations) {
                 likelihoods[j] = lsamplers[j]->sequential_imputation(*(graphs[j]));
                 p.increment();
@@ -81,7 +83,7 @@ void SequentialImputation::parallel_run(DescentGraph& dg, int iterations) {
         
         int index = -1;
         
-        for(int j = 0; j < 64; ++j) {
+        for(int j = 0; j < num_threads; ++j) {
             if((i + j) < iterations) {
                 if(likelihoods[j] == LOG_ZERO) {
                     fprintf(stderr, "error: sequential imputation produced an invalid descent graph\n");
@@ -105,7 +107,7 @@ void SequentialImputation::parallel_run(DescentGraph& dg, int iterations) {
     
     printf("starting likelihood (log10) = %.3f\n", best_prob / log(10));
     
-    for(int i = 0; i < 64; ++i) {
+    for(int i = 0; i < num_threads; ++i) {
         delete lsamplers[i];
         delete graphs[i];
     }

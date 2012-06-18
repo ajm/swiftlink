@@ -32,9 +32,9 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
     
     // lod scorers
     vector<Peeler*> peelers;
-    for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
+    for(int i = 0; i < omp_get_max_threads(); ++i) {
         Peeler* tmp = new Peeler(ped, map, psg, lod);
-        tmp->set_locus(i);
+        //tmp->set_locus(i);
         peelers.push_back(tmp);
     }
     
@@ -47,10 +47,12 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
     
     // create samplers
     vector<LocusSampler*> lsamplers;
-    for(unsigned int i = 0; i < map->num_markers(); ++i) {
+    for(int i = 0; i < omp_get_max_threads(); ++i) {
         LocusSampler* tmp = new LocusSampler(ped, map, psg, i);
         lsamplers.push_back(tmp);
     }
+    
+    
     
     MeiosisSampler msampler(ped, map);
 
@@ -113,7 +115,8 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
             for(unsigned int j = 0; j < l_ordering.size(); ++j) {
                 #pragma omp parallel for
                 for(unsigned int k = l_ordering[j]; k < map->num_markers(); k += markers_per_window) {
-                    lsamplers[k]->step(dg, k);
+                    lsamplers[omp_get_thread_num()]->set_locus_minimal(k);
+                    lsamplers[omp_get_thread_num()]->step(dg, k);
                 }
             }
         }
@@ -169,7 +172,8 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
             
             #pragma omp parallel for
             for(int j = 0; j < int(map->num_markers() - 1); ++j) {
-                peelers[j]->process(&dg);
+                peelers[omp_get_thread_num()]->set_locus(j);
+                peelers[omp_get_thread_num()]->process(&dg);
             }
             
             #ifdef MICROBENCHMARK_TIMING

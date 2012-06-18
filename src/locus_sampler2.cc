@@ -106,7 +106,9 @@ void LocusSampler::sample_meiosis_indicators(vector<int>& pmk, DescentGraph& dg)
 }
 
 void LocusSampler::step(DescentGraph& dg, unsigned parameter) {
-        
+    
+    //set_locus_minimal(parameter); // XXX doing this here messes up the sequential imputation bits
+    
     // forward peel
     for(unsigned int i = 0; i < rfunctions.size(); ++i) {
         rfunctions[i].evaluate(&dg, 0.0);
@@ -133,6 +135,14 @@ void LocusSampler::set_locus(unsigned int l, bool left, bool right) {
 
     for(unsigned int i = 0; i < rfunctions.size(); ++i) {
         rfunctions[i].set_locus(locus, ignore_left, ignore_right);
+    }
+}
+
+void LocusSampler::set_locus_minimal(unsigned int l) {
+    locus = l;
+    
+    for(unsigned int i = 0; i < rfunctions.size(); ++i) {
+        rfunctions[i].set_locus_minimal(locus);
     }
 }
 

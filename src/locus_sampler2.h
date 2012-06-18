@@ -71,6 +71,7 @@ class LocusSampler : Sampler {
     void reset();
     
     void set_locus(unsigned int locus, bool ignore_left, bool ignore_right);
+    void set_locus_minimal(unsigned int locus);
 };
 
 #endif

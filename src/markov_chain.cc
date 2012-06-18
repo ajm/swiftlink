@@ -19,6 +19,7 @@ using namespace std;
 #include "progress.h"
 #include "types.h"
 #include "random.h"
+#include "lod_score.h"
 
 
 //#define MICROBENCHMARK_TIMING 1
@@ -27,6 +28,8 @@ using namespace std;
 
 double* MarkovChain::run(DescentGraph& dg) {
 
+    LODscores lod(map);
+    
     // lod scorers
     vector<Peeler*> peelers;
     for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {

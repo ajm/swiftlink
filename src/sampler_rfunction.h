@@ -12,9 +12,7 @@ class SamplerRfunction : public Rfunction {
     double antitheta;
     double theta2;
     double antitheta2;
-    double homoz_cache;
     vector<double*> transmission;
-    vector<double> thetas;
     vector<unsigned int> children;
     
     
@@ -45,9 +43,7 @@ class SamplerRfunction : public Rfunction {
         antitheta(1.0),
         theta2(0.0),
         antitheta2(1.0),
-        homoz_cache(1.0),
         transmission(),
-        thetas(4, 0.0),
         children() {
         
         set_locus(locus, ignore_left, ignore_right);
@@ -66,9 +62,7 @@ class SamplerRfunction : public Rfunction {
         antitheta(rhs.antitheta),
         theta2(rhs.theta2),
         antitheta2(rhs.antitheta2),
-        homoz_cache(rhs.homoz_cache),
         transmission(),
-        thetas(4, 0.0),
         children() {
     
         set_locus(locus, ignore_left, ignore_right);
@@ -93,9 +87,6 @@ class SamplerRfunction : public Rfunction {
             antitheta = rhs.antitheta;
             theta2 = rhs.theta2;
             antitheta2 = rhs.antitheta2;
-            homoz_cache = rhs.homoz_cache;
-            
-            thetas = rhs.thetas;
             
             teardown_transmission_cache();
             setup_transmission_cache();
@@ -113,19 +104,15 @@ class SamplerRfunction : public Rfunction {
         
         theta = theta2 = antitheta = antitheta2 = 1.0;
         
-        homoz_cache = 1.0;
-        
         
         if((locus != 0) and (not ignore_left)) {
             theta2 = map->get_theta(locus-1);
             antitheta2 = map->get_inversetheta(locus-1);
-            homoz_cache *= 0.5;
         }
         
         if((locus != (map->num_markers() - 1)) and (not ignore_right)) {
             theta = map->get_theta(locus);
             antitheta = map->get_inversetheta(locus);
-            homoz_cache *= 0.5;
         }
         
         for(int i = 0; i < 4; ++i) {
@@ -133,6 +120,27 @@ class SamplerRfunction : public Rfunction {
         }
         
         // XXX this is such a bad idea, it get changed all over the place!
+        // but only one thread operates on each locus at a time...
+        valid_indices = peel->get_matrix_indices(l);
+        
+        pmatrix.reset();
+        pmatrix_presum.reset();
+    }
+    
+    void set_locus_minimal(unsigned int l) {
+        locus = l;
+        
+        theta2     = map->get_theta(locus-1);
+        antitheta2 = map->get_inversetheta(locus-1);
+        theta      = map->get_theta(locus);
+        antitheta  = map->get_inversetheta(locus);
+        
+        for(int i = 0; i < 4; ++i) {
+            trait_cache[i] = get_trait_probability(peel_id, static_cast<enum phased_trait>(i));
+        }
+        
+        // XXX this is such a bad idea, it get changed all over the place!
+        // but only one thread operates on each locus at a time...
         valid_indices = peel->get_matrix_indices(l);
         
         pmatrix.reset();

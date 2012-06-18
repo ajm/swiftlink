@@ -55,75 +55,6 @@ double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_t
     abort();
 }
 
-/*
-double SamplerRfunction::get_recombination_probability(DescentGraph* dg, 
-                                     unsigned person_id, 
-                                     enum phased_trait parent_trait, 
-                                     enum phased_trait kid_trait, 
-                                     enum parentage parent) {
-    
-    enum trait t = get_trait(kid_trait, parent);
-    int p = 0;
-    double tmp = 1.0;
-    
-    // recombination + transmission prob
-    
-    // deal with homozygotes first
-    if(parent_trait == TRAIT_AA) {
-        tmp = (t == TRAIT_A) ? 1.0 : 0.0;
-        if((locus != 0) and (not ignore_left))
-            tmp *= 0.5;
-        if((locus != (map->num_markers() - 1)) and (not ignore_right))
-            tmp *= 0.5;
-        return tmp;
-    }
-    else if(parent_trait == TRAIT_UU) {
-        tmp = (t == TRAIT_U) ? 1.0 : 0.0;
-        if((locus != 0) and (not ignore_left))
-            tmp *= 0.5;
-        if((locus != (map->num_markers() - 1)) and (not ignore_right))
-            tmp *= 0.5;
-        return tmp;
-    }
-    
-    // heterozygotes are informative, so i can look up
-    // the recombination fractions
-    if(parent_trait == TRAIT_UA) {
-        p = (t == TRAIT_U) ? 0 : 1;
-    }
-    else if(parent_trait == TRAIT_AU) {
-        p = (t == TRAIT_A) ? 0 : 1;
-    }
-    
-    tmp = 0.5;
-    
-    
-    //bool crossover1 = false;
-    //bool crossover2 = false;
-        
-    if((locus != 0) and (not ignore_left)) {
-        tmp *= ((dg->get(person_id, locus-1, parent) == p) ? antitheta2 : theta2);
-        //crossover1 = dg->get(person_id, locus-1, parent) != p;
-    }
-    
-    if((locus != (map->num_markers() - 1)) and (not ignore_right)) {
-        tmp *= ((dg->get(person_id, locus+1, parent) == p) ? antitheta : theta);
-        //crossover2 = dg->get(person_id, locus+1, parent) != p;
-    }
-    
-    
-    //if(crossover1) {
-    //    tmp *= (crossover2 ? thetas[0] : thetas[1]);
-    //}
-    //else {
-    //    tmp *= (crossover2 ? thetas[2] : thetas[3]);
-    //}
-    
-    
-    return tmp;
-}
-*/
-
 double SamplerRfunction::get_recombination_probability(DescentGraph* dg, 
                                      unsigned person_id, 
                                      enum phased_trait parent_trait, 
@@ -135,7 +66,7 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
     
     switch(parent_trait) {
         case TRAIT_UU :
-            return (t == TRAIT_U) ? 1.0 /*homoz_cache*/ : 0.0;
+            return (t == TRAIT_U) ? 1.0 : 0.0;
     
         case TRAIT_AU :
             p = (t == TRAIT_A) ? 0 : 1;
@@ -146,7 +77,7 @@ double SamplerRfunction::get_recombination_probability(DescentGraph* dg,
             break;
         
         case TRAIT_AA :
-            return (t == TRAIT_A) ? 1.0 /*homoz_cache*/ : 0.0;
+            return (t == TRAIT_A) ? 1.0 : 0.0;
     }
     
     double tmp = 0.5;

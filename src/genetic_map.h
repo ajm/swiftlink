@@ -138,6 +138,10 @@ class GeneticMap {
         return map[i].get_prob(pt);
     }
     
+    unsigned int get_lodscore_count() const {
+        return partial_theta_count;
+    }
+    
     //double get_theta(unsigned int i) const ;
     //double get_inversetheta(unsigned int i) const ;
     

@@ -41,6 +41,17 @@ class TraitRfunction : public Rfunction {
         
         return *this;
     }
+    
+    // for TraitRfunction only trait_cache needs to be set, valid_lod_indices is the
+    // same for all loci + pmatrix + pmatrix_presum will not contain different non-zero
+    // elements at different loci
+    void set_locus_minimal(unsigned int l) {
+        locus = l;
+        
+        for(int i = 0; i < 4; ++i) {
+            trait_cache[i] = get_trait_probability(peel_id, static_cast<enum phased_trait>(i));
+        }
+    }
 };
 
 #endif

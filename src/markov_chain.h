@@ -9,6 +9,7 @@ using namespace std;
 class Pedigree;
 class PeelSequenceGenerator;
 class DescentGraph;
+class LODscores;
 
 
 class MarkovChain {
@@ -46,7 +47,7 @@ class MarkovChain {
         return *this;
     }
     
-    double* run(DescentGraph& dg);
+    LODscores* run(DescentGraph& dg);
 };
 
 #endif

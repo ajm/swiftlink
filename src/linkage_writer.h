@@ -8,6 +8,7 @@ using namespace std;
 
 class Peeler;
 class GeneticMap;
+class LODscores;
 
 class LinkageWriter {
 	GeneticMap* map;
@@ -37,7 +38,7 @@ class LinkageWriter {
         return *this;
     }
 
-	bool write(vector<double*>& lod_scores);
+	bool write(vector<LODscores*>& all_scores);
 };
 
 #endif

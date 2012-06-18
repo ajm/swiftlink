@@ -83,13 +83,13 @@ class GeneticMap {
     vector<double> inversethetas;
     vector<double> partial_thetas;
     double temperature;
-    unsigned int partial_theta_count; // must be greater than one
+    unsigned int partial_theta_count; // must be greater than zero
 
     double haldane(double m) const ;
     double inverse_haldane(double m) const;
     
  public :
-    GeneticMap(unsigned int partial_theta_count = 1) : 
+    GeneticMap(unsigned int partial_theta_count) : 
         map(), 
         thetas(), 
         inversethetas(),
@@ -159,6 +159,7 @@ class GeneticMap {
     double get_theta_halfway(unsigned int i) const { return get_theta_partial(i, 1); }
     double get_inversetheta_halfway(unsigned int i) const { return get_inversetheta_partial(i, 1); }
     
+    double get_genetic_position(unsigned int index, unsigned int offset) const;
     double get_theta_partial(unsigned int index, unsigned int offset) const ;
     double get_inversetheta_partial(unsigned int index, unsigned int offset) const ;
     

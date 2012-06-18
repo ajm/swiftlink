@@ -8,9 +8,10 @@ using namespace std;
 #include "linkage_writer.h"
 #include "genetic_map.h"
 #include "peeler.h"
+#include "lod_score.h"
 
 
-bool LinkageWriter::write(vector<double*>& lod_scores) {
+bool LinkageWriter::write(vector<LODscores*>& all_scores) {
     fstream f;
     	
 	f.open(filename.c_str(), fstream::out | fstream::trunc);
@@ -20,6 +21,8 @@ bool LinkageWriter::write(vector<double*>& lod_scores) {
 		return false;
 	}
 	
+	/*
+	// old version
 	for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
         double tmp = lod_scores[0][i];
         for(unsigned int j = 1; j < lod_scores.size(); ++j) {
@@ -43,6 +46,34 @@ bool LinkageWriter::write(vector<double*>& lod_scores) {
         
         if(verbose)
             fprintf(stderr, "%s", ss.str().c_str());
+	}
+	*/
+	
+	for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
+	    for(unsigned int j = 0; j < map->get_lodscore_count(); ++j) {
+	        double tmp = all_scores[0]->get(i, j);
+            for(unsigned int k = 1; k < all_scores.size(); ++k) {
+                tmp += all_scores[k]->get(i,j);
+            }
+            
+            stringstream ss;
+            
+            // genetic position + total LOD
+            ss << 100 * map->get_genetic_position(i, j) << "\t" << tmp;
+            
+            // more than one family
+            if(all_scores.size() > 1) {
+                for(unsigned int k = 0; k < all_scores.size(); ++k) {
+                    ss << "\t" << all_scores[k]->get(i,j);
+                }
+            }
+            
+            ss << "\n";
+            f << ss.str();
+            
+            if(verbose)
+                fprintf(stderr, "%s", ss.str().c_str());
+	    }
 	}
 	
 	f.close();

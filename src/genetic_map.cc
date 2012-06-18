@@ -75,6 +75,10 @@ void GeneticMap::set_temperature(double t) {
     }
 }
 
+double GeneticMap::get_genetic_position(unsigned int index, unsigned int offset) const {
+    return map[index].get_g_distance() + inverse_haldane(partial_thetas[index] * offset);
+}
+
 // XXX offset is 1 -- partial_theta_count
 double GeneticMap::get_theta_partial(unsigned int index, unsigned int offset) const {
     return partial_thetas[index] * offset;

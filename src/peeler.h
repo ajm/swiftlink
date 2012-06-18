@@ -13,30 +13,36 @@ using namespace std;
 class Pedigree;
 class GeneticMap;
 class DescentGraph;
+class LODscores;
 
 class Peeler {
     
     Pedigree* ped;
     GeneticMap* map;
+    LODscores* lod;
     vector<TraitRfunction> rfunctions;
-    double trait_prob;
-    double lod_score;
-    bool initialised;
     unsigned int locus;
-    unsigned int count;
-    
-    double calc_trait_prob();
     
  public :
-    Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator* psg, unsigned int locus);
+    Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator* psg, LODscores* lod);
     Peeler(const Peeler& rhs);
     ~Peeler();
     
     Peeler& operator=(const Peeler& rhs);
     
-    double get_trait_prob();
+    double calc_trait_prob();
+    double get_trait_prob(); // XXX to ease transition, but delete later...
+    
+    void set_locus(unsigned int l) {
+        locus = l;
+        
+        for(unsigned i = 0; i < rfunctions.size(); ++i) {
+            rfunctions[i].set_locus_minimal(locus);
+        }
+    }
+    
     void process(DescentGraph* dg);
-    double get();
 };
 
 #endif
+

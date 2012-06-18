@@ -26,16 +26,24 @@ using namespace std;
 //#define CODA_OUTPUT 1
 
 
-double* MarkovChain::run(DescentGraph& dg) {
+LODscores* MarkovChain::run(DescentGraph& dg) {
 
-    LODscores lod(map);
+    LODscores* lod = new LODscores(map);
     
     // lod scorers
     vector<Peeler*> peelers;
     for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
-        Peeler* tmp = new Peeler(ped, map, psg, i);
+        Peeler* tmp = new Peeler(ped, map, psg, lod);
+        tmp->set_locus(i);
         peelers.push_back(tmp);
     }
+    
+    double trait_prob = peelers[0]->calc_trait_prob();
+    
+    lod->set_trait_prob(trait_prob);
+    
+    printf("P(T) = %e\n", trait_prob / log(10));
+    
     
     // create samplers
     vector<LocusSampler*> lsamplers;
@@ -184,16 +192,14 @@ double* MarkovChain::run(DescentGraph& dg) {
     
     
     // dump lsamplers
-    for(unsigned i = 0; i < lsamplers.size(); ++i) {
+    for(unsigned int i = 0; i < lsamplers.size(); ++i) {
         delete lsamplers[i];
     }
     
-    double* lod_scores = new double[map->num_markers() - 1];
-    for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
-        lod_scores[i] = peelers[i]->get();
+    for(unsigned int i = 0; i < peelers.size(); ++i) {
         delete peelers[i];
     }
     
-    return lod_scores;
+    return lod;
 }
 

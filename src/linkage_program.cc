@@ -18,11 +18,14 @@ using namespace std;
 #include "random.h"
 #include "sequential_imputation.h"
 #include "gpu_markov_chain.h"
+#include "lod_score.h"
 
 
 bool LinkageProgram::run() {
-    vector<double*> lod_scores;
-    double* tmp;
+    vector<LODscores*> all_scores;
+    LODscores* tmp;
+    bool ret = true;
+    LinkageWriter lw(&map, outfile, options.verbose);
     
     /*
     if(options.verbose) {
@@ -45,27 +48,31 @@ bool LinkageProgram::run() {
         // abort() at the slightest hint of a problem
         if((tmp = run_pedigree(pedigrees[i])) == NULL) {
             fprintf(stderr, "error: pedigree '%s' failed\n", pedigrees[i].get_id().c_str());
-            free_lodscores(lod_scores);
             
-            return false;
+            ret = false;
+            goto die;
         }
         
-        lod_scores.push_back(tmp);
+        all_scores.push_back(tmp);
     }
     
-    LinkageWriter lw(&map, outfile, options.verbose);
-    if(not lw.write(lod_scores)) {
+    //LinkageWriter lw(&map, outfile, options.verbose);
+    if(not lw.write(all_scores)) {
         fprintf(stderr, "error: could not write output file '%s'\n", outfile.c_str());
         
-        return false;
+        ret = false;
+        goto die;
     }
     
-    free_lodscores(lod_scores);
+die:
+    for(unsigned int i = 0; i < all_scores.size(); ++i) {
+        delete all_scores[i];
+    }
     
-    return true;
+    return ret;
 }
 
-double* LinkageProgram::run_pedigree(Pedigree& p) {
+LODscores* LinkageProgram::run_pedigree(Pedigree& p) {
     
     if(options.verbose) {
         fprintf(stderr, "processing pedigree %s\n", p.get_id().c_str());
@@ -102,11 +109,5 @@ double* LinkageProgram::run_pedigree(Pedigree& p) {
     
     fprintf(stderr, "error: nothing was run (%s:%d)\n", __FILE__, __LINE__);
     abort();
-}
-
-void LinkageProgram::free_lodscores(vector<double*>& x) {
-    for(unsigned i = 0; i < x.size(); ++i) {
-        delete[] x[i];
-    }
 }
 

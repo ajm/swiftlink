@@ -8,10 +8,6 @@ class SamplerRfunction : public Rfunction {
     
     bool ignore_left;
     bool ignore_right;
-    double theta;
-    double antitheta;
-    double theta2;
-    double antitheta2;
     vector<double*> transmission;
     vector<unsigned int> children;
     
@@ -39,10 +35,6 @@ class SamplerRfunction : public Rfunction {
         Rfunction(p, m, locus, po, prev1, prev2), 
         ignore_left(false), 
         ignore_right(false),
-        theta(0.0),
-        antitheta(1.0),
-        theta2(0.0),
-        antitheta2(1.0),
         transmission(),
         children() {
         
@@ -58,10 +50,6 @@ class SamplerRfunction : public Rfunction {
         Rfunction(rhs), 
         ignore_left(rhs.ignore_left), 
         ignore_right(rhs.ignore_right),
-        theta(rhs.theta),
-        antitheta(rhs.antitheta),
-        theta2(rhs.theta2),
-        antitheta2(rhs.antitheta2),
         transmission(),
         children() {
     
@@ -83,10 +71,6 @@ class SamplerRfunction : public Rfunction {
             Rfunction::operator=(rhs);
             ignore_left = rhs.ignore_left;
             ignore_right = rhs.ignore_right;
-            theta = rhs.theta;
-            antitheta = rhs.antitheta;
-            theta2 = rhs.theta2;
-            antitheta2 = rhs.antitheta2;
             
             teardown_transmission_cache();
             setup_transmission_cache();

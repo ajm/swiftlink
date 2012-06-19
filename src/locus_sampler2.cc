@@ -111,7 +111,7 @@ void LocusSampler::step(DescentGraph& dg, unsigned parameter) {
     
     // forward peel
     for(unsigned int i = 0; i < rfunctions.size(); ++i) {
-        rfunctions[i].evaluate(&dg, 0.0);
+        rfunctions[i].evaluate(&dg, 0);
     }
     
     vector<int> pmk(ped->num_members(), -1);

@@ -28,8 +28,6 @@ bool GeneticMap::sanity_check() {
         partial_thetas.push_back(tmp);
     }
     
-    exit(0);
-    
     return true;
 }
 

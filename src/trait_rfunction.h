@@ -42,6 +42,14 @@ class TraitRfunction : public Rfunction {
         return *this;
     }
     
+    void set_thetas(int offset) {
+        theta = map->get_theta_partial(locus, offset);
+        antitheta = 1.0 - theta;
+        
+        theta2 = map->get_theta_partial(locus, map->get_lodscore_count() + 1 - offset);
+        antitheta2 = 1.0 - theta2;
+    }
+    
     // for TraitRfunction only trait_cache needs to be set, valid_lod_indices is the
     // same for all loci + pmatrix + pmatrix_presum will not contain different non-zero
     // elements at different loci

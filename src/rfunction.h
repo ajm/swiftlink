@@ -36,6 +36,10 @@ class Rfunction {
     unsigned int index_offset;
     unsigned int size;
     unsigned int peel_id;
+    double theta;
+    double antitheta;
+    double theta2;
+    double antitheta2;
     
     double trait_cache[4];
     

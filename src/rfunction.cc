@@ -28,7 +28,11 @@ Rfunction::Rfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperati
     valid_lod_indices(peel->get_lod_indices()),
     index_offset(1 << (2 * peel->get_cutset_size())),
     size(pow((double)NUM_ALLELES, (int)peel->get_cutset_size())),
-    peel_id(peel->get_peelnode()) {
+    peel_id(peel->get_peelnode()),
+    theta(0.0),
+    antitheta(1.0),
+    theta2(0.0),
+    antitheta2(1.0) {
     
     pmatrix.set_keys(peel->get_cutset());
           
@@ -54,7 +58,11 @@ Rfunction::Rfunction(const Rfunction& rhs) :
     valid_lod_indices(rhs.valid_lod_indices),
     index_offset(rhs.index_offset),
     size(rhs.size),
-    peel_id(rhs.peel_id) {}
+    peel_id(rhs.peel_id),
+    theta(rhs.theta),
+    antitheta(rhs.antitheta),
+    theta2(rhs.theta2),
+    antitheta2(rhs.antitheta2) {}
     
 Rfunction& Rfunction::operator=(const Rfunction& rhs) {
 
@@ -74,6 +82,10 @@ Rfunction& Rfunction::operator=(const Rfunction& rhs) {
         index_offset = rhs.index_offset;
         size = rhs.size;
         peel_id = rhs.peel_id;
+        theta = rhs.theta;
+        antitheta = rhs.antitheta;
+        theta2 = rhs.theta2;
+        antitheta2 = rhs.antitheta2;
     }
     
     return *this;

@@ -16,7 +16,7 @@ using namespace std;
 Rfunction::Rfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, Rfunction* prev1, Rfunction* prev2) : 
     map(m),
     ped(p),
-    offset(0.0),
+    offset(0),
     pmatrix(po->get_cutset_size(), NUM_ALLELES),
     pmatrix_presum(po->get_cutset_size() + 1, NUM_ALLELES),
     peel(po), 
@@ -165,7 +165,7 @@ bool Rfunction::legal_genotype(unsigned personid, enum phased_trait g) {
     return p->legal_genotype(locus, g);
 }
 
-void Rfunction::evaluate(DescentGraph* dg, double offset) {
+void Rfunction::evaluate(DescentGraph* dg, unsigned int offset) {
     
     //pmatrix.reset();
     //pmatrix_presum.reset();
@@ -178,12 +178,14 @@ void Rfunction::evaluate(DescentGraph* dg, double offset) {
     
     //#pragma omp parallel for
     
-    if(offset != 0.0) {
+    // calculate lod score
+    if(offset != 0) {
         //for(unsigned int i = 0; i < size; ++i) {
         for(unsigned int i = 0; i < valid_lod_indices->size(); ++i) {
             evaluate_element((*valid_lod_indices)[i], dg);
         }
     }
+    // running locus sampler
     else {
         // this is only for the SamplerRfunction at the moment
         for(unsigned int i = 0; i < valid_indices->size(); ++i) {

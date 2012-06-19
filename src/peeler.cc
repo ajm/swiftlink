@@ -57,7 +57,7 @@ Peeler::~Peeler() {}
 
 double Peeler::calc_trait_prob() {
     for(unsigned i = 0; i < rfunctions.size(); ++i) {
-        rfunctions[i].evaluate(NULL, 0.5);
+        rfunctions[i].evaluate(NULL, 1);
     }
     
     TraitRfunction& rf = rfunctions.back();
@@ -71,14 +71,18 @@ double Peeler::get_trait_prob() {
 
 void Peeler::process(DescentGraph* dg) {
 
-    for(unsigned i = 0; i < rfunctions.size(); ++i) {
-        rfunctions[i].evaluate(dg, 0.5);
+    unsigned int num_lod_scores = lod->get_lodscores_per_marker();
+    
+    for(unsigned int i = 0; i < num_lod_scores; ++i) {
+        for(unsigned j = 0; j < rfunctions.size(); ++j) {
+            rfunctions[j].evaluate(dg, i + 1); // geneticmap expects indexing from 1
+        }
+        
+        TraitRfunction& rf = rfunctions.back();
+        
+        double prob = log(rf.get_result()) - dg->get_recombination_prob(locus, false) - dg->get_marker_transmission();
+         
+        lod->add(locus, i, prob);
     }
-    
-    TraitRfunction& rf = rfunctions.back();
-    
-    double prob = log(rf.get_result()) - dg->get_recombination_prob(locus, false) - dg->get_marker_transmission();
-     
-    lod->add(locus, 0, prob);
 }
 

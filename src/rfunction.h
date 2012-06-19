@@ -23,7 +23,7 @@ class Rfunction {
  protected :
     GeneticMap* map;
     Pedigree* ped;
-    double offset;
+    unsigned int offset;
     PeelMatrix pmatrix;
     PeelMatrix pmatrix_presum;
     PeelOperation* peel;
@@ -117,7 +117,7 @@ class Rfunction {
         return pmatrix.get(index);
     }
     
-    void evaluate(DescentGraph* dg, double offset);
+    void evaluate(DescentGraph* dg, unsigned int offset);
     
     double get_result() { 
         return pmatrix.get_result();

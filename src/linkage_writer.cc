@@ -50,7 +50,7 @@ bool LinkageWriter::write(vector<LODscores*>& all_scores) {
 	*/
 	
 	for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
-	    for(unsigned int j = 0; j < map->get_lodscore_count(); ++j) {
+	    for(unsigned int j = 1; j < (map->get_lodscore_count() + 1); ++j) {
 	        double tmp = all_scores[0]->get(i, j);
             for(unsigned int k = 1; k < all_scores.size(); ++k) {
                 tmp += all_scores[k]->get(i,j);

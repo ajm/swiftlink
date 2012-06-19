@@ -17,6 +17,7 @@ class Pedigree;
 class GeneticMap;
 class PeelSequenceGenerator;
 class DescentGraph;
+class LODscores;
 
 class GPUMarkovChain {
     
@@ -121,7 +122,7 @@ class GPUMarkovChain {
         return *this;
     }
     
-    double* run(DescentGraph& dg);
+    LODscores* run(DescentGraph& dg);
 };
 
 #endif

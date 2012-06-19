@@ -28,6 +28,8 @@ using namespace std;
 #include "meiosis_sampler.h"
 
 #include "peeler.h"
+#include "lod_score.h"
+
 #include <vector>
 
 #define CUDA_CALLANDTEST(x) \
@@ -66,8 +68,8 @@ size_t GPUMarkovChain::calculate_memory_requirements(vector<PeelOperation>& ops)
     
     // genetic stuff
     mem_map = sizeof(struct geneticmap) + \
-                (4 * sizeof(fp_type) * (map->num_markers() - 1)) + \
-                (4 * sizeof(fp_type) *  map->num_markers());
+                (4 * sizeof(double) * (map->num_markers() - 1)) + \
+                (4 * sizeof(double) *  map->num_markers());
     
     mem_pedigree = ped->num_members() * sizeof(struct person);
     for(unsigned i = 0; i < ped->num_members(); ++i) {
@@ -92,8 +94,8 @@ size_t GPUMarkovChain::calculate_memory_requirements(vector<PeelOperation>& ops)
     for(unsigned i = 0; i < ops.size(); ++i) {
         double s = ops[i].get_cutset_size();
         
-        mem_per_sampler += (pow(4.0, s)     * sizeof(fp_type));   // matrix
-        mem_per_sampler += (pow(4.0, s + 1) * sizeof(fp_type));   // presum_matrix
+        mem_per_sampler += (pow(4.0, s)     * sizeof(double));   // matrix
+        mem_per_sampler += (pow(4.0, s + 1) * sizeof(double));   // presum_matrix
         
         mem_per_sampler += (int(s + 1)      * sizeof(int));     // cutset
         mem_per_sampler += sizeof(struct rfunction);            // containing struct
@@ -236,6 +238,7 @@ void GPUMarkovChain::gpu_init(vector<PeelOperation>& ops) {
     //tmp.randmt = gpu_init_random_tinymt();
     
     tmp.lodscores = gpu_init_lodscores(); fprintf(stderr, "GPU: lod scores loaded\n");
+    tmp.lodscores_per_marker = map->get_lodscore_count();
     
     //tmp.graphs = gpu_init_founderallelegraph();
     tmp.founderallele_count = loc_state->founderallele_count;
@@ -476,38 +479,45 @@ void GPUMarkovChain::init_map() {
     }
 
     loc_state->map->map_length = map->num_markers();
+    loc_state->map->lodscores_per_marker = map->get_lodscore_count();
     
-    loc_state->map->thetas = (fp_type*) malloc(sizeof(fp_type) * (map->num_markers() - 1));
+    loc_state->map->thetas = (double*) malloc(sizeof(double) * (map->num_markers() - 1));
     if(!(loc_state->map->thetas)) {
         fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
         abort();
     }
     
-    loc_state->map->inversethetas = (fp_type*) malloc(sizeof(fp_type) * (map->num_markers() - 1));
+    loc_state->map->inversethetas = (double*) malloc(sizeof(double) * (map->num_markers() - 1));
     if(!(loc_state->map->inversethetas)) {
         fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
         abort();
     }
     
-    loc_state->map->halfthetas = (fp_type*) malloc(sizeof(fp_type) * (map->num_markers() - 1));
+    loc_state->map->halfthetas = (double*) malloc(sizeof(double) * (map->num_markers() - 1));
     if(!(loc_state->map->halfthetas)) {
         fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
         abort();
     }
     
-    loc_state->map->halfinversethetas = (fp_type*) malloc(sizeof(fp_type) * (map->num_markers() - 1));
+    loc_state->map->halfinversethetas = (double*) malloc(sizeof(double) * (map->num_markers() - 1));
     if(!(loc_state->map->halfinversethetas)) {
         fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
         abort();
     }
     
-    loc_state->map->markerprobs = (fp_type*) malloc(sizeof(fp_type) * 4 * map->num_markers());
+    loc_state->map->partialthetas = (double*) malloc(sizeof(double) * (map->num_markers() - 1));
+    if(!(loc_state->map->partialthetas)) {
+        fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+        abort();
+    }
+    
+    loc_state->map->markerprobs = (double*) malloc(sizeof(double) * 4 * map->num_markers());
     if(!(loc_state->map->markerprobs)) {
         fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
         abort();
     }
 
-    loc_state->map->allelefreqs = (fp_type*) malloc(sizeof(fp_type) * map->num_markers());
+    loc_state->map->allelefreqs = (double*) malloc(sizeof(double) * map->num_markers());
     if(!(loc_state->map->allelefreqs)) {
         fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
         abort();
@@ -518,6 +528,7 @@ void GPUMarkovChain::init_map() {
         loc_state->map->inversethetas[i] = map->get_inversetheta(i);
         loc_state->map->halfthetas[i] = map->get_theta_halfway(i);
         loc_state->map->halfinversethetas[i] = map->get_inversetheta_halfway(i);
+        loc_state->map->partialthetas[i] = map->get_theta_partial_raw(i);
     }
     
     for(unsigned i = 0; i < map->num_markers(); ++i) {
@@ -536,20 +547,23 @@ struct geneticmap* GPUMarkovChain::gpu_init_map() {
     struct geneticmap* dev_map;
     
     tmp.map_length = loc_state->map->map_length;
+    tmp.lodscores_per_marker = loc_state->map->lodscores_per_marker;
     
-    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.thetas,            sizeof(fp_type) * (map->num_markers() - 1)));
-    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.inversethetas,     sizeof(fp_type) * (map->num_markers() - 1)));
-    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.halfthetas,        sizeof(fp_type) * (map->num_markers() - 1)));
-    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.halfinversethetas, sizeof(fp_type) * (map->num_markers() - 1)));
-    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.markerprobs,       sizeof(fp_type) * (map->num_markers() * 4)));
-    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.allelefreqs,       sizeof(fp_type) *  map->num_markers()));
+    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.thetas,            sizeof(double) * (map->num_markers() - 1)));
+    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.inversethetas,     sizeof(double) * (map->num_markers() - 1)));
+    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.halfthetas,        sizeof(double) * (map->num_markers() - 1)));
+    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.halfinversethetas, sizeof(double) * (map->num_markers() - 1)));
+    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.partialthetas,     sizeof(double) * (map->num_markers() - 1)));
+    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.markerprobs,       sizeof(double) * (map->num_markers() * 4)));
+    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp.allelefreqs,       sizeof(double) *  map->num_markers()));
     
-    CUDA_CALLANDTEST(cudaMemcpy(tmp.thetas,             loc_state->map->thetas,             sizeof(fp_type) * (map->num_markers() - 1), cudaMemcpyHostToDevice));
-    CUDA_CALLANDTEST(cudaMemcpy(tmp.inversethetas,      loc_state->map->inversethetas,      sizeof(fp_type) * (map->num_markers() - 1), cudaMemcpyHostToDevice));
-    CUDA_CALLANDTEST(cudaMemcpy(tmp.halfthetas,         loc_state->map->halfthetas,         sizeof(fp_type) * (map->num_markers() - 1), cudaMemcpyHostToDevice));
-    CUDA_CALLANDTEST(cudaMemcpy(tmp.halfinversethetas,  loc_state->map->halfinversethetas,  sizeof(fp_type) * (map->num_markers() - 1), cudaMemcpyHostToDevice));
-    CUDA_CALLANDTEST(cudaMemcpy(tmp.markerprobs,        loc_state->map->markerprobs,        sizeof(fp_type) * (map->num_markers() * 4), cudaMemcpyHostToDevice));
-    CUDA_CALLANDTEST(cudaMemcpy(tmp.allelefreqs,        loc_state->map->allelefreqs,        sizeof(fp_type) *  map->num_markers(),      cudaMemcpyHostToDevice));
+    CUDA_CALLANDTEST(cudaMemcpy(tmp.thetas,             loc_state->map->thetas,             sizeof(double) * (map->num_markers() - 1), cudaMemcpyHostToDevice));
+    CUDA_CALLANDTEST(cudaMemcpy(tmp.inversethetas,      loc_state->map->inversethetas,      sizeof(double) * (map->num_markers() - 1), cudaMemcpyHostToDevice));
+    CUDA_CALLANDTEST(cudaMemcpy(tmp.halfthetas,         loc_state->map->halfthetas,         sizeof(double) * (map->num_markers() - 1), cudaMemcpyHostToDevice));
+    CUDA_CALLANDTEST(cudaMemcpy(tmp.halfinversethetas,  loc_state->map->halfinversethetas,  sizeof(double) * (map->num_markers() - 1), cudaMemcpyHostToDevice));
+    CUDA_CALLANDTEST(cudaMemcpy(tmp.partialthetas,      loc_state->map->partialthetas,      sizeof(double) * (map->num_markers() - 1), cudaMemcpyHostToDevice));
+    CUDA_CALLANDTEST(cudaMemcpy(tmp.markerprobs,        loc_state->map->markerprobs,        sizeof(double) * (map->num_markers() * 4), cudaMemcpyHostToDevice));
+    CUDA_CALLANDTEST(cudaMemcpy(tmp.allelefreqs,        loc_state->map->allelefreqs,        sizeof(double) *  map->num_markers(),      cudaMemcpyHostToDevice));
     
     CUDA_CALLANDTEST(cudaMalloc((void**)&dev_map, sizeof(struct geneticmap)));
     CUDA_CALLANDTEST(cudaMemcpy(dev_map, &tmp, sizeof(struct geneticmap), cudaMemcpyHostToDevice));
@@ -682,14 +696,14 @@ void GPUMarkovChain::init_rfunctions(vector<PeelOperation>& ops) {
             rf->prev2 = (prev2_index == -1) ? NULL : &loc_state->functions[(i * num_func_per_samp) + prev2_index];
             
             rf->matrix_length = matrix_length;
-            rf->matrix = (fp_type*) malloc(matrix_length * sizeof(fp_type));
+            rf->matrix = (double*) malloc(matrix_length * sizeof(double));
             if(! rf->matrix) {
                 fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
                 abort();
             }
             
             rf->presum_length = presum_length;
-            rf->presum_matrix = (fp_type*) malloc(presum_length * sizeof(fp_type));
+            rf->presum_matrix = (double*) malloc(presum_length * sizeof(double));
             if(! rf->presum_matrix) {
                 fprintf(stderr, "error: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
                 abort();
@@ -762,10 +776,10 @@ struct rfunction* GPUMarkovChain::gpu_init_rfunctions(vector<PeelOperation>& ops
         
         for(int j = 0; j < int(map->num_markers()); ++j) {
             // 3 - 5 mallocs, 1 - 2 memcpys
-            CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.presum_matrix, sizeof(fp_type) * tmp.presum_length));
-            CUDA_CALLANDTEST(cudaMemset(tmp.presum_matrix, 0, sizeof(fp_type) * tmp.presum_length));
+            CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.presum_matrix, sizeof(double) * tmp.presum_length));
+            CUDA_CALLANDTEST(cudaMemset(tmp.presum_matrix, 0, sizeof(double) * tmp.presum_length));
             
-            CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.matrix,        sizeof(fp_type) * tmp.matrix_length));
+            CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.matrix,        sizeof(double) * tmp.matrix_length));
             CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.cutset,        sizeof(int)     * tmp.cutset_length));
             CUDA_CALLANDTEST(cudaMemcpy(tmp.cutset, cutset, sizeof(int) * tmp.cutset_length, cudaMemcpyHostToDevice));
             
@@ -773,7 +787,7 @@ struct rfunction* GPUMarkovChain::gpu_init_rfunctions(vector<PeelOperation>& ops
                 CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.children, sizeof(int) * tmp.children_length));
                 CUDA_CALLANDTEST(cudaMemcpy(tmp.children, children, sizeof(int) * tmp.children_length, cudaMemcpyHostToDevice));
             
-                CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.transmission, sizeof(fp_type) * tmp.children_length * 64));
+                CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.transmission, sizeof(double) * tmp.children_length * 64));
             }
             else {
                 tmp.children = NULL;
@@ -814,12 +828,12 @@ struct rfunction* GPUMarkovChain::gpu_init_rfunctions(vector<PeelOperation>& ops
     return dev_rfunc;
 }
 
-fp_type* GPUMarkovChain::gpu_init_lodscores() {
-    fp_type* tmp;
+double* GPUMarkovChain::gpu_init_lodscores() {
+    double* tmp;
     
-    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp, sizeof(fp_type) * (map->num_markers() - 1)));
+    CUDA_CALLANDTEST(cudaMalloc((void**)&tmp, sizeof(double) * (map->num_markers() - 1) * map->get_lodscore_count()));
     
-    run_gpu_lodscoreinit_kernel(map->num_markers() - 1, tmp);
+    run_gpu_lodscoreinit_kernel(map->num_markers() - 1, map->get_lodscore_count(), tmp, map->get_lodscore_count());
     
     cudaThreadSynchronize();
     
@@ -974,7 +988,7 @@ int GPUMarkovChain::optimal_lsampler_threads() {
 }
 
 
-double* GPUMarkovChain::run(DescentGraph& dg) {
+LODscores* GPUMarkovChain::run(DescentGraph& dg) {
     int count = 0;
     int even_count;
     int odd_count;
@@ -992,7 +1006,7 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
     
     //vector<PeelOperation>& ops = psg->get_peel_order();
     
-//#define HYBRID_CPUGPU 1
+#define HYBRID_CPUGPU 1
 #ifdef HYBRID_CPUGPU
     bool gpu_active = true;
     MeiosisSampler msampler(ped, map);
@@ -1363,8 +1377,8 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
     p.finish();
     
     
-    run_gpu_lodscorenormalise_kernel(map->num_markers() - 1, dev_state, count, trait_likelihood);
-    cudaThreadSynchronize();
+    //run_gpu_lodscorenormalise_kernel(map->num_markers() - 1, map->get_lodscore_count(), dev_state, count, trait_likelihood);
+    //cudaThreadSynchronize();
     
     /*
     //double* lod_scores = new double[map->num_markers() - 1];
@@ -1376,11 +1390,21 @@ double* GPUMarkovChain::run(DescentGraph& dg) {
     //return lod_scores;
     */
     
-    double* data = new double[map->num_markers() - 1];
+    int num_lodscores = map->get_lodscore_count() * (map->num_markers() - 1);
+    double* data = new double[num_lodscores];
     
-    CUDA_CALLANDTEST(cudaMemcpy(data, dev_lodscores, (map->num_markers() - 1) * sizeof(double), cudaMemcpyDeviceToHost));
+    CUDA_CALLANDTEST(cudaMemcpy(data, dev_lodscores, num_lodscores * sizeof(double), cudaMemcpyDeviceToHost));
     
-    return data;
+    LODscores* lod = new LODscores(map);
+    
+    lod->set_trait_prob(trait_likelihood);
+    lod->set_count(count);
+    
+    for(int i = 0; i < num_lodscores; ++i) {
+        lod->set(i, data[i]);
+    }
+    
+    return lod;
 }
 
 void GPUMarkovChain::select_best_gpu() {

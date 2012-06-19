@@ -68,7 +68,8 @@ struct gpu_state {
     struct descentgraph* dg;
     
     // scoring
-    double* lodscores;
+    double* lodscores; // (lodscores_per_marker * (num markers - 1))
+    int lodscores_per_marker;
     
     // random number generation
     curandState* randstates;
@@ -107,9 +108,11 @@ struct geneticmap {
     double* inversethetas;
     double* halfthetas;
     double* halfinversethetas;
+    double* partialthetas;
     double* markerprobs;
     double* allelefreqs;
     int map_length;
+    int lodscores_per_marker;
 };
 
 // THE 'peel_node' MUST ALWAYS BE LOCATED
@@ -198,6 +201,8 @@ struct descentgraph {
 #define MAP_PROB(map_ptr, n, val)      ((map_ptr)->markerprobs[((n) * 4) + val])
 #define MAP_MINOR(map_ptr, n)          ((map_ptr)->allelefreqs[(n)])
 #define MAP_MAJOR(map_ptr, n)          (1.0 - (map_ptr)->allelefreqs[(n)])
+#define MAP_PARTIAL_THETA_LEFT(map_ptr, n, i)  ((map_ptr)->partialthetas[(n)] * (i)) 
+#define MAP_PARTIAL_THETA_RIGHT(map_ptr, n, i) ((map_ptr)->partialthetas[(n)] * ((map_ptr)->lodscores_per_marker + 1 - i))
 
 #define PERSON_ID(person_ptr)               ((person_ptr)->id)
 #define PERSON_ISFOUNDER(person_ptr)        ((person_ptr)->isfounder)
@@ -236,7 +241,7 @@ extern "C" {
     
     void run_gpu_lodscore_kernel(int numblocks, int numthreads, struct gpu_state* state);
     void run_gpu_lodscore_onepeel_kernel(int numblocks, int numthreads, struct gpu_state* state, int function_offset);
-    void run_gpu_lodscoreinit_kernel(int numblocks, double* lodscores);
+    void run_gpu_lodscoreinit_kernel(int numblocks, int numthreads, double* lodscores, int lodscores_per_marker);
     void run_gpu_lodscorenormalise_kernel(int numblocks, struct gpu_state* state, int count, double trait_likelihood);
     void run_gpu_lodscoreprint_kernel(struct gpu_state* state);
     

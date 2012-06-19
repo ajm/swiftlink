@@ -34,7 +34,7 @@ extern __shared__ char extern_pool[];
 #define INVTHETA_LEFT   (map_cache[1])
 #define THETA_RIGHT     (map_cache[2])
 #define INVTHETA_RIGHT  (map_cache[3])
-// LOD-score macros
+// LOD-score macros // XXX unused...
 #define HALF_THETA      (map_cache[0])
 #define HALF_INVTHETA   (map_cache[1])
 #define LOG_THETA       (map_cache[2])

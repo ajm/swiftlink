@@ -156,12 +156,14 @@ class GeneticMap {
     double get_theta_log(unsigned int i) const ;
     double get_inversetheta_log(unsigned int i) const ;
     
+    // only work if you are using "-n 1" on the command line
     double get_theta_halfway(unsigned int i) const { return get_theta_partial(i, 1); }
     double get_inversetheta_halfway(unsigned int i) const { return get_inversetheta_partial(i, 1); }
     
     double get_genetic_position(unsigned int index, unsigned int offset) const;
     double get_theta_partial(unsigned int index, unsigned int offset) const ;
     double get_inversetheta_partial(unsigned int index, unsigned int offset) const ;
+    double get_theta_partial_raw(unsigned int index) const { return partial_thetas[index]; }
     
     unsigned int num_markers() const { 
         return map.size();

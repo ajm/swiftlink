@@ -103,8 +103,8 @@ LODscores* LinkageProgram::run_pedigree(Pedigree& p) {
         return chain.run(dg);
     }
     else {
-        //GPUMarkovChain chain(&p, &map, &psg, options);
-        //return chain.run(dg);
+        GPUMarkovChain chain(&p, &map, &psg, options);
+        return chain.run(dg);
     }
     
     fprintf(stderr, "error: nothing was run (%s:%d)\n", __FILE__, __LINE__);

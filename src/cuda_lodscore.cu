@@ -25,14 +25,14 @@ __device__ double lodscore_trans_prob(struct gpu_state* state, int locus, int pe
     //double half_inversetheta = MAP_HALF_INVERSETHETA(map, locus);
     
     tmp *= ((DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, peelnode, locus, GPU_MATERNAL_ALLELE)) == m_allele) ? \
-            HALF_INVTHETA : HALF_THETA /*half_inversetheta : half_theta*/);
-    tmp *= ((DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, peelnode, locus + 1, GPU_MATERNAL_ALLELE)) == m_allele) ? \
-            HALF_INVTHETA : HALF_THETA  /*half_inversetheta : half_theta*/);
-    
+            INVTHETA_LEFT : THETA_LEFT);
     tmp *= ((DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, peelnode, locus, GPU_PATERNAL_ALLELE)) == p_allele) ? \
-            HALF_INVTHETA : HALF_THETA /*half_inversetheta : half_theta*/);
+            INVTHETA_LEFT : THETA_LEFT);
+    
+    tmp *= ((DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, peelnode, locus + 1, GPU_MATERNAL_ALLELE)) == m_allele) ? \
+            INVTHETA_RIGHT : THETA_RIGHT);
     tmp *= ((DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, peelnode, locus + 1, GPU_PATERNAL_ALLELE)) == p_allele) ? \
-            HALF_INVTHETA : HALF_THETA /*half_inversetheta : half_theta*/);
+            INVTHETA_RIGHT : THETA_RIGHT);
     
     return tmp;
 }
@@ -258,12 +258,14 @@ __device__ void lodscore_evaluate(struct rfunction* rf, struct gpu_state* state,
 
 // this can be done inline?
 __device__ double descentgraph_recombination_prob(struct gpu_state* state, int locus) {
-    //struct geneticmap* map = GET_MAP(state);
+    struct geneticmap* map = GET_MAP(state);
     struct descentgraph* dg = GET_DESCENTGRAPH(state);
     struct person* p;
     //double theta = log(MAP_THETA(map, locus));
     //double antitheta = log(MAP_INVERSETHETA(map, locus));
     double tmp = 0.0;
+    double log_theta = log(MAP_THETA(map, locus));
+    double log_invtheta = log(MAP_INVERSETHETA(map, locus));
 	int i, j;
 	
     for(i = 0; i < state->pedigree_length; ++i) {
@@ -275,10 +277,10 @@ __device__ double descentgraph_recombination_prob(struct gpu_state* state, int l
         for(j = 0; j < 2; ++j) { // mother and father
             if(DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, i, locus,   j)) != \
                DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, i, locus+1, j))) { 
-                tmp += LOG_THETA /*theta*/ ;
+                tmp += log_theta;
             }
             else {
-                tmp += LOG_INVTHETA /*antitheta*/ ;
+                tmp += log_invtheta;
             }
         }
     }
@@ -286,10 +288,11 @@ __device__ double descentgraph_recombination_prob(struct gpu_state* state, int l
     return tmp;
 }
 
-__device__ void lodscore_add(struct gpu_state* state, double likelihood) {
+__device__ void lodscore_add(struct gpu_state* state, int offset, double likelihood) {
     double recomb = descentgraph_recombination_prob(state, blockIdx.x);
+    int tmp = (state->lodscores_per_marker * blockIdx.x) + offset;
     
-    state->lodscores[blockIdx.x] = gpu_log_sum_dbl(state->lodscores[blockIdx.x], likelihood - recomb - state->dg->transmission_prob);
+    state->lodscores[tmp] = gpu_log_sum_dbl(state->lodscores[tmp], likelihood - recomb - state->dg->transmission_prob);
     
     //printf("GPU prob %f (%f, %f, %f)\n", likelihood - recomb - state->dg->transmission_prob, likelihood, recomb, state->dg->transmission_prob);
     //printf("GPU fin  %f\n", state->lodscores[blockIdx.x]);
@@ -302,34 +305,39 @@ __global__ void lodscore_kernel(struct gpu_state* state) {
     struct rfunction* rf;
     struct geneticmap* map = GET_MAP(state);
     
-    // populate map cache in shared memory
-    if(threadIdx.x == 0) {
-        map_cache[0] = MAP_HALF_THETA(map, locus);
-        map_cache[1] = MAP_HALF_INVERSETHETA(map, locus);
+    for(int index = 0; index < state->lodscores_per_marker; ++index) {
+        // populate map cache in shared memory
+        if(threadIdx.x == 0) {
+            map_cache[0] = MAP_PARTIAL_THETA_LEFT(map, locus, index+1);
+            map_cache[1] = 1.0 - map_cache[0];
+            
+            map_cache[2] = MAP_PARTIAL_THETA_RIGHT(map, locus, index+1);
+            map_cache[3] = 1.0 - map_cache[2];
+            
+            map_length = map->map_length;
+        }
         
-        map_cache[2] = log(MAP_THETA(map, locus));
-        map_cache[3] = log(MAP_INVERSETHETA(map, locus));
+        __syncthreads();
         
-        map_length = map->map_length;
-    }
-    
-    __syncthreads();
-    
-    // forward peel
-    for(i = 0; i < state->functions_per_locus; ++i) {
-        rf = GET_RFUNCTION(state, i, locus);
-        lodscore_evaluate(rf, state, locus);
-    }
-    
-    // get result from last rfunction
-    // calculate a lod score
-    if(threadIdx.x == 0) {
-        //printf("GPU peel %d %f\n", locus, log(RFUNCTION_GET(rf, 0)));
-        lodscore_add(state, log(RFUNCTION_GET(rf, 0)));
+        // forward peel
+        for(i = 0; i < state->functions_per_locus; ++i) {
+            rf = GET_RFUNCTION(state, i, locus);
+            lodscore_evaluate(rf, state, locus);
+        }
+        
+        // get result from last rfunction
+        // calculate a lod score
+        if(threadIdx.x == 0) {
+            //printf("GPU peel %d %f\n", locus, log(RFUNCTION_GET(rf, 0)));
+            lodscore_add(state, index, log(RFUNCTION_GET(rf, 0)));
+        }
+        
+        __syncthreads();
     }
 }
 
 __global__ void lodscore_onepeel_kernel(struct gpu_state* state, int function_offset) {
+/*
     int locus = blockIdx.x;
     //int i;
     struct rfunction* rf;
@@ -361,18 +369,19 @@ __global__ void lodscore_onepeel_kernel(struct gpu_state* state, int function_of
         //printf("GPU peel %d %f\n", locus, log(RFUNCTION_GET(rf, 0)));
         lodscore_add(state, log(RFUNCTION_GET(rf, 0)));
     }
+*/
 }
 
-__global__ void lodscoreinit_kernel(double* lodscores) {
-    if(threadIdx.x == 0) {
-        lodscores[blockIdx.x] = DBL_LOG_ZERO;
+__global__ void lodscoreinit_kernel(double* lodscores, int lodscores_per_marker) {
+    if(threadIdx.x < lodscores_per_marker) {
+        lodscores[(lodscores_per_marker * blockIdx.x) + threadIdx.x] = DBL_LOG_ZERO;
     }
 }
 
 __global__ void lodscorenormalise_kernel(struct gpu_state* state, int count, double trait_likelihood) {
-    if(threadIdx.x == 0) {
-        double tmp = (state->lodscores[blockIdx.x] - log((double)count) - trait_likelihood) / log(10.0);
-        state->lodscores[blockIdx.x] = tmp;
+    if(threadIdx.x < state->lodscores_per_marker) {
+        double tmp = (state->lodscores[(state->lodscores_per_marker * blockIdx.x) + threadIdx.x] - log((double)count) - trait_likelihood) / log(10.0);
+        state->lodscores[(state->lodscores_per_marker * blockIdx.x) + threadIdx.x] = tmp;
     }
 }
 
@@ -393,12 +402,12 @@ void run_gpu_lodscore_onepeel_kernel(int numblocks, int numthreads, struct gpu_s
     lodscore_onepeel_kernel<<<numblocks, numthreads>>>(state, function_offset);
 }
 
-void run_gpu_lodscoreinit_kernel(int numblocks, double* lodscores) {
-    lodscoreinit_kernel<<<numblocks, 1>>>(lodscores);
+void run_gpu_lodscoreinit_kernel(int numblocks, int numthreads, double* lodscores, int lodscores_per_marker) {
+    lodscoreinit_kernel<<<numblocks, numthreads>>>(lodscores, lodscores_per_marker);
 }
 
-void run_gpu_lodscorenormalise_kernel(int numblocks, struct gpu_state* state, int count, double trait_likelihood) {
-    lodscorenormalise_kernel<<<numblocks, 1>>>(state, count, trait_likelihood);
+void run_gpu_lodscorenormalise_kernel(int numblocks, int numthreads, struct gpu_state* state, int count, double trait_likelihood) {
+    lodscorenormalise_kernel<<<numblocks, numthreads>>>(state, count, trait_likelihood);
 }
 
 void run_gpu_lodscoreprint_kernel(struct gpu_state* state) {

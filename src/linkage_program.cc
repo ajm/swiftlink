@@ -97,7 +97,7 @@ LODscores* LinkageProgram::run_pedigree(Pedigree& p) {
     //si.run(dg, options.si_iterations);
     si.parallel_run(dg, options.si_iterations);
     
-
+    /*
     if(not options.use_gpu) {
         MarkovChain chain(&p, &map, &psg, options);
         return chain.run(dg);
@@ -109,5 +109,9 @@ LODscores* LinkageProgram::run_pedigree(Pedigree& p) {
     
     fprintf(stderr, "error: nothing was run (%s:%d)\n", __FILE__, __LINE__);
     abort();
+    */
+    
+    MarkovChain chain(&p, &map, &psg, options);
+    return chain.run(dg);
 }
 

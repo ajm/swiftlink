@@ -42,6 +42,7 @@ OBJECTS	:= \
 	progress.o \
 	main.o \
 	gpu_markov_chain.o \
+	gpu_lodscores.o \
 	cuda_linkage.o \
 	tinymt/tinymt32_host.o
 

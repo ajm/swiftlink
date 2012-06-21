@@ -20,6 +20,7 @@ using namespace std;
 #include "types.h"
 #include "random.h"
 #include "lod_score.h"
+#include "gpu_lodscores.h"
 
 
 //#define MICROBENCHMARK_TIMING 1
@@ -29,6 +30,7 @@ using namespace std;
 LODscores* MarkovChain::run(DescentGraph& dg) {
 
     LODscores* lod = new LODscores(map);
+    GPULodscores* gpulod = 0;
     
     // lod scorers
     vector<Peeler*> peelers;
@@ -43,6 +45,10 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
     lod->set_trait_prob(trait_prob);
     
     printf("P(T) = %e\n", trait_prob / log(10));
+    
+    if(options.use_gpu) {
+        gpulod = new GPULodscores(ped, map, psg, options, trait_prob);
+    }
     
     
     // create samplers
@@ -61,18 +67,11 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
     vector<int> l_ordering;
     vector<int> m_ordering;
     
-    /*
-    for(unsigned int i = 0; i < map->num_markers(); ++i)
-        l_ordering.push_back(i);
-    */
     
     int markers_per_window = (map->num_markers() / omp_get_max_threads()) + \
                             ((map->num_markers() % omp_get_max_threads()) == 0 ? 0 : 1);
     fprintf(stderr, "setting %d markers per window\n", markers_per_window);
-    //int markers_per_window = 98; // this needs to be set dynamically
-    //int markers_per_window = 49;
-    //int markers_per_window = 13;
-    //int markers_per_window = 2;
+    
     for(int i = 0; i < markers_per_window; ++i)
         l_ordering.push_back(i);
     
@@ -101,13 +100,6 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
         
     for(int i = 0; i < (options.iterations + options.burnin); ++i) {
         if(get_random() < options.lsampler_prob) {
-            /*
-            random_shuffle(l_ordering.begin(), l_ordering.end());
-            
-            for(unsigned int j = 0; j < l_ordering.size(); ++j) {
-                lsamplers[l_ordering[j]]->step(dg, l_ordering[j]);
-            }
-            */
             
             random_shuffle(l_ordering.begin(), l_ordering.end());
             
@@ -158,35 +150,17 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
         }
         
         if((i % options.scoring_period) == 0) {
-        
-            #ifdef MICROBENCHMARK_TIMING
-            struct timespec start_time;
-            struct timespec end_time;
-            
-            clock_gettime(CLOCK_MONOTONIC, &start_time);
-            
-            int repeats = 100;
-            
-            for(int x = 0; x < repeats; ++x) {
-            #endif
-            
-            #pragma omp parallel for
-            for(int j = 0; j < int(map->num_markers() - 1); ++j) {
-                peelers[omp_get_thread_num()]->set_locus(j);
-                peelers[omp_get_thread_num()]->process(&dg);
+         
+            if(not options.use_gpu) {
+                #pragma omp parallel for
+                for(int j = 0; j < int(map->num_markers() - 1); ++j) {
+                    peelers[omp_get_thread_num()]->set_locus(j);
+                    peelers[omp_get_thread_num()]->process(&dg);
+                }
             }
-            
-            #ifdef MICROBENCHMARK_TIMING
+            else {
+                gpulod->calculate(dg);
             }
-            
-            clock_gettime(CLOCK_MONOTONIC, &end_time);
-            
-            double milliseconds = \
-                (((end_time.tv_sec   * 1000.0) + (end_time.tv_nsec   / 1000000.0)) - \
-                 ((start_time.tv_sec * 1000.0) + (start_time.tv_nsec / 1000000.0))) / double(repeats);
-            
-            fprintf(stderr, "LODSCORE %.3f\n", milliseconds);
-            #endif
         }
         
     }
@@ -194,6 +168,9 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
     
     p.finish();
     
+    if(options.use_gpu) {
+        gpulod->get_results(lod);
+    }
     
     // dump lsamplers
     for(unsigned int i = 0; i < lsamplers.size(); ++i) {

@@ -998,7 +998,7 @@ LODscores* GPUMarkovChain::run(DescentGraph& dg) {
     shared_mem += (shared_mem % 4);
     shared_mem *= 8;
     
-    int window_length = 32;
+    //int window_length = 32;
     
     
     Peeler peel(ped, map, psg, 0);

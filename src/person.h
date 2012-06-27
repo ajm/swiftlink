@@ -59,7 +59,7 @@ class Person {
     }
 
     // private, peeling related
-    bool is_offspring(unsigned int node);
+    
     
     unsigned count_unpeeled(vector<Person*>& v, PeelingState& ps);
     unsigned get_unpeeled_mate(PeelingState& ps);
@@ -125,8 +125,9 @@ class Person {
 	unsigned int num_mates() const { return mates.size(); }
 	Person* get_child(unsigned int i) const { return children[i]; }
 	//Person* get_spouse(unsigned int i) const { return mates[i]; }
-	//Person* get_mate(unsigned int i) const { return mates[i]; }
+	Person* get_mate(unsigned int i) const { return mates[i]; }
 	
+	bool is_offspring(unsigned int node);
 
 	/* setters */
 	void set_internalid(unsigned int id) { internal_id = id; }

@@ -146,8 +146,16 @@ class PeelOperation {
     }
     
     bool contains_cutnodes(vector<unsigned>& nodes) {
+        /*
         for(unsigned i = 0; i < nodes.size(); ++i) {
             if(find(cutset.begin(), cutset.end(), nodes[i]) == cutset.end())
+                return false;
+        }
+        
+        return true;
+        */
+        for(unsigned int i = 0; i < cutset.size(); ++i) {
+            if(find(nodes.begin(), nodes.end(), cutset[i]) == nodes.end())
                 return false;
         }
         
@@ -225,6 +233,39 @@ class PeelOperation {
         tmp = children.size();
         for(unsigned i = 0; i < tmp; ++i) {
             ss << children[i];
+            if(i != (tmp-1)) {
+                ss << ",";
+            }
+        }
+        ss << ") ";
+        
+        return ss.str();
+    }
+    
+    string translated_debug_string(Pedigree* ped) {
+        stringstream ss;
+        unsigned tmp;
+        
+        ss << peeloperation_str(type) << "\t" \
+           << "peelnode = " << peelnode << "\t" \
+           << "id = " << ped->get_by_index(peelnode)->get_id() << "\t" \
+           << "cutset = (";
+        
+        tmp = cutset.size();
+        for(unsigned i = 0; i < tmp; ++i) {
+            ss << ped->get_by_index(cutset[i])->get_id();
+            if(i != (tmp-1)) {
+                ss << ",";
+            }
+        }
+        ss << ")\t";
+        
+        ss << " prev = (" << prev1 << ", " << prev2 << ")";
+        
+        ss << " children = (";
+        tmp = children.size();
+        for(unsigned i = 0; i < tmp; ++i) {
+            ss << ped->get_by_index(children[i])->get_id();
             if(i != (tmp-1)) {
                 ss << ",";
             }

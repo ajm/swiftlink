@@ -11,7 +11,7 @@ using namespace std;
 #include "founder_allele_graph4.h"
 #include "random.h"
 
-#include "founder_allele_graph3.h"
+//#include "founder_allele_graph3.h"
 
 
 void MeiosisSampler::reset(DescentGraph& dg, unsigned int parameter) {

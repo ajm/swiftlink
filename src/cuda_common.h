@@ -7,11 +7,14 @@
 
 #include "cuda_quiet.h"
 
-#include "tinymt/tinymt32_host.h"
+//#include "tinymt/tinymt32_host.h"
 
 //#define NUM_THREADS 96
 #define NUM_ALLELES 4
 #define GPU_DEFAULT_COMPONENT -1
+
+typedef unsigned int uint32_t;
+typedef char uint8_t;
 
 enum {
     GPU_TRAIT_A,
@@ -73,7 +76,7 @@ struct gpu_state {
     
     // random number generation
     curandState* randstates;
-    tinymt32_status_t* randmt;
+    //tinymt32_status_t* randmt;
     
     int* fa_sequence;
 };
@@ -246,7 +249,7 @@ extern "C" {
     void run_gpu_lodscoreprint_kernel(struct gpu_state* state);
     
     void run_gpu_curand_init_kernel(int numblocks, curandState* states, long int* seeds);
-    void run_gpu_tinymt_init_kernel(int numblocks, tinymt32_status_t* states, uint32_t* params, uint32_t* seeds);
+    //void run_gpu_tinymt_init_kernel(int numblocks, tinymt32_status_t* states, uint32_t* params, uint32_t* seeds);
     
     void setup_lsampler_kernel();
     void setup_lodscore_kernel();

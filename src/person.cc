@@ -285,6 +285,34 @@ PeelOperation Person::peel_operation(PeelingState& state) {
     
     PeelOperation p(internal_id);
     
+    
+    if(ripe_to_peel_final(state)) {
+        p.set_type(LAST_PEEL);
+        //get_cutset(p, state);
+        
+        return p;
+    }
+    
+    // not a founder and
+    // neither parent has been peeled
+    //  then; must be child-peel
+    if((not isfounder()) and (not (state.is_peeled(maternal_id) or state.is_peeled(paternal_id)))) {
+        p.set_type(CHILD_PEEL);
+    }
+    else {
+        // if offspring have not been peeled, then their transmission prob can only 
+        // be considered if this is a parent peel
+        // with the exception of when their other parent has been peeled
+        if(not isleaf() and not partners_peeled(state) and not offspring_peeled(state)) {
+            p.set_type(PARENT_PEEL);
+        }
+        else {
+            p.set_type(PARTNER_PEEL);
+        }
+    }
+    
+    
+    /*
     //p.set_type(NULL_PEEL);
     
     if(ripe_to_peel_final(state)) {
@@ -299,10 +327,10 @@ PeelOperation Person::peel_operation(PeelingState& state) {
     else if(ripe_to_peel_down(state)) {
         p.set_type(PARENT_PEEL);
     }
+    */
     
     if(p.get_type() != NULL_PEEL) {
-        //p.set_peelnode(internal_id);
-        get_cutset(p, state);
+        //get_cutset(p, state);
     }
     
     return p;

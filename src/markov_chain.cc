@@ -46,6 +46,8 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
     
     printf("P(T) = %e\n", trait_prob / log(10));
     
+    exit(-1);
+    
     if(options.use_gpu) {
         gpulod = new GPULodscores(ped, map, psg, options, trait_prob);
     }

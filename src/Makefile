@@ -1,8 +1,8 @@
 CXX	:= g++
 CC := gcc
 GPUCC := nvcc
-CXXFLAGS := -g -O2 -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe -fopenmp -m32
-CFLAGS := -g -O2 -Wall -pipe -fopenmp -m32
+CXXFLAGS := -g -O0 -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe -fopenmp -m32
+CFLAGS := -g -O0 -Wall -pipe -fopenmp -m32
 LDFLAGS := -m32
 INCLUDES := -I. -I/usr/local/cuda/include
 #LIBS := -lgomp -lgsl -lgslcblas -lrt -L/usr/local/cuda/lib64 -lcudart
@@ -26,7 +26,6 @@ OBJECTS	:= \
 	linkage_writer.o \
 	peel_sequence_generator.o \
 	founder_allele_graph4.o \
-	founder_allele_graph3.o \
 	elimination.o \
 	peel_matrix.o \
 	rfunction.o \
@@ -41,10 +40,8 @@ OBJECTS	:= \
 	program.o \
 	progress.o \
 	main.o \
-	gpu_markov_chain.o \
 	gpu_lodscores.o \
-	cuda_linkage.o \
-	tinymt/tinymt32_host.o
+	cuda_linkage.o
 
 swiftcpu: $(OBJECTS)
 	$(CXX) -o $@ $(OBJECTS) $(LDFLAGS) $(LIBS)

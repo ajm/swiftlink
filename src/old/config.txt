@@ -1,5 +1,0 @@
-population 1000000
-iterations 1000000
-elitism 0
-crossover double
-selection tournament 5 0.2

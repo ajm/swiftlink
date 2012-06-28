@@ -15,8 +15,8 @@ class TraitRfunction : public Rfunction {
     void evaluate_parent_peel(unsigned int pmatrix_index, DescentGraph* dg);
     
  public :
-    TraitRfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, Rfunction* prev1, Rfunction* prev2) : 
-        Rfunction(p, m, locus, po, prev1, prev2) {
+    TraitRfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, vector<Rfunction*> previous) : 
+        Rfunction(p, m, locus, po, previous) {
         
         for(int i = 0; i < 4; ++i) {
             trait_cache[i] = get_trait_probability(peel_id, static_cast<enum phased_trait>(i));

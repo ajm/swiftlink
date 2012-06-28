@@ -196,20 +196,15 @@ void SamplerRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGr
         
         indices[pmatrix_index][peel_id] = i;
         
-        //tmp = get_trait_probability(peel_id, kid_trait);
         tmp = trait_cache[i];
         if(tmp == 0.0)
             continue;
         
         tmp *= transmission[0][transmission_index(mat_trait, pat_trait, kid_trait)];
-        //tmp *= (get_recombination_probability(dg, peel_id, mat_trait, kid_trait, MATERNAL) *
-        //        get_recombination_probability(dg, peel_id, pat_trait, kid_trait, PATERNAL));
         
-        //if(tmp == 0.0)
-        //    continue;
-        
-        tmp *= ((previous_rfunction1 != NULL) ? previous_rfunction1->get(indices[pmatrix_index]) : 1.0) * \
-               ((previous_rfunction2 != NULL) ? previous_rfunction2->get(indices[pmatrix_index]) : 1.0);
+        for(unsigned int j = 0; j < previous_rfunctions.size(); ++j) {
+            tmp *= previous_rfunctions[j]->get(indices[pmatrix_index]);
+        }
         
         pmatrix_presum.set(presum_index, tmp);
         
@@ -237,15 +232,13 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
         
         indices[pmatrix_index][peel_id] = i;
         
-        //tmp = get_trait_probability(peel_id, mat_trait);
         tmp = trait_cache[i];
         if(tmp == 0.0)
             continue;
         
-        tmp *= ((previous_rfunction1 != NULL ? previous_rfunction1->get(indices[pmatrix_index]) : 1.0) * \
-                (previous_rfunction2 != NULL ? previous_rfunction2->get(indices[pmatrix_index]) : 1.0));
-        //if(tmp == 0.0)
-        //    continue;
+        for(unsigned int j = 0; j < previous_rfunctions.size(); ++j) {
+            tmp *= previous_rfunctions[j]->get(indices[pmatrix_index]);
+        }
         
         double child_prob = 1.0;
         
@@ -263,11 +256,6 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
             }
             
             child_prob *= transmission[c][transmission_index(mat_trait, pat_trait, kid_trait)];
-            //child_prob *= (get_recombination_probability(dg, child_id, mat_trait, kid_trait, MATERNAL) *
-            //               get_recombination_probability(dg, child_id, pat_trait, kid_trait, PATERNAL));
-            
-            //if(child_prob == 0.0)
-            //    break;
         }
         
         tmp *= child_prob;
@@ -283,6 +271,7 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
 void SamplerRfunction::setup_transmission_cache() {
         
     if(peel->get_type() == PARENT_PEEL) {
+        /*
         for(unsigned int c = 0; c < peel->get_cutset_size(); ++c) {
             unsigned int child_id = peel->get_cutnode(c);
             Person* child = ped->get_by_index(child_id);
@@ -293,8 +282,15 @@ void SamplerRfunction::setup_transmission_cache() {
             transmission.push_back(new double[64]);
             children.push_back(child_id);
         }
+        */
+        
+        vector<unsigned int>& kids = peel->get_children();
+        for(unsigned int i = 0; i < kids.size(); ++i) {
+            transmission.push_back(new double[64]);
+            children.push_back(kids[i]);
+        }
     }
-    else {
+    else if(peel->get_type() == CHILD_PEEL){
         transmission.push_back(new double[64]);
     }
 }

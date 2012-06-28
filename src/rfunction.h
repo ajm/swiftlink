@@ -27,8 +27,7 @@ class Rfunction {
     PeelMatrix pmatrix;
     PeelMatrix pmatrix_presum;
     PeelOperation* peel;
-    Rfunction* previous_rfunction1;
-    Rfunction* previous_rfunction2;
+    vector<Rfunction*> previous_rfunctions;
     unsigned int locus;
     vector<vector<int> > indices;
     vector<int>* valid_indices;
@@ -112,7 +111,7 @@ class Rfunction {
     void evaluate_element(unsigned int pmatrix_index, DescentGraph* dg);
 
  public :
-    Rfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, Rfunction* prev1, Rfunction* prev2);
+    Rfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, vector<Rfunction*> previous);
     Rfunction(const Rfunction& r);
     Rfunction& operator=(const Rfunction& rhs);
     virtual ~Rfunction() {}

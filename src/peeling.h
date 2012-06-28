@@ -9,6 +9,7 @@ using namespace std;
 #include <algorithm>
 #include <string>
 #include <sstream>
+#include <cmath>
 
 #include "pedigree.h"
 
@@ -22,56 +23,61 @@ enum peeloperation {
 };
 
 class PeelOperation {
-    enum peeloperation type;
-    vector<unsigned int> cutset; // what is being peeled on to by this operation
-    vector<unsigned int> children;
-    unsigned int peelnode;       // what is being peeled by this operation
-    bool used;
-    int prev1;
-    int prev2;
     
+    Pedigree* ped;
+    enum peeloperation type;        // which function is called later
+    unsigned int peelnode;          // what is being peeled by this operation
+    bool used;                      // book-keeping
+    vector<unsigned int> cutset;    // what is being peeled on to by this operation
+    vector<unsigned int> children;  // used to know what to pre-calculate for transmission probs (parent + child peels)
+    vector<unsigned int> previous;  // all previous functions (0-3) (at least 3 is the most i have seen...)
+    
+    // cached indices 
     vector<vector<int> > assignments;
     vector<vector<int> > presum_indices;
     vector<vector<int> > matrix_indices;
     vector<int> lod_indices;
     
+    
  public :
-    PeelOperation(unsigned int peelnode) :  
+    PeelOperation(Pedigree* ped, unsigned int peelnode) :
+        ped(ped),
         type(NULL_PEEL), 
+        peelnode(peelnode),
+        used(false), 
         cutset(), 
         children(),
-        peelnode(peelnode), 
-        used(false),
-        prev1(-1),
-        prev2(-1),
+        previous(),
         assignments(),
         presum_indices(),
         matrix_indices(),
         lod_indices() {}
     
     PeelOperation(const PeelOperation& rhs) :
+        ped(rhs.ped),
         type(rhs.type),
-        cutset(rhs.cutset),
-        children(rhs.children),
         peelnode(rhs.peelnode),
         used(rhs.used),
-        prev1(rhs.prev1),
-        prev2(rhs.prev2),
+        cutset(rhs.cutset),
+        children(rhs.children),
+        previous(rhs.previous),
         assignments(rhs.assignments),
         presum_indices(rhs.presum_indices),
         matrix_indices(rhs.matrix_indices),
         lod_indices(rhs.lod_indices) {}
+        
+    ~PeelOperation() {}
     
     PeelOperation& operator=(const PeelOperation& rhs) {
         
         if(&rhs != this) {
+            ped = rhs.ped;
             type = rhs.type;
-            cutset = rhs.cutset;
-            children = rhs.children;
             peelnode = rhs.peelnode;
             used = rhs.used;
-            prev1 = rhs.prev1;
-            prev2 = rhs.prev2;
+            cutset = rhs.cutset;
+            children = rhs.children;
+            previous = rhs.previous;
             assignments = rhs.assignments;
             presum_indices = rhs.presum_indices;
             matrix_indices = rhs.matrix_indices;
@@ -80,8 +86,14 @@ class PeelOperation {
         
         return *this;
     }
-        
-    ~PeelOperation() {}
+    
+    bool operator<(const PeelOperation& rhs) const {
+		return get_cutset_size() < rhs.get_cutset_size();
+	}
+    
+    unsigned int get_peelnode() const {
+        return peelnode;
+    }
     
     void set_used() {
         used = true;
@@ -91,20 +103,43 @@ class PeelOperation {
         return used;
     }
     
-    bool in_cutset(unsigned node) const {
+    bool in_cutset(unsigned int node) const {
         return find(cutset.begin(), cutset.end(), node) != cutset.end();
     }
     
-    void set_type(enum peeloperation po) {
-        type = po;
-        
-        if(type == CHILD_PEEL) {
-            children.push_back(peelnode);
+    void add_cutnode(unsigned int c) {
+        if(not in_cutset(c)) {
+            cutset.push_back(c);
         }
     }
     
-    enum peeloperation get_type() const {
-        return type;
+    void remove_cutnode(unsigned int c) {
+        vector<unsigned int>::iterator it = find(cutset.begin(), cutset.end(), c);
+        
+        if(it != cutset.end()) {
+            cutset.erase(it);
+        }
+    }
+    
+    unsigned get_cutnode(unsigned int i) const {
+        return cutset[i];
+    }
+    
+    void reset() {
+        cutset.clear();
+    }
+    
+    unsigned int get_cost() const {
+        return static_cast<int>(pow(4.0, static_cast<double>(cutset.size())));
+    }
+    
+    bool contains_cutnodes(vector<unsigned>& nodes) {
+        for(unsigned int i = 0; i < cutset.size(); ++i) {
+            if(find(nodes.begin(), nodes.end(), cutset[i]) == nodes.end())
+                return false;
+        }
+        
+        return true;
     }
     
     unsigned int get_cutset_size() const { 
@@ -115,6 +150,30 @@ class PeelOperation {
         return cutset;
     }
     
+    void set_type(enum peeloperation po) {
+        type = po;
+        
+        if(type == PARENT_PEEL) {
+            Person* p = ped->get_by_index(peelnode);
+            
+            for(unsigned int i = 0; i < cutset.size(); ++i) {
+                if(p->is_offspring(cutset[i])) {
+                    children.push_back(cutset[i]);
+                }
+            }
+            
+            /*
+            if(not (state.is_peeled(p->get_maternalid()) or state.is_peeled(p->get_paternalid())) {
+                children.push_back(peelnode);
+            }
+            */
+        }
+    }
+    
+    enum peeloperation get_type() const {
+        return type;
+    }
+    
     unsigned int get_children_size() {
         return children.size();
     }
@@ -123,73 +182,12 @@ class PeelOperation {
         return children;
     }
     
-    void add_cutnode(unsigned int c, bool is_offspring) {
-        if(not in_cutset(c)) {
-            cutset.push_back(c);
-            
-            if(is_offspring) {
-                if(find(children.begin(), children.end(), c) == children.end()) {
-                    children.push_back(c);
-                }
-            }
-        }
+    void add_prevfunction(unsigned int i) {
+        previous.push_back(i);
     }
     
-    void remove_cutnode(unsigned int c) {
-        vector<unsigned int>::iterator it = find(cutset.begin(), cutset.end(), c);
-        if(it != cutset.end())
-            cutset.erase(it);
-    }
-    
-    unsigned get_cutnode(unsigned int i) const {
-        return cutset[i];
-    }
-    
-    bool contains_cutnodes(vector<unsigned>& nodes) {
-        /*
-        for(unsigned i = 0; i < nodes.size(); ++i) {
-            if(find(cutset.begin(), cutset.end(), nodes[i]) == cutset.end())
-                return false;
-        }
-        
-        return true;
-        */
-        for(unsigned int i = 0; i < cutset.size(); ++i) {
-            if(find(nodes.begin(), nodes.end(), cutset[i]) == nodes.end())
-                return false;
-        }
-        
-        return true;
-    }
-    
-    unsigned get_peelnode() const {
-        return peelnode;
-    }
-    
-    void set_peelnode(unsigned i) {
-        peelnode = i;
-    }
-    
-    void set_previous_operation(int i) {
-        if(prev1 == -1) {
-            prev1 = i;
-            return;
-        }
-        
-        if(prev2 == -1) {
-            prev2 = i;
-            return;
-        }
-        
-        abort();
-    }
-    
-    int get_previous_op1() const {
-        return prev1;
-    }
-
-    int get_previous_op2() const {
-        return prev2;
+    vector<unsigned int>& get_prevfunctions() {
+        return previous;
     }
 
     string peeloperation_str(enum peeloperation po) {
@@ -227,7 +225,16 @@ class PeelOperation {
         }
         ss << ") ";
         
-        ss << " prev = (" << prev1 << ", " << prev2 << ")";
+        ss << "prev = (";
+        
+        tmp = previous.size();
+        for(unsigned i = 0; i < tmp; ++i) {
+            ss << previous[i];
+            if(i != (tmp-1)) {
+                ss << ",";
+            }
+        }
+        ss << ") ";
         
         ss << " children = (";
         tmp = children.size();
@@ -260,7 +267,16 @@ class PeelOperation {
         }
         ss << ")\t";
         
-        ss << " prev = (" << prev1 << ", " << prev2 << ")";
+        ss << "prev = (";
+        
+        tmp = previous.size();
+        for(unsigned i = 0; i < tmp; ++i) {
+            ss << previous[i];
+            if(i != (tmp-1)) {
+                ss << ",";
+            }
+        }
+        ss << ") ";
         
         ss << " children = (";
         tmp = children.size();
@@ -271,6 +287,14 @@ class PeelOperation {
             }
         }
         ss << ") ";
+        
+        return ss.str();
+    }
+    
+    string code_output() {
+        stringstream ss;
+        
+        ss << "current.push_back(" << peelnode << ");";
         
         return ss.str();
     }
@@ -291,10 +315,8 @@ class PeelOperation {
         lod_indices = indices;
     }
     
-    // XXX do these really need to be return-by-value? are they not read-only?
-    // 
-    // i know this is returned-by-value, it is to get rid of some concurrency problems
-    // at the expense of memory
+    // return-by-value as each locus uses it to store temporary values
+    // for the node being peeled as well 
     vector<vector<int> > get_index_values() {
         return assignments;
     }
@@ -310,10 +332,6 @@ class PeelOperation {
     vector<int>* get_lod_indices() {
         return &lod_indices;
     }
-    
-    bool operator<(const PeelOperation& p) const {
-		return get_cutset_size() < p.get_cutset_size();
-	}
 };
 
 class PeelingState {
@@ -337,6 +355,15 @@ class PeelingState {
     
     void toggle_peel_operation(PeelOperation& operation) {
         toggle_peeled(operation.get_peelnode());
+    }
+    
+    bool is_final_node(unsigned int node) {
+        for(unsigned int i = 0; i < peeled.size(); ++i) {
+            if((i != node) and not peeled[i])
+                return false;
+        }
+        
+        return true;
     }
     
     void reset() {

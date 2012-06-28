@@ -57,30 +57,9 @@ class Person {
 	bool _is_unknown(const string& s) const { 
         return s == "0"; 
     }
-
-    // private, peeling related
     
-    
-    unsigned count_unpeeled(vector<Person*>& v, PeelingState& ps);
-    unsigned get_unpeeled_mate(PeelingState& ps);
-    bool offspring_peeled(PeelingState& ps);
-    bool founder_mates_peeled(PeelingState& ps);
-    bool partners_peeled(PeelingState& ps);
-    bool parents_peeled(PeelingState& ps);
-    bool one_parent_peeled(PeelingState& ps);
-    bool ripe_above_singular_mate(PeelingState& ps);
-    bool ripe_above(PeelingState& ps);
-    bool ripe_above_at_least_one_parent(PeelingState& ps);
-    
-    bool ripe_to_peel_across(PeelingState& ps);
-    bool ripe_to_peel_final(PeelingState& ps);
-    bool ripe_to_peel_down(PeelingState& ps);
-    bool ripe_to_peel_up(PeelingState& ps);
-    
-    void neighbours(vector<unsigned int>& nodes, PeelingState& ps);
-    //void get_cutset(PeelOperation& operation, PeelingState& state);
     void add_mate(Person* p);
-    bool singular_unpeeled_mate(PeelingState& ps);
+    unsigned count_unpeeled(vector<Person*>& v, PeelingState& ps);
     
     
  public :
@@ -194,9 +173,8 @@ class Person {
         return (i == maternal_id) or (i == paternal_id);
     }
     
-    PeelOperation peel_operation(PeelingState& state);
-    void get_cutset(PeelOperation& operation, PeelingState& state);
-    int get_cutset_size(PeelingState& state);
+    bool partners_peeled(PeelingState& ps);
+    bool offspring_peeled(PeelingState& ps);
     
     bool safe_to_ignore_meiosis(enum parentage p);
     
@@ -204,3 +182,4 @@ class Person {
 };
 
 #endif
+

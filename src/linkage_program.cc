@@ -89,9 +89,7 @@ LODscores* LinkageProgram::run_pedigree(Pedigree& p) {
     
     
     PeelSequenceGenerator psg(&p, &map, options.verbose);
-    if((options.peelseq_filename == "") or not psg.read_from_file(options.peelseq_filename)) {
-        psg.build_peel_order();
-    }
+    
     
     SequentialImputation si(&p, &map, &psg);
     //si.run(dg, options.si_iterations);

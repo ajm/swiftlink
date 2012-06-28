@@ -13,15 +13,14 @@ using namespace std;
 #include "genetic_map.h"
 
 
-Rfunction::Rfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, Rfunction* prev1, Rfunction* prev2) : 
+Rfunction::Rfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, vector<Rfunction*> previous) : 
     map(m),
     ped(p),
     offset(0),
     pmatrix(po->get_cutset_size(), NUM_ALLELES),
     pmatrix_presum(po->get_cutset_size() + 1, NUM_ALLELES),
     peel(po), 
-    previous_rfunction1(prev1),
-    previous_rfunction2(prev2),
+    previous_rfunctions(previous),
     locus(locus),
     indices(peel->get_index_values()),
     valid_indices(peel->get_matrix_indices(locus)),
@@ -50,8 +49,7 @@ Rfunction::Rfunction(const Rfunction& rhs) :
     pmatrix(rhs.pmatrix),
     pmatrix_presum(rhs.pmatrix_presum),
     peel(rhs.peel),
-    previous_rfunction1(rhs.previous_rfunction1),
-    previous_rfunction2(rhs.previous_rfunction2),
+    previous_rfunctions(rhs.previous_rfunctions),
     locus(rhs.locus),
     indices(rhs.indices),
     valid_indices(rhs.valid_indices),
@@ -73,8 +71,7 @@ Rfunction& Rfunction::operator=(const Rfunction& rhs) {
         map = rhs.map;
         ped = rhs.ped;
         offset = rhs.offset;
-        previous_rfunction1 = rhs.previous_rfunction1;
-        previous_rfunction2 = rhs.previous_rfunction2;
+        previous_rfunctions = rhs.previous_rfunctions;
         locus = rhs.locus;
         indices = rhs.indices;
         valid_indices = rhs.valid_indices;
@@ -124,21 +121,13 @@ void Rfunction::evaluate_partner_peel(unsigned int pmatrix_index) {
         
         indices[pmatrix_index][peel_id] = i;
         
-        //tmp = get_trait_probability(peel_id, partner_trait);
         tmp = trait_cache[i];
         if(tmp == 0.0)
             continue;
         
-        /*
-        tmp *= (previous_rfunction1 == NULL ? 1.0 : previous_rfunction1->get(indices[pmatrix_index])) * \
-               (previous_rfunction2 == NULL ? 1.0 : previous_rfunction2->get(indices[pmatrix_index]));
-        */
-        
-        tmp *= (previous_rfunction1 == NULL ? 1.0 : previous_rfunction1->get(indices[pmatrix_index]));
-        //if(tmp == 0.0)
-        //    continue;
-        
-        tmp *= (previous_rfunction2 == NULL ? 1.0 : previous_rfunction2->get(indices[pmatrix_index]));
+        for(unsigned int j = 0; j < previous_rfunctions.size(); ++j) {
+            tmp *= previous_rfunctions[j]->get(indices[pmatrix_index]);
+        }
         
         pmatrix_presum.set(presum_index, tmp);
         

@@ -20,7 +20,7 @@ using namespace std;
 #include "types.h"
 #include "random.h"
 #include "lod_score.h"
-#include "gpu_lodscores.h"
+//#include "gpu_lodscores.h"
 
 
 //#define MICROBENCHMARK_TIMING 1
@@ -30,7 +30,7 @@ using namespace std;
 LODscores* MarkovChain::run(DescentGraph& dg) {
 
     LODscores* lod = new LODscores(map);
-    GPULodscores* gpulod = 0;
+    //GPULodscores* gpulod = 0;
     
     // lod scorers
     vector<Peeler*> peelers;
@@ -49,7 +49,7 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
     exit(-1);
     
     if(options.use_gpu) {
-        gpulod = new GPULodscores(ped, map, psg, options, trait_prob);
+        //gpulod = new GPULodscores(ped, map, psg, options, trait_prob);
     }
     
     
@@ -161,7 +161,7 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
                 }
             }
             else {
-                gpulod->calculate(dg);
+                //gpulod->calculate(dg);
             }
         }
         
@@ -171,7 +171,7 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
     p.finish();
     
     if(options.use_gpu) {
-        gpulod->get_results(lod);
+        //gpulod->get_results(lod);
     }
     
     // dump lsamplers

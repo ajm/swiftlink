@@ -18,10 +18,14 @@ void LocusSampler::init_rfunctions(PeelSequenceGenerator* psg) {
     rfunctions.reserve(ops.size()); // need to do this otherwise pointers may not work later...
     
     for(unsigned int i = 0; i < ops.size(); ++i) {
-        Rfunction* prev1 = ops[i].get_previous_op1() == -1 ? NULL : &(rfunctions[ops[i].get_previous_op1()]);
-        Rfunction* prev2 = ops[i].get_previous_op2() == -1 ? NULL : &(rfunctions[ops[i].get_previous_op2()]);
+        vector<unsigned int>& prev_indices = ops[i].get_prevfunctions();
+        vector<Rfunction*> prev_pointers;
         
-        rfunctions.push_back(SamplerRfunction(ped, map, locus, &(ops[i]), prev1, prev2));
+        for(unsigned int j = 0; j < prev_indices.size(); ++j) {
+            prev_pointers.push_back(&(rfunctions[prev_indices[j]]));
+        }
+        
+        rfunctions.push_back(SamplerRfunction(ped, map, locus, &(ops[i]), prev_pointers));
     }
 }
 

@@ -15,12 +15,7 @@ using namespace std;
 #include "elimination.h"
 #include "genetic_map.h"
 
-
-
-
-void PeelSequenceGenerator::build_peel_order() {
-}
-
+/*
 bool PeelSequenceGenerator::read_from_file(string filename) {
     SimpleParser sp(filename);
     if(not sp.parse()) {
@@ -40,74 +35,35 @@ bool PeelSequenceGenerator::read_from_file(string filename) {
     
     return true;
 }
+*/
 
 vector<PeelOperation>& PeelSequenceGenerator::get_peel_order() {
     return peelorder;
-}
-
-unsigned PeelSequenceGenerator::score_peel_sequence() {
-    unsigned total = 0;
-    
-    for(unsigned i = 0; i < peelorder.size(); ++i) {
-        total += pow(4.0, static_cast<double>(peelorder[i].get_cutset_size()));
-    }
-    
-    return total;
 }
 
 string PeelSequenceGenerator::debug_string() {
     stringstream ss;
     
     for(unsigned i = 0; i < peelorder.size(); ++i) {
-        ss << peelorder[i].debug_string() << "\n";
+        ss << i << "\t" << peelorder[i].translated_debug_string(ped) << "\n";
+        //ss << peelorder[i].code_output() << "\n";
     }
     
     return ss.str();
-}
-
-void PeelSequenceGenerator::find_previous_functions(PeelOperation& op) {
-    if(op.get_type() == CHILD_PEEL) {
-        find_child_functions(op);
-    }
-    else {
-        find_generic_functions(op);
-    }
-}
-
-void PeelSequenceGenerator::find_generic_functions(PeelOperation& op) {
-    vector<unsigned> tmp;
-    tmp.push_back(op.get_peelnode());
-    
-    op.set_previous_operation(find_function_containing(tmp));
-    op.set_previous_operation(find_function_containing(tmp));
 }
 
 void PeelSequenceGenerator::find_prev_functions(PeelOperation& op) {
     vector<unsigned> tmp(op.get_cutset());
     tmp.push_back(op.get_peelnode());
     
-    op.set_previous_operation(find_function_containing(tmp));
-    op.set_previous_operation(find_function_containing(tmp));
-}
-
-
-void PeelSequenceGenerator::find_child_functions(PeelOperation& op) {
-    Person* p = ped->get_by_index(op.get_peelnode());
-    vector<unsigned> tmp;
-    tmp.push_back(p->get_maternalid());
-    tmp.push_back(p->get_paternalid());
-    
-    // ancestors
-    op.set_previous_operation(find_function_containing(tmp));
-    
-    if(p->isleaf())
-        return;
-    
-    tmp.clear();
-    tmp.push_back(p->get_internalid());
-    
-    // descendents
-    op.set_previous_operation(find_function_containing(tmp));
+    while(1) {
+        int pf = find_function_containing(tmp);
+        
+        if(pf == -1)
+            break;
+            
+        op.add_prevfunction(pf);
+    }
 }
 
 int PeelSequenceGenerator::find_function_containing(vector<unsigned>& nodes) {
@@ -148,7 +104,7 @@ void PeelSequenceGenerator::bruteforce_assignments(PeelOperation& op) {
         }
     }
     
-    // XXX presum indices, ndim is always one bigger
+    // presum indices, ndim is always one bigger
     for(int locus = 0; locus < int(map->num_markers()); ++locus) {
         for(int i = 0; i < total; ++i) {
             bool valid = true;
@@ -182,7 +138,7 @@ void PeelSequenceGenerator::bruteforce_assignments(PeelOperation& op) {
     }
     
     
-    // XXX matrix_indices
+    // matrix_indices
     for(int locus = 0; locus < int(map->num_markers()); ++locus) {
         for(int i = 0; i < total; ++i) {
             bool valid = true;
@@ -201,7 +157,7 @@ void PeelSequenceGenerator::bruteforce_assignments(PeelOperation& op) {
     }
         
     
-    // XXX lod indices
+    // lod indices
     enum phased_trait pt;
     
     for(int i = 0; i < total; ++i) {
@@ -228,106 +184,96 @@ void PeelSequenceGenerator::bruteforce_assignments(PeelOperation& op) {
     op.set_lod_indices(lod_indices);
 }
 
-int PeelSequenceGenerator::calculate_cost(vector<unsigned int>& seq) {
-    PeelingState ps(ped);
-    int cost = 0;
+void PeelSequenceGenerator::set_type(PeelOperation& p) {
+    enum peeloperation t = NULL_PEEL;
     
-    for(unsigned i = 0; i < seq.size(); ++i) {
-        Person* per = ped->get_by_index(seq[i]);
-        PeelOperation p = per->peel_operation(ps);
-        
-        if(p.get_type() == NULL_PEEL) {
-            return -1;
-        }
-        
-        ps.set_peeled(seq[i]);
-        
-        cost += pow(4.0, int(p.get_cutset_size()));
+    Person* q = ped->get_by_index(p.get_peelnode());
+    
+    if(state.is_final_node(p.get_peelnode())) {
+        t = LAST_PEEL;
+    }
+    // if offspring have not been peeled, then their transmission prob can only 
+    // be considered if this is a parent peel
+    // with the exception of when their other parent has been peeled
+    else if(not q->isleaf() and not q->partners_peeled(state) and not q->offspring_peeled(state)) {
+        t = PARENT_PEEL;
+    }
+    // not a founder and neither parent has been peeled
+    // then; must be child-peel
+    else if((not q->isfounder()) and (not (state.is_peeled(q->get_maternalid()) or state.is_peeled(q->get_paternalid())))) {
+        t = CHILD_PEEL;
+    }
+    else {
+        t = PARTNER_PEEL;
     }
     
-    return cost;
+    /*
+    if(t == NULL_PEEL) {
+        fprintf(stderr, 
+                "Error: invalid peeling sequence (%s did not have a type)\n", 
+                q->get_id().c_str());
+        abort();
+    }
+    */
+    
+    p.set_type(t);
 }
 
-void PeelSequenceGenerator::rebuild_peel_order(vector<unsigned int>& seq) {
-    vector<SimpleGraph> tmp(graph);
+// previously peelorder was just in the order of the pedigree, but after finalise_peel_order
+// it is in the order of the peeling sequence itself
+void PeelSequenceGenerator::finalise_peel_order(vector<unsigned int>& seq) {
+    vector<PeelOperation> tmp(peelorder);
     
     peelorder.clear();
     state.reset();
 
     for(unsigned i = 0; i < seq.size(); ++i) {
-        Person* per = ped->get_by_index(seq[i]);
-        PeelOperation p = per->peel_operation(state);
+        PeelOperation& p = tmp[seq[i]];
         
-        if(p.get_type() == NULL_PEEL) {
-            printf("bad rebuild: %s (%s)\n", p.debug_string().c_str(), per->get_id().c_str());
-            abort();
-        }
-        
-        vector<unsigned int>& cs = tmp[seq[i]].get_cutset();
-        for(unsigned int j = 0; j < cs.size(); ++j) {
-            p.add_cutnode(cs[j], per->is_offspring(cs[j]));
-        }
-        
-        //find_previous_functions(p);
+        set_type(p);
         find_prev_functions(p);
-
-        if(verbose) {
-            fprintf(stderr, "rebuild: %s\n", p.debug_string().c_str());
-        }
-        
-        printf("%02d: (%s)\n", i, p.translated_debug_string(ped).c_str());
-        
-        state.toggle_peel_operation(p);
+        bruteforce_assignments(p);
         
         eliminate_node(tmp, seq[i]);
         
         peelorder.push_back(p);
+        state.toggle_peel_operation(p);
     }
 }
 
-// ----
-
 void PeelSequenceGenerator::build_simple_graph() {
-    graph.clear();
+    
+    peelorder.clear();
     
     for(unsigned int i = 0; i < ped->num_members(); ++i) {
-        SimpleGraph sg(i);
+        PeelOperation po(ped, i);
         
         Person* p = ped->get_by_index(i);
         
         if(not p->isfounder()) {
-            sg.add(p->get_maternalid());
-            sg.add(p->get_paternalid());
+            po.add_cutnode(p->get_maternalid());
+            po.add_cutnode(p->get_paternalid());
         }
         
         for(unsigned int j = 0; j < p->num_children(); ++j) {
             Person* c = p->get_child(j);
-            sg.add(c->get_internalid());
+            po.add_cutnode(c->get_internalid());
         }
         
         for(unsigned int j = 0; j < p->num_mates(); ++j) {
             Person* c = p->get_mate(j);
-            sg.add(c->get_internalid());
+            po.add_cutnode(c->get_internalid());
         }
         
-        //printf("cost of %d = %d\n", i, sg.get_cost());
-        
-        graph.push_back(sg);
+        peelorder.push_back(po);
     }
-}
-
-void PeelSequenceGenerator::print_graph(vector<SimpleGraph>& g) {
-    for(unsigned int i = 0; i < ped->num_members(); ++i) {
-        printf("%s\n", g[i].debug_string().c_str());
-    }
-    printf("\n");
 }
 
 void PeelSequenceGenerator::build_peel_sequence() {
-    int iterations = 1000;
+    int iterations = 500;
     vector<unsigned int> current;
     
-    /*
+    
     current.reserve(ped->num_members());
     
     for(unsigned i = 0; i < ped->num_members(); ++i) {
@@ -344,9 +290,6 @@ void PeelSequenceGenerator::build_peel_sequence() {
     iter = -1;
     swap0 = swap1 = 0;
     
-    printf("start cost = %d\n", cost);
-    
-    //exit(-1);
     
     Progress p("Peel Sequence:", iterations);
     
@@ -385,206 +328,198 @@ void PeelSequenceGenerator::build_peel_sequence() {
         current[swap1] = tmp;
     }
     
-    p.finish_msg("final cost = %d (old method = %d)", get_proper_cost(current), calculate_cost(current));
-    */ 
     
     /*
-    // fixed
-    current.clear();
-    current.push_back(0);
-    current.push_back(32);
-    current.push_back(11);
-    current.push_back(25);
-    current.push_back(14);
-    current.push_back(5);
-    current.push_back(8);
-    current.push_back(15);
-    current.push_back(7);
-    current.push_back(12);
-    current.push_back(23);
-    current.push_back(30);
-    current.push_back(34);
-    current.push_back(28);
-    current.push_back(20);
-    current.push_back(1);
-    current.push_back(13);
-    current.push_back(24);
-    current.push_back(47);
-    current.push_back(43);
-    current.push_back(48);
-    current.push_back(10);
-    current.push_back(39);
-    current.push_back(2);
-    current.push_back(36);
-    current.push_back(46);
-    current.push_back(35);
-    current.push_back(45);
-    current.push_back(44);
-    current.push_back(21);
-    current.push_back(33);
-    current.push_back(3);
-    current.push_back(27);
-    current.push_back(17);
-    current.push_back(4);
-    current.push_back(19);
-    current.push_back(16);
-    current.push_back(6);
-    current.push_back(18);
-    current.push_back(49);
-    current.push_back(50);
-    current.push_back(9);
-    current.push_back(38);
-    current.push_back(37);
-    current.push_back(26);
-    current.push_back(42);
-    current.push_back(31);
-    current.push_back(29);
-    current.push_back(40);
-    current.push_back(41);
-    current.push_back(22);
+current.push_back(15);
+current.push_back(25);
+current.push_back(34);
+current.push_back(24);
+current.push_back(1);
+current.push_back(2);
+current.push_back(14);
+current.push_back(47);
+current.push_back(0);
+current.push_back(40);
+current.push_back(11);
+current.push_back(30);
+current.push_back(8);
+current.push_back(13);
+current.push_back(7);
+current.push_back(3);
+current.push_back(48);
+current.push_back(44);
+current.push_back(49);
+current.push_back(12);
+current.push_back(23);
+current.push_back(6);
+current.push_back(39);
+current.push_back(26);
+current.push_back(33);
+current.push_back(5);
+current.push_back(29);
+current.push_back(4);
+current.push_back(46);
+current.push_back(19);
+current.push_back(32);
+current.push_back(18);
+current.push_back(16);
+current.push_back(36);
+current.push_back(17);
+current.push_back(21);
+current.push_back(50);
+current.push_back(20);
+current.push_back(42);
+current.push_back(28);
+current.push_back(22);
+current.push_back(43);
+current.push_back(45);
+current.push_back(27);
+current.push_back(41);
+current.push_back(9);
+current.push_back(37);
+current.push_back(35);
+current.push_back(38);
+current.push_back(10);
+current.push_back(31);
     */
-    
-    
-    // wrong p(T)
-    current.clear();
-    current.push_back(9);
-    current.push_back(7);
-    current.push_back(30);
-    current.push_back(0);
-    current.push_back(2);
-    current.push_back(12);
-    current.push_back(23);
-    current.push_back(6);
-    current.push_back(13);
-    current.push_back(47);
-    current.push_back(16);
-    current.push_back(36);
-    current.push_back(48);
-    current.push_back(46);
-    current.push_back(10);
-    current.push_back(5);
-    current.push_back(15);
-    current.push_back(11);
-    current.push_back(8);
-    current.push_back(14);
-    current.push_back(35);
-    current.push_back(39);
-    current.push_back(44);
-    current.push_back(24);
-    current.push_back(25);
-    current.push_back(21);
-    current.push_back(4);
-    current.push_back(17);
-    current.push_back(19);
-    current.push_back(1);
-    current.push_back(20);
-    current.push_back(49);
-    current.push_back(3);
-    current.push_back(45);
-    current.push_back(27);
-    current.push_back(43);
-    current.push_back(32);
-    current.push_back(28);
-    current.push_back(33);
-    current.push_back(34);
-    current.push_back(18);
-    current.push_back(38);
-    current.push_back(50);
-    current.push_back(22);
-    current.push_back(37);
-    current.push_back(26);
-    current.push_back(29);
-    current.push_back(31);
-    current.push_back(41);
-    current.push_back(42);
-    current.push_back(40);
-    
     
     /*
-    // wrong cost?
-    current.clear();
-    current.push_back(0);
-    current.push_back(24);
-    current.push_back(2);
-    current.push_back(30);
-    current.push_back(7);
-    current.push_back(3);
-    current.push_back(1);
-    current.push_back(33);
-    current.push_back(12);
-    current.push_back(23);
-    current.push_back(8);
-    current.push_back(25);
-    current.push_back(6);
-    current.push_back(4);
-    current.push_back(39);
-    current.push_back(15);
-    current.push_back(48);
-    current.push_back(11);
-    current.push_back(13);
-    current.push_back(14);
-    current.push_back(21);
-    current.push_back(18);
-    current.push_back(44);
-    current.push_back(19);
-    current.push_back(26);
-    current.push_back(20);
-    current.push_back(47);
-    current.push_back(29);
-    current.push_back(43);
-    current.push_back(46);
-    current.push_back(42);
-    current.push_back(45);
-    current.push_back(49);
-    current.push_back(36);
-    current.push_back(27);
-    current.push_back(9);
-    current.push_back(17);
-    current.push_back(10);
-    current.push_back(5);
-    current.push_back(16);
-    current.push_back(22);
-    current.push_back(32);
-    current.push_back(50);
-    current.push_back(37);
-    current.push_back(35);
-    current.push_back(34);
-    current.push_back(28);
-    current.push_back(40);
-    current.push_back(38);
-    current.push_back(31);
-    current.push_back(41);
+current.push_back(1);
+current.push_back(30);
+current.push_back(2);
+current.push_back(7);
+current.push_back(36);
+current.push_back(0);
+current.push_back(39);
+current.push_back(11);
+current.push_back(34);
+current.push_back(47);
+current.push_back(13);
+current.push_back(25);
+current.push_back(6);
+current.push_back(12);
+current.push_back(37);
+current.push_back(35);
+current.push_back(14);
+current.push_back(23);
+current.push_back(21);
+current.push_back(24);
+current.push_back(15);
+current.push_back(8);
+current.push_back(20);
+current.push_back(19);
+current.push_back(48);
+current.push_back(44);
+current.push_back(5);
+current.push_back(46);
+current.push_back(27);
+current.push_back(3);
+current.push_back(16);
+current.push_back(32);
+current.push_back(49);
+current.push_back(45);
+current.push_back(4);
+current.push_back(43);
+current.push_back(33);
+current.push_back(38);
+current.push_back(17);
+current.push_back(42);
+current.push_back(18);
+current.push_back(22);
+current.push_back(29);
+current.push_back(31);
+current.push_back(26);
+current.push_back(10);
+current.push_back(41);
+current.push_back(50);
+current.push_back(9);
+current.push_back(40);
+current.push_back(28);
     */
     
-    rebuild_peel_order(current);
+    /*
+current.push_back(2);
+current.push_back(30);
+current.push_back(0);
+current.push_back(24);
+current.push_back(8);
+current.push_back(6);
+current.push_back(23);
+current.push_back(16);
+current.push_back(47);
+current.push_back(13);
+current.push_back(7);
+current.push_back(37);
+current.push_back(1);
+current.push_back(21);
+current.push_back(3);
+current.push_back(29);
+current.push_back(39);
+current.push_back(35);
+current.push_back(48);
+current.push_back(40);
+current.push_back(11);
+current.push_back(46);
+current.push_back(15);
+current.push_back(32);
+current.push_back(14);
+current.push_back(34);
+current.push_back(25);
+current.push_back(12);
+current.push_back(36);
+current.push_back(20);
+current.push_back(19);
+current.push_back(43);
+current.push_back(4);
+current.push_back(44);
+current.push_back(27);
+current.push_back(45);
+current.push_back(33);
+current.push_back(5);
+current.push_back(42);
+current.push_back(38);
+current.push_back(17);
+current.push_back(31);
+current.push_back(49);
+current.push_back(26);
+current.push_back(18);
+current.push_back(10);
+current.push_back(9);
+current.push_back(41);
+current.push_back(22);
+current.push_back(50);
+current.push_back(28);
+    */
     
-    printf("final cost = %d (old method = %d)\n", get_proper_cost(current), calculate_cost(current));
+    printf("cost = %d\n", get_proper_cost(current));
+        
+    finalise_peel_order(current);
     
-    for(unsigned int i = 0; i < peelorder.size(); ++i) {
-        bruteforce_assignments(peelorder[i]);
-    }
+    //p.finish_msg("done (cost = %d)", get_peeling_cost());
     
-    printf("final cost = %d (old method = %d)\n", get_proper_cost(current), calculate_cost(current));
+    printf("%s", debug_string().c_str());
 }
 
-void PeelSequenceGenerator::eliminate_node(vector<SimpleGraph>& tmp, unsigned int node) {
+void PeelSequenceGenerator::eliminate_node(vector<PeelOperation>& tmp, unsigned int node) {
     vector<unsigned int>& cutset = tmp[node].get_cutset();
     
     for(unsigned int i = 0; i < cutset.size(); ++i) {
-        tmp[cutset[i]].remove_node(node);
+        tmp[cutset[i]].remove_cutnode(node);
+        
         for(unsigned int j = 0; j < cutset.size(); ++j) {
             if(i != j) {
-                tmp[cutset[i]].add(cutset[j]);
-                tmp[cutset[j]].add(cutset[i]);
+                tmp[cutset[i]].add_cutnode(cutset[j]);
+                tmp[cutset[j]].add_cutnode(cutset[i]);
             }
         }
     }
 }
 
 // on larger problems starting from a random sequence causes a floating point
-// exception during pow
+// exception during pow, so just use the cutset size as a proxy for the number
+// of operations
 unsigned int PeelSequenceGenerator::get_cost(vector<unsigned int>& peel) {
-    vector<SimpleGraph> tmp(graph);
+    vector<PeelOperation> tmp(peelorder);
     unsigned int cost = 0;
     
     for(unsigned int i = 0; i < peel.size(); ++i) {
@@ -596,13 +531,22 @@ unsigned int PeelSequenceGenerator::get_cost(vector<unsigned int>& peel) {
 }
 
 unsigned int PeelSequenceGenerator::get_proper_cost(vector<unsigned int>& peel) {
-    vector<SimpleGraph> tmp(graph);
+    vector<PeelOperation> tmp(peelorder);
     unsigned int cost = 0;
     
     for(unsigned int i = 0; i < peel.size(); ++i) {
-        printf("cost: %s\n", tmp[peel[i]].debug_string().c_str());
         cost += tmp[peel[i]].get_cost();
         eliminate_node(tmp, peel[i]);
+    }
+    
+    return cost;
+}
+
+unsigned int PeelSequenceGenerator::get_peeling_cost() {
+    unsigned int cost = 0;
+    
+    for(unsigned int i = 0; i < peelorder.size(); ++i) {
+        cost += peelorder[i].get_cost();
     }
     
     return cost;

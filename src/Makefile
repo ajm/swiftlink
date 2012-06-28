@@ -1,8 +1,8 @@
 CXX	:= g++
 CC := gcc
 GPUCC := nvcc
-CXXFLAGS := -g -O0 -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe -fopenmp -m32
-CFLAGS := -g -O0 -Wall -pipe -fopenmp -m32
+CXXFLAGS := -g -O2 -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe -fopenmp -m32
+CFLAGS := -g -O2 -Wall -pipe -fopenmp -m32
 LDFLAGS := -m32
 INCLUDES := -I. -I/usr/local/cuda/include
 #LIBS := -lgomp -lgsl -lgslcblas -lrt -L/usr/local/cuda/lib64 -lcudart

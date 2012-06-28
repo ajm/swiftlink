@@ -192,16 +192,16 @@ void PeelSequenceGenerator::set_type(PeelOperation& p) {
     if(state.is_final_node(p.get_peelnode())) {
         t = LAST_PEEL;
     }
+    // not a founder and neither parent has been peeled
+    // then; must be child-peel
+    else if((not q->isfounder()) and (not (state.is_peeled(q->get_maternalid()) or state.is_peeled(q->get_paternalid())))) {
+        t = CHILD_PEEL;
+    }
     // if offspring have not been peeled, then their transmission prob can only 
     // be considered if this is a parent peel
     // with the exception of when their other parent has been peeled
     else if(not q->isleaf() and not q->partners_peeled(state) and not q->offspring_peeled(state)) {
         t = PARENT_PEEL;
-    }
-    // not a founder and neither parent has been peeled
-    // then; must be child-peel
-    else if((not q->isfounder()) and (not (state.is_peeled(q->get_maternalid()) or state.is_peeled(q->get_paternalid())))) {
-        t = CHILD_PEEL;
     }
     else {
         t = PARTNER_PEEL;
@@ -270,19 +270,32 @@ void PeelSequenceGenerator::build_simple_graph() {
 }
 
 void PeelSequenceGenerator::build_peel_sequence() {
-    int iterations = 500;
     vector<unsigned int> current;
     
+    while(1) {
+        current.clear();
+        current.reserve(ped->num_members());
     
-    current.reserve(ped->num_members());
-    
-    for(unsigned i = 0; i < ped->num_members(); ++i) {
-        current.push_back(i);
+        for(unsigned i = 0; i < ped->num_members(); ++i) {
+            current.push_back(i);
+        }
+        
+        random_shuffle(current.begin(), current.end());
+        
+        random_downhill_search(current);
+        
+        if(is_legit(current)) {
+            break;
+        }
     }
     
-    random_shuffle(current.begin(), current.end());
+    finalise_peel_order(current);
     
-    
+    //printf("%s", debug_string().c_str());
+}
+
+void PeelSequenceGenerator::random_downhill_search(vector<unsigned int>& current) {
+    int iterations = 100000;
     int swap0, swap1, tmp, iter;
     int new_cost, cost;
     
@@ -310,7 +323,7 @@ void PeelSequenceGenerator::build_peel_sequence() {
         //printf("iteration %d: %d\n", i, new_cost);
         
         if(new_cost < cost) {
-            printf("iteration %d: %d\n", i, new_cost);
+            //printf("iteration %d: %d\n", i, new_cost);
             iter = i;
         }
         
@@ -328,6 +341,7 @@ void PeelSequenceGenerator::build_peel_sequence() {
         current[swap1] = tmp;
     }
     
+    p.finish_msg("cost = %d\n", get_proper_cost(current));
     
     /*
 current.push_back(15);
@@ -490,14 +504,6 @@ current.push_back(22);
 current.push_back(50);
 current.push_back(28);
     */
-    
-    printf("cost = %d\n", get_proper_cost(current));
-        
-    finalise_peel_order(current);
-    
-    //p.finish_msg("done (cost = %d)", get_peeling_cost());
-    
-    printf("%s", debug_string().c_str());
 }
 
 void PeelSequenceGenerator::eliminate_node(vector<PeelOperation>& tmp, unsigned int node) {
@@ -540,6 +546,38 @@ unsigned int PeelSequenceGenerator::get_proper_cost(vector<unsigned int>& peel) 
     }
     
     return cost;
+}
+
+bool PeelSequenceGenerator::is_legit(vector<unsigned int>& peel) {
+    vector<PeelOperation> tmp(peelorder);
+    PeelingState tmpstate(ped);
+    
+    for(unsigned int i = 0; i < peel.size(); ++i) {
+        Person* q = ped->get_by_index(tmp[peel[i]].get_peelnode());
+        
+        // basically if it could be a CHILD_PEEL (statements 1 & 2)
+        // or a PARENT_PEEL (statements 3,4,5)
+        // then we have a problem
+        // I really doubt this situation would occur in the "optimal"
+        // sequence, but let's not take any chances because the downstream
+        // code is not designed for it...
+        // 
+        // please send hate mail to amedlar@gmail.com subject: "you moron"
+        if(
+            (not q->isfounder()) and 
+            (not (tmpstate.is_peeled(q->get_maternalid()) or tmpstate.is_peeled(q->get_paternalid()))) and
+            (not q->isleaf()) and 
+            (not q->partners_peeled(tmpstate)) and 
+            (not q->offspring_peeled(tmpstate))
+        ) {
+            return false;
+        }
+        
+        eliminate_node(tmp, peel[i]);
+        tmpstate.toggle_peel_operation(tmp[peel[i]]);
+    }
+    
+    return true;
 }
 
 unsigned int PeelSequenceGenerator::get_peeling_cost() {

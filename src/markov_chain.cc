@@ -44,7 +44,7 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
     
     lod->set_trait_prob(trait_prob);
     
-    printf("P(T) = %e\n", trait_prob / log(10));
+    printf("P(T) = %.5f\n", trait_prob / log(10));
     
     exit(-1);
     

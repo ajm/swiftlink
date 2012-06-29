@@ -272,6 +272,17 @@ void PeelSequenceGenerator::build_simple_graph() {
 void PeelSequenceGenerator::build_peel_sequence() {
     vector<unsigned int> current;
     
+    // attempt to find a greedy solution, this will only return true if the
+    // pedigree is outbred and it is therefore optimal
+    if(greedy_search(current)) {
+        if(is_legit(current)) {
+            finalise_peel_order(current);
+            return;
+        }
+    }
+    
+    // otherwise attempt to optimise a better solution using random
+    // downhill searching
     while(1) {
         current.clear();
         current.reserve(ped->num_members());
@@ -292,6 +303,57 @@ void PeelSequenceGenerator::build_peel_sequence() {
     finalise_peel_order(current);
     
     //printf("%s", debug_string().c_str());
+}
+
+bool PeelSequenceGenerator::greedy_search(vector<unsigned int>& current) {
+    vector<PeelOperation> tmp(peelorder);
+    
+    while(1) {
+        if(current.size() == ped->num_members()) {
+            break;
+        }
+        
+        sort(tmp.begin(), tmp.end());
+        
+        unsigned int cost = tmp[0].get_cutset_size();
+        
+        if(cost > 2) {
+            printf("[greedy] cancelled\n");
+            return false;
+        }
+        
+        vector<PeelOperation>::iterator it = tmp.begin();
+        while(it != tmp.end()) {
+            if(it->get_cutset_size() != cost) {
+                break;
+            }
+            ++it;
+        }
+        
+        random_shuffle(tmp.begin(), it);
+        
+        int node = tmp[0].get_peelnode();
+        printf("[greedy] %d (%s)\n", node, ped->get_by_index(node)->get_id().c_str());
+        
+        //eliminate_node(tmp, node);
+        vector<unsigned int>& cutset = tmp[0].get_cutset();
+        for(unsigned int i = 1; i < tmp.size(); ++i) {
+            if(tmp[i].in_cutset(node)) {
+                tmp[i].remove_cutnode(node);
+                
+                for(unsigned int j = 0; j < cutset.size(); ++j) {
+                    if(cutset[j] != tmp[i].get_peelnode()) {
+                        tmp[i].add_cutnode(cutset[j]);
+                    }
+                }
+            }
+        }
+        
+        current.push_back(node);
+        tmp.erase(tmp.begin());
+    }
+    
+    return true;
 }
 
 void PeelSequenceGenerator::random_downhill_search(vector<unsigned int>& current) {
@@ -342,168 +404,6 @@ void PeelSequenceGenerator::random_downhill_search(vector<unsigned int>& current
     }
     
     p.finish_msg("cost = %d\n", get_proper_cost(current));
-    
-    /*
-current.push_back(15);
-current.push_back(25);
-current.push_back(34);
-current.push_back(24);
-current.push_back(1);
-current.push_back(2);
-current.push_back(14);
-current.push_back(47);
-current.push_back(0);
-current.push_back(40);
-current.push_back(11);
-current.push_back(30);
-current.push_back(8);
-current.push_back(13);
-current.push_back(7);
-current.push_back(3);
-current.push_back(48);
-current.push_back(44);
-current.push_back(49);
-current.push_back(12);
-current.push_back(23);
-current.push_back(6);
-current.push_back(39);
-current.push_back(26);
-current.push_back(33);
-current.push_back(5);
-current.push_back(29);
-current.push_back(4);
-current.push_back(46);
-current.push_back(19);
-current.push_back(32);
-current.push_back(18);
-current.push_back(16);
-current.push_back(36);
-current.push_back(17);
-current.push_back(21);
-current.push_back(50);
-current.push_back(20);
-current.push_back(42);
-current.push_back(28);
-current.push_back(22);
-current.push_back(43);
-current.push_back(45);
-current.push_back(27);
-current.push_back(41);
-current.push_back(9);
-current.push_back(37);
-current.push_back(35);
-current.push_back(38);
-current.push_back(10);
-current.push_back(31);
-    */
-    
-    /*
-current.push_back(1);
-current.push_back(30);
-current.push_back(2);
-current.push_back(7);
-current.push_back(36);
-current.push_back(0);
-current.push_back(39);
-current.push_back(11);
-current.push_back(34);
-current.push_back(47);
-current.push_back(13);
-current.push_back(25);
-current.push_back(6);
-current.push_back(12);
-current.push_back(37);
-current.push_back(35);
-current.push_back(14);
-current.push_back(23);
-current.push_back(21);
-current.push_back(24);
-current.push_back(15);
-current.push_back(8);
-current.push_back(20);
-current.push_back(19);
-current.push_back(48);
-current.push_back(44);
-current.push_back(5);
-current.push_back(46);
-current.push_back(27);
-current.push_back(3);
-current.push_back(16);
-current.push_back(32);
-current.push_back(49);
-current.push_back(45);
-current.push_back(4);
-current.push_back(43);
-current.push_back(33);
-current.push_back(38);
-current.push_back(17);
-current.push_back(42);
-current.push_back(18);
-current.push_back(22);
-current.push_back(29);
-current.push_back(31);
-current.push_back(26);
-current.push_back(10);
-current.push_back(41);
-current.push_back(50);
-current.push_back(9);
-current.push_back(40);
-current.push_back(28);
-    */
-    
-    /*
-current.push_back(2);
-current.push_back(30);
-current.push_back(0);
-current.push_back(24);
-current.push_back(8);
-current.push_back(6);
-current.push_back(23);
-current.push_back(16);
-current.push_back(47);
-current.push_back(13);
-current.push_back(7);
-current.push_back(37);
-current.push_back(1);
-current.push_back(21);
-current.push_back(3);
-current.push_back(29);
-current.push_back(39);
-current.push_back(35);
-current.push_back(48);
-current.push_back(40);
-current.push_back(11);
-current.push_back(46);
-current.push_back(15);
-current.push_back(32);
-current.push_back(14);
-current.push_back(34);
-current.push_back(25);
-current.push_back(12);
-current.push_back(36);
-current.push_back(20);
-current.push_back(19);
-current.push_back(43);
-current.push_back(4);
-current.push_back(44);
-current.push_back(27);
-current.push_back(45);
-current.push_back(33);
-current.push_back(5);
-current.push_back(42);
-current.push_back(38);
-current.push_back(17);
-current.push_back(31);
-current.push_back(49);
-current.push_back(26);
-current.push_back(18);
-current.push_back(10);
-current.push_back(9);
-current.push_back(41);
-current.push_back(22);
-current.push_back(50);
-current.push_back(28);
-    */
 }
 
 void PeelSequenceGenerator::eliminate_node(vector<PeelOperation>& tmp, unsigned int node) {

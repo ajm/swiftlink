@@ -43,6 +43,7 @@ class PeelSequenceGenerator {
     unsigned int get_proper_cost(vector<unsigned int>& peel);
     bool is_legit(vector<unsigned int>& peel);
     
+    bool greedy_search(vector<unsigned int>& current);
     void random_downhill_search(vector<unsigned int>& current);
 
   public :

@@ -39,9 +39,9 @@ OBJECTS	:= \
 	linkage_program.o \
 	program.o \
 	progress.o \
-	main.o #\
-#	gpu_lodscores.o \
-#	cuda_linkage.o
+	main.o \
+	gpu_lodscores.o \
+	cuda_linkage.o
 
 swiftcpu: $(OBJECTS)
 	$(CXX) -o $@ $(OBJECTS) $(LDFLAGS) $(LIBS)

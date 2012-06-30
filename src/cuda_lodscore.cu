@@ -70,7 +70,8 @@ __device__ void lodscore_evaluate_partner_peel(struct rfunction* rf, struct gpu_
     int assignment[128];
     int peelnode;
     //int peelnode_value;
-    int i;
+    int i, j;
+    double total;
     double tmp;
     //printf("e b%d t%d\n", blockIdx.x, threadIdx.x);
     
@@ -78,23 +79,22 @@ __device__ void lodscore_evaluate_partner_peel(struct rfunction* rf, struct gpu_
     
     peelnode = RFUNCTION_PEELNODE(rf);
     //peelnode_value = assignment[peelnode];
-    tmp = 0.0;
+    total = 0.0;
     
     for(i = 0; i < NUM_ALLELES; ++i) {
         
         assignment[peelnode] = i;
     
-        tmp += (\
-            lodscore_trait_prob(state, peelnode, i) * \
-            (rf->prev1 == NULL ? 1.0 : rfunction_get(rf->prev1, assignment, assignment_length)) * \
-            (rf->prev2 == NULL ? 1.0 : rfunction_get(rf->prev2, assignment, assignment_length)) \
-        );
+        tmp = lodscore_trait_prob(state, peelnode, i);
+        
+        for(j = 0; j < rf->prev_length; ++j) {
+            tmp *= rfunction_get(rf->prev[j], assignment, assignment_length);
+        }
+        
+        total += tmp;
     }
     
-    RFUNCTION_SET(rf, ind, tmp);
-    
-    //if(locus == 1)
-    //    printf("x %d %e\n", locus, tmp);
+    RFUNCTION_SET(rf, ind, total);
 }
 
 __device__ void lodscore_evaluate_child_peel(struct rfunction* rf, struct gpu_state* state, int locus, int ind) {
@@ -106,8 +106,9 @@ __device__ void lodscore_evaluate_child_peel(struct rfunction* rf, struct gpu_st
     int peelnode_value;
     int mother_value;
     int father_value;
-    int i, j;
+    int i, j, k;
     double tmp;
+    double total;
     
     //printf("e b%d t%d\n", blockIdx.x, threadIdx.x);
     
@@ -118,7 +119,7 @@ __device__ void lodscore_evaluate_child_peel(struct rfunction* rf, struct gpu_st
     p = GET_PERSON(state, peelnode);
     mother_value = assignment[PERSON_MOTHER(p)];
     father_value = assignment[PERSON_FATHER(p)];
-    tmp = 0.0;
+    total = 0.0;
     
     for(i = 0; i < 2; ++i) {
         for(j = 0; j < 2; ++j) {
@@ -127,19 +128,18 @@ __device__ void lodscore_evaluate_child_peel(struct rfunction* rf, struct gpu_st
             
             assignment[peelnode] = peelnode_value;
             
-            tmp += (\
-                lodscore_trait_prob(state, peelnode, peelnode_value) * \
-                lodscore_trans_prob(state, locus, peelnode, i, j) * \
-                (rf->prev1 == NULL ? 1.0 : rfunction_get(rf->prev1, assignment, assignment_length)) * \
-                (rf->prev2 == NULL ? 1.0 : rfunction_get(rf->prev2, assignment, assignment_length)) \
-            );
+            tmp = (lodscore_trait_prob(state, peelnode, peelnode_value) * \
+                   lodscore_trans_prob(state, locus, peelnode, i, j));
+                   
+            for(k = 0; k < rf->prev_length; ++k) {
+                tmp *= rfunction_get(rf->prev[k], assignment, assignment_length);
+            }
+            
+            total += tmp;
         }
     }
     
-    RFUNCTION_SET(rf, ind, tmp);
-    
-    //if(locus == 1)
-    //    printf("c %d %e\n", locus, tmp);
+    RFUNCTION_SET(rf, ind, total);
 }
 
 __device__ void lodscore_evaluate_parent_peel(struct rfunction* rf, struct gpu_state* state, int locus, int ind) {
@@ -172,9 +172,11 @@ __device__ void lodscore_evaluate_parent_peel(struct rfunction* rf, struct gpu_s
     
         assignment[peelnode] = peelnode_value;
     
-        tmp = lodscore_trait_prob(state, peelnode, peelnode_value) * \
-              (rf->prev1 == NULL ? 1.0 : rfunction_get(rf->prev1, assignment, assignment_length)) * \
-              (rf->prev2 == NULL ? 1.0 : rfunction_get(rf->prev2, assignment, assignment_length));
+        tmp = lodscore_trait_prob(state, peelnode, peelnode_value);
+        
+        for(i = 0; i < rf->prev_length; ++i) {
+            tmp *= rfunction_get(rf->prev[i], assignment, assignment_length);
+        }
         
         child_prob = 1.0;
         
@@ -204,9 +206,6 @@ __device__ void lodscore_evaluate_parent_peel(struct rfunction* rf, struct gpu_s
     }
     
     RFUNCTION_SET(rf, ind, total);
-    
-    //if(locus == 1)
-    //    printf("p %d %e\n", locus, total);
 }
 
 __device__ void lodscore_evaluate_element(struct rfunction* rf, struct gpu_state* state, int locus, int ind) {

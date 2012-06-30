@@ -174,7 +174,7 @@ class PeelOperation {
         return type;
     }
     
-    unsigned int get_children_size() {
+    unsigned int get_children_size() const {
         return children.size();
     }
     
@@ -188,6 +188,10 @@ class PeelOperation {
     
     vector<unsigned int>& get_prevfunctions() {
         return previous;
+    }
+    
+    unsigned int get_prev_size() const {
+        return previous.size();
     }
 
     string peeloperation_str(enum peeloperation po) {

@@ -373,8 +373,16 @@ struct rfunction* GPULodscores::gpu_init_rfunctions(vector<PeelOperation>& ops) 
     
     for(int i = 0; i < int(ops.size()); ++i) {
         // get all the stuff for this rfunction
-        int prev1_index = ops[i].get_previous_op1();
-        int prev2_index = ops[i].get_previous_op2();
+        
+        int prev_length = ops[i].get_prev_size();
+        struct rfunction** prev_cache = NULL;
+        vector<unsigned int>& prev = ops[i].get_prevfunctions();
+        
+        if(prev_length > 0) {
+            // this is filled in during the next for loop to get the actual 
+            // pointer offsets
+            prev_cache = new struct rfunction*[prev_length];
+        }
         
         int children_length = ops[i].get_children_size();
         int* children = NULL;
@@ -399,6 +407,7 @@ struct rfunction* GPULodscores::gpu_init_rfunctions(vector<PeelOperation>& ops) 
         tmp.presum_length = int(pow(4.0, ops[i].get_cutset_size() + 1));
         tmp.matrix_length = int(pow(4.0, ops[i].get_cutset_size()));
         tmp.children_length = children_length;
+        tmp.prev_length = prev_length;
         
         
         fprintf(stderr, "  rfunctions: loading %d...\n", i);
@@ -423,9 +432,21 @@ struct rfunction* GPULodscores::gpu_init_rfunctions(vector<PeelOperation>& ops) 
                 tmp.transmission = NULL;
             }
             
+            if(prev_length > 0) {
+                for(int k = 0; k < prev_length; ++k) {
+                    prev_cache[k] = &dev_rfunc[(j * ops.size()) + prev[k]];
+                }
+                
+                CUDA_CALLANDTEST(cudaMalloc((void**) &tmp.prev, sizeof(struct rfunction*) * tmp.prev_length));
+                CUDA_CALLANDTEST(cudaMemcpy(tmp.prev, prev_cache, sizeof(struct rfunction*) * tmp.prev_length, cudaMemcpyHostToDevice));
+            }
+            else {
+                tmp.prev = NULL;
+            }
+            
             // 2 pointers
-            tmp.prev1 = (prev1_index != -1) ? &dev_rfunc[(j * ops.size()) + prev1_index] : NULL;
-            tmp.prev2 = (prev2_index != -1) ? &dev_rfunc[(j * ops.size()) + prev2_index] : NULL;
+            //tmp.prev1 = (prev1_index != -1) ? &dev_rfunc[(j * ops.size()) + prev1_index] : NULL;
+            //tmp.prev2 = (prev2_index != -1) ? &dev_rfunc[(j * ops.size()) + prev2_index] : NULL;
             
             
             // valid indices from genotype elimination
@@ -440,7 +461,6 @@ struct rfunction* GPULodscores::gpu_init_rfunctions(vector<PeelOperation>& ops) 
             CUDA_CALLANDTEST(cudaMemcpy(tmp.presum_indices, presum_indices, sizeof(int) * tmp.presum_indices_length, cudaMemcpyHostToDevice));
             
             delete[] presum_indices;
-            // 
             
             // copy tmp to device via dev_rf pointer
             struct rfunction* dev_rf = &dev_rfunc[(j * ops.size()) + i];

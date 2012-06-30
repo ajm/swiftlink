@@ -151,8 +151,10 @@ struct rfunction {
     int matrix_indices_length;
     
     
-    struct rfunction* prev1;    // must be NULL if not used
-    struct rfunction* prev2;    // must be NULL if not used
+    //struct rfunction* prev1;    // must be NULL if not used
+    //struct rfunction* prev2;    // must be NULL if not used
+    struct rfunction** prev;
+    int prev_length;
 };
 
 struct person {

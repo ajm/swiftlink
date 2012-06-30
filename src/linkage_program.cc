@@ -89,7 +89,7 @@ LODscores* LinkageProgram::run_pedigree(Pedigree& p) {
     
     
     PeelSequenceGenerator psg(&p, &map, options.verbose);
-    
+    psg.build_peel_sequence(options.peelopt_iterations);
     
     SequentialImputation si(&p, &map, &psg);
     //si.run(dg, options.si_iterations);

@@ -58,6 +58,7 @@ struct mcmc_options {
     int si_iterations;
     int scoring_period;
     int lodscores;
+    int peelopt_iterations;
     
     double lsampler_prob;
     
@@ -74,6 +75,7 @@ struct mcmc_options {
         si_iterations(DEFAULT_SEQUENTIALIMPUTATION_RUNS),
         scoring_period(DEFAULT_SCORING_PERIOD),
         lodscores(DEFAULT_LODSCORES),
+        peelopt_iterations(DEFAULT_PEELOPT_ITERATIONS),
         lsampler_prob(DEFAULT_LSAMPLER_PROB),
         thread_count(DEFAULT_THREAD_COUNT),
         use_gpu(false),

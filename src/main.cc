@@ -65,7 +65,8 @@ void _usage(char *prog) {
 "  -g,         --gpu\n"
 "\n"
 "Misc:\n"
-"  -q seqfile, --peelsequence=seqfile\n"
+"  -q NUM,     --peelseqiter=NUM           (default = %d)\n"
+"  -r seedfile,--randomseeds=seedfile\n"
 "  -v,         --verbose\n"
 "  -h,         --help\n"
 "\n", 
@@ -77,7 +78,8 @@ DEFAULT_SEQUENTIALIMPUTATION_RUNS,
 DEFAULT_SCORING_PERIOD,
 DEFAULT_LSAMPLER_PROB,
 DEFAULT_LODSCORES,
-DEFAULT_THREAD_COUNT
+DEFAULT_THREAD_COUNT,
+DEFAULT_PEELOPT_ITERATIONS
 );
 }
 
@@ -146,14 +148,15 @@ void _handle_args(int argc, char **argv) {
 	        {"map",                 required_argument,  0,      'm'},
 	        {"dat",                 required_argument,  0,      'd'},
 	        {"output",              required_argument,  0,      'o'},
-	        {"peelsequence",        required_argument,  0,      'q'},
+	        {"peelseqiter",         required_argument,  0,      'q'},
 	        {"lodscores",           required_argument,  0,      'n'},
+	        {"randomseeds",         required_argument,  0,      'r'},
 	        {0, 0, 0, 0}
 	    };
     
     int option_index = 0;
     
-	while ((ch = getopt_long(argc, argv, ":p:d:m:o:i:b:s:l:c:x:q:n:vhcg", long_options, &option_index)) != -1) {
+	while ((ch = getopt_long(argc, argv, ":p:d:m:o:i:b:s:l:c:x:q:r:n:vhcg", long_options, &option_index)) != -1) {
 		switch (ch) {
 			case 'p':
 				pedfile = optarg;
@@ -257,7 +260,23 @@ void _handle_args(int argc, char **argv) {
                 break;
                 
             case 'q':
-                options.peelseq_filename = string(optarg);
+                if(not str2int(options.peelopt_iterations, optarg)) {
+                    fprintf(stderr, "%s: option '-q' requires an int as an argument ('%s' given)\n", argv[0], optarg);
+                    exit(EXIT_FAILURE);
+                }
+                if(options.peelopt_iterations <= 0) {
+                    fprintf(stderr, "%s: peeling sequence iterations must be positive (%d given)\n", argv[0], options.lodscores);
+                    exit(EXIT_FAILURE);
+                }
+                // if this is too small, then you can get floating point exceptions
+                // due to the summation of the sizes of the matrices being too big
+                if(options.peelopt_iterations < 10000) {
+                    options.peelopt_iterations = 10000;
+                }
+                break;
+                
+            case 'r':
+                options.random_filename = string(optarg);
                 break;
             
             /*

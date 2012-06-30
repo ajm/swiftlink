@@ -9,7 +9,8 @@ const int DEFAULT_SEQUENTIALIMPUTATION_RUNS = 1000;
 const int DEFAULT_SCORING_PERIOD            = 1;
 const int DEFAULT_THREAD_COUNT              = 1;
 const int DEFAULT_LODSCORES                 = 5;
+const int DEFAULT_PEELOPT_ITERATIONS        = 1000000;
 const double DEFAULT_LSAMPLER_PROB          = 0.5;
 
-
 #endif
+

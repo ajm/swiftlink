@@ -37,14 +37,13 @@ class PeelSequenceGenerator {
     
     
     void build_simple_graph();
-    void build_peel_sequence();
     void eliminate_node(vector<PeelOperation>& tmp, unsigned int node);
     unsigned int get_cost(vector<unsigned int>& peel);
     unsigned int get_proper_cost(vector<unsigned int>& peel);
     bool is_legit(vector<unsigned int>& peel);
     
     bool greedy_search(vector<unsigned int>& current);
-    void random_downhill_search(vector<unsigned int>& current);
+    void random_downhill_search(vector<unsigned int>& current, unsigned int iterations);
 
   public :
     PeelSequenceGenerator(Pedigree* p, GeneticMap* m, bool verbose) : 
@@ -58,7 +57,6 @@ class PeelSequenceGenerator {
         ge.elimination();
         
         build_simple_graph();
-        build_peel_sequence();
     }
         
     ~PeelSequenceGenerator() {}
@@ -87,6 +85,7 @@ class PeelSequenceGenerator {
     //bool read_from_file(string filename);
     vector<PeelOperation>& get_peel_order();
     unsigned int get_peeling_cost();
+    void build_peel_sequence(unsigned int iterations);
     
     string debug_string();
 };

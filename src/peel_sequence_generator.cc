@@ -269,7 +269,7 @@ void PeelSequenceGenerator::build_simple_graph() {
     }
 }
 
-void PeelSequenceGenerator::build_peel_sequence() {
+void PeelSequenceGenerator::build_peel_sequence(unsigned int iterations) {
     vector<unsigned int> current;
     
     // attempt to find a greedy solution, this will only return true if the
@@ -293,7 +293,7 @@ void PeelSequenceGenerator::build_peel_sequence() {
         
         random_shuffle(current.begin(), current.end());
         
-        random_downhill_search(current);
+        random_downhill_search(current, iterations);
         
         if(is_legit(current)) {
             break;
@@ -356,8 +356,8 @@ bool PeelSequenceGenerator::greedy_search(vector<unsigned int>& current) {
     return true;
 }
 
-void PeelSequenceGenerator::random_downhill_search(vector<unsigned int>& current) {
-    int iterations = 100000;
+void PeelSequenceGenerator::random_downhill_search(vector<unsigned int>& current, unsigned int iterations) {
+    
     int swap0, swap1, tmp, iter;
     int new_cost, cost;
     

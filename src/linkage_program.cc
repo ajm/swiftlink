@@ -35,7 +35,12 @@ bool LinkageProgram::run() {
     */
         
     init_random();
-    seed_random_implicit();
+    if(options.random_filename == "") {
+        seed_random_implicit();
+    }
+    else {
+        seed_random_explicit(options.random_filename);
+    }
     
     for(unsigned int i = 0; i < pedigrees.size(); ++i) {
         

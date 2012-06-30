@@ -22,7 +22,21 @@ class Parser {
 	vector<string> tokens;
 
 	void tokenise(const string s) {
-		stringstream ss(s);
+	
+	    tokens.clear();
+	
+	    //stringstream ss(s);
+	    size_t first = s.find_first_not_of(" \t");
+	    size_t last = s.find_last_not_of(" \t");
+	    
+	    if(first == s.npos) {
+	        return;
+	    }
+	    
+	    size_t len = last - first + 1;
+	    stringstream ss(s.substr(first, len));
+	    
+	    //printf("'%s'\n", ss.str().c_str());
         
         istream_iterator<string> i(ss);
         istream_iterator<string> end;

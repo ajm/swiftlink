@@ -8,6 +8,7 @@ using namespace std;
 #include <gsl/gsl_rng.h>
 
 #include "random.h"
+#include "simple_parser.h"
 
 const gsl_rng_type* T;
 gsl_rng** r;
@@ -53,17 +54,32 @@ unsigned int get_randomness() {
     return seed;
 }
 
-void seed_random_explicit(unsigned int seed) {
-    //gsl_rng* ran = gsl_rng_alloc(T);
-    //gsl_rng_set(ran, seed);
+void seed_random_explicit(string filename) {
+    SimpleParser sp(filename);
     
-    //srandom(seed);
+    if(not sp.parse()) {
+        //fprintf(stderr, "error: reading random seeds file failed\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    vector<unsigned int>& v = sp.get_values();
+    if(int(v.size()) != omp_get_max_threads()) {
+        fprintf(stderr, "error: read %d random seeds from file '%s' when I expected %d...\n", 
+                        v.size(), filename.c_str(), omp_get_max_threads());
+        exit(EXIT_FAILURE);
+    }
     
     for(int i = 0; i < omp_get_max_threads(); ++i) {
-        //gsl_rng_set(r[i], random());
-        //gsl_rng_set(r[i], gsl_rng_get(ran));
-        //gsl_rng_set(r[i], get_randomness());
-        
+        gsl_rng_set(r[i], v[i]);
+        printf("seed %d = %u (from file)\n", i, v[i]);
+    }
+    
+    printf("generator type: %s\n", gsl_rng_name(r[0]));
+}
+
+void seed_random_implicit() {
+    
+    for(int i = 0; i < omp_get_max_threads(); ++i) {
         unsigned int s = get_randomness();
         gsl_rng_set(r[i], s);
         
@@ -71,13 +87,6 @@ void seed_random_explicit(unsigned int seed) {
     }
     
     printf("generator type: %s\n", gsl_rng_name(r[0]));
-    //printf("seed = %u\n", seed);
-    
-    //gsl_rng_free(ran);
-}
-
-void seed_random_implicit() {
-    seed_random_explicit(get_randomness());
 }
 
 double get_random() {

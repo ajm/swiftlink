@@ -20,7 +20,7 @@ bool MapParser::parse_line(const int linenum, const string line) {
     
     if(tokens.size() != 5) {
         fprintf(stderr, "error: %s, line %d: not enough data fields specified "
-				"(expected at least 4, read %d)", 
+				"(expected at least 5, read %d)\n", 
 				filename.c_str(), linenum+1, int(tokens.size()));
         return false;
     }

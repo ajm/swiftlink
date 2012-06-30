@@ -368,7 +368,7 @@ void PeelSequenceGenerator::random_downhill_search(vector<unsigned int>& current
     
     Progress p("Peel Sequence:", iterations);
     
-    for(int i = 0; i < iterations; ++i) {
+    for(unsigned int i = 0; i < iterations; ++i) {
         
         do {
             swap0 = get_random_int(current.size());

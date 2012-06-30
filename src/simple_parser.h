@@ -20,9 +20,12 @@ class SimpleParser : public Parser {
 	bool parse_line(const int linenum, const string s) {
 		tokenise(s);
 		
+		if(tokens.size() == 0)
+		    return true;
+		
 		if(tokens.size() != 1) {
 		    fprintf(stderr, 
-		            "error: read more than one field on line %d in peel sequence file %s (read \"%s\")\n", 
+		            "error: read more than one field on line %d in file '%s' (read \"%s\")\n", 
 		            linenum, filename.c_str(), s.c_str());
 		    return false;
 		}
@@ -32,7 +35,7 @@ class SimpleParser : public Parser {
 		
 		if((ss >> tmp).fail()) {
 		    fprintf(stderr, 
-		            "error: not an integer, line %d, peel sequence file %s (read \"%s\")\n", 
+		            "error: not an integer, line %d, file '%s' (read \"%s\")\n", 
 		            linenum, filename.c_str(), s.c_str());
 		    return false;
 		}

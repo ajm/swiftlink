@@ -212,6 +212,7 @@ bool LinkageParser::read_abstract_marker() {
 	switch(marker_linenum) {
 		case 0 :
 			ss << tokens[1];
+			
 			if((ss >> marker_alleles).fail()) {
 				fprintf(stderr, "error: %s, line %d: first line of marker"
 							"description should have been \"%s  N\" where N is "
@@ -274,6 +275,7 @@ bool LinkageParser::read_affection_status() {
 			return read_abstract_marker();
 		
 		case 2 :
+		    
 			ss << tokens[0];
 			if((ss >> liability_classes).fail()) {
 				fprintf(stderr, "error: %s, line %d: number of liability classes"
@@ -284,8 +286,8 @@ bool LinkageParser::read_affection_status() {
 
 			if(liability_classes < 1) {
 				fprintf(stderr, "error: %s, line %d: must specify at least one" 
-							" liability class\n",
-							filename.c_str(), linenum);
+							" liability class (%d specified)\n",
+							filename.c_str(), linenum, liability_classes);
 				return false;
 			}
 
@@ -385,7 +387,7 @@ bool LinkageParser::parse_line(const int linenum, const string line) {
 	}
     
 	if(total_markers_read() < number_of_loci) {
-		return description_of_loci(linenum);
+	    return description_of_loci(linenum);
 	}
 	
 	return information_on_recombination(linenum);

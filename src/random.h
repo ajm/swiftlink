@@ -5,7 +5,7 @@
 void init_random();
 void destroy_random();
 
-void seed_random_explicit(unsigned int seed);
+void seed_random_explicit(string filename);
 void seed_random_implicit();
 
 double get_random();

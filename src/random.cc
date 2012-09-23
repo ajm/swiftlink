@@ -65,7 +65,7 @@ void seed_random_explicit(string filename) {
     vector<unsigned int>& v = sp.get_values();
     if(int(v.size()) != omp_get_max_threads()) {
         fprintf(stderr, "error: read %d random seeds from file '%s' when I expected %d...\n", 
-                        v.size(), filename.c_str(), omp_get_max_threads());
+                        int(v.size()), filename.c_str(), omp_get_max_threads());
         exit(EXIT_FAILURE);
     }
     

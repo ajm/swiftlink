@@ -1,5 +1,5 @@
-CXX	:= g++
-CC := gcc
+CXX	:= g++-4.2
+CC := gcc-4.2
 GPUCC := nvcc
 
 # 32bit
@@ -10,11 +10,11 @@ GPUCC := nvcc
 #LIBS := -L/usr/local/cuda/lib -L/usr/lib32 -lcudart -lgomp -lgsl -lgslcblas -lrt
 #GPUFLAGS := -arch=sm_20 -O2 -m32
 
-CXXFLAGS := -g -O2 -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe -fopenmp -DUSE_CUDA
+CXXFLAGS := -g -O2 -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe -fopenmp -g #-DUSE_CUDA
 CFLAGS := -g -O2 -Wall -pipe -fopenmp
 LDFLAGS :=
-INCLUDES := -I. -I/usr/local/cuda/include
-LIBS := -lgomp -lgsl -lgslcblas -lrt -L/usr/local/cuda/lib64 -lcudart
+INCLUDES := -I. #-I/usr/local/cuda/include
+LIBS := -lgomp -lgsl -lgslcblas #-lrt -L/usr/local/cuda/lib64 -lcudart
 GPUFLAGS := -arch=sm_20 -O2
 
 OBJECTS	:= \
@@ -47,7 +47,7 @@ OBJECTS	:= \
 	linkage_program.o \
 	program.o \
 	progress.o \
-	main.o \
+	main.o #\
 	gpu_lodscores.o \
 	cuda_linkage.o
 

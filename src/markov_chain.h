@@ -48,6 +48,7 @@ class MarkovChain {
     }
     
     LODscores* run(DescentGraph& dg);
+    bool noninterferring(vector<int>& x, int val);
 };
 
 #endif

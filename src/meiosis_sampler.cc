@@ -19,12 +19,12 @@ void MeiosisSampler::reset(DescentGraph& dg, unsigned int parameter) {
     enum parentage p = static_cast<enum parentage>(parameter % 2);
     
     #pragma omp parallel for
-    for(unsigned int i = 0; i < map->num_markers(); ++i) {
+    for(int i = 0; i < int(map->num_markers()); ++i) {
         f4[i].reset(dg);
     }
     
     #pragma omp parallel for
-    for(unsigned int i = 0; i < map->num_markers(); ++i) {
+    for(int i = 0; i < int(map->num_markers()); ++i) {
         int index = i * 2;
         int meiosis = dg.get(person_id, i, p);
         

@@ -17,7 +17,7 @@ using namespace std;
 #include "peeler.h"
 #include "random.h"
 #include "sequential_imputation.h"
-#include "gpu_markov_chain.h"
+//#include "gpu_markov_chain.h"
 #include "lod_score.h"
 
 

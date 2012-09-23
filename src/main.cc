@@ -19,6 +19,7 @@
 #include "types.h"
 #include "defaults.h"
 #include "linkage_program.h"
+
 //#include "test_program.h"
 //#include "haplotype_program.h"
 
@@ -361,7 +362,9 @@ int testing_mode() {
 
 int main(int argc, char **argv) {
     
+#ifdef __linux__
     feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
+#endif
     
     
 	_handle_args(argc, argv);

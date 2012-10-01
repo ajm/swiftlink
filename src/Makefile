@@ -10,7 +10,7 @@ GPUCC := nvcc
 #LIBS := -L/usr/local/cuda/lib -L/usr/lib32 -lcudart -lgomp -lgsl -lgslcblas -lrt
 #GPUFLAGS := -arch=sm_20 -O2 -m32
 
-CXXFLAGS := -g -O2 -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe -fopenmp -DUSE_CUDA
+CXXFLAGS := -g -O2 -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe -fopenmp -DUSE_CUDA -DCUDA_SHAREDMEM_CACHE
 CFLAGS := -g -O2 -Wall -pipe -fopenmp
 LDFLAGS :=
 INCLUDES := -I. -I/usr/local/cuda/include

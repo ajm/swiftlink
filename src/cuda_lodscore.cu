@@ -297,12 +297,92 @@ __device__ void lodscore_add(struct gpu_state* state, int offset, double likelih
     //printf("GPU fin  %f\n", state->lodscores[blockIdx.x]);
 }
 
+__device__ void copy_rfunction(struct rfunction* src, struct rfunction* dst) {
+    int* from = (int*) src;
+    int* to = (int*) dst;
+    
+    if(threadIdx.x < (sizeof(struct rfunction) / 4)) {
+        to[threadIdx.x] = from[threadIdx.x];
+    }
+    
+    __syncthreads();
+}
+
+// warning: there is no fail over code yet,
+//          though it should be trivial, just have a pointer to main memory if 
+//          you run out of cache...
+__device__ struct rfunction* cache_rfunction(struct gpu_state* state, int index, int locus, char* cache_mem) {
+    struct rfunction* rf = GET_RFUNCTION(state, index, locus);
+    struct rfunction* current = (struct rfunction*) &cache_mem[0];
+    int i, j;
+    char* last_ptr;
+    
+    copy_rfunction(rf, current);
+
+    current->cutset = (int*)    &current[1];
+    current->matrix = (double*) &current->cutset[current->cutset_length];
+    current->prev   = (struct rfunction**) &current->matrix[current->matrix_length];
+    
+    last_ptr = (char*) &current->prev[current->prev_length];
+    
+    // copy contents of cutset
+    if(threadIdx.x < current->cutset_length) {
+        current->cutset[threadIdx.x] = rf->cutset[threadIdx.x];
+    }
+    
+    __syncthreads();
+    
+    
+    for(i = 0; i < current->prev_length; ++i) {
+        struct rfunction* tmp = rf->prev[i];
+        struct rfunction* next = (struct rfunction*) last_ptr;
+        
+        copy_rfunction(tmp, next);
+        
+        current->prev[i] = next;
+        
+        next->cutset = (int*) &next[1];
+        next->matrix = (double*) &next->cutset[next->cutset_length];
+        
+        last_ptr = (char*) &next->matrix[next->matrix_length];
+        
+        if(threadIdx.x < current->cutset_length) {
+            next->cutset[threadIdx.x] = tmp->cutset[threadIdx.x];
+        }
+        
+        __syncthreads();
+        
+        for(j = threadIdx.x; j < next->matrix_length; j += blockDim.x) {
+            next->matrix[j] = tmp->matrix[j];
+        }
+        
+        __syncthreads();
+    }
+    
+    return current;
+}
+
+__device__ void write_rfunction(struct gpu_state* state, int index, int locus, struct rfunction* rfsrc) {
+    struct rfunction* rfdst = GET_RFUNCTION(state, index, locus);
+    int i;
+    
+    for(i = threadIdx.x; i < rfsrc->matrix_length; i += blockDim.x) {
+        rfdst->matrix[i] = rfsrc->matrix[i];
+    }
+    
+    __syncthreads();
+}
+
 // number of blocks is number of loci - 1
 __global__ void lodscore_kernel(struct gpu_state* state) {
     int locus = blockIdx.x;
     int i;
     struct rfunction* rf;
     struct geneticmap* map = GET_MAP(state);
+    
+#ifdef CUDA_SHAREDMEM_CACHE
+    char* cache[5120];
+#endif
     
     for(int index = 0; index < state->lodscores_per_marker; ++index) {
         // populate map cache in shared memory
@@ -320,8 +400,17 @@ __global__ void lodscore_kernel(struct gpu_state* state) {
         
         // forward peel
         for(i = 0; i < state->functions_per_locus; ++i) {
+#ifdef CUDA_SHAREDMEM_CACHE
+            rf = cache_rfunction(state, i, locus, cache);
+#else
             rf = GET_RFUNCTION(state, i, locus);
+#endif
+
             lodscore_evaluate(rf, state, locus);
+
+#ifdef CUDA_SHAREDMEM_CACHE
+            write_rfunction(state, i, locus, rf);
+#endif
         }
         
         // get result from last rfunction

@@ -134,21 +134,21 @@ struct rfunction {
     // could the index to one be a factor of the other
     // eg: presum_matrix[(x,y,z)] and matrix[(x,y,z) / z]?
     
-    double* presum_matrix;
-    int presum_length;          // 4 ** (cutset_length + 1)
+    //double* presum_matrix;
+    //int presum_length;          // 4 ** (cutset_length + 1)
     
     double* matrix;
     int matrix_length;          // 4 ** cutset_length
     
-    double* transmission;       // 64 * children_length
-    int* children;
-    int children_length;
+    //double* transmission;       // 64 * children_length
+    //int* children;
+    //int children_length;
     
-    int* presum_indices;
-    int presum_indices_length;
+    //int* presum_indices;
+    //int presum_indices_length;
     
-    int* matrix_indices;
-    int matrix_indices_length;
+    //int* matrix_indices;
+    //int matrix_indices_length;
     
     
     //struct rfunction* prev1;    // must be NULL if not used

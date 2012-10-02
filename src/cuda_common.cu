@@ -27,7 +27,12 @@ __device__ float _LOG_ZERO = -FLT_MAX;
 
 __shared__ double map_cache[4]; // theta-left, inversetheta-right, theta-right, inversetheta-right XXX
 __shared__ int map_length;
-extern __shared__ char extern_pool[];
+//extern __shared__ char extern_pool[];
+__shared__ int descentgraph_left_mat;
+__shared__ int descentgraph_left_pat;
+__shared__ int descentgraph_right_mat;
+__shared__ int descentgraph_right_pat;
+__shared__ int disease_prob[4];
 
 // L-sampler macros
 #define THETA_LEFT      (map_cache[0])

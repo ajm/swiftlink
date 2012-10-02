@@ -27,7 +27,6 @@ __device__ double lodscore_trans_prob(struct gpu_state* state, int locus, int pe
     //double half_inversetheta = MAP_HALF_INVERSETHETA(map, locus);
     
     
-    /*
     tmp *= ((DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, peelnode, locus, GPU_MATERNAL_ALLELE)) == m_allele) ? \
             INVTHETA_LEFT : THETA_LEFT);
     tmp *= ((DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, peelnode, locus, GPU_PATERNAL_ALLELE)) == p_allele) ? \
@@ -37,13 +36,14 @@ __device__ double lodscore_trans_prob(struct gpu_state* state, int locus, int pe
             INVTHETA_RIGHT : THETA_RIGHT);
     tmp *= ((DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, peelnode, locus + 1, GPU_PATERNAL_ALLELE)) == p_allele) ? \
             INVTHETA_RIGHT : THETA_RIGHT);
+    
+    // this does not work for parent peels
+    /*
+    tmp *= (descentgraph_left_mat  == m_allele) ? INVTHETA_LEFT  : THETA_LEFT;
+    tmp *= (descentgraph_left_pat  == p_allele) ? INVTHETA_LEFT  : THETA_LEFT;
+    tmp *= (descentgraph_right_mat == m_allele) ? INVTHETA_RIGHT : THETA_RIGHT;
+    tmp *= (descentgraph_right_pat == p_allele) ? INVTHETA_RIGHT : THETA_RIGHT;
     */
-    
-    tmp *= (descentgraph_left_mat  == m_allele) ? INVTHETA_LEFT  : THETA_LEFT);
-    tmp *= (descentgraph_left_pat  == p_allele) ? INVTHETA_LEFT  : THETA_LEFT);
-    tmp *= (descentgraph_right_mat == m_allele) ? INVTHETA_RIGHT : THETA_RIGHT);
-    tmp *= (descentgraph_right_pat == p_allele) ? INVTHETA_RIGHT : THETA_RIGHT);
-    
     return tmp;
 }
 
@@ -77,7 +77,7 @@ __device__ int get_phased_trait(int m, int p, int m_allele, int p_allele) {
 __device__ void lodscore_evaluate_partner_peel(struct rfunction* rf, struct gpu_state* state, int locus, int ind) {
     
     int assignment_length = state->pedigree_length;
-    int assignment[128];
+    int assignment[MAX_PEDIGREE_MEMBERS];
     int peelnode;
     //int peelnode_value;
     int i, j;
@@ -111,7 +111,7 @@ __device__ void lodscore_evaluate_child_peel(struct rfunction* rf, struct gpu_st
     
     struct person* p;
     int assignment_length = state->pedigree_length;
-    int assignment[128];
+    int assignment[MAX_PEDIGREE_MEMBERS];
     int peelnode;
     int peelnode_value;
     int mother_value;
@@ -156,7 +156,7 @@ __device__ void lodscore_evaluate_parent_peel(struct rfunction* rf, struct gpu_s
     
     struct person* p;
     int assignment_length = state->pedigree_length;
-    int assignment[128];
+    int assignment[MAX_PEDIGREE_MEMBERS];
     int peelnode;
     int peelnode_value;
     int mother_value;
@@ -272,10 +272,12 @@ __device__ double descentgraph_recombination_prob(struct gpu_state* state, int l
     struct person* p;
     //double theta = log(MAP_THETA(map, locus));
     //double antitheta = log(MAP_INVERSETHETA(map, locus));
-    double tmp = 0.0;
-    double log_theta = log(MAP_THETA(map, locus));
-    double log_invtheta = log(MAP_INVERSETHETA(map, locus));
+    double tmp = MAP_THETA(map, locus);
+    double log_theta = log(tmp); //log(MAP_THETA(map, locus));
+    double log_invtheta = log(1.0 - tmp); //log(MAP_INVERSETHETA(map, locus));
 	int i, j;
+	
+	tmp = 0.0;
 	
     for(i = 0; i < state->pedigree_length; ++i) {
         p = GET_PERSON(state, i);
@@ -297,7 +299,7 @@ __device__ double descentgraph_recombination_prob(struct gpu_state* state, int l
     return tmp;
 }
 
-__device__ void lodscore_add(struct gpu_state* state, int offset, double likelihood) {
+__device__ void lodscore_add(struct gpu_state* state, int offset, double likelihood) { //, double recomb) {
     double recomb = descentgraph_recombination_prob(state, blockIdx.x);
     int tmp = (state->lodscores_per_marker * blockIdx.x) + offset;
     
@@ -389,48 +391,59 @@ __global__ void lodscore_kernel(struct gpu_state* state) {
     int i;
     struct rfunction* rf;
     struct geneticmap* map = GET_MAP(state);
-    struct descentgraph* dg = GET_DESCENTGRAPH(state);
+    //struct descentgraph* dg = GET_DESCENTGRAPH(state);
     struct person* p;
+    //double recomb_prob;
+    //double theta;
+    //double invtheta;
     
 #ifdef CUDA_SHAREDMEM_CACHE
     __shared__ char* cache[5120];
 #endif
     
     for(int index = 0; index < state->lodscores_per_marker; ++index) {
-        // populate map cache in shared memory
-        if(threadIdx.x == 0) {
-            map_cache[0] = MAP_PARTIAL_THETA_LEFT(map, locus, index+1);
-            map_cache[1] = 1.0 - map_cache[0];
-            
-            map_cache[2] = MAP_PARTIAL_THETA_RIGHT(map, locus, index+1);
-            map_cache[3] = 1.0 - map_cache[2];
-            
-            map_length = map->map_length;
-        }
-        
-        __syncthreads();
-        
         // forward peel
         for(i = 0; i < state->functions_per_locus; ++i) {
-            
 #ifdef CUDA_SHAREDMEM_CACHE
             rf = cache_rfunction(state, i, locus, cache);
 #else
             rf = GET_RFUNCTION(state, i, locus);
 #endif
-
-            // avoid looking up meiosis indicators later...
+            p = GET_PERSON(state, rf->peel_node);
+            
+            // populate map cache in shared memory
             if(threadIdx.x == 0) {
-                descentgraph_left_mat  = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, rf->peelnode, locus,   GPU_MATERNAL_ALLELE);
-                descentgraph_left_pat  = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, rf->peelnode, locus,   GPU_PATERNAL_ALLELE);
-                descentgraph_right_mat = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, rf->peelnode, locus+1, GPU_MATERNAL_ALLELE);
-                descentgraph_right_pat = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, rf->peelnode, locus+1, GPU_PATERNAL_ALLELE);
+                map_cache[0] = MAP_PARTIAL_THETA_LEFT(map, locus, index+1);
+                map_cache[1] = 1.0 - map_cache[0];
+                
+                map_cache[2] = MAP_PARTIAL_THETA_RIGHT(map, locus, index+1);
+                map_cache[3] = 1.0 - map_cache[2];
+                
+                map_length = map->map_length;
+                
+                //if(index == 0) {
+                //    recomb_prob = MAP_THETA(map, locus);
+                //    theta = log(recomb_prob);
+                //    invtheta = log(1.0 - recomb_prob);
+                //    recomb_prob = 0.0;
+                //}
             }
             
-            p = GET_PERSON(state, rf->peelnode);
+            // avoid looking up meiosis indicators later...
+            //if(threadIdx.x == 0) {
+                //descentgraph_left_mat  = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, rf->peel_node, locus,   GPU_MATERNAL_ALLELE));
+                //descentgraph_left_pat  = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, rf->peel_node, locus,   GPU_PATERNAL_ALLELE));
+                //descentgraph_right_mat = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, rf->peel_node, locus+1, GPU_MATERNAL_ALLELE));
+                //descentgraph_right_pat = DESCENTGRAPH_GET(dg, DESCENTGRAPH_OFFSET(dg, rf->peel_node, locus+1, GPU_PATERNAL_ALLELE));                
+            
+                //if((index == 0) && ! PERSON_ISFOUNDER(p)) {
+                //    recomb_prob += ((descentgraph_left_mat == descentgraph_right_mat) ? invtheta : theta);
+                //    recomb_prob += ((descentgraph_left_pat == descentgraph_right_pat) ? invtheta : theta);
+                //}
+            //}
             
             if(threadIdx.x < 4) {
-                disease_prob[threadIdx.x] = PERSON_DISEASEPROB(p, value);
+                disease_prob[threadIdx.x] = PERSON_DISEASEPROB(p, threadIdx.x);
             }
             
             __syncthreads();
@@ -446,7 +459,7 @@ __global__ void lodscore_kernel(struct gpu_state* state) {
         // calculate a lod score
         if(threadIdx.x == 0) {
             //printf("GPU peel %d %f\n", locus, log(RFUNCTION_GET(rf, 0)));
-            lodscore_add(state, index, log(RFUNCTION_GET(rf, 0)));
+            lodscore_add(state, index, log(RFUNCTION_GET(rf, 0)));//, recomb_prob);
         }
         
         __syncthreads();

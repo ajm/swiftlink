@@ -12,6 +12,7 @@
 //#define NUM_THREADS 96
 #define NUM_ALLELES 4
 #define GPU_DEFAULT_COMPONENT -1
+#define MAX_PEDIGREE_MEMBERS 128
 
 typedef unsigned int uint32_t;
 typedef char uint8_t;
@@ -230,7 +231,7 @@ struct descentgraph {
 
 #ifdef __cplusplus
 extern "C" { 
-#endif    
+#endif
     void run_gpu_print_kernel(struct gpu_state* state);
     void run_gpu_print_pedigree_kernel(struct person* p, int length);
     

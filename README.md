@@ -66,7 +66,7 @@ Options
 Example
 ---------
 
-Assuming that the pedigree file, map file and data file are called ped, map and dat, respectively, and that we want the results to be written to a file called results.out, this command:
+Assuming that the pedigree file, map file and data file are called ped, map and dat, respectively (see example directory), and that we want the results to be written to a file called results.out, this command:
 
     swift -p ped -m map -d dat -i 90000 -b 10000 -s 1000 -c 4 -g -o results.out
 

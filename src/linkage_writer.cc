@@ -59,7 +59,8 @@ bool LinkageWriter::write(vector<LODscores*>& all_scores) {
             stringstream ss;
             
             // genetic position + total LOD
-            ss << 100 * map->get_genetic_position(i, j) << "\t" << tmp;
+            // (get_genetic_position needs j+1 because it treats j as an offset, ie: indexed from 1)
+            ss << 100 * map->get_genetic_position(i, j+1) << "\t" << tmp;
             
             // more than one family
             if(all_scores.size() > 1) {

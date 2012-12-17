@@ -184,11 +184,18 @@ vector<double>* LinkageParser::get_doubles() {
 
 	for(int i = 0; i < int(tokens.size()); ++i) {
 		stringstream ss(tokens[i]);
-		if((ss >> tmp2).fail()) {
+		// Mega2 LINKAGE format seems to add the words "Haldane" or "Kosambi" 
+        // to the end of the recombination fraction line
+
+        /*
+        if((ss >> tmp2).fail()) {
+            fprintf("error: bad token '%s'\n", tokens[i]);
 			delete tmp;
 			return NULL;
 		}
-		tmp->push_back(tmp2);
+        */
+        if(not ((ss >> tmp2).fail()))
+		    tmp->push_back(tmp2);
 	}
 
 	return tmp;

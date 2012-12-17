@@ -26,7 +26,7 @@ class Snp {
     double prob[4];
 
  public :
-    Snp(string name, double genetic, unsigned int physical) : 
+    Snp(string name, double genetic, unsigned int physical=0) : 
         name(name), 
         genetic_distance(genetic), 
         physical_distance(physical),

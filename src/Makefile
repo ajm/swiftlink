@@ -66,3 +66,25 @@ swift: $(OBJECTS)
 clean:
 	rm -f $(OBJECTS) swift
 
+# Dependencies for File: SwiftLink:
+SwiftLink: "Allegro "Linkage (anecdotally, ), /github.com/ajm/swiftlink.git
+SwiftLink: /stackoverflow.com/questions/10320562/a-disastrous-slowdown-of-cudamalloc-in-nvidia-drivers-from-version-285
+SwiftLink: 32-bit 4.0 5.0 </b> Allegro. CUDA Format" I If LINKAGE MCMC Mega2
+SwiftLink: Parallel RC1 We
+SwiftLink: [Alohomora](http:/bioinformatics.oxfordjournals.org/content/21/9/2123.full.pdf)
+SwiftLink: analysis and are bug). but by compatible confirms data different.
+SwiftLink: does example file file, files files, files. fine for format, format.
+SwiftLink: from generate generated generates have however in input is it
+SwiftLink: linkage locus map mode mostly must not on pedigree seem seems select
+SwiftLink: selecting simple something standard suffer tested that the this to
+SwiftLink: using very work written you your
+# Dependencies for File: <h1>SwiftLink:
+<h1>SwiftLink: (anecdotally, /github.com/ajm/swiftlink.git
+<h1>SwiftLink: /stackoverflow.com/questions/10320562/a-disastrous-slowdown-of-cudamalloc-in-nvidia-drivers-from-version-285">slow
+<h1>SwiftLink: 32-bit 4.0 5.0 </p> <a Allegro.</p> CUDA LINKAGE MCMC Parallel
+<h1>SwiftLink: RC1 We analysis</h1> and bug bug).</p> by cudaMalloc</a>, data
+<h1>SwiftLink: does down file file, files fine for format. from generated have
+<h1>SwiftLink: however
+<h1>SwiftLink: href="http:/bioinformatics.oxfordjournals.org/content/21/9/2123.full.pdf">Alohomora</a>
+<h1>SwiftLink: identical in input it linkage map mode mostly not on pedigree
+<h1>SwiftLink: seem seems standard suffer tested this to using work

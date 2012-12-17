@@ -18,9 +18,9 @@ bool MapParser::parse_line(const int linenum, const string line) {
     if(tokens.size() == 0)
         return true;
     
-    if(tokens.size() != 5) {
+    if(tokens.size() < 3) {
         fprintf(stderr, "error: %s, line %d: not enough data fields specified "
-				"(expected at least 5, read %d)\n", 
+				"(expected at least 3 (chromosome, genetic position, marker name), read %d)\n", 
 				filename.c_str(), linenum+1, int(tokens.size()));
         return false;
     }
@@ -41,8 +41,9 @@ bool MapParser::parse_line(const int linenum, const string line) {
         return false;
     }
     
-    name = tokens[2];
     
+    name = tokens[2];
+    /*
     stringstream ss2(tokens[3]);
     if((ss2 >> pdist).fail()) {
         fprintf(stderr, "error: %s, line %d: physical distance is not an "
@@ -56,10 +57,11 @@ bool MapParser::parse_line(const int linenum, const string line) {
                 filename.c_str(), linenum+1, pdist);
         return false;
     }
+    */
     
     gdist /= 100.0; // XXX get to morgans
     
-    Snp snp(name, gdist, pdist);
+    Snp snp(name, gdist);//, pdist);
     map.add(snp);
     
     return true;

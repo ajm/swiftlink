@@ -48,19 +48,23 @@ bool LinkageWriter::write(vector<LODscores*>& all_scores) {
             fprintf(stderr, "%s", ss.str().c_str());
 	}
 	*/
+
+    f << "marker\tposition\tlod\n";
 	
 	for(unsigned int i = 0; i < (map->num_markers() - 1); ++i) {
-	    for(unsigned int j = 0; j < map->get_lodscore_count(); ++j) {
+        f << map->get_name(i) << "\t" << 100.0 * map->get_genetic_position(i, 0) << "\n";
+	    
+        for(unsigned int j = 0; j < map->get_lodscore_count(); ++j) {
 	        double tmp = all_scores[0]->get(i, j);
             for(unsigned int k = 1; k < all_scores.size(); ++k) {
                 tmp += all_scores[k]->get(i,j);
             }
             
             stringstream ss;
-            
+
             // genetic position + total LOD
             // (get_genetic_position needs j+1 because it treats j as an offset, ie: indexed from 1)
-            ss << 100 * map->get_genetic_position(i, j+1) << "\t" << tmp;
+            ss << "-\t" << 100 * map->get_genetic_position(i, j+1) << "\t" << tmp;
             
             // more than one family
             if(all_scores.size() > 1) {
@@ -76,6 +80,8 @@ bool LinkageWriter::write(vector<LODscores*>& all_scores) {
                 fprintf(stderr, "%s", ss.str().c_str());
 	    }
 	}
+
+    f << map->get_name(map->num_markers()-1) << "\t" << 100.0 * map->get_genetic_position(map->num_markers()-1, 0) << "\n";
 	
 	f.close();
 	

@@ -183,7 +183,7 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
         */
         
         #ifdef CODA_OUTPUT
-        if(i < options.burnin) {
+        if((i % options.scoring_period) == 0) {
             double current_likelihood = dg.get_likelihood();
             if(current_likelihood == LOG_ILLEGAL) {
                 fprintf(stderr, "error: descent graph illegal...\n");
@@ -192,6 +192,8 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
             
             fprintf(stderr, "%d\t%f\n", i+1, current_likelihood);
         }
+
+        continue;
         #endif
         
         

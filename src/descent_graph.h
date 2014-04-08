@@ -60,6 +60,9 @@ class DescentGraph {
     void set_bit(unsigned i, int b);
     void flip_bit(unsigned i);
 	
+    void copy_locus(unsigned src, unsigned dst);
+    void copy_locus(DescentGraph& d, unsigned src, unsigned dst);
+
     int get_founderallele(unsigned person_id, unsigned loci, enum parentage p) const;
     
     bool random_descentgraph();

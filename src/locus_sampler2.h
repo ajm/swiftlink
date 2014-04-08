@@ -68,6 +68,7 @@ class LocusSampler : Sampler {
     
     double locus_by_locus(DescentGraph& dg);
     double sequential_imputation(DescentGraph& dg);
+    double start_from(DescentGraph& dg, unsigned int starting_locus);
     void reset();
     
     void set_locus(unsigned int locus, bool ignore_left, bool ignore_right);

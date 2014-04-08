@@ -174,7 +174,11 @@ double LocusSampler::locus_by_locus(DescentGraph& dg) {
 }
 
 double LocusSampler::sequential_imputation(DescentGraph& dg) {
-    unsigned int starting_locus = get_random_locus();
+    return start_from(dg, get_random_locus());
+}
+
+double LocusSampler::start_from(DescentGraph& dg, unsigned int starting_locus) {
+    //unsigned int starting_locus = get_random_locus();
     unsigned int tmp = locus;
     double weight = 0.0;
     

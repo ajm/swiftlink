@@ -105,6 +105,20 @@ int DescentGraph::get(unsigned person_id, unsigned locus, enum parentage p) cons
 }
 */
 
+void DescentGraph::copy_locus(unsigned src, unsigned dst) {
+    for(unsigned i = 0; i < ped->num_members(); ++i) {
+        data[_offset(i, dst, MATERNAL)] = data[_offset(i, src, MATERNAL)];
+        data[_offset(i, dst, PATERNAL)] = data[_offset(i, src, PATERNAL)];
+    }
+}
+
+void DescentGraph::copy_locus(DescentGraph& d, unsigned src, unsigned dst) {
+    for(unsigned i = 0; i < ped->num_members(); ++i) {
+        data[_offset(i, dst, MATERNAL)] = d.get(i, src, MATERNAL);
+        data[_offset(i, dst, PATERNAL)] = d.get(i, src, PATERNAL);
+    }
+}
+
 void DescentGraph::set(unsigned person_id, unsigned locus, enum parentage p, int value) {
     data[_offset(person_id, locus, p)] = value;
 }

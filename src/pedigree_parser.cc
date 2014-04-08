@@ -153,6 +153,8 @@ bool PedigreeParser::parse_line(const int linenum, const string line) {
 		p.add_genotype(g);
 	}
 
+    p.populate_trait_prob_cache(map);
+
     return q.add(p);
 }
 

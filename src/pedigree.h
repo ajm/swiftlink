@@ -91,7 +91,7 @@ class Pedigree {
 	// manipulate
 	bool add(Person& p);
 	bool exists(const string& id);
-	
+
 	bool sanity_check();
 	string debug_string();
 };

@@ -18,6 +18,7 @@ class Pedigree;
 class DiseaseModel;
 class PeelOperation;
 class PeelingState;
+class GeneticMap;
 
 class Person {
     
@@ -47,10 +48,9 @@ class Person {
     // filled in by the pedigree class once
     // the entire pedigree file has been read
 	vector<enum unphased_genotype> genotypes;
+    vector<vector<double> > genotypes_prob;
 	vector<Person*> children;
 	vector<Person*> mates;
-
-
     
     // private stuff
 	void _init_probs(const DiseaseModel& dm);
@@ -61,6 +61,7 @@ class Person {
     void add_mate(Person* p);
     unsigned count_unpeeled(vector<Person*>& v, PeelingState& ps);
     
+    double get_genotype_probability(enum unphased_genotype g, enum phased_trait pt, double marker_prob);
     
  public :
 	Person(const string name, const string father_name, const string mother_name, 
@@ -119,7 +120,11 @@ class Person {
 	    }
 	    
 		genotypes.push_back(g);
-	}
+    }
+
+    void clear_genotypes() {
+        genotypes.clear();
+    }
 	
 	bool legal_genotype(unsigned locus, enum phased_trait g) {
 	
@@ -179,6 +184,19 @@ class Person {
     bool safe_to_ignore_meiosis(enum parentage p);
     
     string debug_string();
+
+    void populate_trait_prob_cache(GeneticMap& map);
+    double get_trait_probability(unsigned int locus, enum phased_trait pt) {
+        return genotypes_prob[locus][pt];
+    }
+
+    // experimental for the ELOD code
+    // assumes the genotype is already there
+    void copy_disease_probs(int locus) {
+        for(int i = 0; i < 4; ++i) {
+            genotypes_prob[locus][i] = disease_prob[i];
+        }
+    }
 };
 
 #endif

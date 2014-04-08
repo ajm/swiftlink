@@ -1,9 +1,13 @@
 #ifndef LKG_LODSCORE_H_
 #define LKG_LODSCORE_H_
 
+using namespace std;
+
 #include <cstdio>
 #include <vector>
 #include <cmath>
+#include <sstream>
+#include <iomanip>
 
 #include "genetic_map.h"
 #include "logarithms.h"
@@ -89,6 +93,17 @@ class LODscores {
         
         scores[index] = prob;
         initialised[index] = true;
+    }
+
+    string debug_string() {
+        stringstream ss;
+
+        ss << "LodScore: ";
+
+        for(unsigned int i = 0; i < scores.size(); ++i)
+            ss << setprecision(2) << scores[i] << " ";
+
+        return ss.str();
     }
 };
 

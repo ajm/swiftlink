@@ -85,8 +85,8 @@ class GeneticMap {
     double temperature;
     unsigned int partial_theta_count; // must be greater than zero
 
-    double haldane(double m) const ;
-    double inverse_haldane(double m) const;
+    //double haldane(double m) const ;
+    //double inverse_haldane(double m) const;
     
  public :
     GeneticMap(unsigned int partial_theta_count) : 
@@ -106,6 +106,9 @@ class GeneticMap {
     const Snp& operator[](int i) const {
 		return map[i];
 	}
+
+    double haldane(double m) const ;
+    double inverse_haldane(double m) const;
     
     void add(Snp& s) {
         map.push_back(s);

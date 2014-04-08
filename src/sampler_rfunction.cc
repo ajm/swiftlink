@@ -10,7 +10,7 @@ using namespace std;
 #include "peel_matrix.h"
 #include "random.h"
     
-
+/*
 double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_trait pt) {
     
     Person* p = ped->get_by_index(person_id);
@@ -53,6 +53,11 @@ double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_t
     
     fprintf(stderr, "error: %s:%d\n", __FILE__, __LINE__);
     abort();
+}
+*/
+
+double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_trait pt) {
+    return ped->get_by_index(person_id)->get_trait_probability(locus, pt);
 }
 
 double SamplerRfunction::get_recombination_probability(DescentGraph* dg, 

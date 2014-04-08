@@ -37,7 +37,7 @@ bool Program::read_and_check_input() {
 	}
 
     // read in the pedigree file
-	PedigreeParser pp(pedfile, pedigrees, dm);
+	PedigreeParser pp(pedfile, pedigrees, dm, map);
 	if(! pp.parse()) {
 		//fprintf(stderr, "errors parsing pedigree file, exiting...\n");
 		return false;

@@ -26,6 +26,16 @@ class DiseaseModel {
 		
         penetrance[0] = penetrance[1] = penetrance[2] = 0.0;
 	}
+
+    DiseaseModel(double freq, double pen[3], bool sexlink) :
+        frequency(freq),
+        sexlinked(sexlink) {
+  
+        for(unsigned int i = 0; i < 3; ++i)
+            penetrance[i] = pen[i];
+    
+        finish_init();    
+    }
     
     ~DiseaseModel() {}
     

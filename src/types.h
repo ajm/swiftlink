@@ -68,6 +68,10 @@ struct mcmc_options {
     string peelseq_filename;
     string random_filename;
     
+    double elod_frequency;
+    double elod_penetrance[3];
+    double elod_marker_separation;
+
     mcmc_options() :
         verbose(false),
         burnin(DEFAULT_BURNIN_ITERATIONS),
@@ -80,7 +84,12 @@ struct mcmc_options {
         thread_count(DEFAULT_THREAD_COUNT),
         use_gpu(false),
         peelseq_filename(""),
-        random_filename("") {}
+        random_filename(""),
+        elod_frequency(0.0),
+        elod_marker_separation(0.1) {
+        
+            elod_penetrance[0] = elod_penetrance[1] = elod_penetrance[2] = 0.0;
+        }
 };
 
 

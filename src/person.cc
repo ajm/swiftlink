@@ -13,6 +13,7 @@ using namespace std;
 #include "pedigree.h"
 #include "peeling.h"
 #include "disease_model.h"
+#include "genetic_map.h"
 
 
 Person::Person(const string name, const string father_name, const string mother_name, 
@@ -28,6 +29,7 @@ Person::Person(const string name, const string father_name, const string mother_
     	typed(false),
     	ped(pedigree),
     	genotypes(),
+        genotypes_prob(),
     	children(),
     	mates() {
     
@@ -46,6 +48,7 @@ Person::Person(const Person& p) :
 		typed(p.typed),
 		ped(p.ped),
 		genotypes(p.genotypes),
+        genotypes_prob(p.genotypes_prob),
 		children(p.children),
 		mates(p.mates) {
 	    
@@ -66,6 +69,7 @@ Person& Person::operator=(const Person& rhs) {
 	    typed = rhs.typed;
 	    ped = rhs.ped;
 	    genotypes = rhs.genotypes;
+        genotypes_prob = rhs.genotypes_prob;
 	    children = rhs.children;
 	    mates = rhs.mates;
 	    
@@ -171,6 +175,71 @@ bool Person::safe_to_ignore_meiosis(enum parentage p) {
         return false;
         
     return tmp->num_children() == 1;
+}
+
+void Person::populate_trait_prob_cache(GeneticMap& map) {
+    vector<double> probs(4, 0.0);
+
+    genotypes_prob.clear();
+    
+    for(unsigned int i = 0; i < genotypes.size(); ++i) {
+        for(int j = 0; j < 4; ++j) {
+            enum phased_trait pt = static_cast<enum phased_trait>(j);
+            double marker_prob = map.get_prob(i, pt);
+
+            probs[j] = get_genotype_probability(genotypes[i], pt, marker_prob);
+        }
+
+        double total = probs[0] + probs[1] + probs[2] + probs[3];
+
+        for(int j = 0; j < 4; ++j) {
+            probs[j] /= total;
+        }
+
+        genotypes_prob.push_back(probs);
+    }
+}
+
+double Person::get_genotype_probability(enum unphased_genotype g, enum phased_trait pt, double marker_prob) {
+    
+    // penetrace prob
+    if(not isfounder()) {
+        if(istyped()) {
+            switch(g) {
+                case HETERO :
+                    return ((pt == TRAIT_AU) or (pt == TRAIT_UA)) ? 1.0 : 0.0;
+                case HOMOZ_A :
+                    return (pt == TRAIT_UU) ? 1.0 : 0.0;
+                case HOMOZ_B :
+                    return (pt == TRAIT_AA) ? 1.0 : 0.0;
+                default :
+                    return 1.0;
+            }
+        }
+        else {
+            return 1.0;
+        }
+    }
+    
+    // penetrance + founder prob
+    if(istyped()) {
+        switch(g) {
+            case HETERO :
+                return ((pt == TRAIT_AU) or (pt == TRAIT_UA)) ? marker_prob : 0.0;
+            case HOMOZ_A :
+                return (pt == TRAIT_UU) ? marker_prob : 0.0;
+            case HOMOZ_B :
+                return (pt == TRAIT_AA) ? marker_prob : 0.0;
+            default :
+                return marker_prob;
+        }
+    }
+    else {
+        return marker_prob;
+    }
+    
+    fprintf(stderr, "error: %s:%d\n", __FILE__, __LINE__);
+    abort();
 }
 
 string Person::debug_string() {

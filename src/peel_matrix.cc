@@ -13,9 +13,7 @@ using namespace std;
 
 
 PeelMatrix::PeelMatrix(unsigned int num_dim, unsigned int val_dim) :
-    num_keys(0),
-    keys(NULL),
-    //offsets(NULL),
+    keys(),
     number_of_dimensions(num_dim),
     values_per_dimension(val_dim),
     size((unsigned int) pow(static_cast<double>(values_per_dimension), static_cast<double>(number_of_dimensions))),
@@ -26,20 +24,11 @@ PeelMatrix::PeelMatrix(unsigned int num_dim, unsigned int val_dim) :
 }
 
 void PeelMatrix::reset() {
-    /*
-    for(unsigned i = 0; i < size; ++i) {
-        data[i] = 0.0;
-    }
-    
-    memset(data, 0, sizeof(double) * size);
-    */
     fill(data, data + size, 0.0);
 }
 
 PeelMatrix::PeelMatrix(const PeelMatrix& rhs) :
-    num_keys(rhs.num_keys),
-    keys(NULL),
-    //offsets(NULL),
+    keys(rhs.keys),
     number_of_dimensions(rhs.number_of_dimensions),
     values_per_dimension(rhs.values_per_dimension),
     size(rhs.size),
@@ -47,12 +36,6 @@ PeelMatrix::PeelMatrix(const PeelMatrix& rhs) :
     
     data = new double[size];
     copy(rhs.data, rhs.data + size, data);
-    
-    keys = new unsigned int[num_keys];
-    copy(rhs.keys, rhs.keys + num_keys, keys);
-    
-    //offsets = new unsigned int[num_keys];
-    //copy(rhs.offsets, rhs.offsets + num_keys, offsets);
 }
 
 PeelMatrix& PeelMatrix::operator=(const PeelMatrix& rhs) {
@@ -69,17 +52,7 @@ PeelMatrix& PeelMatrix::operator=(const PeelMatrix& rhs) {
         size = rhs.size;
         copy(rhs.data, rhs.data + size, data);
         
-        
-        if(num_keys != rhs.num_keys) {
-            delete[] keys;
-            keys = new unsigned int[rhs.num_keys];
-            //delete[] offsets;
-            //offsets = new unsigned int[rhs.num_keys];
-        }
-                
-        num_keys = rhs.num_keys;
-        copy(rhs.keys, rhs.keys + num_keys, keys);
-        //copy(rhs.offsets, rhs.offsets + num_keys, offsets);
+        keys = rhs.keys;
     }
 
     return *this;
@@ -87,19 +60,10 @@ PeelMatrix& PeelMatrix::operator=(const PeelMatrix& rhs) {
 
 PeelMatrix::~PeelMatrix() {
     delete[] data;
-    delete[] keys;
-    //delete[] offsets;
 }
 
 void PeelMatrix::set_keys(vector<unsigned int>& k) {
-    num_keys = k.size();
-    keys = new unsigned int[num_keys];
-    copy(k.begin(), k.end(), keys);
-    
-    //offsets = new unsigned int[num_keys];
-    //for(int i = 0; i < num_keys; ++i) {
-    //    offsets[i] = (1 << (2 * i));
-    //}
+    keys = k;
 }
 
 double PeelMatrix::get_result() {
@@ -133,21 +97,4 @@ void PeelMatrix::normalise() {
         data[i] /= matrix_sum;
     }
 }
-
-/*
-unsigned int PeelMatrix::generate_index(vector<int>& index) const {
-    unsigned int tmp = 0;
-    
-    for(unsigned int i = 0; i < num_keys; ++i) {
-        //if(index[keys[i]] == -1) {
-        //    fprintf(stderr, "%d was -1\n", keys[i]);
-        //    abort();
-        //}
-        
-        tmp += (index[keys[i]] * (1 << (2 * i)));
-    }
-    
-    return tmp;
-}
-*/
 

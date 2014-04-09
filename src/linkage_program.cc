@@ -20,6 +20,7 @@ using namespace std;
 //#include "gpu_markov_chain.h"
 #include "lod_score.h"
 
+#include "mc3.h"
 
 bool LinkageProgram::run() {
     vector<LODscores*> all_scores;
@@ -114,7 +115,14 @@ LODscores* LinkageProgram::run_pedigree(Pedigree& p) {
     abort();
     */
     
-    MarkovChain chain(&p, &map, &psg, options);
+//    MarkovChain chain(&p, &map, &psg, options);
+//    return chain.run(dg);
+
+    options.mc3_number_of_chains = 8;
+    options.mc3_exchange_period = 10;
+    options.mc3_temperature = 0.02;
+
+    Mc3 chain(&p, &map, &psg, options);
     return chain.run(dg);
 }
 

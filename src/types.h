@@ -62,15 +62,23 @@ struct mcmc_options {
     
     double lsampler_prob;
     
+    // parallelism
     int thread_count;
     bool use_gpu;
     
+    // things precalculated or stored in files
     string peelseq_filename;
     string random_filename;
-    
+
+    // elod options
     double elod_frequency;
     double elod_penetrance[3];
     double elod_marker_separation;
+
+    // mc3 options
+    int mc3_number_of_chains;
+    int mc3_exchange_period;
+    double mc3_temperature;
 
     mcmc_options() :
         verbose(false),
@@ -86,7 +94,10 @@ struct mcmc_options {
         peelseq_filename(""),
         random_filename(""),
         elod_frequency(0.0),
-        elod_marker_separation(0.1) {
+        elod_marker_separation(0.0), 
+        mc3_number_of_chains(0), 
+        mc3_exchange_period(0),
+        mc3_temperature(0.0) {
         
             elod_penetrance[0] = elod_penetrance[1] = elod_penetrance[2] = 0.0;
         }

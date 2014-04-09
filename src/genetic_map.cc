@@ -58,20 +58,29 @@ double GeneticMap::inverse_haldane(double r) const {
     return -0.5 * log(1 - (2 * r));
 }
 
-// XXX
-// this was never used, the idea was to do parallel tempering
-// but in the end it did not seem necessary
+// coldest temperature is 1.0
+// hottest is 0.0 (random)
 void GeneticMap::set_temperature(double t) {
-    if(temperature != 0.0) {
+    if(temperature != 1.0) {
         fprintf(stderr, "error: temperature cannot be set twice in GeneticMap objects\n");
         abort();
     }
     
     temperature = t;
     
+    // only theta and minor allele frequencies play 
+    // a part in samplering, the partial theta stuff is only
+    // used when calculating location scores
     for(unsigned i = 0; i < thetas.size(); ++i) {
-        thetas[i] =         ((1 - temperature) * thetas[i])         + (temperature * 0.5);
-        inversethetas[i] =  ((1 - temperature) * inversethetas[i])  + (temperature * 0.5);
+        thetas[i] =         (temperature * thetas[i])         + ((1 - temperature) * 0.5);
+        inversethetas[i] =  (temperature * inversethetas[i])  + ((1 - temperature) * 0.5);
+    }
+
+    for(unsigned i = 0; i < map.size(); ++i) {
+        Snp& tmp = map[i];
+        double minor_freq = tmp.minor();
+
+        tmp.set_minor_freq((temperature * minor_freq) + ((1 - temperature) * 0.5));
     }
 }
 

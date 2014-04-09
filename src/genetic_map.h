@@ -94,11 +94,31 @@ class GeneticMap {
         thetas(), 
         inversethetas(),
         partial_thetas(),
-        temperature(0.0),
+        temperature(1.0),
         partial_theta_count(partial_theta_count) {}
     
     ~GeneticMap() {}
     
+    GeneticMap(const GeneticMap& rhs) :
+        map(rhs.map),
+        thetas(rhs.thetas),
+        inversethetas(rhs.inversethetas),
+        partial_thetas(rhs.partial_thetas),
+        temperature(rhs.temperature),
+        partial_theta_count(rhs.partial_theta_count) {}
+
+    GeneticMap& operator=(const GeneticMap& rhs) {
+        if(this != &rhs) {
+            map = rhs.map;
+            thetas = rhs.thetas;
+            inversethetas = rhs.inversethetas;
+            partial_thetas = rhs.partial_thetas;
+            temperature = rhs.temperature;
+            partial_theta_count = rhs.partial_theta_count;
+        }
+        return *this;
+    }
+
 	Snp& operator[](int i) {
 		return map[i];
 	}

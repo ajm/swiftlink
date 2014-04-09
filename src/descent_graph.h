@@ -73,6 +73,14 @@ class DescentGraph {
 	double get_recombination_prob(unsigned int locus, bool count_crossovers);
     double get_haplotype_likelihood();
     double get_likelihood();
+
+    double get_likelihood2(GeneticMap* m) {
+        GeneticMap* tmp = map;
+        map = m;
+        double l = get_likelihood();
+        map = tmp;
+        return l;
+    }
     
     string debug_string();
     

@@ -27,7 +27,7 @@ class TraitRfunction : public Rfunction {
         Rfunction(rhs) {
         
         for(int i = 0; i < 4; ++i) {
-            trait_cache[i] = get_trait_probability(peel_id, static_cast<enum phased_trait>(i));
+            trait_cache[i] = rhs.trait_cache[i]; //get_trait_probability(peel_id, static_cast<enum phased_trait>(i));
         }
     }
     

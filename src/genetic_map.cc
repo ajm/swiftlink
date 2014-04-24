@@ -69,7 +69,7 @@ void GeneticMap::set_temperature(double t) {
     temperature = t;
     
     // only theta and minor allele frequencies play 
-    // a part in samplering, the partial theta stuff is only
+    // a part in sampling, the partial theta stuff is only
     // used when calculating location scores
     for(unsigned i = 0; i < thetas.size(); ++i) {
         thetas[i] =         (temperature * thetas[i])         + ((1 - temperature) * 0.5);

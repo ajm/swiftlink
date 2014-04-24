@@ -97,10 +97,12 @@ LODscores* LinkageProgram::run_pedigree(Pedigree& p) {
     PeelSequenceGenerator psg(&p, &map, options.verbose);
     psg.build_peel_sequence(options.peelopt_iterations);
     
+/*
     SequentialImputation si(&p, &map, &psg);
     //si.run(dg, options.si_iterations);
     si.parallel_run(dg, options.si_iterations);
-    
+*/
+
     /*
     if(not options.use_gpu) {
         MarkovChain chain(&p, &map, &psg, options);
@@ -119,8 +121,10 @@ LODscores* LinkageProgram::run_pedigree(Pedigree& p) {
 //    return chain.run(dg);
 
     options.mc3_number_of_chains = 8;
-    options.mc3_exchange_period = 10;
-    options.mc3_temperature = 0.02;
+    options.mc3_exchange_period = 1;
+    options.mc3_temperature = 0.001;
+    
+    options.scoring_period = 10;
 
     Mc3 chain(&p, &map, &psg, options);
     return chain.run(dg);

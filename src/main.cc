@@ -64,7 +64,7 @@ void _usage(char *prog) {
 "  -y NUM,     --exchangeperiod=NUM        (default = %d)\n"
 "  -l FLOAT,   --lsamplerprobability=FLOAT (default = %.1f)\n"
 "  -n NUM,     --lodscores=NUM             (default = %d)\n"
-"  -a,         --mcmcmc\n"
+"  -w,         --mcmcmc\n"
 "  -t FLOAT,FLOAT,... --temperatures=FLOAT,FLOAT,...\n"
 "\n"
 "ELOD options:\n"
@@ -79,6 +79,7 @@ void _usage(char *prog) {
 "  -g,         --gpu\n"
 "\n"
 "Misc:\n"
+"  -a,         --affectedonly"
 "  -q NUM,     --peelseqiter=NUM           (default = %d)\n"
 "  -r seedfile,--randomseeds=seedfile\n"
 "  -v,         --verbose\n"
@@ -175,32 +176,33 @@ void _handle_args(int argc, char **argv) {
 	
 	static struct option long_options[] = 
 	    {
-	        {"verbose",             no_argument,        0,      'v'},
-	        {"help",                no_argument,        0,      'h'},
-	        {"iterations",          required_argument,  0,      'i'},
-	        {"burnin",              required_argument,  0,      'b'},
-	        {"sequentialimputation",required_argument,  0,      's'},
-	        {"lsamplerprobability", required_argument,  0,      'l'},
-	        {"scoringperiod",       required_argument,  0,      'x'},
-	        {"gpu",                 no_argument,        0,      'g'},
-	        {"cores",               required_argument,  0,      'c'},
-	        {"pedigree",            required_argument,  0,      'p'},
-	        {"map",                 required_argument,  0,      'm'},
-	        {"dat",                 required_argument,  0,      'd'},
-	        {"output",              required_argument,  0,      'o'},
-	        {"peelseqiter",         required_argument,  0,      'q'},
-	        {"lodscores",           required_argument,  0,      'n'},
-	        {"randomseeds",         required_argument,  0,      'r'},
-            {"chains",              required_argument,  0,      'z'},
-            {"exchangeperiod",      required_argument,  0,      'y'},
-            {"temperatures",        required_argument,  0,      't'},
+            {"affectedonly",        no_argument,        0,      'a'},
+            {"burnin",              required_argument,  0,      'b'},
+            {"cores",               required_argument,  0,      'c'},
+            {"dat",                 required_argument,  0,      'd'},
             {"elod",                no_argument,        0,      'e'},
-            {"separation",          required_argument,  0,      'w'},
-            {"penetrance",          required_argument,  0,      'k'},
             {"frequency",           required_argument,  0,      'f'},
-            {"replicates",          required_argument,  0,      'u'},
+            {"gpu",                 no_argument,        0,      'g'},
+            {"help",                no_argument,        0,      'h'},
+            {"iterations",          required_argument,  0,      'i'},
             {"exchangefile",        required_argument,  0,      'j'},
-            {"mcmcmc",              no_argument,  0,      'a'},
+            {"penetrance",          required_argument,  0,      'k'},
+            {"lsamplerprobability", required_argument,  0,      'l'},
+            {"map",                 required_argument,  0,      'm'},
+            {"lodscores",           required_argument,  0,      'n'},
+            {"output",              required_argument,  0,      'o'},
+            {"pedigree",            required_argument,  0,      'p'},
+            {"peelseqiter",         required_argument,  0,      'q'},
+            {"randomseeds",         required_argument,  0,      'r'},
+            {"sequentialimputation",required_argument,  0,      's'},
+            {"temperatures",        required_argument,  0,      't'},
+            {"replicates",          required_argument,  0,      'u'},
+	        {"verbose",             no_argument,        0,      'v'},
+            {"separation",          required_argument,  0,      'w'},
+            {"scoringperiod",       required_argument,  0,      'x'},
+            {"exchangeperiod",      required_argument,  0,      'y'},
+            {"chains",              required_argument,  0,      'z'},
+            {"mcmcmc",              no_argument,        0,      'M'},
             {0, 0, 0, 0}
 	    };
     
@@ -396,6 +398,10 @@ void _handle_args(int argc, char **argv) {
                 break;
 
             case 'a':
+                options.affected_only = true;
+                break;
+
+            case 'M':
                 options.mc3 = true;
                 break;
 

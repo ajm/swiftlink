@@ -153,7 +153,8 @@ class Person {
 	bool isunsexed() const { return gender == UNSEXED; }
 
 	bool isaffected() const { return affection == AFFECTED; }
-	bool istyped() const { return typed; }
+	void make_unknown_affection() { affection = UNKNOWN_AFFECTION; }
+    bool istyped() const { return typed; }
 
 	bool isfounder_str() const { return mother_unknown() and father_unknown(); }
     bool isfounder() const /*{ return isfounder_str(); }*/ { return (maternal_id == UNKNOWN_PARENT) and (paternal_id == UNKNOWN_PARENT); }

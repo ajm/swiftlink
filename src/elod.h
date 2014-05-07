@@ -81,6 +81,10 @@ class Elod {
                 p->populate_trait_prob_cache(map1);
 
                 p->copy_disease_probs(1);
+
+                if(options.affected_only and not p->isaffected()) {
+                    p->make_unknown_affection();
+                }
             }
         }
 

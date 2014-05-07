@@ -83,7 +83,17 @@ LODscores* LinkageProgram::run_pedigree(Pedigree& p) {
     if(options.verbose) {
         fprintf(stderr, "processing pedigree %s\n", p.get_id().c_str());
     }
-    
+
+    if(options.affected_only) {
+        for(unsigned int i = 0; i < p.num_members(); ++i) {
+            Person* q = p.get_by_index(i);
+
+            if(not q->isaffected()) {
+                q->make_unknown_affection();
+            }
+        }
+    }
+
 /*
     DescentGraph dg(&p, &map);
     

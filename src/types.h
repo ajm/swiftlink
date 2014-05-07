@@ -73,6 +73,8 @@ struct mcmc_options {
     string random_filename;
     string exchange_filename;
 
+    bool affected_only;
+
     // elod options
     bool elod;
     double elod_frequency;
@@ -100,6 +102,7 @@ struct mcmc_options {
         peelseq_filename(""),
         random_filename(""),
         exchange_filename(""),
+        affected_only(false),
         elod(false),
         elod_frequency(DEFAULT_ELOD_FREQUENCY),
         elod_penetrance(DEFAULT_ELOD_PENETRANCE, DEFAULT_ELOD_PENETRANCE + 3),

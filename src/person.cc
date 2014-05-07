@@ -17,7 +17,7 @@ using namespace std;
 
 
 Person::Person(const string name, const string father_name, const string mother_name, 
-			   enum sex s, enum affection a, Pedigree* pedigree, const DiseaseModel& dm) :
+			   enum sex s, enum affection a, Pedigree* pedigree, DiseaseModel& dm) :
         id(name),
     	mother(mother_name),
     	father(father_name),		
@@ -28,12 +28,13 @@ Person::Person(const string name, const string father_name, const string mother_
     	paternal_id(UNKNOWN_ID),
     	typed(false),
     	ped(pedigree),
+        dm(&dm),
     	genotypes(),
         genotypes_prob(),
     	children(),
     	mates() {
     
-    _init_probs(dm);
+    _init_probs();
 }
 	
 Person::Person(const Person& p) :
@@ -47,6 +48,7 @@ Person::Person(const Person& p) :
 		paternal_id(p.paternal_id),
 		typed(p.typed),
 		ped(p.ped),
+        dm(p.dm),
 		genotypes(p.genotypes),
         genotypes_prob(p.genotypes_prob),
 		children(p.children),
@@ -68,6 +70,7 @@ Person& Person::operator=(const Person& rhs) {
 	    paternal_id = rhs.paternal_id;
 	    typed = rhs.typed;
 	    ped = rhs.ped;
+        dm = rhs.dm;
 	    genotypes = rhs.genotypes;
         genotypes_prob = rhs.genotypes_prob;
 	    children = rhs.children;
@@ -79,20 +82,20 @@ Person& Person::operator=(const Person& rhs) {
 	return *this;
 }
 
-void Person::_init_probs(const DiseaseModel& dm) {
+void Person::_init_probs() {
 
     disease_prob[TRAIT_AA] = isfounder_str() ? \
-        dm.get_apriori_prob(get_affection(), TRAIT_HOMO_A) : \
-        dm.get_penetrance_prob(get_affection(), TRAIT_HOMO_A);
+        dm->get_apriori_prob(get_affection(), TRAIT_HOMO_A) : \
+        dm->get_penetrance_prob(get_affection(), TRAIT_HOMO_A);
 
     disease_prob[TRAIT_AU] = \
     disease_prob[TRAIT_UA] = isfounder_str() ? \
-        dm.get_apriori_prob(get_affection(), TRAIT_HETERO) : \
-        dm.get_penetrance_prob(get_affection(), TRAIT_HETERO);
+        dm->get_apriori_prob(get_affection(), TRAIT_HETERO) : \
+        dm->get_penetrance_prob(get_affection(), TRAIT_HETERO);
 
     disease_prob[TRAIT_UU] = isfounder_str() ? \
-        dm.get_apriori_prob(get_affection(), TRAIT_HOMO_U) : \
-        dm.get_penetrance_prob(get_affection(), TRAIT_HOMO_U);
+        dm->get_apriori_prob(get_affection(), TRAIT_HOMO_U) : \
+        dm->get_penetrance_prob(get_affection(), TRAIT_HOMO_U);
 }
 
 bool Person::mendelian_errors() const {

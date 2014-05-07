@@ -44,7 +44,8 @@ class Person {
     // for peeling code, information comes from the
     // disease model objects
     double disease_prob[4];
-    
+    DiseaseModel* dm;
+
     // filled in by the pedigree class once
     // the entire pedigree file has been read
 	vector<enum unphased_genotype> genotypes;
@@ -53,7 +54,7 @@ class Person {
 	vector<Person*> mates;
     
     // private stuff
-	void _init_probs(const DiseaseModel& dm);
+	void _init_probs();
 	bool _is_unknown(const string& s) const { 
         return s == "0"; 
     }
@@ -65,7 +66,7 @@ class Person {
     
  public :
 	Person(const string name, const string father_name, const string mother_name, 
-			enum sex s, enum affection a, Pedigree* pedigree, const DiseaseModel& dm);
+			enum sex s, enum affection a, Pedigree* pedigree, DiseaseModel& dm);
 	~Person() {}
 	Person(const Person& rhs);
 	Person& operator=(const Person& p);
@@ -153,7 +154,10 @@ class Person {
 	bool isunsexed() const { return gender == UNSEXED; }
 
 	bool isaffected() const { return affection == AFFECTED; }
-	void make_unknown_affection() { affection = UNKNOWN_AFFECTION; }
+	void make_unknown_affection() { 
+        affection = UNKNOWN_AFFECTION; 
+        _init_probs();
+    }
     bool istyped() const { return typed; }
 
 	bool isfounder_str() const { return mother_unknown() and father_unknown(); }

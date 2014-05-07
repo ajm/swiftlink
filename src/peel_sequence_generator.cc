@@ -318,7 +318,8 @@ bool PeelSequenceGenerator::greedy_search(vector<unsigned int>& current) {
         unsigned int cost = tmp[0].get_cutset_size();
         
         if(cost > 2) {
-            printf("[greedy] cancelled\n");
+            //printf("[greedy] cancelled\n");
+            fprintf(stderr, "Greedy algorithm to find peeling sequence failed, switching to randomised method...\n");
             return false;
         }
         
@@ -333,7 +334,7 @@ bool PeelSequenceGenerator::greedy_search(vector<unsigned int>& current) {
         random_shuffle(tmp.begin(), it);
         
         int node = tmp[0].get_peelnode();
-        printf("[greedy] %d (%s)\n", node, ped->get_by_index(node)->get_id().c_str());
+        //printf("[greedy] %d (%s)\n", node, ped->get_by_index(node)->get_id().c_str());
         
         //eliminate_node(tmp, node);
         vector<unsigned int>& cutset = tmp[0].get_cutset();

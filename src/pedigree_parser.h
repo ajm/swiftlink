@@ -21,6 +21,8 @@ class PedigreeParser : public Parser {
     DiseaseModel& disease_model;
 	GeneticMap& map;
 
+    bool ignore_genotypes;
+
 	bool _parse_sex(const string& str, enum sex& s);
 	bool _parse_affection(const string& str, enum affection& a);
 	bool _parse_genotype(const string& a1, const string& a2, enum unphased_genotype& g);
@@ -31,8 +33,12 @@ class PedigreeParser : public Parser {
 	    Parser(fn, false), 
 	    pedigrees(peds), 
 	    disease_model(dm),
-        map(map) {}
+        map(map),
+        ignore_genotypes(false) {}
     
+    void set_ignore_genotypes() {
+        ignore_genotypes = true;
+    }
 	bool parse_line(const int linenum, const string line);
     bool parse_end();
 };

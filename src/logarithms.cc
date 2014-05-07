@@ -27,3 +27,7 @@ double log_product(double a, double b) {
     return ((a == LOG_ZERO) or (b == LOG_ZERO)) ? LOG_ZERO : a + b;
 }
 
+double log_mean(double a, double b) {
+    return log_sum(a, b) - log(2.0);
+}
+

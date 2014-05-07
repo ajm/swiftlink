@@ -33,9 +33,9 @@ double Elod::run() {
         lod.set_trait_prob(peel.calc_trait_prob());
 
 
-        Progress p("ELOD: ", options.iterations);
+        Progress p("ELOD: ", options.elod_replicates);
 
-        for(int j = 0; j < options.iterations; ++j) {
+        for(int j = 0; j < options.elod_replicates; ++j) {
             lsampler.start_from(dg1, 1);
 
             dg2.copy_locus(dg1, 0, 0);

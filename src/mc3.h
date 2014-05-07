@@ -66,7 +66,7 @@ class Mc3 {
         return *this;
     }
 
-    LODscores* run(DescentGraph& dg);
+    LODscores* run();
 };
 
 #endif

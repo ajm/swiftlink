@@ -19,6 +19,7 @@
 #include "types.h"
 #include "defaults.h"
 #include "linkage_program.h"
+#include "elod.h"
 
 //#include "test_program.h"
 //#include "haplotype_program.h"
@@ -44,6 +45,7 @@ struct mcmc_options options;
 void _usage(char *prog) {
 	fprintf(stderr,
 "Usage: %s [OPTIONS] -p pedfile -m mapfile -d datfile\n"
+"       %s [OPTIONS] -p pedfile --elod\n"
 "\n"
 "Input files:\n"
 "  -p pedfile, --pedigree=pedfile\n"
@@ -54,12 +56,23 @@ void _usage(char *prog) {
 "  -o outfile, --output=outfile            (default = '%s')\n"
 "\n"
 "MCMC options:\n"
+"  -z NUM,     --chains=NUM                (default = %d)\n"
 "  -i NUM,     --iterations=NUM            (default = %d)\n"
 "  -b NUM,     --burnin=NUM                (default = %d)\n"
 "  -s NUM,     --sequentialimputation=NUM  (default = %d)\n"
 "  -x NUM,     --scoringperiod=NUM         (default = %d)\n"
+"  -y NUM,     --exchangeperiod=NUM        (default = %d)\n"
 "  -l FLOAT,   --lsamplerprobability=FLOAT (default = %.1f)\n"
 "  -n NUM,     --lodscores=NUM             (default = %d)\n"
+"  -a,         --mcmcmc\n"
+"  -t FLOAT,FLOAT,... --temperatures=FLOAT,FLOAT,...\n"
+"\n"
+"ELOD options:\n"
+"  -e          --elod\n"
+"  -f FLOAT    --frequency=FLOAT           (default = %.4f)\n"
+"  -w FLOAT    --separation=FLOAT          (default = %.4f)\n"
+"  -k FLOAT,FLOAT,FLOAT --penetrance=FLOAT,FLOAT,FLOAT(default = %.2f,%.2f,%.2f)\n"
+"  -u NUM      --replicates=NUM            (default = %d)\n"
 "\n"
 "Runtime options:\n"
 "  -c NUM,     --cores=NUM                 (default = %d)\n"
@@ -72,13 +85,22 @@ void _usage(char *prog) {
 "  -h,         --help\n"
 "\n", 
 prog, 
+prog,
 DEFAULT_RESULTS_FILENAME, 
+DEFAULT_MCMC_CHAINS,
 DEFAULT_MCMC_ITERATIONS,
-DEFAULT_BURNIN_ITERATIONS,
+DEFAULT_MCMC_BURNIN,
 DEFAULT_SEQUENTIALIMPUTATION_RUNS,
-DEFAULT_SCORING_PERIOD,
+DEFAULT_MCMC_SCORING_PERIOD,
+DEFAULT_MCMC_EXCHANGE_PERIOD,
 DEFAULT_LSAMPLER_PROB,
 DEFAULT_LODSCORES,
+DEFAULT_ELOD_FREQUENCY,
+DEFAULT_ELOD_SEPARATION,
+DEFAULT_ELOD_PENETRANCE[0],
+DEFAULT_ELOD_PENETRANCE[1],
+DEFAULT_ELOD_PENETRANCE[2],
+DEFAULT_ELOD_REPLICATES,
 DEFAULT_THREAD_COUNT,
 DEFAULT_PEELOPT_ITERATIONS
 );
@@ -129,6 +151,23 @@ bool str2float(double &i, char *s) {
     return true;
 }
 
+bool csv2vec(vector<double>& v, char *s) {
+    char* tmp;
+    double d;
+
+    v.clear();
+
+    while((tmp = strsep(&s, ",")) != NULL) {
+        if(not str2float(d, tmp)) {
+            return false;
+        }
+
+        v.push_back(d);
+    }
+
+    return true;
+}
+
 void _handle_args(int argc, char **argv) {
 	extern char *optarg;
     extern int optopt;
@@ -152,12 +191,22 @@ void _handle_args(int argc, char **argv) {
 	        {"peelseqiter",         required_argument,  0,      'q'},
 	        {"lodscores",           required_argument,  0,      'n'},
 	        {"randomseeds",         required_argument,  0,      'r'},
-	        {0, 0, 0, 0}
+            {"chains",              required_argument,  0,      'z'},
+            {"exchangeperiod",      required_argument,  0,      'y'},
+            {"temperatures",        required_argument,  0,      't'},
+            {"elod",                no_argument,        0,      'e'},
+            {"separation",          required_argument,  0,      'w'},
+            {"penetrance",          required_argument,  0,      'k'},
+            {"frequency",           required_argument,  0,      'f'},
+            {"replicates",          required_argument,  0,      'u'},
+            {"exchangefile",        required_argument,  0,      'j'},
+            {"mcmcmc",              no_argument,  0,      'a'},
+            {0, 0, 0, 0}
 	    };
     
     int option_index = 0;
     
-	while ((ch = getopt_long(argc, argv, ":p:d:m:o:i:b:s:l:c:x:q:r:n:vhcg", long_options, &option_index)) != -1) {
+	while ((ch = getopt_long(argc, argv, ":p:d:m:o:i:b:s:l:c:x:q:r:n:vhcgz:y:t:ew:k:f:u:j:a", long_options, &option_index)) != -1) {
 		switch (ch) {
 			case 'p':
 				pedfile = optarg;
@@ -303,6 +352,114 @@ void _handle_args(int argc, char **argv) {
 				_usage(argv[0]);
 				exit(EXIT_SUCCESS);
 				
+            case 'j':
+                options.exchange_filename = string(optarg);
+                break;
+
+            case 'z':
+                if(not str2int(options.mc3_number_of_chains, optarg)) {
+                    fprintf(stderr, "%s: option '-z' requires an int as an argument ('%s' given)\n", argv[0], optarg);
+                    exit(EXIT_FAILURE);
+                }
+                if(options.mc3_number_of_chains < 1) {
+                    fprintf(stderr, "%s: number of Markov chains must be greater than zero ('%d' given)\n", argv[0], options.mc3_number_of_chains);
+                    exit(EXIT_FAILURE);
+                }
+                break;
+
+            case 'y':
+                if(not str2int(options.mc3_exchange_period, optarg)) {
+                    fprintf(stderr, "%s: option '-y' requires an int as an argument ('%s' given)\n", argv[0], optarg);
+                    exit(EXIT_FAILURE);
+                }
+                if(options.mc3_exchange_period < 1) {
+                    fprintf(stderr, "%s: exchange period must be greater than zero ('%d' given)\n", argv[0], options.mc3_exchange_period);
+                    exit(EXIT_FAILURE);
+                }
+                break;
+
+            case 't':
+                if(not csv2vec(options.mc3_temperatures, optarg)) {
+                    fprintf(stderr, "%s: temperatures must be comma delimited floats from 0.0 - 1.0 inclusive, e.g.: 1.0,0.9,0.8,0.7 ('%s' given)\n", argv[0], optarg);
+                    exit(EXIT_FAILURE);
+                }
+                
+                for(unsigned i = 0; i < options.mc3_temperatures.size(); ++i) {
+                    double tmp = options.mc3_temperatures[i];
+                    if((tmp < 0.0) or (tmp > 1.0)) {
+                        fprintf(stderr, "%s: temperatures must be 0.0 - 1.0 inclusive (%d%s value is %.3f)\n", 
+                            argv[0], i+1, i==0 ? "st" : i==1 ? "nd" : i==2 ? "rd" : "th", tmp);
+                        exit(EXIT_FAILURE);
+                    }
+                }
+
+                break;
+
+            case 'a':
+                options.mc3 = true;
+                break;
+
+            case 'e':
+                options.elod = true;
+                break;
+
+            case 'w':
+                if(not str2float(options.elod_marker_separation, optarg)) {
+                    fprintf(stderr, "%s: option '-w' requires a float as an argument ('%s' given)\n", argv[0], optarg);
+                    exit(EXIT_FAILURE);
+                }
+                if(options.elod_marker_separation <= 0.0) {
+                    fprintf(stderr, "%s: ELOD marker separation must be greater than zero ('%f' given)\n", argv[0], options.elod_marker_separation);
+                    exit(EXIT_FAILURE);
+                }
+                break;
+
+            case 'k':
+                if(not csv2vec(options.elod_penetrance, optarg)) {
+                    fprintf(stderr, "%s: penetraces must be comma delimited floats from 0.0 - 1.0 inclusive, e.g.: 0.0,0.0,1.0 ('%s' given)\n", argv[0], optarg);
+                    exit(EXIT_FAILURE);
+                }
+                
+                if(options.elod_penetrance.size() != 3) {
+                    fprintf(stderr, "%s: penetrance requires 3 floats, found %d!\n", argv[0], int(options.elod_penetrance.size()));
+                    exit(EXIT_FAILURE);
+                }
+
+                for(unsigned i = 0; i < options.elod_penetrance.size(); ++i) {
+                    double tmp = options.elod_penetrance[i];
+                    if((tmp < 0.0) or (tmp > 1.0)) {
+                        fprintf(stderr, "%s: temperatures must be 0.0 - 1.0 inclusive (%d%s value is %.3f)\n", 
+                            argv[0], i+1, i==0 ? "st" : i==1 ? "nd" : i==2 ? "rd" : "th", tmp);
+                        exit(EXIT_FAILURE);
+                    }
+                }
+
+                break;
+
+            case 'f':
+                if(not str2float(options.elod_frequency, optarg)) {
+                    fprintf(stderr, "%s: option '-f' requires a float as an argument ('%s' given)\n", argv[0], optarg);
+                    exit(EXIT_FAILURE);
+                }
+                if(options.elod_frequency <= 0.0) {
+                    fprintf(stderr, "%s: ELOD trait frequency must be greater than zero ('%f' given)\n", argv[0], options.elod_frequency);
+                    exit(EXIT_FAILURE);
+                }
+                break;
+
+
+            case 'u':
+                if(not str2int(options.elod_replicates, optarg)) {
+                    fprintf(stderr, "%s: option '-u' requires an int as an argument ('%s' given)\n", argv[0], optarg);
+                    exit(EXIT_FAILURE);
+                }
+                if(options.elod_replicates < 1) {
+                    fprintf(stderr, "%s: number of ELOD replicates must be greater than zero ('%d' given)\n", argv[0], options.elod_replicates);
+                    exit(EXIT_FAILURE);
+                }
+                break;
+
+
             case ':':
                 fprintf(stderr, "%s: option '-%c' requires an argument\n", 
                         argv[0], optopt);
@@ -315,18 +472,28 @@ void _handle_args(int argc, char **argv) {
                 break;
 		}
 	}
+
+    //fprintf(stderr, "%s", options.debug_string().c_str());
 	
+    if(options.elod and pedfile != NULL)
+        return;
+
+    if((int(options.mc3_temperatures.size()) > 0) and (int(options.mc3_temperatures.size()) != options.mc3_number_of_chains)) {
+        fprintf(stderr, "Error: %d temperature%s %s set for %d chain%s\n", 
+                int(options.mc3_temperatures.size()), 
+                int(options.mc3_temperatures.size()) == 1 ? "" : "s", 
+                int(options.mc3_temperatures.size()) == 1 ? "was" : "were",
+                options.mc3_number_of_chains, 
+                options.mc3_number_of_chains == 1 ? "" : "s");
+        exit(EXIT_FAILURE);
+    }
+
+    if((int(options.mc3_temperatures.size()) > 0) and (options.mc3_temperatures[0] != 1.0)) {
+        fprintf(stderr, "Warning: no sampling will happen if the temperature of the first chain is not 1.0!\n");
+    }
+
 	if((mapfile == NULL) or (pedfile == NULL) or (datfile == NULL)) {
-	    fprintf(stderr, 
-	    "\n"
-	    "-----------------------------------------------------------\n"
-	    "|                                                         |\n"
-	    "|  error: at a minimum you must specify a pedigree file,  |\n"
-	    "|         a map file and a linkage format dat file        |\n"
-	    "|                                                         |\n"
-	    "-----------------------------------------------------------\n"
-	    "\n");
-        _usage(argv[0]);
+	    fprintf(stderr, "Error: at a minimum you must specify a pedigree file, a map file and a linkage format dat file\n");
         exit(EXIT_FAILURE);
 	}
 }
@@ -340,6 +507,16 @@ int linkage_analysis() {
     LinkageProgram lp(pedfile, mapfile, datfile, outfile, options);
     
     return lp.run() ? EXIT_SUCCESS : EXIT_FAILURE;
+}
+
+int elod_analysis() {
+    Elod e(pedfile, options);
+
+    double elod = e.run();
+
+    fprintf(stderr, "\nELOD = %.3f\n", elod);
+    
+    return EXIT_SUCCESS;
 }
 
 int haplotype_analysis() {
@@ -371,6 +548,8 @@ int main(int argc, char **argv) {
 	
 	_set_runtime_parameters();
 	
+    if(options.elod)
+        return elod_analysis();
 	
 	return linkage_analysis();
     

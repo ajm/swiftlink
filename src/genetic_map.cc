@@ -73,7 +73,7 @@ void GeneticMap::set_temperature(double t) {
     // used when calculating location scores
     for(unsigned i = 0; i < thetas.size(); ++i) {
         thetas[i] =         (temperature * thetas[i])         + ((1 - temperature) * 0.5);
-        inversethetas[i] =  (temperature * inversethetas[i])  + ((1 - temperature) * 0.5);
+        inversethetas[i] =  1.0 - thetas[i] ; //(temperature * inversethetas[i])  + ((1 - temperature) * 0.5);
     }
 
     for(unsigned i = 0; i < map.size(); ++i) {

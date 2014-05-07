@@ -2,6 +2,8 @@
 #define LKG_TYPES_H_
 
 #include <cstdlib>
+#include <vector>
+#include <sstream>
 
 #include "genotype.h"
 #include "trait.h"
@@ -69,23 +71,27 @@ struct mcmc_options {
     // things precalculated or stored in files
     string peelseq_filename;
     string random_filename;
+    string exchange_filename;
 
     // elod options
+    bool elod;
     double elod_frequency;
-    double elod_penetrance[3];
+    vector<double> elod_penetrance;
     double elod_marker_separation;
+    int elod_replicates;
 
     // mc3 options
+    int mc3;
     int mc3_number_of_chains;
     int mc3_exchange_period;
-    double mc3_temperature;
+    vector<double> mc3_temperatures;
 
     mcmc_options() :
         verbose(false),
-        burnin(DEFAULT_BURNIN_ITERATIONS),
+        burnin(DEFAULT_MCMC_BURNIN),
         iterations(DEFAULT_MCMC_ITERATIONS),
         si_iterations(DEFAULT_SEQUENTIALIMPUTATION_RUNS),
-        scoring_period(DEFAULT_SCORING_PERIOD),
+        scoring_period(DEFAULT_MCMC_SCORING_PERIOD),
         lodscores(DEFAULT_LODSCORES),
         peelopt_iterations(DEFAULT_PEELOPT_ITERATIONS),
         lsampler_prob(DEFAULT_LSAMPLER_PROB),
@@ -93,16 +99,33 @@ struct mcmc_options {
         use_gpu(false),
         peelseq_filename(""),
         random_filename(""),
-        elod_frequency(0.0),
-        elod_marker_separation(0.0), 
-        mc3_number_of_chains(0), 
-        mc3_exchange_period(0),
-        mc3_temperature(0.0) {
-        
-            elod_penetrance[0] = elod_penetrance[1] = elod_penetrance[2] = 0.0;
-        }
-};
+        exchange_filename(""),
+        elod(false),
+        elod_frequency(DEFAULT_ELOD_FREQUENCY),
+        elod_penetrance(DEFAULT_ELOD_PENETRANCE, DEFAULT_ELOD_PENETRANCE + 3),
+        elod_marker_separation(DEFAULT_ELOD_SEPARATION),
+        elod_replicates(DEFAULT_ELOD_REPLICATES),
+        mc3(false),
+        mc3_number_of_chains(DEFAULT_MCMC_CHAINS), 
+        mc3_exchange_period(DEFAULT_MCMC_EXCHANGE_PERIOD),
+        mc3_temperatures() {}
 
+    string debug_string() {
+        stringstream ss;
+
+        ss << "elod_penetrance: ";
+        for(int i = 0; i < int(elod_penetrance.size()); ++i)
+            ss << elod_penetrance[i] << " ";
+        ss << "\n";
+
+        ss << "mc3_temperatures: ";
+        for(int i = 0; i < int(mc3_temperatures.size()); ++i)
+            ss << mc3_temperatures[i] << " ";
+        ss << "\n";
+
+        return ss.str();
+    }
+};
 
 #endif
 

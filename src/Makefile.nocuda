@@ -48,8 +48,8 @@ OBJECTS	:= \
 	program.o \
 	progress.o \
     main.o \
-    mc3.o #\
-    elod.o \
+    mc3.o \
+    elod.o #\
     elod_main.o #\
     main.o #\
 	gpu_lodscores.o \

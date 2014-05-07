@@ -4,6 +4,7 @@
 using namespace std;
 
 #include <string>
+#include <vector>
 
 #include "types.h"
 
@@ -27,10 +28,15 @@ class DiseaseModel {
         penetrance[0] = penetrance[1] = penetrance[2] = 0.0;
 	}
 
-    DiseaseModel(double freq, double pen[3], bool sexlink) :
+    DiseaseModel(double freq, vector<double> pen, bool sexlink) :
         frequency(freq),
         sexlinked(sexlink) {
   
+        if(int(pen.size()) != 3) { 
+            fprintf(stderr, "error: DiseaseModel must be initialised with three penetrance probabilities, not %d\n", int(pen.size()));
+            abort();
+        }
+
         for(unsigned int i = 0; i < 3; ++i)
             penetrance[i] = pen[i];
     

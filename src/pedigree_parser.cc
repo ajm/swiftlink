@@ -140,20 +140,22 @@ bool PedigreeParser::parse_line(const int linenum, const string line) {
     Pedigree& q = _current_ped(famid);
 	Person p(id, fatherid, motherid, s, a, &q, disease_model);
     	
-	// handle genotypes
-	for(int i = 0; i < ((tokens.size() - 6) / 2.0); ++i) {
-		int index = 6 + (i * 2);
+    if(not ignore_genotypes) {
+	    // handle genotypes
+	    for(int i = 0; i < ((tokens.size() - 6) / 2.0); ++i) {
+		    int index = 6 + (i * 2);
 
-		if(not _parse_genotype(tokens[index], tokens[index+1], g)) {
-			fprintf(stderr, "error: %s, line %d: error parsing genotype %d (columns %d and %d)\n", 
-                filename.c_str(), linenum+1, i+1, index+1, index+2);
-			return false;
-		}
+		    if(not _parse_genotype(tokens[index], tokens[index+1], g)) {
+			    fprintf(stderr, "error: %s, line %d: error parsing genotype %d (columns %d and %d)\n", 
+                    filename.c_str(), linenum+1, i+1, index+1, index+2);
+			    return false;
+		    }
 
-		p.add_genotype(g);
-	}
+		    p.add_genotype(g);
+	    }
 
-    p.populate_trait_prob_cache(map);
+        p.populate_trait_prob_cache(map);
+    }
 
     return q.add(p);
 }

@@ -84,6 +84,7 @@ LODscores* LinkageProgram::run_pedigree(Pedigree& p) {
         fprintf(stderr, "processing pedigree %s\n", p.get_id().c_str());
     }
     
+/*
     DescentGraph dg(&p, &map);
     
     dg.random_descentgraph(); // just in case the user selects zero sequential imputation iterations
@@ -92,7 +93,7 @@ LODscores* LinkageProgram::run_pedigree(Pedigree& p) {
         fprintf(stderr, "error, bad descent graph %s:%d\n", __FILE__, __LINE__);
         abort();
     }
-    
+*/
     
     PeelSequenceGenerator psg(&p, &map, options.verbose);
     psg.build_peel_sequence(options.peelopt_iterations);
@@ -120,13 +121,7 @@ LODscores* LinkageProgram::run_pedigree(Pedigree& p) {
 //    MarkovChain chain(&p, &map, &psg, options);
 //    return chain.run(dg);
 
-    options.mc3_number_of_chains = 8;
-    options.mc3_exchange_period = 1;
-    options.mc3_temperature = 0.001;
-    
-    options.scoring_period = 10;
-
     Mc3 chain(&p, &map, &psg, options);
-    return chain.run(dg);
+    return chain.run();
 }
 

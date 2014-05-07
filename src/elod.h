@@ -60,6 +60,7 @@ class Elod {
 
         // read in pedigrees
         PedigreeParser pp(pedfile, pedigrees, dm, map1);
+        pp.set_ignore_genotypes();
         if(! pp.parse()) {
             exit(1);
         }

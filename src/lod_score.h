@@ -78,6 +78,10 @@ class LODscores {
         if((locus == 0) and (offset == 0))
             ++count;
     }
+
+    double get_raw(unsigned int index) {
+        return scores[index];
+    }
     
     double get(unsigned int locus, unsigned int offset) const {
         return (scores[(locus * num_scores_per_marker) + offset] - log(count) - trait_prob) / log(10.0);
@@ -85,6 +89,20 @@ class LODscores {
     
     double get_genetic_position(unsigned int locus, unsigned int offset) {
         return map->get_genetic_position(locus, offset);
+    }
+
+    unsigned int get_count() {
+        return count;
+    }
+
+    void merge_results(LODscores* tmp) {
+        for(unsigned i = 0; i < map->num_markers() - 1; ++i) {
+            for(unsigned j = 0; j < num_scores_per_marker; ++j) {
+                unsigned int index = (i * num_scores_per_marker) + j;
+                scores[index] = log_sum(scores[index], tmp->get_raw(index));
+            }
+        }
+        count += tmp->get_count();
     }
     
     void set_count(unsigned int c) { count = c; }

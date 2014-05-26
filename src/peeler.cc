@@ -86,6 +86,11 @@ void Peeler::process(DescentGraph* dg) {
         
         TraitRfunction& rf = rfunctions.back();
         
+        if(rf.get_result() <= 0.0) {
+            fprintf(stderr, "\n\nerror: intermediate state had a likelihood of 0.0 or less (lod score %d, likelihood = %e)\n", i, rf.get_result());
+            exit(1);
+        }
+
         double prob = log(rf.get_result()) - \
                       dg->get_recombination_prob(locus, false) - \
                       dg->get_marker_transmission();

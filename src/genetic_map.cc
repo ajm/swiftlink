@@ -22,6 +22,16 @@ bool GeneticMap::sanity_check() {
     for(unsigned i = 0; i < map.size(); ++i)
         map[i].init_probs();
     
+    // XXX dump map values from file, calculate directly from the map
+    //     instead
+    fprintf(stderr, "WARNING: recalculating theta values using Haldane map function\n");
+    thetas.clear();
+    inversethetas.clear();
+    for(unsigned i = 1; i < map.size(); ++i) {
+        add_theta(haldane(map[i].get_g_distance() - map[i-1].get_g_distance()));
+    }
+    // XXX
+
     for(unsigned i = 0; i < thetas.size(); ++i) {
         tmp = haldane(inverse_haldane(thetas[i]) / double(partial_theta_count + 1));
         

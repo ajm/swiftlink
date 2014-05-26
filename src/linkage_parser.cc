@@ -248,6 +248,11 @@ bool LinkageParser::read_abstract_marker() {
 			}
 			
 			// XXX only suitable for SNPs and traits
+            if(((*af)[0] + (*af)[1]) < 0.99) {
+                fprintf(stderr, "error: %s, line %d: allele frequencies on this line do not sum to 1.0!\n", 
+                        filename.c_str(), linenum+1);
+                return false;
+            }
 			marker_freq = (*af)[1];
 			
 			delete af;

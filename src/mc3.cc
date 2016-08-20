@@ -1,12 +1,8 @@
-using namespace std;
-
 #include <vector>
 #include <algorithm>
 
 #include <fstream>
 #include <iomanip>
-
-#include "omp.h"
 
 #include "descent_graph.h"
 #include "peel_sequence_generator.h"
@@ -16,13 +12,17 @@ using namespace std;
 #include "mc3.h"
 #include "progress.h"
 #include "sequential_imputation.h"
+#include "omp_facade.h"
+
+using namespace std;
+
 
 void Mc3::_init() {
 
     lod = new LODscores(map);
 
-    for(int i = 0; i < omp_get_max_threads(); ++i) {
-        Peeler* tmp = new Peeler(ped, map, psg, lod);
+    for(int i = 0; i < get_max_threads(); ++i) {
+        Peeler* tmp = new Peeler(ped, map, psg, lod, options.sex_linked);
         peelers.push_back(tmp);
     }
 
@@ -90,10 +90,10 @@ LODscores* Mc3::run() {
 #endif
 
     vector<DescentGraph> graphs;
-    SequentialImputation si(ped, map, psg);
+    SequentialImputation si(ped, map, psg, options.sex_linked);
 
     for(unsigned i = 0; i < chains.size(); ++i) {
-        DescentGraph tmp(ped, map);
+        DescentGraph tmp(ped, map, options.sex_linked);
 
         if(options.si_iterations != 0)
             si.parallel_run(tmp, options.si_iterations);

@@ -1,14 +1,15 @@
-using namespace std;
-
 #include <cstdio>
 #include <iostream>
 #include <fstream>
 
-#include <omp.h>
 #include <gsl/gsl_rng.h>
 
 #include "random.h"
 #include "simple_parser.h"
+#include "omp_facade.h"
+
+using namespace std;
+
 
 const gsl_rng_type* T;
 gsl_rng** r;
@@ -20,9 +21,9 @@ void init_random() {
     T = gsl_rng_default;
     //r = gsl_rng_alloc (T);
     
-    r = new gsl_rng*[omp_get_max_threads()];
+    r = new gsl_rng*[get_max_threads()];
     
-    for(int i = 0; i < omp_get_max_threads(); ++i) {
+    for(int i = 0; i < get_max_threads(); ++i) {
         r[i] = gsl_rng_alloc(T);
     }
 }
@@ -30,7 +31,7 @@ void init_random() {
 void destroy_random() {
     //gsl_rng_free(r);
     
-    for(int i = 0; i < omp_get_max_threads(); ++i) {
+    for(int i = 0; i < get_max_threads(); ++i) {
         gsl_rng_free(r[i]);
     }
     
@@ -63,13 +64,13 @@ void seed_random_explicit(string filename) {
     }
     
     vector<unsigned int>& v = sp.get_values();
-    if(int(v.size()) != omp_get_max_threads()) {
+    if(int(v.size()) != get_max_threads()) {
         fprintf(stderr, "error: read %d random seeds from file '%s' when I expected %d...\n", 
-                        int(v.size()), filename.c_str(), omp_get_max_threads());
+                        int(v.size()), filename.c_str(), get_max_threads());
         exit(EXIT_FAILURE);
     }
     
-    for(int i = 0; i < omp_get_max_threads(); ++i) {
+    for(int i = 0; i < get_max_threads(); ++i) {
         gsl_rng_set(r[i], v[i]);
         printf("seed %d = %u (from file)\n", i, v[i]);
     }
@@ -79,7 +80,7 @@ void seed_random_explicit(string filename) {
 
 void seed_random_implicit() {
     
-    for(int i = 0; i < omp_get_max_threads(); ++i) {
+    for(int i = 0; i < get_max_threads(); ++i) {
         unsigned int s = get_randomness();
         gsl_rng_set(r[i], s);
         
@@ -90,10 +91,10 @@ void seed_random_implicit() {
 }
 
 double get_random() {
-    return gsl_rng_uniform(r[omp_get_thread_num()]);
+    return gsl_rng_uniform(r[get_thread_num()]);
 }
 
 int get_random_int(int limit) {
-    return gsl_rng_uniform_int(r[omp_get_thread_num()], limit);
+    return gsl_rng_uniform_int(r[get_thread_num()], limit);
 }
 

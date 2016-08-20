@@ -7,6 +7,7 @@ using namespace std;
 #include <cstdlib>
 
 #include "trait.h"
+#include "types.h"
 
 // this is kind of old-school, my initial attempt at this
 // program was in C, so there are the occasional C-idioms
@@ -31,7 +32,9 @@ enum unphased_genotype {
 
 bool genotype_compatible(enum unphased_genotype mother, 
                          enum unphased_genotype father, 
-                         enum unphased_genotype child);
+                         enum unphased_genotype child,
+                         enum sex child_sex,
+                         bool sex_linked);
 
 bool genotype_untyped(enum unphased_genotype g);
 bool genotype_homoz  (enum unphased_genotype g);
@@ -51,6 +54,7 @@ enum phased_genotype genotype_from_trait(int i);
 #define genotype_set_all(g)     ((g)  = (AA | AB | BA | BB))
 #define genotype_set_homozA(g)	((g) &= AA)
 #define genotype_set_homozB(g)	((g) &= BB)
+#define genotype_set_homoz(g)  ((g) &= (AA | BB))
 #define genotype_set_hetero(g)  ((g) &= (AB | BA))
 #define genotype_bad(g)         ((g) == 0)
 #define genotype_possible(g,v)  ((g) & (v))

@@ -1,5 +1,3 @@
-using namespace std;
-
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
@@ -10,17 +8,21 @@ using namespace std;
 #include "types.h"
 #include "disease_model.h"
 
+using namespace std;
+
 
 string DiseaseModel::debug_string() {
     stringstream ss;
     
     ss << "DiseaseModel:" << "\n";
-    ss << "\tsex linked: " << (sexlinked ? "true" : "false") << "\n";
-    ss << "\tdisease freq: " << frequency << "\n";
-    ss << "\tpenetrance: " << penetrance[0] << ", " 
+    ss << "    sex linked: " << (sexlinked ? "true" : "false") << "\n";
+    ss << "    disease freq: " << frequency << "\n";
+    ss << "    penetrance: " << penetrance[0] << ", " 
                            << penetrance[1] << ", " 
                            << penetrance[2] << "\n";
     ss << "\n";
+
+    return ss.str();
     
     // I hate not doing this inline, like a fmt string...
     // I know about setprecision(n) inline, but that set it permanently
@@ -52,7 +54,7 @@ string DiseaseModel::debug_string() {
 // mostly for testing
 void DiseaseModel::set_autosomal_recessive() {
     
-    set_freq(1 / 1000.0); // XXX sensible value?
+    set_freq(1 / 100000.0);
     set_sexlinked(false);
 	set_penetrance(0.0, TRAIT_HOMO_U);
     set_penetrance(0.0, TRAIT_HETERO);
@@ -63,7 +65,7 @@ void DiseaseModel::set_autosomal_recessive() {
 
 void DiseaseModel::set_autosomal_dominant() {
     
-    set_freq(1 / 1000.0); // XXX sensible value?
+    set_freq(1 / 100000.0);
     set_sexlinked(false);
 	set_penetrance(0.0, TRAIT_HOMO_U);
     set_penetrance(1.0, TRAIT_HETERO);
@@ -133,3 +135,54 @@ void DiseaseModel::finish_init() {
 	apriori_prob[UNKNOWN_AFFECTION][TRAIT_HETERO] = apriori_prob[AFFECTED][TRAIT_HETERO] + apriori_prob[UNAFFECTED][TRAIT_HETERO];
 	apriori_prob[UNKNOWN_AFFECTION][TRAIT_HOMO_U] = apriori_prob[AFFECTED][TRAIT_HOMO_U] + apriori_prob[UNAFFECTED][TRAIT_HOMO_U];
 }
+
+double DiseaseModel::get_penetrance_prob2(enum affection a, enum unphased_trait t, enum sex s) const {
+
+    if(sexlinked and s == MALE) {
+        if(t == TRAIT_HETERO)
+            return 0.0;
+    }
+
+    if(a == UNKNOWN_AFFECTION) {
+        return (sexlinked and s == MALE) ? 0.5 : 0.25;
+    }
+
+    return ((a == AFFECTED) ? 0.0 : 1.0) - penetrance[t];
+}
+
+double DiseaseModel::get_apriori_prob2(enum affection a, enum unphased_trait t, enum sex s) const {
+    double tmp;
+
+    if(sexlinked and s == MALE) {
+        if(t == TRAIT_HETERO)
+            return 0.0;
+    }
+
+    switch(t) {
+        case TRAIT_HOMO_A :
+            tmp = (sexlinked and s == MALE) ? frequency : frequency * frequency;
+            break;
+
+        case TRAIT_HETERO :
+            tmp = (sexlinked and s == MALE) ? 0.0 : frequency * (1.0 - frequency);
+            break;
+
+        case TRAIT_HOMO_U :
+            tmp = (sexlinked and s == MALE) ? (1.0 - frequency) : (1.0 - frequency) * (1.0 - frequency);
+            break;
+    }
+
+    switch(a) {
+        case AFFECTED :
+            return tmp * penetrance[t];
+
+        case UNAFFECTED :
+            return tmp * (1.0 - penetrance[t]);
+
+        case UNKNOWN_AFFECTION :
+            return (tmp * penetrance[t]) + (tmp * (1.0 - penetrance[t]));
+    }
+
+    abort();
+}
+

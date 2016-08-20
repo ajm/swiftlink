@@ -32,6 +32,8 @@ class FounderAlleleGraph4 {
     vector<vector<double> > prob;
     
     vector<int>* sequence;
+
+    bool sex_linked;
     
     
     bool legal(enum unphased_genotype obs, enum unphased_genotype a1, enum unphased_genotype a2);
@@ -42,7 +44,7 @@ class FounderAlleleGraph4 {
     void valid_genotype(enum unphased_genotype g);
     
  public :
-	FounderAlleleGraph4(Pedigree* p, GeneticMap* g) :
+	FounderAlleleGraph4(Pedigree* p, GeneticMap* g, bool sex_linked) :
         ped(p),
         map(g),
         locus(0),
@@ -57,7 +59,8 @@ class FounderAlleleGraph4 {
         group_size(founder_alleles, 0),
         allele_assignment(2, vector<enum unphased_genotype>(founder_alleles, UNTYPED)),
         prob(2, vector<double>(founder_alleles, 1.0)),
-        sequence(NULL) {}
+        sequence(NULL),
+        sex_linked(sex_linked) {}
     
 	FounderAlleleGraph4(const FounderAlleleGraph4& f) :
         ped(f.ped),
@@ -74,7 +77,8 @@ class FounderAlleleGraph4 {
         group_size(f.group_size),
         allele_assignment(f.allele_assignment),
         prob(f.prob),
-        sequence(f.sequence) {}
+        sequence(f.sequence),
+        sex_linked(f.sex_linked) {}
     
 	~FounderAlleleGraph4() {}
     
@@ -97,6 +101,8 @@ class FounderAlleleGraph4 {
             prob = rhs.prob;
             
             sequence = rhs.sequence;
+
+            sex_linked = rhs.sex_linked;
         }
         
         return *this;

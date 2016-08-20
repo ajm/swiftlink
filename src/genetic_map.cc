@@ -1,5 +1,3 @@
-using namespace std;
-
 #include <cstdio>
 #include <cmath>
 #include <cstdlib>
@@ -9,6 +7,8 @@ using namespace std;
 #include <string>
 
 #include "genetic_map.h"
+
+using namespace std;
 
 
 bool GeneticMap::sanity_check() {

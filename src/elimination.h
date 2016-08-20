@@ -14,13 +14,14 @@ class GenotypeElimination {
     Pedigree* ped;
     int **possible_genotypes;
     bool init_processing;
+    bool sex_linked;
     
     void _init();
     void _copy(const GenotypeElimination& rhs);
     void _kill();
     void _initial_elimination();
     int _child_homoz(int** ds, unsigned locus, int mother, int father, 
-                        int child, enum phased_genotype homoz);
+                        int child, enum phased_genotype homoz, bool ismale);
     int _parent_homoz(int** ds, unsigned locus, int parent, int other_parent, 
                         int child, enum phased_genotype homoz, enum parentage p);
     bool _legal(int** ds, unsigned locus);
@@ -35,10 +36,11 @@ class GenotypeElimination {
     void _write_descentgraph(DescentGraph& d, int** ds);
     
  public :
-    GenotypeElimination(Pedigree* p) : 
+    GenotypeElimination(Pedigree* p, bool sex_linked) :
         ped(p), 
         possible_genotypes(NULL),
-        init_processing(false) {
+        init_processing(false),
+        sex_linked(sex_linked) {
         
         _init();
     }
@@ -46,7 +48,8 @@ class GenotypeElimination {
     GenotypeElimination(const GenotypeElimination& rhs) :
         ped(rhs.ped),
         possible_genotypes(NULL),
-        init_processing(rhs.init_processing) {
+        init_processing(rhs.init_processing),
+        sex_linked(rhs.sex_linked) {
         
         _init();
         _copy(rhs);
@@ -61,6 +64,7 @@ class GenotypeElimination {
         if(&rhs != this) {
             ped = rhs.ped;
             init_processing = rhs.init_processing;
+            sex_linked = rhs.sex_linked;
         
             _kill();
             _init();
@@ -72,9 +76,8 @@ class GenotypeElimination {
     
     bool elimination();
     bool random_descentgraph(DescentGraph& d);
-    bool is_legal(int id, int locus, int value) {
-        return genotype_possible(possible_genotypes[locus][id], genotype_from_trait(value));
-    }
+    bool is_legal(int id, int locus, int value);
 };
 
 #endif
+

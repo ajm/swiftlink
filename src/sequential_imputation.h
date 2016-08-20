@@ -15,25 +15,29 @@ class SequentialImputation {
     Pedigree* ped;
     GeneticMap* map;
     PeelSequenceGenerator* psg;
+    bool sex_linked;
     
  public :
-    SequentialImputation(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator* psg) :
+    SequentialImputation(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator* psg, bool sex_linked) :
         ped(ped), 
         map(map),
-        psg(psg) {}
+        psg(psg),
+        sex_linked(sex_linked) {}
     
     ~SequentialImputation() {}
     
     SequentialImputation(const SequentialImputation& rhs) :
         ped(rhs.ped), 
         map(rhs.map),
-        psg(rhs.psg) {}
+        psg(rhs.psg),
+        sex_linked(rhs.sex_linked) {}
     
     SequentialImputation& operator=(const SequentialImputation& rhs) {
         if(this != &rhs) {
             ped = rhs.ped;
             map = rhs.map;
             psg = rhs.psg;
+            sex_linked = rhs.sex_linked;
         }
         return *this;
     }

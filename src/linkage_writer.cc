@@ -1,5 +1,3 @@
-using namespace std;
-
 #include <cstdio>
 #include <string>
 #include <fstream>
@@ -9,6 +7,8 @@ using namespace std;
 #include "genetic_map.h"
 #include "peeler.h"
 #include "lod_score.h"
+
+using namespace std;
 
 
 bool LinkageWriter::write(vector<LODscores*>& all_scores) {

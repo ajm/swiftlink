@@ -1,6 +1,6 @@
-using namespace std;
-
 #include <cstdio>
+#include <vector>
+#include <numeric>
 
 #include "elod.h"
 #include "lod_score.h"
@@ -13,20 +13,37 @@ using namespace std;
 #include "progress.h"
 #include "types.h"
 
+using namespace std;
+
+
 double Elod::run() {
-    double total_elod = 0.0;
+    vector<double> elods;
+
+    fprintf(stderr, "\nELOD parameters:\n"
+                    "\tpenetrance = %.2f:%.2f:%.2f\n"
+                    "\tseparation = %.2f\n"
+                    "\ttrait freq = %.2e\n"
+                    "\treplicates = %d\n"
+                    "\tsex-linked = %s\n\n", 
+                    options.elod_penetrance[0],
+                    options.elod_penetrance[1],
+                    options.elod_penetrance[2],
+                    options.elod_marker_separation,
+                    options.elod_frequency,
+                    options.elod_replicates,
+                    options.sex_linked ? "true" : "false");
 
     for(unsigned int i = 0; i < pedigrees.size(); ++i) {
-        PeelSequenceGenerator psg(&pedigrees[i], &map1, options.verbose);
+        PeelSequenceGenerator psg(&pedigrees[i], &map1, options.sex_linked, options.verbose);
         psg.build_peel_sequence(options.peelopt_iterations);
 
-        DescentGraph dg1(&pedigrees[i], &map1);
-        DescentGraph dg2(&pedigrees[i], &map2);
+        DescentGraph dg1(&pedigrees[i], &map1, options.sex_linked);
+        DescentGraph dg2(&pedigrees[i], &map2, options.sex_linked);
 
-        LocusSampler lsampler(&pedigrees[i], &map1, &psg, 0);
+        LocusSampler lsampler(&pedigrees[i], &map1, &psg, 0, options.sex_linked);
         LODscores lod(&map2);
         
-        Peeler peel(&pedigrees[i], &map2, &psg, &lod);
+        Peeler peel(&pedigrees[i], &map2, &psg, &lod, options.sex_linked);
         peel.calc_trait_prob();
         peel.set_locus(0);
 
@@ -44,24 +61,24 @@ double Elod::run() {
             peel.process(&dg2);
         
             p.increment();
-
-            //printf("%s\n", lod.debug_string().c_str());
         }
 
         p.finish();
 
-        total_elod += lod.get(0,0);
-
-        if(options.verbose)
-            fprintf(stderr, "Pedigree %d ELOD = %.2f\n", i, lod.get(0,0));
-    
-        //for(int i = 0; i < 10; ++i) {
-        //    fprintf(stderr, " %d %.2f\n", i, lod.get(0,i));
-        //}
+        elods.push_back(lod.get(0,0));
     }
 
-    if(options.verbose)
-        fprintf(stderr, "Final ELOD = %.2f\n", total_elod);
+
+    double total_elod = 0.0;
+    fprintf(stderr, "\n%10s |%12s\n", "Pedigree", "ELOD");
+    fprintf(stderr, "-----------|------------\n");
+
+    for(unsigned int i = 0; i < elods.size(); ++i) {
+        fprintf(stderr, "%10d |%12f\n", i, elods[i]);
+        total_elod += elods[i];
+    }
+
+    fprintf(stderr, "%10s |%12f\n", "Total", total_elod);
 
     return total_elod;
 }

@@ -96,12 +96,11 @@ class LODscores {
     }
 
     void merge_results(LODscores* tmp) {
-        for(unsigned i = 0; i < map->num_markers() - 1; ++i) {
-            for(unsigned j = 0; j < num_scores_per_marker; ++j) {
-                unsigned int index = (i * num_scores_per_marker) + j;
-                scores[index] = log_sum(scores[index], tmp->get_raw(index));
-            }
+        
+        for(unsigned i = 0; i < num_scores; ++i) {
+            scores[i] = log_sum(scores[i], tmp->get_raw(i));
         }
+
         count += tmp->get_count();
     }
     

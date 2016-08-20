@@ -24,6 +24,7 @@ class Snp {
     double major_freq;
     double minor_freq;
     double prob[4];
+    double x_male_prob[4];
 
  public :
     Snp(string name, double genetic, unsigned int physical=0) : 
@@ -69,10 +70,20 @@ class Snp {
 	    
 	    for(int i = 0; i < 4; ++i)
 	        prob[i] /= total;
+
+        // X-linked
+        x_male_prob[TRAIT_UU] = major_freq;
+        x_male_prob[TRAIT_UA] = x_male_prob[TRAIT_AU] = 0.0;
+        x_male_prob[TRAIT_AA] = minor_freq;
+
+        total = x_male_prob[TRAIT_UU] +  x_male_prob[TRAIT_UA] + x_male_prob[TRAIT_AU] + x_male_prob[TRAIT_AA];
+
+        for(int i = 0; i < 4; ++i)
+            x_male_prob[i] /= total;
 	}
 	
-	double get_prob(enum phased_trait pt) const {
-	    return prob[pt];
+	double get_prob(enum phased_trait pt, bool x_male) const {
+	    return x_male ? x_male_prob[pt] : prob[pt];
 	}
 };
 
@@ -157,8 +168,8 @@ class GeneticMap {
         return map[i].major();
     }
     
-    double get_prob(unsigned int i, enum phased_trait pt) const {
-        return map[i].get_prob(pt);
+    double get_prob(unsigned int i, enum phased_trait pt, bool x_male) const {
+        return map[i].get_prob(pt, x_male);
     }
     
     unsigned int get_lodscore_count() const {

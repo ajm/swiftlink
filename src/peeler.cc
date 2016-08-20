@@ -1,5 +1,3 @@
-using namespace std;
-
 #include <cstdio>
 #include <vector>
 #include <cmath>
@@ -13,13 +11,16 @@ using namespace std;
 #include "trait_rfunction.h"
 #include "lod_score.h"
 
+using namespace std;
 
-Peeler::Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator* psg, LODscores* lod) : 
+
+Peeler::Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator* psg, LODscores* lod, bool sex_linked) :
     ped(p), 
     map(g),
     lod(lod),
     rfunctions(),
-    locus(0) {
+    locus(0),
+    sex_linked(sex_linked) {
     
     vector<PeelOperation>& ops = psg->get_peel_order();
     
@@ -33,7 +34,7 @@ Peeler::Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator* psg, LODscores
             prev_pointers.push_back(&(rfunctions[prev_indices[j]]));
         }
         
-        rfunctions.push_back(TraitRfunction(ped, map, locus, &(ops[i]), prev_pointers));
+        rfunctions.push_back(TraitRfunction(ped, map, locus, &(ops[i]), prev_pointers, sex_linked));
     }
 }
 
@@ -42,7 +43,8 @@ Peeler::Peeler(const Peeler& rhs) :
     map(rhs.map),
     lod(rhs.lod),
     rfunctions(rhs.rfunctions),
-    locus(rhs.locus) {}
+    locus(rhs.locus),
+    sex_linked(rhs.sex_linked) {}
 
 Peeler& Peeler::operator=(const Peeler& rhs) {
     
@@ -52,6 +54,7 @@ Peeler& Peeler::operator=(const Peeler& rhs) {
         lod = rhs.lod;
         rfunctions = rhs.rfunctions;
         locus = rhs.locus;
+        sex_linked = rhs.sex_linked;
     }
     
     return *this;
@@ -75,6 +78,8 @@ double Peeler::get_trait_prob() {
 
 void Peeler::process(DescentGraph* dg) {
 
+    //fprintf(stderr, "%s", dg->debug_string().c_str());
+
     unsigned int num_lod_scores = lod->get_lodscores_per_marker();
     
     for(unsigned int i = 0; i < num_lod_scores; ++i) {
@@ -96,6 +101,9 @@ void Peeler::process(DescentGraph* dg) {
                       dg->get_marker_transmission();
         
         lod->add(locus, i, prob);
+
+        //if(i == 0)
+        //    fprintf(stderr, " %f ( %f - %f )\n", prob, log(rf.get_result()), dg->get_recombination_prob(locus, false));
     }
 }
 

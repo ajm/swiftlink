@@ -1,5 +1,3 @@
-using namespace std;
-
 #include <cstdio>
 #include <string>
 #include <sstream>
@@ -7,11 +5,13 @@ using namespace std;
 #include "map_parser.h"
 #include "genetic_map.h"
 
+using namespace std;
+
 
 bool MapParser::parse_line(const int linenum, const string line) {
     string name;
     double gdist;
-    int pdist;
+    //int pdist;
     
     tokenise(line);
     

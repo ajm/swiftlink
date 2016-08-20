@@ -3,7 +3,6 @@ using namespace std;
 #include <cstdio>
 #include <cstdlib>
 
-#include "omp.h"
 #include "types.h"
 #include "elod.h"
 

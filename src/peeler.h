@@ -22,9 +22,10 @@ class Peeler {
     LODscores* lod;
     vector<TraitRfunction> rfunctions;
     unsigned int locus;
+    bool sex_linked;
     
  public :
-    Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator* psg, LODscores* lod);
+    Peeler(Pedigree* p, GeneticMap* g, PeelSequenceGenerator* psg, LODscores* lod, bool sex_linked);
     Peeler(const Peeler& rhs);
     ~Peeler();
     

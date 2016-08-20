@@ -9,10 +9,10 @@ using namespace std;
 #include "genotype.h"
 #include "person.h"
 #include "parser.h"
+#include "disease_model.h"
 
 
 class Pedigree;
-class DiseaseModel;
 class GeneticMap;
 
 class PedigreeParser : public Parser {

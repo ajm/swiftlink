@@ -1,5 +1,3 @@
-using namespace std;
-
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
@@ -22,19 +20,15 @@ using namespace std;
 
 #include "mc3.h"
 
+using namespace std;
+
+
 bool LinkageProgram::run() {
     vector<LODscores*> all_scores;
     LODscores* tmp;
     bool ret = true;
     LinkageWriter lw(&map, outfile, options.verbose);
-    
-    /*
-    if(options.verbose) {
-        fprintf(stderr, "%s\n", dm.debug_string().c_str());
-        fprintf(stderr, "%s\n", map.debug_string().c_str());
-    }
-    */
-        
+
     init_random();
     if(options.random_filename == "") {
         seed_random_implicit();
@@ -49,10 +43,9 @@ bool LinkageProgram::run() {
             fprintf(stderr, "%s\n", pedigrees[i].debug_string().c_str());
         }
         
-        
         // it cannot actually be NULL, the program will call
         // abort() at the slightest hint of a problem
-        if((tmp = run_pedigree(pedigrees[i])) == NULL) {
+        if((tmp = run_pedigree_average(pedigrees[i], options.mcmc_runs)) == NULL) {
             fprintf(stderr, "error: pedigree '%s' failed\n", pedigrees[i].get_id().c_str());
             
             ret = false;
@@ -78,6 +71,20 @@ die:
     return ret;
 }
 
+LODscores* LinkageProgram::run_pedigree_average(Pedigree& p, int repeats) {
+    LODscores *ret, *tmp;
+
+    ret = run_pedigree(p);
+
+    for(int i = 1; i < repeats; ++i) {
+        tmp = run_pedigree(p);
+        ret->merge_results(tmp);
+        delete tmp;
+    }
+
+    return ret;
+}
+
 LODscores* LinkageProgram::run_pedigree(Pedigree& p) {
     
     if(options.verbose) {
@@ -94,25 +101,33 @@ LODscores* LinkageProgram::run_pedigree(Pedigree& p) {
         }
     }
 
-/*
-    DescentGraph dg(&p, &map);
-    
+
+    DescentGraph dg(&p, &map, dm.is_sexlinked());
     dg.random_descentgraph(); // just in case the user selects zero sequential imputation iterations
     
     if(dg.get_likelihood() == LOG_ZERO) {
         fprintf(stderr, "error, bad descent graph %s:%d\n", __FILE__, __LINE__);
         abort();
     }
-*/
+
     
-    PeelSequenceGenerator psg(&p, &map, options.verbose);
+    PeelSequenceGenerator psg(&p, &map, dm.is_sexlinked(), options.verbose);
     psg.build_peel_sequence(options.peelopt_iterations);
-    
-/*
-    SequentialImputation si(&p, &map, &psg);
-    //si.run(dg, options.si_iterations);
-    si.parallel_run(dg, options.si_iterations);
-*/
+
+    if(options.verbose) {
+        fprintf(stderr, "\n\n%s\n\n", psg.debug_string().c_str());
+    }
+
+
+    SequentialImputation si(&p, &map, &psg, dm.is_sexlinked());
+    si.run(dg, options.si_iterations);
+    //si.parallel_run(dg, options.si_iterations);
+
+    if(dg.get_likelihood() == LOG_ZERO) {
+        fprintf(stderr, "error, bad descent graph %s:%d\n", __FILE__, __LINE__);
+        abort();
+    }
+
 
     /*
     if(not options.use_gpu) {
@@ -128,10 +143,12 @@ LODscores* LinkageProgram::run_pedigree(Pedigree& p) {
     abort();
     */
     
-//    MarkovChain chain(&p, &map, &psg, options);
-//    return chain.run(dg);
+    options.sex_linked = dm.is_sexlinked();
 
-    Mc3 chain(&p, &map, &psg, options);
-    return chain.run();
+    MarkovChain chain(&p, &map, &psg, options);
+    return chain.run(dg);
+
+    //Mc3 chain(&p, &map, &psg, options);
+    //return chain.run();
 }
 

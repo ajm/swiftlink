@@ -1,5 +1,3 @@
-using namespace std;
-
 #include <cmath>
 #include <vector>
 
@@ -12,8 +10,10 @@ using namespace std;
 #include "trait.h"
 #include "genetic_map.h"
 
+using namespace std;
 
-Rfunction::Rfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, vector<Rfunction*> previous) : 
+
+Rfunction::Rfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, vector<Rfunction*> previous, bool sex_linked) :
     map(m),
     ped(p),
     offset(0),
@@ -31,7 +31,8 @@ Rfunction::Rfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperati
     theta(0.0),
     antitheta(1.0),
     theta2(0.0),
-    antitheta2(1.0) {
+    antitheta2(1.0),
+    sex_linked(sex_linked) {
     
     pmatrix.set_keys(peel->get_cutset());
           
@@ -60,7 +61,8 @@ Rfunction::Rfunction(const Rfunction& rhs) :
     theta(rhs.theta),
     antitheta(rhs.antitheta),
     theta2(rhs.theta2),
-    antitheta2(rhs.antitheta2) {}
+    antitheta2(rhs.antitheta2),
+    sex_linked(rhs.sex_linked) {}
     
 Rfunction& Rfunction::operator=(const Rfunction& rhs) {
 
@@ -83,18 +85,23 @@ Rfunction& Rfunction::operator=(const Rfunction& rhs) {
         antitheta = rhs.antitheta;
         theta2 = rhs.theta2;
         antitheta2 = rhs.antitheta2;
+        sex_linked = rhs.sex_linked;
     }
     
     return *this;
 }
 
 enum phased_trait Rfunction::get_phased_trait(enum phased_trait m, enum phased_trait p, 
-                                                   int maternal_allele, int paternal_allele) {
+                                                   int maternal_allele, int paternal_allele, enum sex child_sex) {
                                                    
     bool m_affected = affected_trait(m, maternal_allele);
     bool p_affected = affected_trait(p, paternal_allele);
     enum phased_trait pt;
     
+    if(sex_linked and child_sex == MALE) {
+        return m_affected ? TRAIT_AA : TRAIT_UU;
+    }
+
     if(m_affected) {
         pt = p_affected ? TRAIT_AA : TRAIT_AU;
     }
@@ -115,7 +122,7 @@ void Rfunction::evaluate_partner_peel(unsigned int pmatrix_index) {
     enum phased_trait partner_trait;
     
     
-    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+    for(unsigned i = 0; i < 4; ++i) {
         partner_trait = static_cast<enum phased_trait>(i);        
         presum_index = pmatrix_index + (index_offset * i);
         
@@ -135,10 +142,14 @@ void Rfunction::evaluate_partner_peel(unsigned int pmatrix_index) {
     }
     
     pmatrix.set(pmatrix_index, total);
+/*
+    if(total == 0.0) {
+        fprintf(stderr, "ERROR: evaluate partner peel = ZERO\n");
+    }
+*/
 }
 
 void Rfunction::evaluate_element(unsigned int pmatrix_index, DescentGraph* dg) {
-    
     switch(peel->get_type()) {
         
         case CHILD_PEEL :
@@ -167,7 +178,6 @@ bool Rfunction::legal_genotype(unsigned personid, enum phased_trait g) {
 }
 
 void Rfunction::evaluate(DescentGraph* dg, unsigned int offset) {
-    
     //pmatrix.reset();
     //pmatrix_presum.reset();
     

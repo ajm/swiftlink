@@ -22,10 +22,11 @@ class DescentGraph {
     int graph_size; 			// size of descent graph at one loci, 
 								// for indexing data
 	int recombinations;
+    bool sex_linked;
 	
 	vector<int> seq;
 	
-    
+    void _invalidate_paternal_x();
 	double _transmission_prob();
 	double _recombination_prob();
     double _best_prior_prob();
@@ -38,7 +39,7 @@ class DescentGraph {
 	void find_founderallelegraph_ordering();
 
  public :
-	DescentGraph(Pedigree* ped, GeneticMap* map);
+	DescentGraph(Pedigree* ped, GeneticMap* map, bool sex_linked);
 	DescentGraph(const DescentGraph& d);
     ~DescentGraph();
 	DescentGraph& operator=(const DescentGraph& d);

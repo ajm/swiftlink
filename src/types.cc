@@ -1,9 +1,9 @@
-using namespace std;
-
 #include <string>
 #include <cstdlib>
 
 #include "types.h"
+
+using namespace std;
 
 
 string gender_str(enum sex s) {
@@ -41,6 +41,8 @@ string parent_str(enum parentage p) {
             return "maternal";
         case PATERNAL :
             return "paternal";
+        case NONE :
+            return "none";
     }
     
     abort();

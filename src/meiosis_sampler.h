@@ -33,9 +33,9 @@ class MeiosisSampler : Sampler {
     unsigned sample(int locus);
     
  public :
-    MeiosisSampler(Pedigree* ped, GeneticMap* map) :
+    MeiosisSampler(Pedigree* ped, GeneticMap* map, bool sex_linked) :
         Sampler(ped, map),
-        f4(map->num_markers(), FounderAlleleGraph4(ped, map)),
+        f4(map->num_markers(), FounderAlleleGraph4(ped, map, sex_linked)),
         raw_matrix(map->num_markers() * 2),
         fb_matrix(map->num_markers() * 2),
         seq(),

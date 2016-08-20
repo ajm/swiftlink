@@ -1,6 +1,7 @@
 #ifndef LKG_RANDOM_H_
 #define LKG_RANDOM_H_
 
+using namespace std;
 
 void init_random();
 void destroy_random();

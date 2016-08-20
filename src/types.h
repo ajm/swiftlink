@@ -5,7 +5,6 @@
 #include <vector>
 #include <sstream>
 
-#include "genotype.h"
 #include "trait.h"
 #include "defaults.h"
 
@@ -17,7 +16,8 @@ const double DBL_RAND_MAX = static_cast<double>(RAND_MAX);
 
 enum parentage { 
     MATERNAL,
-    PATERNAL
+    PATERNAL,
+    NONE
 };
 
 enum sex {
@@ -55,10 +55,14 @@ string parent_str(enum parentage p);
 struct mcmc_options {
     bool verbose;
 
+    // mcmc
     int burnin;
     int iterations;
     int si_iterations;
     int scoring_period;
+    int mcmc_runs;
+
+    // linkage
     int lodscores;
     int peelopt_iterations;
     
@@ -74,6 +78,7 @@ struct mcmc_options {
     string exchange_filename;
 
     bool affected_only;
+    bool sex_linked;
 
     // elod options
     bool elod;
@@ -94,6 +99,7 @@ struct mcmc_options {
         iterations(DEFAULT_MCMC_ITERATIONS),
         si_iterations(DEFAULT_SEQUENTIALIMPUTATION_RUNS),
         scoring_period(DEFAULT_MCMC_SCORING_PERIOD),
+        mcmc_runs(DEFAULT_MCMC_RUNS),
         lodscores(DEFAULT_LODSCORES),
         peelopt_iterations(DEFAULT_PEELOPT_ITERATIONS),
         lsampler_prob(DEFAULT_LSAMPLER_PROB),
@@ -103,6 +109,7 @@ struct mcmc_options {
         random_filename(""),
         exchange_filename(""),
         affected_only(false),
+        sex_linked(false),
         elod(false),
         elod_frequency(DEFAULT_ELOD_FREQUENCY),
         elod_penetrance(DEFAULT_ELOD_PENETRANCE, DEFAULT_ELOD_PENETRANCE + 3),

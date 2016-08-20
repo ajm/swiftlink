@@ -1,5 +1,3 @@
-using namespace std;
-
 #include <cstdio>
 #include <cmath>
 #include <string>
@@ -13,8 +11,10 @@ using namespace std;
 #include "elimination.h"
 #include "founder_allele_graph4.h"
 
+using namespace std;
 
-DescentGraph::DescentGraph(Pedigree* ped, GeneticMap* map) : 
+
+DescentGraph::DescentGraph(Pedigree* ped, GeneticMap* map, bool sex_linked) :
     data(NULL),
     ped(ped), 
     map(map), 
@@ -22,6 +22,7 @@ DescentGraph::DescentGraph(Pedigree* ped, GeneticMap* map) :
     marker_transmission(log(0.5) * (2 * (ped->num_members() - ped->num_founders()))), 
     graph_size(2 * ped->num_members()),
     recombinations(-1),
+    sex_linked(sex_linked),
     seq() {
     
     data = new int[graph_size * map->num_markers()];
@@ -30,6 +31,11 @@ DescentGraph::DescentGraph(Pedigree* ped, GeneticMap* map) :
         data[i] = 0;
     }
     
+    if(sex_linked) {
+        marker_transmission = log(0.5) * (ped->num_members() - ped->num_founders());
+        //_invalidate_paternal_x();
+    }
+
     find_founderallelegraph_ordering();
 }
 
@@ -41,6 +47,7 @@ DescentGraph::DescentGraph(const DescentGraph& d) :
 	marker_transmission(d.marker_transmission),
     graph_size(d.graph_size),
     recombinations(d.recombinations),
+    sex_linked(d.sex_linked),
     seq(d.seq) {
 
     unsigned int data_length = graph_size * map->num_markers();
@@ -63,6 +70,7 @@ DescentGraph& DescentGraph::operator=(const DescentGraph& d) {
 		prob = d.prob;
 		graph_size = d.graph_size;
 		marker_transmission = d.marker_transmission;
+        sex_linked = d.sex_linked;
                 
         copy(d.data, 
              d.data + (graph_size * map->num_markers()), 
@@ -72,8 +80,25 @@ DescentGraph& DescentGraph::operator=(const DescentGraph& d) {
 	return *this;
 }
 
+void DescentGraph::_invalidate_paternal_x() {
+    Person* p;
+
+    for(unsigned i = 0; i < ped->num_members(); ++i) { // every person
+        p = ped->get_by_index(i);
+        
+        if(p->isfounder())
+            continue;
+
+        if(p->ismale()) {
+            for(unsigned j = 0; j < map->num_markers(); ++j) { // every loci
+                set(i, j, PATERNAL, NONE);
+            }
+        }
+    }
+}
+
 bool DescentGraph::random_descentgraph() {
-    GenotypeElimination ge(ped);
+    GenotypeElimination ge(ped, sex_linked);
     return ge.random_descentgraph(*this);
 }
 
@@ -127,7 +152,7 @@ void DescentGraph::flip(unsigned person_id, unsigned locus, enum parentage p) {
 	flip_bit(_offset(person_id, locus, p));
 }
 
-// this only works because the founders are guarenteed to be at the start of
+// this only works because the founders are guaranteed to be at the start of
 // the list of family members
 int DescentGraph::_founder_allele(unsigned person_id, enum parentage p) const {
     return (person_id * 2) + p;
@@ -158,6 +183,7 @@ int DescentGraph::get_founderallele(unsigned person_id, unsigned locus, enum par
 
 double DescentGraph::get_likelihood() {
     prob = log_product(_transmission_prob(), _sum_prior_prob());
+    //fprintf(stderr, "TP = %f, SPP = %f\n", _transmission_prob(), _sum_prior_prob());
     //prob = _transmission_prob();
     return prob;
 }
@@ -188,24 +214,26 @@ double DescentGraph::get_recombination_prob(unsigned locus, bool count_crossover
 	enum parentage parent;
 	bool crossover;
 	Person* p;
-	
+
     double theta = map->get_theta_log(locus);
     double antitheta = map->get_inversetheta_log(locus);
-	    
+
+    unsigned num_alleles = sex_linked ? 1 : 2;
+
     for(unsigned i = 0; i < ped->num_members(); ++i) { // every person
         p = ped->get_by_index(i);
-        
+
         if(p->isfounder())
             continue;
-        
-        for(unsigned j = 0; j < 2; ++j) { // mother and father
+
+        for(unsigned j = 0; j < num_alleles; ++j) { // mother and father, just mother (0) for sex-linked
             parent = static_cast<enum parentage>(j);
             crossover = get(i, locus, parent) != get(i, locus + 1, parent);
-            
+
             if(count_crossovers and crossover) {
                 ++recombinations;
             }
-				
+
             tmp += (crossover ? theta : antitheta) ;
         }
     }
@@ -216,7 +244,7 @@ double DescentGraph::get_recombination_prob(unsigned locus, bool count_crossover
 double DescentGraph::_sum_prior_prob() {
     double tmp_prob;
 	double return_prob = 0.0;
-    FounderAlleleGraph4 f(ped, map);
+    FounderAlleleGraph4 f(ped, map, sex_linked);
     
     f.set_sequence(&seq);
     
@@ -227,6 +255,7 @@ double DescentGraph::_sum_prior_prob() {
         if((tmp_prob = f.likelihood()) == 0.0) {
             fprintf(stderr, "error: descent graph illegal at locus %d\n", int(i));
             fprintf(stderr, "%s\n", f.debug_string().c_str());
+            fprintf(stderr, "%s\n", debug_string().c_str());
 			return LOG_ZERO;
         }
         
@@ -263,9 +292,20 @@ double DescentGraph::_best_prior_prob() {
 
 string DescentGraph::debug_string() {
     stringstream ss;
+    Person* p;
 	
-    ss << "DescentGraph: ";
+    ss << "DescentGraph order: ";
     
+    for(unsigned i = 0; i  < ped->num_members(); ++i) {
+        p = ped->get_by_index(i);
+        if(not p->isfounder()) {
+            ss << p->get_id() << " ";
+        }
+    }
+    ss << "\n";
+
+    ss << "DescentGraph: ";
+
     for(unsigned locus = 0; locus < map->num_markers(); ++locus) {
         for(unsigned i = 0; i  < ped->num_members(); ++i) {
             if(not (ped->get_by_index(i))->isfounder()) {

@@ -1,5 +1,3 @@
-using namespace std;
-
 #include <cstdio>
 #include <vector>
 #include <algorithm>
@@ -15,24 +13,26 @@ using namespace std;
 #include "disease_model.h"
 #include "genetic_map.h"
 
+using namespace std;
+
 
 Person::Person(const string name, const string father_name, const string mother_name, 
 			   enum sex s, enum affection a, Pedigree* pedigree, DiseaseModel& dm) :
         id(name),
-    	mother(mother_name),
-    	father(father_name),		
-    	gender(s),
-    	affection(a),			
-    	internal_id(UNKNOWN_ID),
-    	maternal_id(UNKNOWN_ID),
-    	paternal_id(UNKNOWN_ID),
-    	typed(false),
-    	ped(pedigree),
+        mother(mother_name),
+        father(father_name),
+        gender(s),
+        affection(a),
+        internal_id(UNKNOWN_ID),
+        maternal_id(UNKNOWN_ID),
+        paternal_id(UNKNOWN_ID),
+        typed(false),
+        ped(pedigree),
         dm(&dm),
-    	genotypes(),
+        genotypes(),
         genotypes_prob(),
-    	children(),
-    	mates() {
+        children(),
+        mates() {
     
     _init_probs();
 }
@@ -83,7 +83,7 @@ Person& Person::operator=(const Person& rhs) {
 }
 
 void Person::_init_probs() {
-
+/*
     disease_prob[TRAIT_AA] = isfounder_str() ? \
         dm->get_apriori_prob(get_affection(), TRAIT_HOMO_A) : \
         dm->get_penetrance_prob(get_affection(), TRAIT_HOMO_A);
@@ -96,6 +96,34 @@ void Person::_init_probs() {
     disease_prob[TRAIT_UU] = isfounder_str() ? \
         dm->get_apriori_prob(get_affection(), TRAIT_HOMO_U) : \
         dm->get_penetrance_prob(get_affection(), TRAIT_HOMO_U);
+
+    if(dm->is_sexlinked() and ismale()) {
+        disease_prob[TRAIT_AU] = 0.0;
+        disease_prob[TRAIT_UA] = 0.0;
+    }
+*/
+    disease_prob[TRAIT_AA] = isfounder_str() ? \
+        dm->get_apriori_prob2(get_affection(), TRAIT_HOMO_A, get_sex()) : \
+        dm->get_penetrance_prob2(get_affection(), TRAIT_HOMO_A, get_sex());
+
+    disease_prob[TRAIT_AU] = \
+    disease_prob[TRAIT_UA] = isfounder_str() ? \
+        dm->get_apriori_prob2(get_affection(), TRAIT_HETERO, get_sex()) : \
+        dm->get_penetrance_prob2(get_affection(), TRAIT_HETERO, get_sex());
+
+    disease_prob[TRAIT_UU] = isfounder_str() ? \
+        dm->get_apriori_prob2(get_affection(), TRAIT_HOMO_U, get_sex()) : \
+        dm->get_penetrance_prob2(get_affection(), TRAIT_HOMO_U, get_sex());
+
+    double total = 0.0;
+
+    for(int i = 0; i < 4; ++i) {
+        total += disease_prob[i];
+    }
+
+    for(int i = 0; i < 4; ++i) {
+        disease_prob[i] /= total;
+    }
 }
 
 bool Person::mendelian_errors() const {
@@ -109,7 +137,9 @@ bool Person::mendelian_errors() const {
 	for(unsigned int i = 0; i < genotypes.size(); ++i) {
         if(not genotype_compatible(m->get_genotype(i), 
 								   p->get_genotype(i), 
-									  get_genotype(i))) {
+									  get_genotype(i),
+                                      get_sex(),
+                                  dm->is_sexlinked())) {
             
 			fprintf(stderr, "error: genotypes at loci number %d of person \"%s\" inconsistent with parents\n", i+1, id.c_str());
 			return true;
@@ -118,6 +148,18 @@ bool Person::mendelian_errors() const {
     
 	return false;
 }
+
+/*
+bool Person::all_homozygous() {
+
+    for(unsigned int i = 0; i < genotypes.size(); ++i) {
+        if(get_genotype(i) == HETERO)
+            return false;
+    }
+
+    return true;
+}
+*/
 
 void Person::add_mate(Person* p) {
     if(find(mates.begin(), mates.end(), p) == mates.end()) {
@@ -174,8 +216,15 @@ bool Person::partners_peeled(PeelingState& ps) {
 bool Person::safe_to_ignore_meiosis(enum parentage p) {
     Person* tmp = ped->get_by_index(p == MATERNAL ? maternal_id : paternal_id);
     
-    if(not tmp->isfounder())
+    if(not tmp->isfounder()) {
+        if(dm->is_sexlinked()) {
+            // sex == MALE   : paternal Y, maternal can be either
+            // sex == FEMALE : paternal grandmothers allele, maternal can be either
+            return p == PATERNAL;
+        }
+
         return false;
+    }
         
     return tmp->num_children() == 1;
 }
@@ -188,7 +237,7 @@ void Person::populate_trait_prob_cache(GeneticMap& map) {
     for(unsigned int i = 0; i < genotypes.size(); ++i) {
         for(int j = 0; j < 4; ++j) {
             enum phased_trait pt = static_cast<enum phased_trait>(j);
-            double marker_prob = map.get_prob(i, pt);
+            double marker_prob = map.get_prob(i, pt, dm->is_sexlinked() and ismale());
 
             probs[j] = get_genotype_probability(genotypes[i], pt, marker_prob);
         }
@@ -220,6 +269,12 @@ double Person::get_genotype_probability(enum unphased_genotype g, enum phased_tr
             }
         }
         else {
+            if(dm->is_sexlinked()) {
+                if(ismale()) {
+                    return ((pt == TRAIT_AU) or (pt == TRAIT_UA)) ? 0.0 : 1.0;
+                }
+            }
+
             return 1.0;
         }
     }
@@ -238,6 +293,12 @@ double Person::get_genotype_probability(enum unphased_genotype g, enum phased_tr
         }
     }
     else {
+        if(dm->is_sexlinked()) {
+            if(ismale()) {
+                return ((pt == TRAIT_AU) or (pt == TRAIT_UA)) ? 0.0 : marker_prob;
+            }
+        }
+
         return marker_prob;
     }
     

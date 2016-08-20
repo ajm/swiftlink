@@ -18,10 +18,20 @@ bool LinkageParser::unsupported(string s) {
 bool LinkageParser::general_information(const int linenum) {
 	switch(linenum) {
 		case 0 :
+            if(tokens.size() != 4) {
+                fprintf(stderr, "error: expected 4 fields on line 1 of LINKAGE dat file (read %d)\n", int(tokens.size()));
+                return false;
+            }
+
 			return set_numloci(tokens[0]) and \
 				   set_sexlinked(tokens[2]) and \
 				   set_programcode(tokens[3]);
 		case 1 :
+            if(tokens.size() != 4) {
+                fprintf(stderr, "error: expected 4 fields on line 2 of LINKAGE dat file (read %d)\n", int(tokens.size()));
+                return false;
+            }
+
 			return ensure_false(tokens[0], "mutation mode") and \
 				   ensure_false(tokens[3], "linkage disequilibrium");
 		case 2 :

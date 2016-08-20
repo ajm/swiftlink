@@ -1,5 +1,3 @@
-using namespace std;
-
 #include <cstdio>
 #include <vector>
 
@@ -13,6 +11,8 @@ using namespace std;
 #include "disease_model.h"
 #include "genetic_map.h"
 #include "pedigree.h"
+
+using namespace std;
 
 
 bool Program::read_and_check_input() {
@@ -31,6 +31,14 @@ bool Program::read_and_check_input() {
 		return false;
 	}
 
+    if(options.verbose) {
+        fprintf(stderr, "%s\n", dm.debug_string().c_str());
+    }
+
+    if(options.sex_linked) {
+        dm.set_sexlinked(true);
+    }
+
     if(! map.sanity_check()) {
 		fprintf(stderr, "error: map data failed sanity check...\n");
 		return false;
@@ -42,7 +50,7 @@ bool Program::read_and_check_input() {
 		//fprintf(stderr, "errors parsing pedigree file, exiting...\n");
 		return false;
 	}
-    
+
 	return true;
 }
 

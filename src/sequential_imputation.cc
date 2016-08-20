@@ -1,7 +1,4 @@
-using namespace std;
-
 #include <cstdio>
-#include <omp.h>
 
 #include "sequential_imputation.h"
 #include "logarithms.h"
@@ -9,13 +6,16 @@ using namespace std;
 #include "descent_graph.h"
 #include "locus_sampler2.h"
 #include "peel_sequence_generator.h"
+#include "omp_facade.h"
+
+using namespace std;
 
 
 void SequentialImputation::run(DescentGraph& dg, int iterations) {
-    DescentGraph tmp(ped, map);
+    DescentGraph tmp(ped, map, sex_linked);
     double tmp_prob, best_prob = LOG_ZERO;
     
-    LocusSampler lsampler(ped, map, psg, 0);
+    LocusSampler lsampler(ped, map, psg, 0, sex_linked);
     
     Progress p("Sequential Imputation: ", iterations);
     
@@ -24,7 +24,7 @@ void SequentialImputation::run(DescentGraph& dg, int iterations) {
         
         if(tmp_prob == LOG_ZERO) {
             p.finish();
-            fprintf(stderr, "error: sequential imputation produced an invalid descent graph\n");
+            fprintf(stderr, "Error: sequential imputation produced an invalid descent graph\n");
             fprintf(stderr, "%s\n", tmp.debug_string().c_str());
             abort();
         }
@@ -49,7 +49,7 @@ void SequentialImputation::parallel_run(DescentGraph& dg, int iterations) {
     
     if(iterations == 0) {
         
-        LocusSampler tmp(ped, map, psg, 0);
+        LocusSampler tmp(ped, map, psg, 0, sex_linked);
         double tmp_likelihood = tmp.locus_by_locus(dg);
         
         printf("starting likelihood (log10) = %.3f\n", tmp_likelihood / log(10));
@@ -57,15 +57,15 @@ void SequentialImputation::parallel_run(DescentGraph& dg, int iterations) {
         return;
     }
     
-    int num_threads = omp_get_max_threads();
+    int num_threads = get_max_threads();
     vector<LocusSampler*> lsamplers;
     vector<DescentGraph*> graphs;
     vector<double> likelihoods(num_threads, 0.0);
     for(int i = 0; i < num_threads; ++i) {
-        LocusSampler* tmp = new LocusSampler(ped, map, psg, 0);
+        LocusSampler* tmp = new LocusSampler(ped, map, psg, 0, sex_linked);
         lsamplers.push_back(tmp);
         
-        DescentGraph* tmp_dg = new DescentGraph(ped, map);
+        DescentGraph* tmp_dg = new DescentGraph(ped, map, sex_linked);
         graphs.push_back(tmp_dg);
     }
     

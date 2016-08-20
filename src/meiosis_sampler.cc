@@ -1,5 +1,3 @@
-using namespace std;
-
 #include <cmath>
 
 #include "types.h"
@@ -12,6 +10,8 @@ using namespace std;
 #include "random.h"
 
 //#include "founder_allele_graph3.h"
+
+using namespace std;
 
 
 void MeiosisSampler::reset(DescentGraph& dg, unsigned int parameter) {

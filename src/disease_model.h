@@ -56,6 +56,9 @@ class DiseaseModel {
     double get_penetrance_prob(enum affection a, enum unphased_trait t) const;
     double get_apriori_prob(enum affection a, enum unphased_trait t) const;
     
+    double get_penetrance_prob2(enum affection a, enum unphased_trait t, enum sex s) const;
+    double get_apriori_prob2(enum affection a, enum unphased_trait t, enum sex s) const;
+
     void set(enum simple_disease_model d);
     void finish_init();
     

@@ -1,8 +1,6 @@
 #ifndef LKG_PERSON_H_
 #define LKG_PERSON_H_
 
-using namespace std;
-
 #include <cstdio>
 #include <cstdlib>
 #include <string>
@@ -12,6 +10,9 @@ using namespace std;
 #include <algorithm>
 
 #include "types.h"
+#include "genotype.h"
+
+using namespace std;
 
 
 class Pedigree;
@@ -52,7 +53,7 @@ class Person {
     vector<vector<double> > genotypes_prob;
 	vector<Person*> children;
 	vector<Person*> mates;
-    
+
     // private stuff
 	void _init_probs();
 	bool _is_unknown(const string& s) const { 
@@ -88,6 +89,9 @@ class Person {
 	            return maternal_id;
 	        case PATERNAL:
 	            return paternal_id;
+            case NONE :
+            default :
+                break;
 	    }
         abort();
 	}

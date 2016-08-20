@@ -1,5 +1,3 @@
-using namespace std;
-
 #include <cstdlib>
 #include <cstring>
 
@@ -9,7 +7,10 @@ using namespace std;
 #include "peeling.h"
 #include "peel_matrix.h"
 #include "random.h"
-    
+
+using namespace std;
+
+
 /*
 double SamplerRfunction::get_trait_probability(unsigned person_id, enum phased_trait pt) {
     
@@ -112,6 +113,11 @@ void SamplerRfunction::get_recombination_distribution(DescentGraph* dg,
             
         case TRAIT_AU :
         case TRAIT_UA :
+            if(sex_linked and parent == PATERNAL) {
+                dist[TRAIT_U] = 0.0;
+                dist[TRAIT_A] = 0.0;
+                return;
+            }
             break;
             
         case TRAIT_AA :
@@ -122,7 +128,7 @@ void SamplerRfunction::get_recombination_distribution(DescentGraph* dg,
     
     double tmp0 = 0.5;
     double tmp1 = 0.5;
-    
+
     if(locus != 0) {
         bool cross = dg->get(person_id, locus-1, parent) != 0;
         
@@ -151,21 +157,27 @@ void SamplerRfunction::get_recombination_distribution(DescentGraph* dg,
 }
 
 void SamplerRfunction::sample(vector<int>& pmk) {
-    double prob_dist[NUM_ALLELES];
+    double prob_dist[4];
     
-    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+    for(unsigned i = 0; i < 4; ++i) {
         pmk[peel_id] = i;
         prob_dist[i] = pmatrix_presum.get(pmk);        
     }
     
     normalise(prob_dist);
-        
+
+/*
+    fprintf(stderr, "[DIST] %s (%d) UU/AA/AU/UA %.3f/%.3f/%.3f/%.3f\n", \
+            ped->get_by_index(peel_id)->get_id().c_str(), peel_id, \
+            prob_dist[0], prob_dist[1], prob_dist[2], prob_dist[3]);
+*/
+
     // sample
     unsigned int last = 0;
     double r = get_random();
     double total = 0.0;
     
-    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+    for(unsigned i = 0; i < 4; ++i) {
         total += prob_dist[i];
         
         if(r < total) {
@@ -191,32 +203,39 @@ void SamplerRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGr
     enum phased_trait kid_trait;
     double tmp;
     double total = 0.0;
+
+    dg->illegal(); // get rid of warning
     
     mat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][kid->get_maternalid()]);
     pat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][kid->get_paternalid()]);
     
-    for(unsigned i = 0; i < NUM_ALLELES; ++i) {
+    for(unsigned i = 0; i < 4; ++i) {
         kid_trait = static_cast<enum phased_trait>(i);
         presum_index = pmatrix_index + (index_offset * i);
-        
+
         indices[pmatrix_index][peel_id] = i;
-        
+
         tmp = trait_cache[i];
         if(tmp == 0.0)
             continue;
-        
+
         tmp *= transmission[0][transmission_index(mat_trait, pat_trait, kid_trait)];
-        
+
         for(unsigned int j = 0; j < previous_rfunctions.size(); ++j) {
             tmp *= previous_rfunctions[j]->get(indices[pmatrix_index]);
         }
-        
+
         pmatrix_presum.set(presum_index, tmp);
-        
+
         total += tmp;
     }
-    
+
     pmatrix.set(pmatrix_index, total);
+/*
+    if(total == 0.0) {
+        fprintf(stderr, "ERROR: evaluate child peel(%s) = ZERO\n", kid->get_id().c_str());
+    }
+*/
 }
 
 void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentGraph* dg) {
@@ -230,8 +249,9 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
     double tmp;
     double total = 0.0;
         
+    //dg->illegal(); // get rid of warning
     
-    for(unsigned int i = 0; i < NUM_ALLELES; ++i) {
+    for(unsigned int i = 0; i < 4; ++i) {
         mat_trait = pat_trait = static_cast<enum phased_trait>(i);
         presum_index = pmatrix_index + (index_offset * i);
         
@@ -260,7 +280,13 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
                 mat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][child->get_maternalid()]);
             }
             
+            //if(sex_linked and (pat_trait == TRAIT_AU or pat_trait == TRAIT_UA)) {
+                //continue;
+            //}
+
             child_prob *= transmission[c][transmission_index(mat_trait, pat_trait, kid_trait)];
+
+            //fprintf(stderr, "child_prob = %f (%d) [%d + %d = %d] = %f @%d\n", child_prob, child_id, mat_trait, pat_trait, kid_trait, get_recombination_probability(dg, peel_id, mat_trait, kid_trait, MATERNAL), locus);
         }
         
         tmp *= child_prob;
@@ -271,6 +297,11 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
     }
     
     pmatrix.set(pmatrix_index, total);
+/*
+    if(total == 0.0) {
+        fprintf(stderr, "ERROR: evaluate parent peel(%s) = ZERO\n", ped->get_by_index(peel_id)->get_id().c_str());
+    }
+*/
 }
 
 void SamplerRfunction::setup_transmission_cache() {
@@ -357,11 +388,11 @@ void SamplerRfunction::transmission_matrix(DescentGraph* dg, int kid_id, double*
     double pat_dist[2];
     int mindex, pindex;
     
-    //Person *c = ped->get_by_index(kid_id);
+    Person *c = ped->get_by_index(kid_id);
     //Person *p = ped->get_by_index(c->get_paternalid());
     //Person *m = ped->get_by_index(c->get_maternalid());
     
-    
+    enum sex kid_gender = c->get_sex();
     enum phased_trait ptm, ptp;
     
     for(int i = 0; i < 4; ++i) {
@@ -376,16 +407,31 @@ void SamplerRfunction::transmission_matrix(DescentGraph* dg, int kid_id, double*
             ptp = static_cast<enum phased_trait>(j);
             pindex = mindex + (4 * j);
             //pat_dist[0] = pat_dist[1] = 0.0;
-            
+
             //if(p->legal_genotype(locus, ptp))
             get_recombination_distribution(dg, kid_id, ptp, PATERNAL, pat_dist);
-            
+
             // U = 0, A = 1
-            // UU = 0, AU = 1, UA = 2, AA = 3
-            tmatrix[pindex + TRAIT_UU] = mat_dist[TRAIT_U] * pat_dist[TRAIT_U];
-            tmatrix[pindex + TRAIT_AU] = mat_dist[TRAIT_A] * pat_dist[TRAIT_U];
-            tmatrix[pindex + TRAIT_UA] = mat_dist[TRAIT_U] * pat_dist[TRAIT_A];
-            tmatrix[pindex + TRAIT_AA] = mat_dist[TRAIT_A] * pat_dist[TRAIT_A];
+            // UU = 0, AA = 1, AU = 2, UA = 3
+            if(sex_linked and kid_gender == MALE) {
+
+                if(ptp == TRAIT_AU or ptp == TRAIT_UA) {
+                    tmatrix[pindex + TRAIT_UU] = tmatrix[pindex + TRAIT_AU] = \
+                    tmatrix[pindex + TRAIT_UA] = tmatrix[pindex + TRAIT_AA] = 0.0;
+                }
+                else {
+                    tmatrix[pindex + TRAIT_UU] = mat_dist[TRAIT_U];
+                    tmatrix[pindex + TRAIT_AU] = 0.0;
+                    tmatrix[pindex + TRAIT_UA] = 0.0;
+                    tmatrix[pindex + TRAIT_AA] = mat_dist[TRAIT_A];
+                }
+            }
+            else {
+                tmatrix[pindex + TRAIT_UU] = mat_dist[TRAIT_U] * pat_dist[TRAIT_U];
+                tmatrix[pindex + TRAIT_AU] = mat_dist[TRAIT_A] * pat_dist[TRAIT_U];
+                tmatrix[pindex + TRAIT_UA] = mat_dist[TRAIT_U] * pat_dist[TRAIT_A];
+                tmatrix[pindex + TRAIT_AA] = mat_dist[TRAIT_A] * pat_dist[TRAIT_A];
+            }
         }
     }
 }

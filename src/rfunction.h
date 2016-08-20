@@ -41,10 +41,12 @@ class Rfunction {
     double antitheta2;
     
     double trait_cache[4];
+
+    bool sex_linked;
     
     //enum trait get_trait(enum phased_trait p, enum parentage parent);
     //bool affected_trait(enum phased_trait pt, int allele);
-    enum phased_trait get_phased_trait(enum phased_trait m, enum phased_trait p, int maternal_allele, int paternal_allele);
+    enum phased_trait get_phased_trait(enum phased_trait m, enum phased_trait p, int maternal_allele, int paternal_allele, enum sex child_sex);
     
     void normalise(double* p);
     
@@ -111,7 +113,7 @@ class Rfunction {
     void evaluate_element(unsigned int pmatrix_index, DescentGraph* dg);
 
  public :
-    Rfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, vector<Rfunction*> previous);
+    Rfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, vector<Rfunction*> previous, bool sex_linked);
     Rfunction(const Rfunction& r);
     Rfunction& operator=(const Rfunction& rhs);
     virtual ~Rfunction() {}

@@ -1,8 +1,9 @@
-using namespace std;
-
 #include <cmath>
 
 #include "logarithms.h"
+
+using namespace std;
+
 
 /*
 double log_sum(double a, double b) {

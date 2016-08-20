@@ -14,6 +14,7 @@ using namespace std;
 class Pedigree {
 
 	string id;
+    bool sex_linked;
 	vector<Person> members;
 	unsigned int number_of_founders;
 	unsigned int number_of_leaves;
@@ -32,14 +33,16 @@ class Pedigree {
 	int _person_compare(const Person& a, const Person& b) const;
     
  public:
-	Pedigree(const string id) : 
+	Pedigree(const string id, bool sex_linked) : 
 	    id(id), 
+        sex_linked(sex_linked),
         members(), 
         number_of_founders(0), 
         number_of_leaves(0) {}
     
     Pedigree(const Pedigree& rhs) :
         id(rhs.id),
+        sex_linked(rhs.sex_linked),
         members(rhs.members),
         number_of_founders(rhs.number_of_founders),
         number_of_leaves(rhs.number_of_leaves) {}
@@ -50,6 +53,7 @@ class Pedigree {
         
         if(&rhs != this) {
             id = rhs.id;
+            sex_linked = rhs.sex_linked;
             members.clear();
             members = rhs.members;
             number_of_founders = rhs.number_of_founders;
@@ -62,6 +66,10 @@ class Pedigree {
 	// interrogate	
 	string get_id() const { 
         return id;
+    }
+
+    bool is_sexlinked() const {
+        return sex_linked;
     }
     
 	unsigned int num_members() const { 
@@ -79,7 +87,7 @@ class Pedigree {
 	unsigned int num_leaves() const {
 		return number_of_leaves;
 	}
-    
+
 	//Person* get_by_index(int i);
 	Person* get_by_name(const string& id);
 	

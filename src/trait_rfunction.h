@@ -3,6 +3,9 @@
 
 #include <vector>
 #include "rfunction.h"
+#include "descent_graph.h"
+
+using namespace std;
 
 
 class TraitRfunction : public Rfunction {
@@ -15,8 +18,8 @@ class TraitRfunction : public Rfunction {
     void evaluate_parent_peel(unsigned int pmatrix_index, DescentGraph* dg);
     
  public :
-    TraitRfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, vector<Rfunction*> previous) : 
-        Rfunction(p, m, locus, po, previous) {
+    TraitRfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, vector<Rfunction*> previous, bool sex_linked) : 
+        Rfunction(p, m, locus, po, previous, sex_linked) {
         
         for(int i = 0; i < 4; ++i) {
             trait_cache[i] = get_trait_probability(peel_id, static_cast<enum phased_trait>(i));

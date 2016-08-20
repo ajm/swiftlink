@@ -1,9 +1,9 @@
-using namespace std;
-
 #include <cstdlib>
 #include <string>
 
 #include "trait.h"
+
+using namespace std;
 
 
 string trait_str(enum phased_trait pt) {

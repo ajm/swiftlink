@@ -46,13 +46,13 @@ class PeelSequenceGenerator {
     void random_downhill_search(vector<unsigned int>& current, unsigned int iterations);
 
   public :
-    PeelSequenceGenerator(Pedigree* p, GeneticMap* m, bool verbose) : 
+    PeelSequenceGenerator(Pedigree* p, GeneticMap* m, bool sex_linked, bool verbose) : 
         ped(p),
         map(m),
         verbose(verbose),
         peelorder(),
         state(p),
-        ge(p) {
+        ge(p, sex_linked) {
         
         ge.elimination();
         

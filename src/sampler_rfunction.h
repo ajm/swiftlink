@@ -31,8 +31,8 @@ class SamplerRfunction : public Rfunction {
     void preevaluate_init(DescentGraph* dg);
 
  public :    
-    SamplerRfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, vector<Rfunction*> previous) : 
-        Rfunction(p, m, locus, po, previous), 
+    SamplerRfunction(Pedigree* p, GeneticMap* m, unsigned int locus, PeelOperation* po, vector<Rfunction*> previous, bool sex_linked) :
+        Rfunction(p, m, locus, po, previous, sex_linked), 
         ignore_left(false), 
         ignore_right(false),
         transmission(),

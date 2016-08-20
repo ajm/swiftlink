@@ -14,12 +14,11 @@
 #include <unistd.h>
 #include <getopt.h>
 
-#include <omp.h>
-
 #include "types.h"
 #include "defaults.h"
 #include "linkage_program.h"
 #include "elod.h"
+#include "omp_facade.h"
 
 //#include "test_program.h"
 //#include "haplotype_program.h"
@@ -56,16 +55,17 @@ void _usage(char *prog) {
 "  -o outfile, --output=outfile            (default = '%s')\n"
 "\n"
 "MCMC options:\n"
-"  -z NUM,     --chains=NUM                (default = %d)\n"
 "  -i NUM,     --iterations=NUM            (default = %d)\n"
 "  -b NUM,     --burnin=NUM                (default = %d)\n"
 "  -s NUM,     --sequentialimputation=NUM  (default = %d)\n"
 "  -x NUM,     --scoringperiod=NUM         (default = %d)\n"
-"  -y NUM,     --exchangeperiod=NUM        (default = %d)\n"
 "  -l FLOAT,   --lsamplerprobability=FLOAT (default = %.1f)\n"
 "  -n NUM,     --lodscores=NUM             (default = %d)\n"
-"  -w,         --mcmcmc\n"
-"  -t FLOAT,FLOAT,... --temperatures=FLOAT,FLOAT,...\n"
+"  -R NUM,     --runs=NUM                  (default = %d)\n"
+//"  -M,         --mcmcmc\n"
+//"  -z NUM,     --chains=NUM                (default = %d)\n"
+//"  -y NUM,     --exchangeperiod=NUM        (default = %d)\n"
+//"  -t FLOAT,FLOAT,... --temperatures=FLOAT,FLOAT,...\n"
 "\n"
 "ELOD options:\n"
 "  -e          --elod\n"
@@ -79,7 +79,8 @@ void _usage(char *prog) {
 "  -g,         --gpu\n"
 "\n"
 "Misc:\n"
-"  -a,         --affectedonly"
+"  -X,         --sexlinked\n"
+"  -a,         --affectedonly\n"
 "  -q NUM,     --peelseqiter=NUM           (default = %d)\n"
 "  -r seedfile,--randomseeds=seedfile\n"
 "  -v,         --verbose\n"
@@ -88,14 +89,15 @@ void _usage(char *prog) {
 prog, 
 prog,
 DEFAULT_RESULTS_FILENAME, 
-DEFAULT_MCMC_CHAINS,
 DEFAULT_MCMC_ITERATIONS,
 DEFAULT_MCMC_BURNIN,
 DEFAULT_SEQUENTIALIMPUTATION_RUNS,
 DEFAULT_MCMC_SCORING_PERIOD,
-DEFAULT_MCMC_EXCHANGE_PERIOD,
 DEFAULT_LSAMPLER_PROB,
 DEFAULT_LODSCORES,
+DEFAULT_MCMC_RUNS,
+//DEFAULT_MCMC_CHAINS,
+//DEFAULT_MCMC_EXCHANGE_PERIOD,
 DEFAULT_ELOD_FREQUENCY,
 DEFAULT_ELOD_SEPARATION,
 DEFAULT_ELOD_PENETRANCE[0],
@@ -185,7 +187,7 @@ void _handle_args(int argc, char **argv) {
             {"gpu",                 no_argument,        0,      'g'},
             {"help",                no_argument,        0,      'h'},
             {"iterations",          required_argument,  0,      'i'},
-            {"exchangefile",        required_argument,  0,      'j'},
+            //{"exchangefile",        required_argument,  0,      'j'},
             {"penetrance",          required_argument,  0,      'k'},
             {"lsamplerprobability", required_argument,  0,      'l'},
             {"map",                 required_argument,  0,      'm'},
@@ -195,20 +197,25 @@ void _handle_args(int argc, char **argv) {
             {"peelseqiter",         required_argument,  0,      'q'},
             {"randomseeds",         required_argument,  0,      'r'},
             {"sequentialimputation",required_argument,  0,      's'},
-            {"temperatures",        required_argument,  0,      't'},
+            //{"temperatures",        required_argument,  0,      't'},
             {"replicates",          required_argument,  0,      'u'},
 	        {"verbose",             no_argument,        0,      'v'},
             {"separation",          required_argument,  0,      'w'},
             {"scoringperiod",       required_argument,  0,      'x'},
-            {"exchangeperiod",      required_argument,  0,      'y'},
-            {"chains",              required_argument,  0,      'z'},
-            {"mcmcmc",              no_argument,        0,      'M'},
+            //{"exchangeperiod",      required_argument,  0,      'y'},
+            //{"chains",              required_argument,  0,      'z'},
+            //{"mcmcmc",              no_argument,        0,      'M'},
+            {"sexlinked",           no_argument,        0,      'X'},
+            {"runs",                required_argument,  0,      'R'},
             {0, 0, 0, 0}
 	    };
     
     int option_index = 0;
     
-	while ((ch = getopt_long(argc, argv, ":p:d:m:o:i:b:s:l:c:x:q:r:n:vhcgz:y:t:ew:k:f:u:j:a", long_options, &option_index)) != -1) {
+	while ((ch = getopt_long(argc, argv, 
+                    //":p:d:m:o:i:b:s:l:c:x:q:r:n:vhcgz:y:t:ew:k:f:u:j:aMX", 
+                    ":p:d:m:o:i:b:s:l:c:x:q:r:n:vhcgew:k:f:u:aXR:",
+                    long_options, &option_index)) != -1) {
 		switch (ch) {
 			case 'p':
 				pedfile = optarg;
@@ -257,8 +264,8 @@ void _handle_args(int argc, char **argv) {
                     fprintf(stderr, "%s: option '-s' requires an int as an argument ('%s' given)\n", argv[0], optarg);
                     exit(EXIT_FAILURE);
                 }
-                if(options.si_iterations < 0) {
-                    fprintf(stderr, "%s: number of sequential imputation runs must be positive (%d given)\n", argv[0], options.si_iterations);
+                if(options.si_iterations < 1) {
+                    fprintf(stderr, "%s: number of sequential imputation runs must be greater than zero (%d given)\n", argv[0], options.si_iterations);
                     exit(EXIT_FAILURE);
                 }
                 break;
@@ -353,7 +360,7 @@ void _handle_args(int argc, char **argv) {
 			case 'h':
 				_usage(argv[0]);
 				exit(EXIT_SUCCESS);
-				
+	        /*
             case 'j':
                 options.exchange_filename = string(optarg);
                 break;
@@ -396,13 +403,13 @@ void _handle_args(int argc, char **argv) {
                 }
 
                 break;
-
-            case 'a':
-                options.affected_only = true;
-                break;
-
+            
             case 'M':
                 options.mc3 = true;
+                break;
+            */
+            case 'a':
+                options.affected_only = true;
                 break;
 
             case 'e':
@@ -465,6 +472,20 @@ void _handle_args(int argc, char **argv) {
                 }
                 break;
 
+            case 'X':
+                options.sex_linked = true;
+                break;
+
+            case 'R':
+                if(not str2int(options.mcmc_runs, optarg)) {
+                    fprintf(stderr, "%s: option '-R' requires an int as an argument ('%s' given)\n", argv[0], optarg);
+                    exit(EXIT_FAILURE);
+                }
+                if(options.mcmc_runs < 1) {
+                    fprintf(stderr, "%s: number of MCMC runs must be greater than zero ('%d' given)\n", argv[0], options.mcmc_runs);
+                    exit(EXIT_FAILURE);
+                }
+                break;
 
             case ':':
                 fprintf(stderr, "%s: option '-%c' requires an argument\n", 
@@ -484,6 +505,11 @@ void _handle_args(int argc, char **argv) {
     if(options.elod and pedfile != NULL)
         return;
 
+    if(options.use_gpu and options.sex_linked) {
+        fprintf(stderr, "Error: we do not current support sex-linked analysis on GPU\n");
+        exit(EXIT_FAILURE);
+    }
+
     if((int(options.mc3_temperatures.size()) > 0) and (int(options.mc3_temperatures.size()) != options.mc3_number_of_chains)) {
         fprintf(stderr, "Error: %d temperature%s %s set for %d chain%s\n", 
                 int(options.mc3_temperatures.size()), 
@@ -499,14 +525,14 @@ void _handle_args(int argc, char **argv) {
     }
 
 	if((mapfile == NULL) or (pedfile == NULL) or (datfile == NULL)) {
-	    fprintf(stderr, "Error: at a minimum you must specify a pedigree file, a map file and a linkage format dat file\n");
+	    fprintf(stderr, "Error: you must specify at least a pedigree file, a map file and a data file in LINKAGE format\n");
         exit(EXIT_FAILURE);
 	}
 }
 
 void _set_runtime_parameters() {
-    printf("setting %d threads\n", options.thread_count);
-    omp_set_num_threads(options.thread_count);
+    printf("setting %d thread%s\n", options.thread_count, options.thread_count == 1 ? "" : "s");
+    set_num_threads(options.thread_count);
 }
 
 int linkage_analysis() {
@@ -532,7 +558,7 @@ int haplotype_analysis() {
     return hp.run() ? EXIT_SUCCESS : EXIT_FAILURE;
 */
 
-    fprintf(stderr, "Sorry chaps, not currently supported...\n");
+    fprintf(stderr, "Not currently supported...\n");
 
 	return EXIT_FAILURE;
 }

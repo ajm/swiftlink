@@ -20,9 +20,10 @@ enum trait {
 
 enum phased_trait {
     TRAIT_UU,
+    TRAIT_AA,
     TRAIT_AU,
-    TRAIT_UA,
-    TRAIT_AA
+    TRAIT_UA //,
+    //TRAIT_AA
 };
 
 string trait_str(enum phased_trait t);

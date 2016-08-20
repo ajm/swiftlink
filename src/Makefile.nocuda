@@ -14,7 +14,7 @@ CXXFLAGS := -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe -fopenmp -g -O2 #-
 CFLAGS := -g -O2 -Wall -pipe -fopenmp
 LDFLAGS :=
 INCLUDES := -I. #-I/usr/local/cuda/include
-LIBS := -lgomp -lgsl -lgslcblas #-lrt -L/usr/local/cuda/lib64 -lcudart
+LIBS := -lgsl -lgslcblas #-lgomp #-lrt -L/usr/local/cuda/lib64 -lcudart
 GPUFLAGS := -arch=sm_20 -O2
 
 OBJECTS	:= \

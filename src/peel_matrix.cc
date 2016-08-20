@@ -1,6 +1,5 @@
-using namespace std;
-
 #include <cstdio>
+#include <cstdlib>
 #include <cmath>
 #include <cstring>
 #include <map>
@@ -10,6 +9,8 @@ using namespace std;
 
 #include "trait.h"
 #include "peel_matrix.h"
+
+using namespace std;
 
 
 PeelMatrix::PeelMatrix(unsigned int num_dim, unsigned int val_dim) :

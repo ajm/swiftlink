@@ -1,5 +1,3 @@
-using namespace std;
-
 #include <cstdio>
 #include <cmath>
 #include <queue>
@@ -13,6 +11,8 @@ using namespace std;
 #include "founder_allele_graph4.h"
 #include "descent_graph.h"
 #include "genetic_map.h"
+
+using namespace std;
 
 
 string FounderAlleleGraph4::debug_string() {
@@ -70,11 +70,16 @@ double FounderAlleleGraph4::likelihood() {
         
         tmp = i * 2;
         mat_fa = edge_list[tmp];
-        pat_fa = edge_list[tmp+1];
+        pat_fa = edge_list[tmp+1]; // <---- does not exist if p is male and X-linked
         
-        // autozygous
-        if(mat_fa == pat_fa) {
+        //fprintf(stderr, "person = %d (%s)\n", i, p->ismale() ? "M" : "F");
+
+        // autozygous or
+        // for every male, the maternal founder allele just gets assigned 
+        // because there is no ambiguity due to lack of phase
+        if((mat_fa == pat_fa) or (sex_linked and p->ismale())) {
             if(g == HETERO) {
+                //fprintf(stderr, "FAG: %s:%d\n", __FILE__, __LINE__);
                 return 0.0;
             }
             
@@ -85,6 +90,7 @@ double FounderAlleleGraph4::likelihood() {
                 fixed1 = group_fixed[group1];
                 if(fixed1 != -1) {
                     if(g != allele_assignment[fixed1][mat_fa]) {
+                        //fprintf(stderr, "FAG: %s:%d\n", __FILE__, __LINE__);
                         return 0.0;
                     }
                 }
@@ -98,6 +104,7 @@ double FounderAlleleGraph4::likelihood() {
                         prob[0][group1] = 0.0;
                     }
                     else {
+                        //fprintf(stderr, "FAG: %s:%d\n", __FILE__, __LINE__);
                         return 0.0;
                     }
                 }
@@ -130,6 +137,7 @@ double FounderAlleleGraph4::likelihood() {
                         if(fixed1 != -1) {
                             // fixed, check if legit
                             if(not legal(g, allele_assignment[fixed1][mat_fa], allele_assignment[fixed1][pat_fa])) {
+                                //fprintf(stderr, "FAG: %s:%d\n", __FILE__, __LINE__);
                                 return 0.0;
                             }
                         }
@@ -150,6 +158,7 @@ double FounderAlleleGraph4::likelihood() {
                                     prob[0][group1] = 0.0;
                                 }
                                 else {
+                                    //fprintf(stderr, "FAG: %s:%d\n", __FILE__, __LINE__);
                                     return 0.0;
                                 }
                             }
@@ -163,6 +172,7 @@ double FounderAlleleGraph4::likelihood() {
                             if(fixed2 != -1) {
                                 // fixed, check if legit
                                 if(not legal(g, allele_assignment[fixed1][mat_fa], allele_assignment[fixed2][pat_fa])) {
+                                    //fprintf(stderr, "FAG: %s:%d\n", __FILE__, __LINE__);
                                     return 0.0;
                                 }
                             }
@@ -176,6 +186,7 @@ double FounderAlleleGraph4::likelihood() {
                                 else if(legal1)
                                     fixed2 = 1;
                                 else {
+                                    //fprintf(stderr, "FAG: %s:%d\n", __FILE__, __LINE__);
                                     return 0.0;
                                 }
                             }
@@ -190,6 +201,7 @@ double FounderAlleleGraph4::likelihood() {
                             else if(legal1)
                                 fixed1 = 1;
                             else {
+                                //fprintf(stderr, "FAG: %s:%d\n", __FILE__, __LINE__);
                                 return 0.0;
                             }
                         }
@@ -201,6 +213,7 @@ double FounderAlleleGraph4::likelihood() {
                             legal3 = legal(g, allele_assignment[1][mat_fa], allele_assignment[1][pat_fa]);
                             
                             if(not (legal0 or legal1 or legal2 or legal3)) {
+                                //fprintf(stderr, "FAG: %s:%d\n", __FILE__, __LINE__);
                                 return 0.0;
                             }
                             
@@ -269,6 +282,7 @@ double FounderAlleleGraph4::likelihood() {
                         tmp0 = get_other_allele(g, allele_assignment[fixed1][mat_fa]);
                         
                         if(tmp0 == UNTYPED) {
+                            //fprintf(stderr, "FAG: %s:%d\n", __FILE__, __LINE__);
                             return 0.0;
                         }
                         else {
@@ -302,6 +316,7 @@ double FounderAlleleGraph4::likelihood() {
                                 group_fixed[group1] = 1;
                             }
                             else {
+                                //fprintf(stderr, "FAG: %s:%d\n", __FILE__, __LINE__);
                                 return 0.0;
                             }
                         }
@@ -319,6 +334,7 @@ double FounderAlleleGraph4::likelihood() {
                     tmp0 = get_other_allele(g, allele_assignment[fixed2][pat_fa]);
                     
                     if(tmp0 == UNTYPED) {
+                        //fprintf(stderr, "FAG: %s:%d\n", __FILE__, __LINE__);
                         return 0.0;
                     }
                     else {
@@ -352,6 +368,7 @@ double FounderAlleleGraph4::likelihood() {
                             group_fixed[group2] = 1;
                         }
                         else {
+                            //fprintf(stderr, "FAG: %s:%d\n", __FILE__, __LINE__);
                             return 0.0;
                         }
                     }
@@ -391,13 +408,13 @@ double FounderAlleleGraph4::likelihood() {
             if(group_active[j]) {
                 if(group_fixed[j] == -1) {
                     if((prob[0][j] <= 0.0) or (prob[0][j] > 1.0) or (prob[1][j] <= 0.0) or (prob[1][j] > 1.0)) {
-                        fprintf(stderr, "fag is corrupt %s:%d\n", __FILE__, __LINE__);
+                        fprintf(stderr, "founder allele graph is corrupt %s:%d\n", __FILE__, __LINE__);
                         abort();
                     }
                 }
                 else {
                     if((prob[group_fixed[j]][j] <= 0.0) or (prob[group_fixed[j]][j] > 1.0) or (prob[1-group_fixed[j]][j]) != 0.0) {
-                        fprintf(stderr, "fag is corrupt %s:%d\n", __FILE__, __LINE__);
+                        fprintf(stderr, "founder allele graph is corrupt %s:%d\n", __FILE__, __LINE__);
                         abort();
                     }
                 }
@@ -410,7 +427,7 @@ double FounderAlleleGraph4::likelihood() {
     double ret_prob = 1.0;
     
     for(int i = 0; i < group_index; ++i) {
-        if(group_active[i] /* and (group_size[i] > 1)*/) {
+        if(group_active[i] /*and (group_size[i] > 1)*/) {
             fixed1 = group_fixed[i];
             if(fixed1 != -1) {
                 ret_prob *= prob[fixed1][i];
@@ -545,7 +562,7 @@ void FounderAlleleGraph4::reset(DescentGraph& dg) {
 	        parent_allele = dg.get(pid, locus, MATERNAL);
 	        edge_list[tmp] = edge_list[(p->get_maternalid() * 2) + parent_allele];
 	        
-	        parent_allele = dg.get(pid, locus, PATERNAL);
+	        parent_allele = dg.get(pid, locus, PATERNAL); // <---- if p is male, this does not exist!
 	        edge_list[tmp + 1] = edge_list[(p->get_paternalid() * 2) + parent_allele];
 	    }
 	}

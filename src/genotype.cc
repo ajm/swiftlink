@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
+
 #include "genotype.h"
 
 // both parents hetero - child anything
@@ -8,19 +9,35 @@
 // both parents different homoz - child can only be hetero
 bool genotype_compatible(enum unphased_genotype mother, 
 		 				 enum unphased_genotype father, 
-						 enum unphased_genotype child) {
+						 enum unphased_genotype child,
+                         enum sex child_sex,
+                         bool sex_linked) {
 	
-	switch (child) {
-		case UNTYPED :
-			return true;
-		case HOMOZ_A :
-			return (mother != HOMOZ_B) and (father != HOMOZ_B);
-        case HOMOZ_B :
-			return (mother != HOMOZ_A) and (father != HOMOZ_A);
-		case HETERO :
-			return not ((mother == HOMOZ_A) and (father == HOMOZ_A)) and \
-                   not ((mother == HOMOZ_B) and (father == HOMOZ_B));
-	}
+    if(not sex_linked or child_sex == FEMALE) {
+	    switch (child) {
+		    case UNTYPED :
+			    return true;
+		    case HOMOZ_A :
+			    return (mother != HOMOZ_B) and (father != HOMOZ_B);
+            case HOMOZ_B :
+			    return (mother != HOMOZ_A) and (father != HOMOZ_A);
+		    case HETERO :
+			    return not ((mother == HOMOZ_A) and (father == HOMOZ_A)) and \
+                       not ((mother == HOMOZ_B) and (father == HOMOZ_B));
+	    }
+    }
+    else { // male X-linked
+        switch(child) {
+            case UNTYPED :
+                return true;
+            case HETERO :
+                return false;
+            case HOMOZ_A :
+                return mother != HOMOZ_B;
+            case HOMOZ_B :
+                return mother != HOMOZ_A;
+        }
+    }
 	
 	abort();
 }

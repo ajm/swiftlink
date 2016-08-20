@@ -1,10 +1,10 @@
-using namespace std;
-
 #include <cstdio>
 #include <string>
 #include <cstdarg>
 
 #include "progress.h"
+
+using namespace std;
 
 
 Progress::Progress(string s, unsigned int increments) : 

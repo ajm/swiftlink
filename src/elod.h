@@ -1,8 +1,6 @@
 #ifndef LKG_ELOD_H_
 #define LKG_ELOD_H_
 
-using namespace std;
-
 #include <cstdlib>
 #include <vector>
 
@@ -15,6 +13,8 @@ using namespace std;
 #include "random.h"
 #include "disease_model.h"
 
+using namespace std;
+
 
 class Elod {
 
@@ -26,7 +26,7 @@ class Elod {
 
   public :
     Elod(const char* pedfile, struct mcmc_options opt) : 
-        dm(opt.elod_frequency, opt.elod_penetrance, false), 
+        dm(opt.elod_frequency, opt.elod_penetrance, opt.sex_linked), 
         pedigrees(), 
         map1(1),
         map2(1),

@@ -1,11 +1,8 @@
-using namespace std;
-
 #include <cmath>
 #include <vector>
 #include <algorithm>
 
 #include <time.h>
-#include <omp.h>
 
 #include "markov_chain.h"
 #include "peel_sequence_generator.h"
@@ -20,10 +17,14 @@ using namespace std;
 #include "types.h"
 #include "random.h"
 #include "lod_score.h"
+#include "omp_facade.h"
 
 #ifdef USE_CUDA
   #include "gpu_lodscores.h"
 #endif
+
+using namespace std;
+
 
 //#define CODA_OUTPUT 1
 
@@ -32,16 +33,16 @@ void MarkovChain::_init() {
     map.set_temperature(temperature);
 
     // create samplers
-    for(int i = 0; i < omp_get_max_threads(); ++i) {
-        LocusSampler* tmp = new LocusSampler(ped, &map, psg, i);
+    for(int i = 0; i < get_max_threads(); ++i) {
+        LocusSampler* tmp = new LocusSampler(ped, &map, psg, i, options.sex_linked);
         lsamplers.push_back(tmp);
     }
 
     lod = new LODscores(&map);
 
     // lod scorers
-    for(int i = 0; i < omp_get_max_threads(); ++i) {
-        Peeler* tmp = new Peeler(ped, &map, psg, lod);
+    for(int i = 0; i < get_max_threads(); ++i) {
+        Peeler* tmp = new Peeler(ped, &map, psg, lod, options.sex_linked);
         peelers.push_back(tmp);
     }
     
@@ -92,7 +93,7 @@ void MarkovChain::step(DescentGraph& dg, int start_iteration, int step_size) {
         if(get_random() < options.lsampler_prob) {
             
             random_shuffle(l_ordering.begin(), l_ordering.end());
-            vector<int> thread_assignments(omp_get_max_threads(), -1);
+            vector<int> thread_assignments(get_max_threads(), -1);
             vector<int> tmp(l_ordering);
 
             #pragma omp parallel
@@ -111,14 +112,14 @@ void MarkovChain::step(DescentGraph& dg, int start_iteration, int step_size) {
                             }
                         }
 
-                        thread_assignments[omp_get_thread_num()] = locus;
+                        thread_assignments[get_thread_num()] = locus;
                     }
                     
-                    if(thread_assignments[omp_get_thread_num()] == -1)
+                    if(thread_assignments[get_thread_num()] == -1)
                         break;
                     
-                    lsamplers[omp_get_thread_num()]->set_locus_minimal(thread_assignments[omp_get_thread_num()]);
-                    lsamplers[omp_get_thread_num()]->step(dg, thread_assignments[omp_get_thread_num()]);
+                    lsamplers[get_thread_num()]->set_locus_minimal(thread_assignments[get_thread_num()]);
+                    lsamplers[get_thread_num()]->step(dg, thread_assignments[get_thread_num()]);
                 }
             }
         }
@@ -160,8 +161,8 @@ void MarkovChain::step(DescentGraph& dg, int start_iteration, int step_size) {
 #endif
                 #pragma omp parallel for
                 for(int j = 0; j < int(map.num_markers() - 1); ++j) {
-                    peelers[omp_get_thread_num()]->set_locus(j);
-                    peelers[omp_get_thread_num()]->process(&dg);
+                    peelers[get_thread_num()]->set_locus(j);
+                    peelers[get_thread_num()]->process(&dg);
                 }
 #ifdef USE_CUDA
             }
@@ -195,7 +196,7 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
         if(get_random() < options.lsampler_prob) {
             
             random_shuffle(l_ordering.begin(), l_ordering.end());
-            vector<int> thread_assignments(omp_get_max_threads(), -1);
+            vector<int> thread_assignments(get_max_threads(), -1);
             vector<int> tmp(l_ordering);
 
             #pragma omp parallel
@@ -214,14 +215,14 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
                             }
                         }
 
-                        thread_assignments[omp_get_thread_num()] = locus;
+                        thread_assignments[get_thread_num()] = locus;
                     }
                     
-                    if(thread_assignments[omp_get_thread_num()] == -1)
+                    if(thread_assignments[get_thread_num()] == -1)
                         break;
                     
-                    lsamplers[omp_get_thread_num()]->set_locus_minimal(thread_assignments[omp_get_thread_num()]);
-                    lsamplers[omp_get_thread_num()]->step(dg, thread_assignments[omp_get_thread_num()]);
+                    lsamplers[get_thread_num()]->set_locus_minimal(thread_assignments[get_thread_num()]);
+                    lsamplers[get_thread_num()]->step(dg, thread_assignments[get_thread_num()]);
                 }
             }
         }
@@ -263,8 +264,8 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
 #endif
                 #pragma omp parallel for
                 for(int j = 0; j < int(map.num_markers() - 1); ++j) {
-                    peelers[omp_get_thread_num()]->set_locus(j);
-                    peelers[omp_get_thread_num()]->process(&dg);
+                    peelers[get_thread_num()]->set_locus(j);
+                    peelers[get_thread_num()]->process(&dg);
                 }
 #ifdef USE_CUDA
             }
@@ -290,7 +291,7 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
 
 bool MarkovChain::noninterferring(vector<int>& x, int val) {
     for(int i = 0; i < int(x.size()); ++i) {
-        if(i != omp_get_thread_num()) {
+        if(i != get_thread_num()) {
             int diff = val - x[i];
             if((diff == 1) or (diff == -1)) {
                 return false;

@@ -1,14 +1,14 @@
 #ifndef LKG_LOCUSSAMPLER_H_
 #define LKG_LOCUSSAMPLER_H_
 
-using namespace std;
-
 #include <vector>
 
 #include "descent_graph.h"
 #include "trait.h"
 #include "sampler.h"
 #include "sampler_rfunction.h"
+
+using namespace std;
 
 
 class Pedigree;
@@ -22,6 +22,7 @@ class LocusSampler : Sampler {
     unsigned int locus;
     bool ignore_left;
     bool ignore_right;
+    bool sex_linked;
     
     void init_rfunctions(PeelSequenceGenerator* psg);    
     unsigned sample_mi(DescentGraph& dg, enum trait allele, enum phased_trait trait, unsigned personid, enum parentage parent);
@@ -32,12 +33,13 @@ class LocusSampler : Sampler {
 
     
  public :
-    LocusSampler(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator* psg, unsigned int locus) :
+    LocusSampler(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator* psg, unsigned int locus, bool sex_linked) :
         Sampler(ped, map), 
         rfunctions(),
         locus(locus),
         ignore_left(false),
-        ignore_right(false) {
+        ignore_right(false),
+        sex_linked(sex_linked) {
         
         init_rfunctions(psg);
     }

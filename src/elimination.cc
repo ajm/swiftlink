@@ -1,5 +1,3 @@
-using namespace std;
-
 #include <cstdlib>
 #include <algorithm>
 
@@ -9,6 +7,8 @@ using namespace std;
 #include "descent_graph.h"
 #include "genotype.h"
 #include "random.h"
+
+using namespace std;
 
 
 void GenotypeElimination::_init() {
@@ -55,6 +55,11 @@ void GenotypeElimination::_initial_elimination() {
 			
 			g = tmp->get_genotype(i);
 			
+            if(sex_linked and tmp->ismale() and g == UNTYPED) {
+                genotype_set_homoz(possible_genotypes[i][j]);
+                continue;
+            }
+
 			switch(g) {
 				case HOMOZ_A:
 					genotype_set_homozA(possible_genotypes[i][j]);
@@ -97,11 +102,14 @@ bool GenotypeElimination::_elimination_pass(int** ds, unsigned locus) {
                 
             changes += _parent_homoz(ds, locus, mat, pat, i, AA, MATERNAL);
             changes += _parent_homoz(ds, locus, mat, pat, i, BB, MATERNAL);
-            changes += _parent_homoz(ds, locus, pat, mat, i, AA, PATERNAL);
-            changes += _parent_homoz(ds, locus, pat, mat, i, BB, PATERNAL);
-            
-            changes += _child_homoz(ds, locus, mat, pat, i, AA);
-            changes += _child_homoz(ds, locus, mat, pat, i, BB);                
+
+            if(not (sex_linked and tmp->ismale())) {
+                changes += _parent_homoz(ds, locus, pat, mat, i, AA, PATERNAL);
+                changes += _parent_homoz(ds, locus, pat, mat, i, BB, PATERNAL);
+            }
+
+            changes += _child_homoz(ds, locus, mat, pat, i, AA, tmp->ismale());
+            changes += _child_homoz(ds, locus, mat, pat, i, BB, tmp->ismale());
         }
         
         if(not _legal(ds, locus)) {
@@ -141,7 +149,8 @@ int GenotypeElimination::_child_homoz(int** ds,
                                       int mother, 
                                       int father, 
                                       int child,
-                                      enum phased_genotype homoz) {
+                                      enum phased_genotype homoz,
+                                      bool ismale) {
 	enum phased_genotype other_homoz;
 	int changes = 0;
 	
@@ -154,10 +163,12 @@ int GenotypeElimination::_child_homoz(int** ds,
 			changes++;
 		}
 		
-		if( genotype_possible(ds[locus][father], other_homoz) ) {
-			genotype_remove(ds[locus][father], other_homoz);
-			changes++;
-		}
+        if(not (sex_linked and ismale)) {
+		    if( genotype_possible(ds[locus][father], other_homoz) ) {
+			    genotype_remove(ds[locus][father], other_homoz);
+			    changes++;
+		    }
+        }
 	}
 	
 	return changes;
@@ -377,5 +388,9 @@ bool GenotypeElimination::elimination() {
     }
 
     return true;
+}
+
+bool GenotypeElimination::is_legal(int id, int locus, int value) {
+    return genotype_possible(possible_genotypes[locus][id], genotype_from_trait(value));
 }
 

@@ -1,5 +1,3 @@
-using namespace std;
-
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -8,6 +6,8 @@ using namespace std;
 #include "pedigree.h"
 #include "person.h"
 #include "types.h"
+
+using namespace std;
 
 
 bool PedigreeParser::_parse_sex(const string& str, enum sex& s) {
@@ -71,7 +71,7 @@ Pedigree& PedigreeParser::_current_ped(const string& famid) {
 		}
 	}
 
-    Pedigree p(famid);
+    Pedigree p(famid, disease_model.is_sexlinked());
 	pedigrees.push_back(p);
         
 	return pedigrees.back();

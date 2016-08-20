@@ -1,5 +1,3 @@
-using namespace std;
-
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
@@ -14,6 +12,9 @@ using namespace std;
 #include "simple_parser.h"
 #include "elimination.h"
 #include "genetic_map.h"
+
+using namespace std;
+
 
 /*
 bool PeelSequenceGenerator::read_from_file(string filename) {

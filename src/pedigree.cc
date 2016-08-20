@@ -1,5 +1,3 @@
-using namespace std;
-
 #include <cstdio>
 #include <string>
 #include <iostream>
@@ -10,6 +8,8 @@ using namespace std;
 #include "types.h"
 #include "pedigree.h"
 #include "person.h"
+
+using namespace std;
 
 
 bool Pedigree::add(Person& p) {

@@ -42,7 +42,7 @@ class MarkovChain {
     void _kill();
 
  public :
-    MarkovChain(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator* psg, struct mcmc_options options, double temp) :
+    MarkovChain(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator* psg, struct mcmc_options options, double temp=1.0) :
         ped(ped), 
         map(*map), 
         psg(psg),
@@ -53,7 +53,7 @@ class MarkovChain {
 #endif
         peelers(),
         lsamplers(),
-        msampler(ped, map),
+        msampler(ped, map, options.sex_linked),
         l_ordering(),
         m_ordering(),
         temperature(temp) {

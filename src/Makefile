@@ -47,6 +47,8 @@ OBJECTS	:= \
 	linkage_program.o \
 	program.o \
 	progress.o \
+    mc3.o \
+    elod.o \
 	main.o \
 	gpu_lodscores.o \
 	cuda_linkage.o

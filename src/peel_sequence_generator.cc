@@ -360,11 +360,11 @@ bool PeelSequenceGenerator::greedy_search(vector<unsigned int>& current) {
 
 void PeelSequenceGenerator::random_downhill_search(vector<unsigned int>& current, unsigned int iterations) {
     
-    int swap0, swap1, tmp, iter;
+    int swap0, swap1, tmp; //, iter;
     int new_cost, cost;
     
     cost = get_cost(current);
-    iter = -1;
+    //iter = -1;
     swap0 = swap1 = 0;
     
     
@@ -385,12 +385,12 @@ void PeelSequenceGenerator::random_downhill_search(vector<unsigned int>& current
         
         new_cost = get_cost(current);
         //printf("iteration %d: %d\n", i, new_cost);
-        
+/*
         if(new_cost < cost) {
             //printf("iteration %d: %d\n", i, new_cost);
             iter = i;
         }
-        
+*/
         p.increment();
         
         // if better, store result

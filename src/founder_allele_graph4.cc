@@ -17,12 +17,12 @@ using namespace std;
 
 string FounderAlleleGraph4::debug_string() {
     stringstream ss;
-    Person* p;
+    //Person* p;
     int tmp, pid;
     
     for(unsigned int i = 0; i < ped->num_members(); ++i) {
 	    pid = (*sequence)[i];
-        p = ped->get_by_index(pid);
+        //p = ped->get_by_index(pid);
 	    tmp = pid * 2;
 	    
 	    ss << pid << "\t(" << edge_list[tmp] << ", " << edge_list[tmp + 1] << ")\n";

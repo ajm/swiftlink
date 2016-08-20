@@ -17,7 +17,7 @@ inline int get_max_threads() {
 
 inline void set_num_threads(int t) {
     #if defined(_OPENMP)
-    omp_set_num_threads(t)
+    omp_set_num_threads(t);
     #else
     if(t != 1) {
         fprintf(stderr, "WARNING: this binary was compiled without OpenMP support, so does not support multithreading\n");

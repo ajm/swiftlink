@@ -151,7 +151,7 @@ double DiseaseModel::get_penetrance_prob2(enum affection a, enum unphased_trait 
 }
 
 double DiseaseModel::get_apriori_prob2(enum affection a, enum unphased_trait t, enum sex s) const {
-    double tmp;
+    double tmp = 0.0;
 
     if(sexlinked and s == MALE) {
         if(t == TRAIT_HETERO)

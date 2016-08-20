@@ -264,7 +264,7 @@ void GPULodscores::init_map() {
         Snp& marker = map->get_marker(i);
         for(unsigned j = 0; j < 4; ++j) {
             enum phased_trait pt = static_cast<enum phased_trait>(j);
-            loc_state->map->markerprobs[(i * 4) + j] = marker.get_prob(pt);
+            loc_state->map->markerprobs[(i * 4) + j] = marker.get_prob(pt, false);
         }
         loc_state->map->allelefreqs[i] = marker.minor();
     }

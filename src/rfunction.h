@@ -74,6 +74,8 @@ class Rfunction {
             case TRAIT_AA :
                 return TRAIT_A;
         }
+
+        abort();
     }
     
     inline bool affected_trait(enum phased_trait pt, int allele) {
@@ -100,6 +102,8 @@ class Rfunction {
             case TRAIT_AA :
                 return true;
         }
+
+        abort();
     }
     
         

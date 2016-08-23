@@ -142,11 +142,6 @@ void Rfunction::evaluate_partner_peel(unsigned int pmatrix_index) {
     }
     
     pmatrix.set(pmatrix_index, total);
-/*
-    if(total == 0.0) {
-        fprintf(stderr, "ERROR: evaluate partner peel = ZERO\n");
-    }
-*/
 }
 
 void Rfunction::evaluate_element(unsigned int pmatrix_index, DescentGraph* dg) {

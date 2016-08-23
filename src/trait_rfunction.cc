@@ -49,41 +49,12 @@ void TraitRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGrap
         trait_prob = child_gender == MALE ? 0.5 : 1/3.0;
     } 
 
-/*    
-    if(sex_linked and (pat_trait == TRAIT_UA or pat_trait == TRAIT_AU)) {
-        pmatrix.set(pmatrix_index, 0.0);
-        return;
-    }
-*/
     // iterate over all descent graphs to determine child trait 
     // based on parents' traits
-//    if(not sex_linked) {
-        for(int i = 0; i < 2; ++i) {        // maternal
-            for(int j = 0; j < 2; ++j) {    // paternal
+    for(int i = 0; i < 2; ++i) {        // maternal
+        for(int j = 0; j < 2; ++j) {    // paternal
 
-                kid_trait = get_phased_trait(mat_trait, pat_trait, i, j, child_gender);
-                presum_index = pmatrix_index + (index_offset * static_cast<int>(kid_trait));
-
-                indices[pmatrix_index][peel_id] = static_cast<int>(kid_trait);
-
-                tmp = trait_cache[static_cast<int>(kid_trait)];
-                if(tmp == 0.0)
-                    continue;
-
-                for(unsigned int k = 0; k < previous_rfunctions.size(); ++k) {
-                    tmp *= previous_rfunctions[k]->get(indices[pmatrix_index]);
-                }
-
-                tmp *= (!dg ? trait_prob : trait_prob * get_recombination_probability(dg, peel_id, i, j));
-
-                total += tmp;
-            }
-        }
-/*    }
-    else {
-        for(int i = 0; i < 2; ++i) {        // maternal
-
-            kid_trait = get_phased_trait(mat_trait, pat_trait, i, 0, child_gender);
+            kid_trait = get_phased_trait(mat_trait, pat_trait, i, j, child_gender);
             presum_index = pmatrix_index + (index_offset * static_cast<int>(kid_trait));
 
             indices[pmatrix_index][peel_id] = static_cast<int>(kid_trait);
@@ -96,12 +67,12 @@ void TraitRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGrap
                 tmp *= previous_rfunctions[k]->get(indices[pmatrix_index]);
             }
 
-            tmp *= (!dg ? trait_prob : trait_prob * get_recombination_probability(dg, peel_id, i, 0));
+            tmp *= (!dg ? trait_prob : trait_prob * get_recombination_probability(dg, peel_id, i, j));
 
             total += tmp;
         }
     }
-*/
+
     pmatrix.set(pmatrix_index, total);
 }
 
@@ -157,43 +128,19 @@ void TraitRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentGra
                 trait_prob = child_gender == MALE ? 0.5 : 1/3.0;
             }
 
-/*
-            if(sex_linked and (pat_trait == TRAIT_UA or pat_trait == TRAIT_AU)) {
-                continue;
-            }
-*/
-            // XXX debugging, never prints
-            if(sex_linked and (pat_trait == TRAIT_UA or pat_trait == TRAIT_AU)) {
-                fprintf(stderr, "bad\n");
-                abort();
-            }
-
             double child_tmp = 0.0;
 
-            // XXX changing to not sex_linked or true did not change the results XXX
-//            if(not sex_linked) {
-                for(int i = 0; i < 2; ++i) {        // maternal allele
-                    for(int j = 0; j < 2; ++j) {    // paternal allele
-                        pivot_trait = get_phased_trait(mat_trait, pat_trait, i, j, child_gender);
-                    
-                        if(pivot_trait != kid_trait)
-                            continue;
-                    
-                        child_tmp += (!dg ? trait_prob : trait_prob * get_recombination_probability(dg, child_id, i, j));
-                    }
-                }
-/*            }
-            else {
-                for(int i = 0; i < 2; ++i) {        // maternal allele
-                    pivot_trait = get_phased_trait(mat_trait, pat_trait, i, 0, child_gender);
+            for(int i = 0; i < 2; ++i) {        // maternal allele
+                for(int j = 0; j < 2; ++j) {    // paternal allele
+                    pivot_trait = get_phased_trait(mat_trait, pat_trait, i, j, child_gender);
 
                     if(pivot_trait != kid_trait)
                         continue;
-
-                    child_tmp += (!dg ? trait_prob : trait_prob * get_recombination_probability(dg, child_id, i, 0));
+                    
+                    child_tmp += (!dg ? trait_prob : trait_prob * get_recombination_probability(dg, child_id, i, j));
                 }
             }
-*/
+
             child_prob *= child_tmp;
         }
         

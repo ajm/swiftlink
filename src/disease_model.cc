@@ -147,7 +147,7 @@ double DiseaseModel::get_penetrance_prob2(enum affection a, enum unphased_trait 
         return (sexlinked and s == MALE) ? 0.5 : 0.25;
     }
 
-    return ((a == AFFECTED) ? 0.0 : 1.0) - penetrance[t];
+    return ((a == AFFECTED) ? penetrance[t] : 1.0 - penetrance[t]);
 }
 
 double DiseaseModel::get_apriori_prob2(enum affection a, enum unphased_trait t, enum sex s) const {

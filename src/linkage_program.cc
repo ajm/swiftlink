@@ -120,8 +120,8 @@ LODscores* LinkageProgram::run_pedigree(Pedigree& p) {
 
 
     SequentialImputation si(&p, &map, &psg, dm.is_sexlinked());
-    si.run(dg, options.si_iterations);
-    //si.parallel_run(dg, options.si_iterations);
+    //si.run(dg, options.si_iterations);
+    si.parallel_run(dg, options.si_iterations);
 
     if(dg.get_likelihood() == LOG_ZERO) {
         fprintf(stderr, "error, bad descent graph %s:%d\n", __FILE__, __LINE__);

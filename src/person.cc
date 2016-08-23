@@ -115,15 +115,7 @@ void Person::_init_probs() {
         dm->get_apriori_prob2(get_affection(), TRAIT_HOMO_U, get_sex()) : \
         dm->get_penetrance_prob2(get_affection(), TRAIT_HOMO_U, get_sex());
 
-    double total = 0.0;
-
-    for(int i = 0; i < 4; ++i) {
-        total += disease_prob[i];
-    }
-
-    for(int i = 0; i < 4; ++i) {
-        disease_prob[i] /= total;
-    }
+    //printf("XXX %s %f %f %f %f\n", id.c_str(), disease_prob[TRAIT_AA], disease_prob[TRAIT_AU], disease_prob[TRAIT_UA], disease_prob[TRAIT_UU]);
 }
 
 bool Person::mendelian_errors() const {

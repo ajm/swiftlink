@@ -36,7 +36,7 @@ void TraitRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGrap
     
     enum sex child_gender = kid->get_sex();
 
-    double trait_prob = 0.25;
+    double trait_prob = sex_linked ? 0.5 : 0.25;
 
     double tmp;
     double total = 0.0;
@@ -44,10 +44,6 @@ void TraitRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGrap
         
     mat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][kid->get_maternalid()]);
     pat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][kid->get_paternalid()]);
-
-    if(sex_linked) {
-        trait_prob = child_gender == MALE ? 0.5 : 1/3.0;
-    } 
 
     // iterate over all descent graphs to determine child trait 
     // based on parents' traits
@@ -86,7 +82,7 @@ void TraitRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentGra
     
     double tmp;
     double total = 0.0;
-    double trait_prob = 0.25;
+    double trait_prob = sex_linked ? 0.5 : 0.25;
         
     
     for(unsigned a = 0; a < 4; ++a) {
@@ -122,10 +118,6 @@ void TraitRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentGra
             }
             else {
                 mat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][child->get_maternalid()]);
-            }
-
-            if(sex_linked) {
-                trait_prob = child_gender == MALE ? 0.5 : 1/3.0;
             }
 
             double child_tmp = 0.0;

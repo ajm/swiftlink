@@ -166,12 +166,6 @@ void SamplerRfunction::sample(vector<int>& pmk) {
     
     normalise(prob_dist);
 
-/*
-    fprintf(stderr, "[DIST] %s (%d) UU/AA/AU/UA %.3f/%.3f/%.3f/%.3f\n", \
-            ped->get_by_index(peel_id)->get_id().c_str(), peel_id, \
-            prob_dist[0], prob_dist[1], prob_dist[2], prob_dist[3]);
-*/
-
     // sample
     unsigned int last = 0;
     double r = get_random();
@@ -280,13 +274,7 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
                 mat_trait = static_cast<enum phased_trait>(indices[pmatrix_index][child->get_maternalid()]);
             }
             
-            //if(sex_linked and (pat_trait == TRAIT_AU or pat_trait == TRAIT_UA)) {
-                //continue;
-            //}
-
             child_prob *= transmission[c][transmission_index(mat_trait, pat_trait, kid_trait)];
-
-            //fprintf(stderr, "child_prob = %f (%d) [%d + %d = %d] = %f @%d\n", child_prob, child_id, mat_trait, pat_trait, kid_trait, get_recombination_probability(dg, peel_id, mat_trait, kid_trait, MATERNAL), locus);
         }
         
         tmp *= child_prob;
@@ -297,11 +285,6 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
     }
     
     pmatrix.set(pmatrix_index, total);
-/*
-    if(total == 0.0) {
-        fprintf(stderr, "ERROR: evaluate parent peel(%s) = ZERO\n", ped->get_by_index(peel_id)->get_id().c_str());
-    }
-*/
 }
 
 void SamplerRfunction::setup_transmission_cache() {

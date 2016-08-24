@@ -290,8 +290,8 @@ void GPULodscores::init_map() {
             loc_state->map->markerprobs[(i * 4) + 2],
             loc_state->map->markerprobs[(i * 4) + 3],
             loc_state->map->allelefreqs[i]);
-    }
 */
+    }
 }
 
 struct geneticmap* GPULodscores::gpu_init_map() {

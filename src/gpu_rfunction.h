@@ -19,10 +19,10 @@ enum {
 
 enum { 
     GPU_TRAIT_AA,
-    GPU_TRAIT_BB,
+    //GPU_TRAIT_BB,
     GPU_TRAIT_BA,
-    GPU_TRAIT_AB//,
-    //GPU_TRAIT_BB
+    GPU_TRAIT_AB,
+    GPU_TRAIT_BB
 };
 
 enum {

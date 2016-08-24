@@ -258,16 +258,40 @@ void GPULodscores::init_map() {
         loc_state->map->halfthetas[i] = map->get_theta_halfway(i);
         loc_state->map->halfinversethetas[i] = map->get_inversetheta_halfway(i);
         loc_state->map->partialthetas[i] = map->get_theta_partial_raw(i);
+/*
+        fprintf(stderr, "GPUDEBUG1 %f\t%f\t%f\t%f\t%f\n", 
+            loc_state->map->thetas[i],
+            loc_state->map->inversethetas[i],
+            loc_state->map->halfthetas[i],
+            loc_state->map->halfinversethetas[i],
+            loc_state->map->partialthetas[i]);
+*/
     }
     
     for(unsigned i = 0; i < map->num_markers(); ++i) {
         Snp& marker = map->get_marker(i);
+
+        loc_state->map->markerprobs[(i * 4) + 0] = marker.get_prob(TRAIT_UU, false);
+        loc_state->map->markerprobs[(i * 4) + 1] = marker.get_prob(TRAIT_AU, false);
+        loc_state->map->markerprobs[(i * 4) + 2] = marker.get_prob(TRAIT_UA, false);
+        loc_state->map->markerprobs[(i * 4) + 3] = marker.get_prob(TRAIT_AA, false);
+
+/*
         for(unsigned j = 0; j < 4; ++j) {
             enum phased_trait pt = static_cast<enum phased_trait>(j);
             loc_state->map->markerprobs[(i * 4) + j] = marker.get_prob(pt, false);
         }
+*/
         loc_state->map->allelefreqs[i] = marker.minor();
+/*
+        fprintf(stderr, "GPUDEBUG2 %f\t%f\t%f\t%f\t%f\n",
+            loc_state->map->markerprobs[(i * 4) + 0],
+            loc_state->map->markerprobs[(i * 4) + 1],
+            loc_state->map->markerprobs[(i * 4) + 2],
+            loc_state->map->markerprobs[(i * 4) + 3],
+            loc_state->map->allelefreqs[i]);
     }
+*/
 }
 
 struct geneticmap* GPULodscores::gpu_init_map() {
@@ -322,9 +346,15 @@ void GPULodscores::init_pedigree() {
         p->genotypes_length = tmp->istyped() ? map->num_markers() : 0 ;
         
         // probs
+/*
         for(int j = 0; j < 4; ++j) {
             p->prob[j] = tmp->get_disease_prob(static_cast<enum phased_trait>(j));
         }
+*/
+        p->prob[0] = tmp->get_disease_prob(TRAIT_UU);
+        p->prob[1] = tmp->get_disease_prob(TRAIT_AU);
+        p->prob[2] = tmp->get_disease_prob(TRAIT_UA);
+        p->prob[3] = tmp->get_disease_prob(TRAIT_AA);
         
         // genotypes
         if(tmp->istyped()) {

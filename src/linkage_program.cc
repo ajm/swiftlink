@@ -74,10 +74,10 @@ die:
 LODscores* LinkageProgram::run_pedigree_average(Pedigree& p, int repeats) {
     LODscores *ret, *tmp;
 
-    ret = run_pedigree(p);
+    ret = run_pedigree(p, 0);
 
     for(int i = 1; i < repeats; ++i) {
-        tmp = run_pedigree(p);
+        tmp = run_pedigree(p, i);
         ret->merge_results(tmp);
         delete tmp;
     }
@@ -85,7 +85,7 @@ LODscores* LinkageProgram::run_pedigree_average(Pedigree& p, int repeats) {
     return ret;
 }
 
-LODscores* LinkageProgram::run_pedigree(Pedigree& p) {
+LODscores* LinkageProgram::run_pedigree(Pedigree& p, int sequence_number) {
     
     if(options.verbose) {
         fprintf(stderr, "processing pedigree %s\n", p.get_id().c_str());
@@ -145,7 +145,7 @@ LODscores* LinkageProgram::run_pedigree(Pedigree& p) {
     
     options.sex_linked = dm.is_sexlinked();
 
-    MarkovChain chain(&p, &map, &psg, options);
+    MarkovChain chain(&p, &map, &psg, options, sequence_number);
     return chain.run(dg);
 
     //Mc3 chain(&p, &map, &psg, options);

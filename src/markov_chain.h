@@ -36,13 +36,16 @@ class MarkovChain {
     vector<int> l_ordering;
     vector<int> m_ordering;
 
+    FILE* coda_filehandle;
+    int seq_num;
+
     double temperature;
 
     void _init();
     void _kill();
 
  public :
-    MarkovChain(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator* psg, struct mcmc_options options, double temp=1.0) :
+    MarkovChain(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator* psg, struct mcmc_options options, int sequence_num, double temp=1.0) :
         ped(ped), 
         map(*map), 
         psg(psg),
@@ -56,6 +59,8 @@ class MarkovChain {
         msampler(ped, map, options.sex_linked),
         l_ordering(),
         m_ordering(),
+        coda_filehandle(NULL),
+        seq_num(sequence_num),
         temperature(temp) {
     
         _init();

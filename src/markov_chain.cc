@@ -1,6 +1,8 @@
+#include <cstdio>
 #include <cmath>
 #include <vector>
 #include <algorithm>
+#include <string>
 
 #include <time.h>
 
@@ -76,6 +78,13 @@ void MarkovChain::_init() {
             m_ordering.push_back(i);
         }
     }
+
+    // create coda file if necessary
+    if(options.coda_logging) {
+        string fname = options.coda_prefix + ".ped" + ped->get_id() + ".run" + to_string(seq_num);
+        coda_filehandle = fopen(fname.c_str(), "w");
+        printf("opened CODA log file (%s)\n", fname.c_str());
+    }
 }
 
 void MarkovChain::_kill() {
@@ -84,6 +93,10 @@ void MarkovChain::_kill() {
     }
     for(int i = 0; i < int(peelers.size()); ++i) {
         delete peelers[i];
+    }
+
+    if(options.coda_logging) {
+        fclose(coda_filehandle);
     }
 }
 
@@ -244,19 +257,16 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
         p.increment();
         
         
-#ifdef CODA_OUTPUT
-        if((i % options.scoring_period) == 0) {
+        if(options.coda_logging and ((i % options.scoring_period) == 0)) {
             double current_likelihood = dg.get_likelihood();
             if(current_likelihood == LOG_ILLEGAL) {
                 fprintf(stderr, "error: descent graph illegal...\n");
                 abort();
             }
             
-            fprintf(stderr, "%d\t%f\n", i+1, current_likelihood);
+            fprintf(coda_filehandle, "%d\t%f\n", i+1, current_likelihood);
         }
 
-        continue;
-#endif
         
         if(i < options.burnin) {
             continue;

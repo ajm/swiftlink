@@ -62,11 +62,17 @@ void _usage(char *prog) {
 "  -l FLOAT,   --lsamplerprobability=FLOAT (default = %.1f)\n"
 "  -n NUM,     --lodscores=NUM             (default = %d)\n"
 "  -R NUM,     --runs=NUM                  (default = %d)\n"
+"\n"
+"MCMC diagnostic options:\n"
+"  -C,         --coda\n"
+"  -P PREFIX,  --codaprefix=PREFIX         (default = %s)\n"
+"\n"
+//"Metropolis-coupled MCMC options:\n"
 //"  -M,         --mcmcmc\n"
 //"  -z NUM,     --chains=NUM                (default = %d)\n"
 //"  -y NUM,     --exchangeperiod=NUM        (default = %d)\n"
 //"  -t FLOAT,FLOAT,... --temperatures=FLOAT,FLOAT,...\n"
-"\n"
+//"\n"
 "ELOD options:\n"
 "  -e          --elod\n"
 "  -f FLOAT    --frequency=FLOAT           (default = %.4f)\n"
@@ -100,6 +106,7 @@ DEFAULT_MCMC_SCORING_PERIOD,
 DEFAULT_LSAMPLER_PROB,
 DEFAULT_LODSCORES,
 DEFAULT_MCMC_RUNS,
+DEFAULT_CODA_PREFIX,
 //DEFAULT_MCMC_CHAINS,
 //DEFAULT_MCMC_EXCHANGE_PERIOD,
 DEFAULT_ELOD_FREQUENCY,
@@ -211,6 +218,8 @@ void _handle_args(int argc, char **argv) {
             //{"mcmcmc",              no_argument,        0,      'M'},
             {"sexlinked",           no_argument,        0,      'X'},
             {"runs",                required_argument,  0,      'R'},
+            {"coda",                no_argument,        0,      'C'},
+            {"codaprefix",          required_argument,  0,      'P'},
             {0, 0, 0, 0}
 	    };
     
@@ -218,7 +227,7 @@ void _handle_args(int argc, char **argv) {
     
 	while ((ch = getopt_long(argc, argv, 
                     //":p:d:m:o:i:b:s:l:c:x:q:r:n:vhcgz:y:t:ew:k:f:u:j:aMX", 
-                    ":p:d:m:o:i:b:s:l:c:x:q:r:n:vhcgew:k:f:u:aXR:",
+                    ":p:d:m:o:i:b:s:l:c:x:q:r:n:vhcgew:k:f:u:aXR:CP:",
                     long_options, &option_index)) != -1) {
 		switch (ch) {
 			case 'p':
@@ -494,6 +503,14 @@ void _handle_args(int argc, char **argv) {
                     fprintf(stderr, "%s: number of MCMC runs must be greater than zero ('%d' given)\n", argv[0], options.mcmc_runs);
                     exit(EXIT_FAILURE);
                 }
+                break;
+
+            case 'C':
+                options.coda_logging = true;
+                break;
+
+            case 'P':
+                options.coda_prefix = string(optarg);
                 break;
 
             case ':':

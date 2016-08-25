@@ -10,7 +10,7 @@ class LODscores;
 
 class LinkageProgram : public Program {
     
-    LODscores* run_pedigree(Pedigree& p);
+    LODscores* run_pedigree(Pedigree& p, int sequence_num);
     LODscores* run_pedigree_average(Pedigree& p, int repeats);
 
  public :

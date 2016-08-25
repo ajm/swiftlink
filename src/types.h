@@ -62,6 +62,10 @@ struct mcmc_options {
     int scoring_period;
     int mcmc_runs;
 
+    // coda
+    bool coda_logging;
+    string coda_prefix;
+
     // linkage
     int lodscores;
     int peelopt_iterations;
@@ -100,6 +104,8 @@ struct mcmc_options {
         si_iterations(DEFAULT_SEQUENTIALIMPUTATION_RUNS),
         scoring_period(DEFAULT_MCMC_SCORING_PERIOD),
         mcmc_runs(DEFAULT_MCMC_RUNS),
+        coda_logging(false),
+        coda_prefix(DEFAULT_CODA_PREFIX),
         lodscores(DEFAULT_LODSCORES),
         peelopt_iterations(DEFAULT_PEELOPT_ITERATIONS),
         lsampler_prob(DEFAULT_LSAMPLER_PROB),

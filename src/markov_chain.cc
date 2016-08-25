@@ -33,7 +33,7 @@ void MarkovChain::_init() {
     map.set_temperature(temperature);
 
     // create samplers
-    for(int i = 0; i < get_max_threads(); ++i) {
+    for(int i = 0; i < min(get_max_threads(), int(map.num_markers())); ++i) {
         LocusSampler* tmp = new LocusSampler(ped, &map, psg, i, options.sex_linked);
         lsamplers.push_back(tmp);
     }
@@ -41,7 +41,7 @@ void MarkovChain::_init() {
     lod = new LODscores(&map);
 
     // lod scorers
-    for(int i = 0; i < get_max_threads(); ++i) {
+    for(int i = 0; i < min(get_max_threads(), int((map.num_markers() - 1) * map.get_lodscore_count())); ++i) {
         Peeler* tmp = new Peeler(ped, &map, psg, lod, options.sex_linked);
         peelers.push_back(tmp);
     }
@@ -196,10 +196,10 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
         if(get_random() < options.lsampler_prob) {
             
             random_shuffle(l_ordering.begin(), l_ordering.end());
-            vector<int> thread_assignments(get_max_threads(), -1);
+            vector<int> thread_assignments(lsamplers.size(), -1);
             vector<int> tmp(l_ordering);
 
-            #pragma omp parallel
+            #pragma omp parallel num_threads(lsamplers.size())
             {
                 while(1) {
                     #pragma omp critical 
@@ -223,6 +223,11 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
                     
                     lsamplers[get_thread_num()]->set_locus_minimal(thread_assignments[get_thread_num()]);
                     lsamplers[get_thread_num()]->step(dg, thread_assignments[get_thread_num()]);
+
+                    #pragma omp critical
+                    {
+                        thread_assignments[get_thread_num()] = -1;
+                    }
                 }
             }
         }
@@ -291,7 +296,7 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
 
 bool MarkovChain::noninterferring(vector<int>& x, int val) {
     for(int i = 0; i < int(x.size()); ++i) {
-        if(i != get_thread_num()) {
+        if((i != get_thread_num()) and (x[i] != -1)) {
             int diff = val - x[i];
             if((diff == 1) or (diff == -1)) {
                 return false;

@@ -76,7 +76,11 @@ void _usage(char *prog) {
 "\n"
 "Runtime options:\n"
 "  -c NUM,     --cores=NUM                 (default = %d)\n"
+#ifndef USE_CUDA
+"  -g,         --gpu                       [UNAVAILABLE, COMPILED WITHOUT CUDA]\n"
+#else
 "  -g,         --gpu\n"
+#endif
 "\n"
 "Misc:\n"
 "  -X,         --sexlinked\n"
@@ -315,8 +319,13 @@ void _handle_args(int argc, char **argv) {
                 break;
                 
             case 'g':
+#ifdef USE_CUDA
                 options.use_gpu = true;
                 break;
+#else
+                fprintf(stderr, "Error: SwiftLink was compiled without CUDA support, exiting...\n");
+                exit(EXIT_FAILURE);
+#endif
                 
             case 'q':
                 if(not str2int(options.peelopt_iterations, optarg)) {

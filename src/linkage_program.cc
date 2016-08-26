@@ -29,6 +29,28 @@ bool LinkageProgram::run() {
     bool ret = true;
     LinkageWriter lw(&map, outfile, options.verbose);
 
+
+    fprintf(stderr, "\nLinkage parameters:\n"
+                    "\tpenetrance = %.2f:%.2f:%.2f\n"
+                    "\ttrait freq = %.2e\n"
+                    "\tsex-linked = %s\n"
+                    "\tburnin iterations = %d\n"
+                    "\tsampling iterations = %d\n"
+                    "\tsampling period = %d\n"
+                    "\tlocus sampler prob = %.3f\n"
+                    "\tnumber of runs = %d\n\n",
+                    dm.get_penetrance(TRAIT_HOMO_U),
+                    dm.get_penetrance(TRAIT_HETERO),
+                    dm.get_penetrance(TRAIT_HOMO_A),
+                    dm.get_freq(),
+                    options.sex_linked ? "true" : "false",
+                    options.burnin,
+                    options.iterations,
+                    options.scoring_period,
+                    options.lsampler_prob,
+                    options.mcmc_runs);
+
+
     init_random();
     if(options.random_filename == "") {
         seed_random_implicit();

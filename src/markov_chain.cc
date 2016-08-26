@@ -81,7 +81,10 @@ void MarkovChain::_init() {
 
     // create coda file if necessary
     if(options.coda_logging) {
-        string fname = options.coda_prefix + ".ped" + ped->get_id() + ".run" + to_string(seq_num);
+        //string fname = options.coda_prefix + ".ped" + ped->get_id() + ".run" + to_string(seq_num); // does not work on gcc 4.8.X
+        char buf[4];
+        sprintf(buf, "%d", seq_num);
+        string fname = options.coda_prefix + ".ped" + ped->get_id() + ".run" + string(buf);
         coda_filehandle = fopen(fname.c_str(), "w");
         printf("opened CODA log file (%s)\n", fname.c_str());
     }

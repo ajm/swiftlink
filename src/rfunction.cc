@@ -119,11 +119,8 @@ void Rfunction::evaluate_partner_peel(unsigned int pmatrix_index) {
     
     unsigned int presum_index;
     
-    enum phased_trait partner_trait;
-    
     
     for(unsigned i = 0; i < 4; ++i) {
-        partner_trait = static_cast<enum phased_trait>(i);        
         presum_index = pmatrix_index + (index_offset * i);
         
         indices[pmatrix_index][peel_id] = i;

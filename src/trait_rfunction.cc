@@ -73,9 +73,6 @@ void TraitRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGrap
 }
 
 void TraitRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentGraph* dg) {
-    
-    unsigned int presum_index;
-    
     enum phased_trait pivot_trait;
     enum phased_trait mat_trait;
     enum phased_trait pat_trait;
@@ -87,7 +84,6 @@ void TraitRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentGra
     
     for(unsigned a = 0; a < 4; ++a) {
         mat_trait = pat_trait = static_cast<enum phased_trait>(a);
-        presum_index = pmatrix_index + (index_offset * a);
         
         indices[pmatrix_index][peel_id] = a;
         

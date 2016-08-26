@@ -51,7 +51,8 @@ class LocusSampler : Sampler {
         rfunctions(rhs.rfunctions),
         locus(rhs.locus),
         ignore_left(rhs.ignore_left),
-        ignore_right(rhs.ignore_right) {}
+        ignore_right(rhs.ignore_right),
+        sex_linked(rhs.sex_linked) {}
     
     LocusSampler& operator=(const LocusSampler& rhs) {
         

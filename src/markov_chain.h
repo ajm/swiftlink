@@ -84,6 +84,8 @@ class MarkovChain {
         msampler(rhs.msampler), 
         l_ordering(rhs.l_ordering),
         m_ordering(rhs.m_ordering),
+        coda_filehandle(rhs.coda_filehandle),
+        seq_num(rhs.seq_num),
         temperature(rhs.temperature) {}
     
     MarkovChain& operator=(const MarkovChain& rhs) {

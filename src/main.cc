@@ -75,7 +75,7 @@ void _usage(char *prog) {
 //"\n"
 "ELOD options:\n"
 "  -e          --elod\n"
-"  -f FLOAT    --frequency=FLOAT           (default = %.4f)\n"
+"  -f FLOAT    --frequency=FLOAT           (default = %.1e)\n"
 "  -w FLOAT    --separation=FLOAT          (default = %.4f)\n"
 "  -k FLOAT,FLOAT,FLOAT --penetrance=FLOAT,FLOAT,FLOAT(default = %.2f,%.2f,%.2f)\n"
 "  -u NUM      --replicates=NUM            (default = %d)\n"

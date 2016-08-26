@@ -10,11 +10,11 @@ GPUCC := nvcc
 #LIBS := -L/usr/local/cuda/lib -L/usr/lib32 -lcudart -lgomp -lgsl -lgslcblas -lrt
 #GPUFLAGS := -arch=sm_20 -O2 -m32
 
-CXXFLAGS := -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe -fopenmp -g -O2
+CXXFLAGS := -g -O2 -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe -fopenmp -DUSE_CUDA #-DCUDA_SHAREDMEM_CACHE
 CFLAGS := -g -O2 -Wall -pipe -fopenmp
 LDFLAGS :=
-INCLUDES := -I.
-LIBS := -lgsl -lgslcblas
+INCLUDES := -I. -I/usr/local/cuda/include
+LIBS := -lgomp -lgsl -lgslcblas -lrt -L/usr/local/cuda/lib64 -lcudart
 GPUFLAGS := -arch=sm_20 -O2
 
 OBJECTS	:= \
@@ -47,11 +47,9 @@ OBJECTS	:= \
 	linkage_program.o \
 	program.o \
 	progress.o \
-    main.o \
     mc3.o \
-    elod.o #\
-    elod_main.o #\
-    main.o #\
+    elod.o \
+	main.o \
 	gpu_lodscores.o \
 	cuda_linkage.o
 

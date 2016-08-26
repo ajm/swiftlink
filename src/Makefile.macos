@@ -1,5 +1,7 @@
-CXX	:= g++
-CC := gcc
+#CXX	:= g++
+#CC := gcc
+CC := clang-omp
+CXX := clang-omp++
 GPUCC := nvcc
 
 # 32bit
@@ -14,7 +16,7 @@ CXXFLAGS := -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe -fopenmp -g -O2
 CFLAGS := -g -O2 -Wall -pipe -fopenmp
 LDFLAGS :=
 INCLUDES := -I.
-LIBS := -lgsl -lgslcblas
+LIBS := -lgsl -lgslcblas -liomp5
 GPUFLAGS := -arch=sm_20 -O2
 
 OBJECTS	:= \

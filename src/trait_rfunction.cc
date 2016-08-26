@@ -26,8 +26,6 @@ double TraitRfunction::get_trait_probability(unsigned person_id, enum phased_tra
 }
 
 void TraitRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGraph* dg) {
-    
-    unsigned int presum_index;
     Person* kid = ped->get_by_index(peel_id);
     
     enum phased_trait kid_trait;
@@ -49,9 +47,7 @@ void TraitRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGrap
     // based on parents' traits
     for(int i = 0; i < 2; ++i) {        // maternal
         for(int j = 0; j < 2; ++j) {    // paternal
-
             kid_trait = get_phased_trait(mat_trait, pat_trait, i, j, child_gender);
-            presum_index = pmatrix_index + (index_offset * static_cast<int>(kid_trait));
 
             indices[pmatrix_index][peel_id] = static_cast<int>(kid_trait);
 

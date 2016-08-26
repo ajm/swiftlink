@@ -232,6 +232,7 @@ void SamplerRfunction::evaluate_child_peel(unsigned int pmatrix_index, DescentGr
 */
 }
 
+#pragma GCC diagnostic ignored "-Wunused-parameter" // dg used moved due to optimisation
 void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentGraph* dg) {
     
     unsigned int presum_index;
@@ -243,8 +244,6 @@ void SamplerRfunction::evaluate_parent_peel(unsigned int pmatrix_index, DescentG
     double tmp;
     double total = 0.0;
         
-    //dg->illegal(); // get rid of warning
-    
     for(unsigned int i = 0; i < 4; ++i) {
         mat_trait = pat_trait = static_cast<enum phased_trait>(i);
         presum_index = pmatrix_index + (index_offset * i);

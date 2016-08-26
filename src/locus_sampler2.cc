@@ -124,6 +124,7 @@ void LocusSampler::sample_meiosis_indicators(vector<int>& pmk, DescentGraph& dg)
     }
 }
 
+#pragma GCC diagnostic ignored "-Wunused-parameter" // parameter use moved due to optimisation
 void LocusSampler::step(DescentGraph& dg, unsigned parameter) {
     //fprintf(stderr, "[STEP]\n");   
     //set_locus_minimal(parameter); // XXX doing this here messes up the sequential imputation bits

@@ -259,23 +259,20 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
         
         p.increment();
         
-        
-        if(options.coda_logging and ((i % options.scoring_period) == 0)) {
-            double current_likelihood = dg.get_likelihood();
-            if(current_likelihood == LOG_ILLEGAL) {
-                fprintf(stderr, "error: descent graph illegal...\n");
-                abort();
-            }
-            
-            fprintf(coda_filehandle, "%d\t%f\n", i+1, current_likelihood);
-        }
-
-        
         if(i < options.burnin) {
             continue;
         }
         
         if((i % options.scoring_period) == 0) {
+            if(options.coda_logging) {
+                double current_likelihood = dg.get_likelihood();
+                if(current_likelihood == LOG_ILLEGAL) {
+                    fprintf(stderr, "error: descent graph illegal...\n");
+                    abort();
+                }
+
+                fprintf(coda_filehandle, "%d\t%f\n", i+1, current_likelihood);
+            }
          
 #ifdef USE_CUDA
             if(not options.use_gpu) {

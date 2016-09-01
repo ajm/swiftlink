@@ -4,6 +4,19 @@ SwiftLink performs multipoint parametric linkage analysis on large consanguineou
 
 The SwiftLink source code is licensed under the [GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html).
 
+If you use SwiftLink in your work please cite [Medlar et al, 2013](http://bioinformatics.oxfordjournals.org/content/29/4/413.long)
+
+    @article{medlar2013swiftlink,
+      title={SwiftLink: parallel MCMC linkage analysis using multicore CPU and GPU},
+      author={Medlar, Alan and G{\l}owacka, Dorota and Stanescu, Horia and Bryson, Kevin and Kleta, Robert},
+      journal={Bioinformatics},
+      volume={29},
+      number={4},
+      pages={413--419},
+      year={2013},
+      publisher={Oxford Univ Press}
+    }
+
 ## Installation
 
 SwiftLink's only mandatory dependency is GNU scientific library for the Mersenne Twister pseudo random number generator. Optionally, SwiftLink can be compiled with CUDA support.

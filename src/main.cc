@@ -65,7 +65,7 @@ void _usage(char *prog) {
 "\n"
 "MCMC diagnostic options:\n"
 "  -T,         --trace\n"
-"  -P PREFIX,  --traceprefix=PREFIX         (default = '%s')\n"
+"  -P PREFIX,  --traceprefix=PREFIX        (default = '%s')\n"
 "\n"
 //"Metropolis-coupled MCMC options:\n"
 //"  -M,         --mcmcmc\n"

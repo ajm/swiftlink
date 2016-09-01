@@ -43,13 +43,13 @@ SwiftLink does not work properly using CUDA versions 4.1 and 4.2 due to a known 
 
 ## Examples
 
-All the input files used in the following commands can be found in the [examples](https://github.com/ajm/swiftlink/tree/master/examples) directory.
+All the input files used in the following commands can be found in the [examples](https://github.com/ajm/swiftlink/tree/master/examples) directory. We use the pedigree from [Bockenhauer et al, 2009](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3398803/), but the data and map are simulated.
 
 ### Expected LOD (ELOD) score
 
 SwiftLink can calculate an expected LOD (ELOD) score for your pedigree:
 
-    swift -p ped --elod
+    swift -p east.ped --elod
 
 The ELOD score can be used both as a power analysis and as an additional quality control post-analysis. If the maximum LOD score differs considerably from the ELOD, then this could point to an unidentified problem with the input data or other model misspecification.
 
@@ -57,7 +57,7 @@ The ELOD score can be used both as a power analysis and as an additional quality
 
 The simplest way to run a linkage analysis with SwiftLink, i.e. with default parameters, is the following:
 
-    swift -p ped -m map -d dat -o results.txt
+    swift -p east.ped -m east.map -d east.dat -o results.txt
 
 This will perform either an autosomal or X-linked analysis dependent on whether it is specified in the first line of the DAT file (SwiftLink can be forced to perform an X-linked analysis with the -X flag, see options). By default SwiftLink only uses a single CPU core.
 
@@ -65,25 +65,25 @@ This will perform either an autosomal or X-linked analysis dependent on whether 
 
 SwiftLink can be efficiently run across multiple CPU cores. Here we perform the same analysis using four CPUs:
 
-    swift -p ped -m map -d dat -o results.txt -c 4 
+    swift -p east.ped -m east.map -d east.dat -o results.txt -c 4 
 
 ### Performing multiple runs
 
 SwiftLink has a builtin function to perform multiple Markov chains and output LOD scores averaged over all runs:
 
-    swift -p ped -m map -d dat -o results.txt -c 4 -R 4
+    swift -p east.ped -m east.map -d east.dat -o results.txt -c 4 -R 4
 
 ### Affected-only analysis
 
 SwiftLink can easily perform an affected-only analysis, forcing all negative affection statuses to unknown status:
 
-    swift -p ped -m map -d dat -o results.txt -c 4 -a
+    swift -p east.ped -m east.map -d east.dat -o results.txt -c 4 -a
 
 ### Using the GPU
 
 If you have a CUDA-compatible GPU and have the CUDA drivers installed, SwiftLink can offload LOD score calculations to it and speed up the overall runtime. The GPU code only supports autosomal linkage analysis:
 
-    swift -p ped -m map -d dat -o results.txt -c 4 -g
+    swift -p east.ped -m east.map -d east.dat -o results.txt -c 4 -g
 
 ### MCMC options and convergence diagnostics
 
@@ -91,11 +91,11 @@ The [examples](https://github.com/ajm/swiftlink/tree/master/examples) directory 
 
 This command runs SwiftLink for 1,000,000 iterations of burnin, followed by 1,000,000 iterations of simulation, sampling every 100th descent graph for LOD score estimation:
 
-    swift -p ped -m map -d dat -o results.txt -c 4 -b 1000000 -i 1000000 -x 100
+    swift -p east.ped -m east.map -d east.dat -o results.txt -c 4 -b 1000000 -i 1000000 -x 100
 
 This command performs 4 separate runs and, for each run, outputs a log file starting with the prefix "log" that can be used as input to the CODA R package:
 
-    swift -p ped -m map -d dat -o results.txt -c 4 -R 4 --trace --traceprefix log
+    swift -p east.ped -m east.map -d east.dat -o results.txt -c 4 -R 4 --trace --traceprefix log
 
 #### Using CODA R package to perform diagnostics
 

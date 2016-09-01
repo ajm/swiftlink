@@ -43,7 +43,7 @@ bool LinkageProgram::run() {
                     dm.get_penetrance(TRAIT_HETERO),
                     dm.get_penetrance(TRAIT_HOMO_A),
                     dm.get_freq(),
-                    options.sex_linked ? "true" : "false",
+                    dm.is_sexlinked() ? "true" : "false",
                     options.burnin,
                     options.iterations,
                     options.scoring_period,

@@ -64,8 +64,8 @@ void _usage(char *prog) {
 "  -R NUM,     --runs=NUM                  (default = %d)\n"
 "\n"
 "MCMC diagnostic options:\n"
-"  -C,         --coda\n"
-"  -P PREFIX,  --codaprefix=PREFIX         (default = %s)\n"
+"  -T,         --trace\n"
+"  -P PREFIX,  --traceprefix=PREFIX         (default = '%s')\n"
 "\n"
 //"Metropolis-coupled MCMC options:\n"
 //"  -M,         --mcmcmc\n"
@@ -218,8 +218,8 @@ void _handle_args(int argc, char **argv) {
             //{"mcmcmc",              no_argument,        0,      'M'},
             {"sexlinked",           no_argument,        0,      'X'},
             {"runs",                required_argument,  0,      'R'},
-            {"coda",                no_argument,        0,      'C'},
-            {"codaprefix",          required_argument,  0,      'P'},
+            {"trace",               no_argument,        0,      'T'},
+            {"traceprefix",         required_argument,  0,      'P'},
             {0, 0, 0, 0}
 	    };
     
@@ -227,7 +227,7 @@ void _handle_args(int argc, char **argv) {
     
 	while ((ch = getopt_long(argc, argv, 
                     //":p:d:m:o:i:b:s:l:c:x:q:r:n:vhcgz:y:t:ew:k:f:u:j:aMX", 
-                    ":p:d:m:o:i:b:s:l:c:x:q:r:n:vhcgew:k:f:u:aXR:CP:",
+                    ":p:d:m:o:i:b:s:l:c:x:q:r:n:vhcgew:k:f:u:aXR:TP:",
                     long_options, &option_index)) != -1) {
 		switch (ch) {
 			case 'p':
@@ -505,7 +505,7 @@ void _handle_args(int argc, char **argv) {
                 }
                 break;
 
-            case 'C':
+            case 'T':
                 options.coda_logging = true;
                 break;
 

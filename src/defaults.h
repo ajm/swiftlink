@@ -7,14 +7,14 @@ const double DEFAULT_ELOD_SEPARATION        = 0.05;
 const int DEFAULT_ELOD_REPLICATES           = 1000000;
 
 const int DEFAULT_MCMC_CHAINS               = 1;
-const int DEFAULT_MCMC_ITERATIONS           = 80000;
-const int DEFAULT_MCMC_BURNIN               = 20000;
+const int DEFAULT_MCMC_ITERATIONS           = 50000;
+const int DEFAULT_MCMC_BURNIN               = 50000;
 const int DEFAULT_MCMC_EXCHANGE_PERIOD      = 10;
 const int DEFAULT_MCMC_SCORING_PERIOD       = 10;
 const int DEFAULT_MCMC_RUNS                 = 1;
 
 #define DEFAULT_RESULTS_FILENAME "swiftlink.out"
-#define DEFAULT_CODA_PREFIX "coda"
+#define DEFAULT_CODA_PREFIX "trace"
 
 const int DEFAULT_SEQUENTIALIMPUTATION_RUNS = 1000;
 

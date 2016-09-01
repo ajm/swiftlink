@@ -86,7 +86,8 @@ void MarkovChain::_init() {
         sprintf(buf, "%d", seq_num);
         string fname = options.coda_prefix + ".ped" + ped->get_id() + ".run" + string(buf);
         coda_filehandle = fopen(fname.c_str(), "w");
-        printf("opened CODA log file (%s)\n", fname.c_str());
+        fprintf(coda_filehandle, "iteration likelihood\n");
+        printf("opened trace file (%s)\n", fname.c_str());
     }
 }
 

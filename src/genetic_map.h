@@ -23,6 +23,7 @@ class Snp {
     unsigned int physical_distance;
     double major_freq;
     double minor_freq;
+    bool maf_set;
     double prob[4];
     double x_male_prob[4];
 
@@ -32,7 +33,8 @@ class Snp {
         genetic_distance(genetic), 
         physical_distance(physical),
         major_freq(1.0), 
-        minor_freq(0.0) {}
+        minor_freq(0.0),
+        maf_set(false) {}
 
     ~Snp() {}
     
@@ -41,11 +43,13 @@ class Snp {
     void set_minor_freq(double m) {
         minor_freq = m;
         major_freq = 1.0 - m;
+        maf_set = true;
     }
     
     string get_name() const { return name; }
     double get_g_distance() const { return genetic_distance; }
     unsigned int get_p_distance() const { return physical_distance; }
+    bool is_maf_set() const { return maf_set; }
 	
 	string debug_string() {
 	    stringstream ss;

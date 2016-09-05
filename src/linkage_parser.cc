@@ -355,6 +355,11 @@ bool LinkageParser::read_numbered_allele() {
 		return false;
 
 	if(marker_linenum >= 2) {
+        if(int(map.num_markers()) <= markers_read[NUMBERED_ALLELES]) {
+            fprintf(stderr, "Error: more alleles in DAT file than MAP file!\nExiting...\n");
+            exit(EXIT_FAILURE);
+        }
+
 		map[markers_read[NUMBERED_ALLELES]].set_minor_freq(marker_freq);
 		marker_end();
 	}

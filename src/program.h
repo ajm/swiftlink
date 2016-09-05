@@ -40,6 +40,7 @@ class Program {
 	    outfile(out) {
 
         if(! read_and_check_input()) {
+            fprintf(stderr, "Exiting...\n");
             exit(1);
         }
     }

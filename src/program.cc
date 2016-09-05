@@ -40,7 +40,7 @@ bool Program::read_and_check_input() {
     }
 
     if(! map.sanity_check()) {
-		fprintf(stderr, "error: map data failed sanity check...\n");
+		fprintf(stderr, "Error: map data failed sanity check...\n");
 		return false;
 	}
 
@@ -50,6 +50,15 @@ bool Program::read_and_check_input() {
 		//fprintf(stderr, "errors parsing pedigree file, exiting...\n");
 		return false;
 	}
+
+    for(unsigned int i = 0; i < pedigrees.size(); ++i) {
+        if(map.num_markers() != pedigrees[i].num_markers()) {
+            fprintf(stderr, 
+                    "Error: different number of markers in \"%s\" pedigree (%d) versus map (%d)\nExiting...\n", 
+                    pedigrees[i].get_id().c_str(), pedigrees[i].num_markers(), map.num_markers());
+            exit(EXIT_FAILURE);
+        }
+    }
 
 	return true;
 }

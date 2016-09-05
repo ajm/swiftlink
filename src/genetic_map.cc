@@ -15,7 +15,21 @@ bool GeneticMap::sanity_check() {
     double tmp;
 
     if(map.size() != (thetas.size() + 1)) {
-        fprintf(stderr, "error: number of markers = %d, number of thetas = %d\n", int(map.size()), int(thetas.size()));
+        bool dat_warning = false;
+
+        fprintf(stderr, "Error: number of markers = %d, number of thetas = %d\n", int(map.size()), int(thetas.size()));
+
+        for(int i = 0; i < int(map.size()); ++i) {
+            if(not map[i].is_maf_set()) {
+                fprintf(stderr, "Error: marker %d (%s) does not have a minor allele frequency\n", i+1, map[i].get_name().c_str());
+                dat_warning = true;
+            }
+        }
+
+        if(dat_warning) {
+            fprintf(stderr, "Error: please check that DAT and MAP files are consistent...\n");
+        }
+
         return false;
     }
     
@@ -28,7 +42,15 @@ bool GeneticMap::sanity_check() {
     thetas.clear();
     inversethetas.clear();
     for(unsigned i = 1; i < map.size(); ++i) {
-        add_theta(haldane(map[i].get_g_distance() - map[i-1].get_g_distance()));
+        tmp = haldane(map[i].get_g_distance() - map[i-1].get_g_distance());
+        add_theta(tmp);
+
+        if(tmp == 0.0) {
+            fprintf(stderr, 
+                    "Error: recombination fraction between %s and %s (markers %d and %d) is zero! (sampling will not work properly)\nExiting...\n", 
+                    map[i-1].get_name().c_str(), map[i].get_name().c_str(), i-1, i);
+            exit(EXIT_FAILURE);
+        }
     }
     // XXX
 

@@ -70,6 +70,6 @@ bool MapParser::parse_line(const int linenum, const string line) {
 bool MapParser::parse_end() {
     // annoyingly, the map cannot be sanity checked, because
     // the linkage file needs to be read first 
-    return true;
+    return map.num_markers() > 1;
 }
 

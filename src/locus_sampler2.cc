@@ -135,8 +135,10 @@ void LocusSampler::step(DescentGraph& dg, unsigned parameter) {
     }
 
     if(rfunctions.back().get_result() == 0.0) {
-        fprintf(stderr, "\n\n\nrfunction returned zero %s:%d\n", __FILE__, __LINE__);
-        abort();
+        //fprintf(stderr, "\n\n\nrfunction returned zero %s:%d\n", __FILE__, __LINE__);
+        //abort();
+        fprintf(stderr, "\n\nError: likelihood is zero! (check penetrance function?)\nExiting...\n");
+        exit(EXIT_FAILURE);
     }
     
     vector<int> pmk(ped->num_members(), -1);

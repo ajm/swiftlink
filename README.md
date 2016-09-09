@@ -68,7 +68,7 @@ For an X-linked recessive trait with complete penetrance:
 
     swift -p xlinked.ped --elod -X
 
-For a dominant trait with complete penetrance:
+For a dominant trait with complete penetrance (for illustrative purposes only, the file dominant.ped is not provided):
 
     swift -p dominant.ped --elod --penetrance=0.0,1.0,1.0
 

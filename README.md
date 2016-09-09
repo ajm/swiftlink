@@ -17,6 +17,10 @@ If you use SwiftLink in your work please cite [Medlar et al, 2013](http://bioinf
       publisher={Oxford Univ Press}
     }
 
+## Contact
+
+If you have an questions about installing or running SwiftLink, please contact <a href="mailto:alan.j.medlar AT helsinki DOT fi">Alan Medlar</a>
+
 ## Installation
 
 SwiftLink's only mandatory dependency is GNU scientific library for the Mersenne Twister pseudo random number generator. Optionally, SwiftLink can be compiled with CUDA support.

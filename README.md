@@ -60,9 +60,17 @@ All the input files used in the following commands can be found in the [examples
 
 ### Expected LOD (ELOD) score
 
-SwiftLink can calculate an expected LOD (ELOD) score for your pedigree:
+SwiftLink can calculate an expected LOD (ELOD) score for your pedigree assuming a recessive trait with complete penetrance (the default):
 
     swift -p east.ped --elod
+
+For an X-linked recessive trait with complete penetrance:
+
+    swift -p xlinked.ped --elod -X
+
+For a dominant trait with complete penetrance:
+
+    swift -p dominant.ped --elod --penetrance=0.0,1.0,1.0
 
 The ELOD score can be used both as a power analysis and as an additional quality control post-analysis. If the maximum LOD score differs considerably from the ELOD, then this could point to an unidentified problem with the input data or other model misspecification.
 

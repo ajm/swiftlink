@@ -114,8 +114,8 @@ This command performs 4 separate runs and, for each run, outputs a log file star
 
 This is an example to perform convergence diagnostics on the output given by the previous command in R using the CODA package. (further details about the interpretation of plots can be found on the web, for [example](http://www.johnmyleswhite.com/notebook/2010/08/29/mcmc-diagnostics-in-r-with-the-coda-package/)):
 
-    \# install package if not present
-    \# install.packages('coda')
+    # install package if not present
+    # install.packages('coda')
 
     library(coda)
 

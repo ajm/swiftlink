@@ -37,7 +37,7 @@ Build with CUDA support:
 
 Build under Mac OS (using [homebrew](http://brew.sh/) for dependencies):
 
-    brew install gsl libiomp
+    brew install gsl libiomp clang-omp
     cd swiftlink/src
     make -f Makefile.macos
 
@@ -50,9 +50,9 @@ SwiftLink expects three input files: pedigree file, map file and locus data file
 
 ## CUDA versions
 
-SwiftLink has been tested with CUDA version 7.5.
+The current version of SwiftLink has been tested on Linux with CUDA version 7.5 (tested Sept. 2016).
 
-SwiftLink does not work properly using CUDA versions 4.1 and 4.2 due to a known [slow down bug in cudaMalloc](http://stackoverflow.com/questions/10320562/a-disastrous-slowdown-of-cudamalloc-in-nvidia-drivers-from-version-285) (anecdotally, CUDA 4.0 in 32-bit mode does not seem to suffer from this bug).
+Older versions of SwiftLink are known to not work properly with CUDA versions 4.1 and 4.2 due to a known [slow down bug in cudaMalloc](http://stackoverflow.com/questions/10320562/a-disastrous-slowdown-of-cudamalloc-in-nvidia-drivers-from-version-285) (anecdotally, CUDA 4.0 in 32-bit mode did not seem to suffer from this bug).
 
 ## Examples
 
@@ -72,7 +72,7 @@ The simplest way to run a linkage analysis with SwiftLink, i.e. with default par
 
     swift -p east.ped -m east.map -d east.dat -o results.txt
 
-This will perform either an autosomal or X-linked analysis dependent on whether it is specified in the first line of the DAT file (SwiftLink can be forced to perform an X-linked analysis with the -X flag, see options). By default SwiftLink only uses a single CPU core.
+This will perform either an autosomal or X-linked analysis dependent on whether it is specified in the first line of the DAT file (SwiftLink can be forced to perform an X-linked analysis with the -X flag, see options). By default SwiftLink only uses a single CPU core and only performs a single replicate.
 
 ### Using multiple CPUs
 
@@ -82,9 +82,9 @@ SwiftLink can be efficiently run across multiple CPU cores. Here we perform the 
 
 ### Performing multiple runs
 
-SwiftLink has a builtin function to perform multiple Markov chains and output LOD scores averaged over all runs:
+SwiftLink has a builtin function to run multiple Markov chains and output LOD scores averaged over all replicates. For a majority of projects we have been involved in ~10 replicates is sufficient:
 
-    swift -p east.ped -m east.map -d east.dat -o results.txt -c 4 -R 4
+    swift -p east.ped -m east.map -d east.dat -o results.txt -c 4 -R 10
 
 ### Affected-only analysis
 
@@ -94,7 +94,7 @@ SwiftLink can easily perform an affected-only analysis, forcing all negative aff
 
 ### Using the GPU
 
-If you have a CUDA-compatible GPU and have the CUDA drivers installed, SwiftLink can offload LOD score calculations to it and speed up the overall runtime. The GPU code only supports autosomal linkage analysis:
+If you have a CUDA-compatible GPU and have the CUDA drivers installed (see [CUDA installation guide](http://docs.nvidia.com/cuda/cuda-getting-started-guide-for-linux/)), SwiftLink can offload LOD score calculations to the GPU and speed up the overall runtime. The GPU code only supports autosomal linkage analysis:
 
     swift -p east.ped -m east.map -d east.dat -o results.txt -c 4 -g
 
@@ -106,20 +106,26 @@ This command runs SwiftLink for 1,000,000 iterations of burnin, followed by 1,00
 
     swift -p east.ped -m east.map -d east.dat -o results.txt -c 4 -b 1000000 -i 1000000 -x 100
 
-This command performs 4 separate runs and, for each run, outputs a log file starting with the prefix "log" that can be used as input to the CODA R package:
+This command performs 4 separate runs and, for each run, outputs a log file starting with the prefix "log" that can be used as input to the CODA R package (see next subsection):
 
     swift -p east.ped -m east.map -d east.dat -o results.txt -c 4 -R 4 --trace --traceprefix log
 
 #### Using CODA R package to perform diagnostics
 
-This is an example to perform convergence diagnostics on the output given by the previous command in R (further details about the interpretation of plots can be found on the web):
+This is an example to perform convergence diagnostics on the output given by the previous command in R using the CODA package. (further details about the interpretation of plots can be found on the web, for [example](http://www.johnmyleswhite.com/notebook/2010/08/29/mcmc-diagnostics-in-r-with-the-coda-package/)):
+
+    \# install package if not present
+    \# install.packages('coda')
 
     library(coda)
+
     chain0 <- read.table('log.ped1.run0', header=T)
     chain1 <- read.table('log.ped1.run1', header=T)
     chain2 <- read.table('log.ped1.run2', header=T)
     chain3 <- read.table('log.ped1.run3', header=T)
+
     chains <- mcmc.list(mcmc(chain0$likelihood), mcmc(chain1$likelihood), mcmc(chain2$likelihood), mcmc(chain3$likelihood))
+
     plot(chains)
     gelman.diag(chains)
     gelman.plot(chains)

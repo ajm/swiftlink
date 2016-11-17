@@ -43,6 +43,9 @@ class MarkovChain {
 
     void _init();
     void _kill();
+    void run_scalable_lsampler(DescentGraph& dg, vector<int>& lgroups, int num_lgroups);
+    void run_old_lsampler(DescentGraph& dg);
+    int optimal_num_lgroups(DescentGraph& dg);
 
  public :
     MarkovChain(Pedigree* ped, GeneticMap* map, PeelSequenceGenerator* psg, struct mcmc_options options, int sequence_num, double temp=1.0) :
@@ -121,7 +124,7 @@ class MarkovChain {
     }
 
     LODscores* run(DescentGraph& dg);
-    bool noninterferring(vector<int>& x, int val);
+    bool noninterferring(vector<int>& x, int val, int thread_num);
 };
 
 #endif

@@ -14,9 +14,9 @@ GPUCC := nvcc
 
 CXXFLAGS := -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe -fopenmp -g -O2
 CFLAGS := -g -O2 -Wall -pipe -fopenmp
-LDFLAGS :=
-INCLUDES := -I.
-LIBS := -lgsl -lgslcblas -liomp5
+LDFLAGS := `gsl-config --libs`
+INCLUDES := -I. `gsl-config --cflags`
+LIBS := -liomp5
 GPUFLAGS := -arch=sm_20 -O2
 
 OBJECTS	:= \

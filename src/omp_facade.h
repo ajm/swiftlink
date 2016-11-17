@@ -2,6 +2,7 @@
 #define LKG_OMPFACADE_H_
 
 #include <cstdio>
+#include <cstdlib>
 
 #if defined(_OPENMP)
     #include <omp.h>
@@ -30,6 +31,15 @@ inline int get_thread_num() {
     return omp_get_thread_num();
     #else
     return 0;
+    #endif
+}
+
+inline double get_wtime() {
+    #if defined(_OPENMP)
+    return omp_get_wtime();
+    #else
+    fprintf(stderr, "get_wtime() should not be called without multiprocessing support\n");
+    abort();
     #endif
 }
 

@@ -11,10 +11,10 @@ GPUCC := nvcc
 #GPUFLAGS := -arch=sm_20 -O2 -m32
 
 CXXFLAGS := -Wall -Wextra -Weffc++ -pedantic -std=c++98 -pipe -fopenmp -g -O2
-CFLAGS := -g -O2 -Wall -pipe -fopenmp
-LDFLAGS :=
-INCLUDES := -I.
-LIBS := -lgsl -lgslcblas -lgomp
+CFLAGS := -g -O3 -Wall -pipe -fopenmp
+LDFLAGS := `gsl-config --libs`
+INCLUDES := -I. `gsl-config --cflags`
+LIBS := -lgomp
 GPUFLAGS := -arch=sm_20 -O2
 
 OBJECTS	:= \

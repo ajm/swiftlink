@@ -105,6 +105,7 @@ void MarkovChain::_kill() {
 }
 
 void MarkovChain::step(DescentGraph& dg, int start_iteration, int step_size) {
+    int thread_num = 0;
 
     for(int i = start_iteration; i < start_iteration + step_size; ++i) {
         if(get_random() < options.lsampler_prob) {
@@ -115,13 +116,15 @@ void MarkovChain::step(DescentGraph& dg, int start_iteration, int step_size) {
 
             #pragma omp parallel
             {
+                thread_num = get_thread_num(); 
+
                 while(1) {
                     #pragma omp critical 
                     {
                         int locus = -1;
                         if(not tmp.empty()) {
                             for(int j = int(tmp.size()-1); j >= 0; --j) {
-                                if(noninterferring(thread_assignments, tmp[j])) {
+                                if(noninterferring(thread_assignments, tmp[j], thread_num)) {
                                     locus = tmp[j];
                                     tmp.erase(tmp.begin() + j);
                                     break;
@@ -129,14 +132,14 @@ void MarkovChain::step(DescentGraph& dg, int start_iteration, int step_size) {
                             }
                         }
 
-                        thread_assignments[get_thread_num()] = locus;
+                        thread_assignments[thread_num] = locus;
                     }
                     
-                    if(thread_assignments[get_thread_num()] == -1)
+                    if(thread_assignments[thread_num] == -1)
                         break;
                     
-                    lsamplers[get_thread_num()]->set_locus_minimal(thread_assignments[get_thread_num()]);
-                    lsamplers[get_thread_num()]->step(dg, thread_assignments[get_thread_num()]);
+                    lsamplers[thread_num]->set_locus_minimal(thread_assignments[thread_num]);
+                    lsamplers[thread_num]->step(dg, thread_assignments[thread_num]);
                 }
             }
         }
@@ -176,10 +179,14 @@ void MarkovChain::step(DescentGraph& dg, int start_iteration, int step_size) {
 #ifdef USE_CUDA
             if(not options.use_gpu) {
 #endif
-                #pragma omp parallel for
-                for(int j = 0; j < int(map.num_markers() - 1); ++j) {
-                    peelers[get_thread_num()]->set_locus(j);
-                    peelers[get_thread_num()]->process(&dg);
+                #pragma omp parallel 
+                {
+                    thread_num = get_thread_num();
+                    #pragma omp for
+                    for(int j = 0; j < int(map.num_markers() - 1); ++j) {
+                        peelers[thread_num]->set_locus(j);
+                        peelers[thread_num]->process(&dg);
+                    }
                 }
 #ifdef USE_CUDA
             }
@@ -199,8 +206,114 @@ void MarkovChain::step(DescentGraph& dg, int start_iteration, int step_size) {
 #endif
 }
 
+void MarkovChain::run_scalable_lsampler(DescentGraph& dg, vector<int>& lgroups, int num_lgroups) {
+    int thread_num = 0;
+
+    random_shuffle(lgroups.begin(), lgroups.end());
+
+    for(int j = 0; j < num_lgroups; ++j) {
+        #pragma omp parallel num_threads(lsamplers.size()) private(thread_num)
+        {   
+            thread_num = get_thread_num();
+
+            #pragma omp for
+            for(int k = lgroups[j]; k < int(map.num_markers()); k += num_lgroups) {
+                lsamplers[thread_num]->set_locus_minimal(l_ordering[k]);
+                lsamplers[thread_num]->step(dg, l_ordering[k]);
+            }
+        }
+    }
+}
+
+void MarkovChain::run_old_lsampler(DescentGraph& dg) {
+    int thread_num = 0;
+    random_shuffle(l_ordering.begin(), l_ordering.end());
+    vector<int> thread_assignments(lsamplers.size(), -1);
+    vector<int> tmp(l_ordering);
+
+    #pragma omp parallel num_threads(lsamplers.size()) private(thread_num)
+    {
+        thread_num = get_thread_num();
+
+        while(1) {
+            #pragma omp critical 
+            {
+                int locus = -1;
+                if(not tmp.empty()) {
+                    for(int j = int(tmp.size()-1); j >= 0; --j) {
+                        if(noninterferring(thread_assignments, tmp[j], thread_num)) {
+                            locus = tmp[j];
+                            tmp.erase(tmp.begin() + j);
+                            break;
+                        }
+                    }
+                }
+
+                thread_assignments[thread_num] = locus;
+            }
+                    
+            if(thread_assignments[thread_num] == -1)
+                break;
+                    
+            lsamplers[thread_num]->set_locus_minimal(thread_assignments[thread_num]);
+            lsamplers[thread_num]->step(dg, thread_assignments[thread_num]);
+
+            #pragma omp critical
+            {
+                thread_assignments[thread_num] = -1;
+            }
+        }
+    }
+}
+
+int MarkovChain::optimal_num_lgroups(DescentGraph& dg) {
+    int best_num_lgroups = -1;
+    double best_time, start_time, run_time;
+    int repetitions = 100;
+
+    if(get_max_threads() == 1) {
+        return -1;
+    }
+
+    //best_time = numeric_limits<double>::infinity();
+
+    // test the old version first
+    start_time = get_wtime();
+    for(int k = 0; k < repetitions; ++k) {
+        run_old_lsampler(dg);
+    }
+    best_time = (get_wtime() - start_time) / repetitions;
+    
+//    fprintf(stderr, "%d lgroups, %f seconds\n", -1, best_time);
+
+    // test scalable version with different step sizes
+    for(int i = 3; i < 11; ++i) {
+        vector<int> tmp(i);
+        for(int j = 0; j < i; ++j) {
+            tmp[j] = j;
+        }
+
+        start_time = get_wtime();
+        for(int k = 0; k < repetitions; ++k) {
+            run_scalable_lsampler(dg, tmp, i);
+        }
+        run_time = (get_wtime() - start_time) / repetitions;
+
+        if(run_time < best_time) {
+            best_num_lgroups = i;
+            best_time = run_time;
+        }
+
+//        fprintf(stderr, "%d lgroups, %f seconds\n", i, run_time);
+    }
+
+    return best_num_lgroups;
+}
+
 // old version
 LODscores* MarkovChain::run(DescentGraph& dg) {
+    int thread_num = 0;
+    int num_lgroups = -1;
 
     Progress p("MCMC: ", options.iterations + options.burnin);
     
@@ -209,43 +322,24 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
         abort();
     }
 
+//    fprintf(stderr, "\n");
+    num_lgroups = optimal_num_lgroups(dg);
+//    fprintf(stderr, "\noptimal number of lgroups = %d\n", num_lgroups);
+//    exit(1);
+
+    vector<int> lgroups; //(num_lgroups, 0);
+    for(int i = 0; i < num_lgroups; ++i) {
+        lgroups.push_back(i);
+    }
+
     for(int i = 0; i < (options.iterations + options.burnin); ++i) {
         if(get_random() < options.lsampler_prob) {
-            
-            random_shuffle(l_ordering.begin(), l_ordering.end());
-            vector<int> thread_assignments(lsamplers.size(), -1);
-            vector<int> tmp(l_ordering);
 
-            #pragma omp parallel num_threads(lsamplers.size())
-            {
-                while(1) {
-                    #pragma omp critical 
-                    {
-                        int locus = -1;
-                        if(not tmp.empty()) {
-                            for(int j = int(tmp.size()-1); j >= 0; --j) {
-                                if(noninterferring(thread_assignments, tmp[j])) {
-                                    locus = tmp[j];
-                                    tmp.erase(tmp.begin() + j);
-                                    break;
-                                }
-                            }
-                        }
-
-                        thread_assignments[get_thread_num()] = locus;
-                    }
-                    
-                    if(thread_assignments[get_thread_num()] == -1)
-                        break;
-                    
-                    lsamplers[get_thread_num()]->set_locus_minimal(thread_assignments[get_thread_num()]);
-                    lsamplers[get_thread_num()]->step(dg, thread_assignments[get_thread_num()]);
-
-                    #pragma omp critical
-                    {
-                        thread_assignments[get_thread_num()] = -1;
-                    }
-                }
+            if(num_lgroups == -1) {
+                run_old_lsampler(dg);
+            }
+            else {
+                run_scalable_lsampler(dg, lgroups, num_lgroups);
             }
         }
         else {
@@ -278,10 +372,14 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
 #ifdef USE_CUDA
             if(not options.use_gpu) {
 #endif
-                #pragma omp parallel for
-                for(int j = 0; j < int(map.num_markers() - 1); ++j) {
-                    peelers[get_thread_num()]->set_locus(j);
-                    peelers[get_thread_num()]->process(&dg);
+                #pragma omp parallel private(thread_num)
+                {
+                    thread_num = get_thread_num();
+                    #pragma omp for
+                    for(int j = 0; j < int(map.num_markers() - 1); ++j) {
+                        peelers[thread_num]->set_locus(j);
+                        peelers[thread_num]->process(&dg);
+                    }
                 }
 #ifdef USE_CUDA
             }
@@ -305,9 +403,9 @@ LODscores* MarkovChain::run(DescentGraph& dg) {
     return lod;
 }
 
-bool MarkovChain::noninterferring(vector<int>& x, int val) {
+bool MarkovChain::noninterferring(vector<int>& x, int val, int thread_num) {
     for(int i = 0; i < int(x.size()); ++i) {
-        if((i != get_thread_num()) and (x[i] != -1)) {
+        if((i != thread_num) and (x[i] != -1)) {
             int diff = val - x[i];
             if((diff == 1) or (diff == -1)) {
                 return false;
